@@ -1,0 +1,964 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>M21 · High-Frequency Engineering &amp; EMC — EE Knowledge Base</title>
+<link rel="stylesheet" href="../../assets/vendor/katex/katex.min.css">
+<link rel="stylesheet" href="../../assets/css/style.css">
+<script src="../../assets/vendor/katex/katex.min.js" defer></script>
+<script src="../../assets/vendor/katex/auto-render.min.js" defer></script>
+<script src="../curriculum.js" defer></script>
+<script src="../../assets/js/app.js" defer></script>
+<script src="../../assets/js/widgets.js" defer></script>
+</head>
+<body data-module="m21">
+<div class="layout">
+<main class="content">
+<article class="article">
+
+<span class="eyebrow">📶 Communications &amp; High Frequency · Module 21</span>
+<h1>High-Frequency Engineering &amp; EMC <span class="muted" style="font-weight:400;font-size:1.4rem">· <span class="de">Hochfrequenztechnik &amp; EMV</span></span></h1>
+<p class="lead">Above a certain frequency, wires stop being wires: they become waveguides, antennas, and troublemakers. This module is where circuit theory meets Maxwell — transmission lines, reflections, the Smith chart, antennas, and the dark art of making electronics that neither pollutes the airwaves nor gets jammed by them. Every WiFi router, every 5G base station, and every CE-marked product on a European shelf exists because someone mastered exactly this material.</p>
+
+<div class="page-meta">
+  <span><b>Corresponds to:</b> Hochfrequenztechnik &amp; EMV (Master / 6th semester)</span>
+  <span><b>Prerequisites:</b> Modules 05, 07, 12</span>
+  <span><b>Study time:</b> ≈ 6–8 h</span>
+</div>
+
+<h2 id="lumped-dies">1. When ordinary circuit theory dies — the λ/10 rule</h2>
+
+<p>Everything you did in Modules 04 and 05 rested on a hidden assumption: that a voltage applied at one end of a wire appears at the other end <em>instantly and identically</em>. In reality the signal travels as an electromagnetic wave at (roughly) the speed of light. Kirchhoff's laws are the limit of Maxwell's equations for circuits that are <strong>electrically small</strong> — small compared to the wavelength</p>
+\[ \lambda = \frac{v}{f}, \qquad v = \frac{c_0}{\sqrt{\varepsilon_r}} \ \ \text{(in a dielectric)}, \quad c_0 = 3\cdot 10^8\,\mathrm{m/s}. \]
+<p>The standard engineering boundary is the <strong>λ/10 rule</strong>: if the physical size \(l\) of a circuit or connection satisfies \(l < \lambda/10\), voltages and currents are essentially the same everywhere along it at any instant, and you may use <strong>lumped-element</strong> (<span class="de">konzentrierte Bauelemente</span>) circuit theory. Beyond that, the phase of the wave varies noticeably along the structure and you must switch to <strong>distributed</strong> (<span class="de">verteilte Elemente</span>) thinking — transmission-line theory.</p>
+
+<div class="table-wrap">
+<table class="data">
+<thead><tr><th>Frequency</th><th>λ in air</th><th>λ/10 in air</th><th>λ/10 in FR-4 PCB (v ≈ c/2)</th><th>Consequence</th></tr></thead>
+<tbody>
+<tr><td>50 Hz (mains)</td><td>6000 km</td><td>600 km</td><td>—</td><td>a whole national grid is <em>almost</em> lumped (M19 treats the exceptions)</td></tr>
+<tr><td>1 MHz (AM radio)</td><td>300 m</td><td>30 m</td><td>15 m</td><td>lab benches are safely lumped</td></tr>
+<tr><td>100 MHz (FM, fast logic)</td><td>3 m</td><td>30 cm</td><td>15 cm</td><td>long PCB traces and cables start to matter</td></tr>
+<tr><td>1 GHz (mobile radio)</td><td>30 cm</td><td>3 cm</td><td>1.5 cm</td><td><b>your PCB trace is now a transmission line</b></td></tr>
+<tr><td>10 GHz (radar, 5G mmWave soon)</td><td>3 cm</td><td>3 mm</td><td>1.5 mm</td><td>even component leads and vias are distributed</td></tr>
+</tbody>
+</table>
+</div>
+
+<div class="box key">
+  <div class="box-title"><span class="ic">🔑</span>Key idea: it's the edge, not the clock</div>
+  <p>For digital signals the relevant frequency is <em>not</em> the clock rate but the spectral content of the <strong>edges</strong>. A common estimate for the highest significant frequency ("knee frequency") of an edge with rise time \(t_r\) is \(f_{\text{knee}} \approx 0.35/t_r\). A leisurely 10 MHz clock with 100 ps edges is, electromagnetically, a multi-GHz signal. This is why signal integrity (<span class="de">Signalintegrität</span>) became a mainstream digital-design discipline.</p>
+</div>
+
+<div class="example">
+  <div class="ex-head"><span class="ex-tag">Worked example</span> λ/10 boundary for a 100 ps edge</div>
+  <div class="ex-body">
+    <p>A modern FPGA output switches with \(t_r = 100\,\mathrm{ps}\). Above what trace length on FR-4 (\(v \approx 1.5\cdot 10^8\,\mathrm{m/s}\), i.e. 15 cm/ns) must the trace be treated as a transmission line?</p>
+    <div class="step"><span class="step-label">Step 1 — edge bandwidth:</span>
+      \( f_{\text{knee}} \approx 0.35/t_r = 0.35/(100\,\mathrm{ps}) = 3.5\,\mathrm{GHz} \).</div>
+    <div class="step"><span class="step-label">Step 2 — wavelength in FR-4:</span>
+      \( \lambda = v/f = 1.5\cdot 10^8 / 3.5\cdot 10^9 \approx 4.3\,\mathrm{cm} \).</div>
+    <div class="step"><span class="step-label">Step 3 — λ/10:</span>
+      critical length \( \approx 4.3\,\mathrm{mm} \). Cross-check with the time-domain rule of thumb "critical if longer than 1/6 of the edge's spatial extent": the edge occupies \( t_r \cdot v = 15\,\mathrm{mm} \) of trace, and \(15/6 = 2.5\,\mathrm{mm}\) — same order.</div>
+    <div class="result-line">Any trace longer than a few millimetres carrying this edge is a transmission line. On a modern board that is <em>every</em> trace — hence termination resistors everywhere (Section 4).</div>
+  </div>
+</div>
+
+<h2 id="tlines">2. Transmission lines — <span class="de">Leitungstheorie</span></h2>
+
+<h3 id="ladder">2.1 The distributed L′C′ ladder</h3>
+<p>Take any uniform two-conductor structure — coax cable, PCB trace over a ground plane, twisted pair. Every short slice \(\Delta x\) of it has a little series inductance (current loop ⇒ magnetic flux, Module 07) and a little shunt capacitance (two conductors with a dielectric between them). Per unit length we write \(L'\) (H/m) and \(C'\) (F/m), plus loss terms \(R'\) (conductor resistance) and \(G'\) (dielectric leakage):</p>
+
+<figure>
+  <div class="fig-frame">
+  <svg class="diagram" viewBox="0 0 640 230" role="img" aria-label="Distributed ladder model of a transmission line">
+    <!-- top wire segments with series inductors -->
+    <path class="wire" d="M40 60 H90"/>
+    <rect x="90" y="53" width="54" height="14" fill="var(--text-soft)"/>
+    <text x="117" y="42" text-anchor="middle" font-size="13">L′·Δx</text>
+    <path class="wire" d="M144 60 H240"/>
+    <rect x="240" y="53" width="54" height="14" fill="var(--text-soft)"/>
+    <text x="267" y="42" text-anchor="middle" font-size="13">L′·Δx</text>
+    <path class="wire" d="M294 60 H390"/>
+    <rect x="390" y="53" width="54" height="14" fill="var(--text-soft)"/>
+    <text x="417" y="42" text-anchor="middle" font-size="13">L′·Δx</text>
+    <path class="wire" d="M444 60 H530"/>
+    <!-- shunt capacitors -->
+    <path class="wire" d="M190 60 V103 M190 113 V180"/>
+    <line x1="174" y1="103" x2="206" y2="103" class="wire"/>
+    <line x1="174" y1="113" x2="206" y2="113" class="wire"/>
+    <text x="216" y="112" font-size="13">C′·Δx</text>
+    <path class="wire" d="M340 60 V103 M340 113 V180"/>
+    <line x1="324" y1="103" x2="356" y2="103" class="wire"/>
+    <line x1="324" y1="113" x2="356" y2="113" class="wire"/>
+    <text x="366" y="112" font-size="13">C′·Δx</text>
+    <path class="wire" d="M490 60 V103 M490 113 V180"/>
+    <line x1="474" y1="103" x2="506" y2="103" class="wire"/>
+    <line x1="474" y1="113" x2="506" y2="113" class="wire"/>
+    <text x="516" y="112" font-size="13">C′·Δx</text>
+    <!-- bottom wire -->
+    <path class="wire" d="M40 180 H530"/>
+    <text x="556" y="65" font-size="15" fill="var(--text-soft)">···</text>
+    <text x="556" y="185" font-size="15" fill="var(--text-soft)">···</text>
+    <!-- input voltage arrow -->
+    <circle cx="40" cy="60" r="4" class="node"/>
+    <circle cx="40" cy="180" r="4" class="node"/>
+    <line x1="24" y1="78" x2="24" y2="162" stroke="var(--accent)" stroke-width="2" marker-end="url(#arrLad)"/>
+    <text x="10" y="124" font-size="14" fill="var(--accent)">u(x,t)</text>
+    <!-- dx bracket -->
+    <path d="M240 205 H390" stroke="var(--text-faint)" stroke-width="1.5" fill="none"/>
+    <path d="M240 200 V210 M390 200 V210" stroke="var(--text-faint)" stroke-width="1.5" fill="none"/>
+    <text x="315" y="224" text-anchor="middle" font-size="12" fill="var(--text-faint)">one cell = Δx</text>
+    <defs><marker id="arrLad" markerWidth="9" markerHeight="9" refX="7" refY="4.5" orient="auto">
+      <path d="M0 0 L8 4.5 L0 9 z" fill="var(--accent)"/></marker></defs>
+  </svg>
+  </div>
+  <figcaption><b>Fig. 2.1</b> — A transmission line is an infinite ladder of infinitesimal series inductances and shunt capacitances (losses \(R'\), \(G'\) omitted for clarity). Energy hops cell to cell: charging one capacitor drives current through the next inductor — that <em>is</em> wave propagation.</figcaption>
+</figure>
+
+<h3 id="telegrapher">2.2 The telegrapher's equations</h3>
+<p>Apply KVL and KCL to one cell of Fig. 2.1 and let \(\Delta x \to 0\) (exactly the limit process of Module 12's field theory, done on a circuit). KVL along the top: the voltage drops by the inductor's \(L'\Delta x \cdot \partial i/\partial t\) plus the resistive drop. KCL at the node: the current drops by what leaks into the capacitor, \(C'\Delta x \cdot \partial u/\partial t\), plus dielectric leakage. Dividing by \(\Delta x\):</p>
+\[ \boxed{\;-\frac{\partial u}{\partial x} = R' i + L' \frac{\partial i}{\partial t}, \qquad
+   -\frac{\partial i}{\partial x} = G' u + C' \frac{\partial u}{\partial t}\;} \]
+<p>These are the <strong>telegrapher's equations</strong> (<span class="de">Leitungsgleichungen</span>), derived by Oliver Heaviside in 1876 for undersea telegraph cables. For the lossless case (\(R' = G' = 0\)), differentiate the first with respect to \(x\), substitute the second, and you get the wave equation:</p>
+\[ \frac{\partial^2 u}{\partial x^2} = L'C' \frac{\partial^2 u}{\partial t^2}
+   \quad\Rightarrow\quad u(x,t) = u^+\!\left(t - \tfrac{x}{v}\right) + u^-\!\left(t + \tfrac{x}{v}\right), \qquad v = \frac{1}{\sqrt{L'C'}}. \]
+<p>Any shape travels undistorted in both directions at velocity \(v\). For lines with homogeneous dielectric, \(v = c_0/\sqrt{\varepsilon_r}\) regardless of geometry — coax with PE dielectric gives \(v \approx 0.66\,c_0\) ("velocity factor 0.66"), FR-4 microstrip roughly \(0.5\,c_0\), i.e. the handy number <b>15 cm/ns</b>, or ~6.7 ps per millimetre.</p>
+
+<h3 id="z0">2.3 Characteristic impedance Z₀ — the ratio the wave wants</h3>
+<p>Substituting the traveling-wave solution back into the telegrapher's equations shows that for a single traveling wave, voltage and current are <em>locked in proportion</em>:</p>
+\[ \boxed{\;\frac{u^+}{i^+} = Z_0 = \sqrt{\frac{L'}{C'}}\;} \qquad \text{(lossless line, real number!)} \]
+<p>This is the <strong>characteristic impedance</strong> (<span class="de">Wellenwiderstand</span>). Physically: to charge each successive cell's capacitance through each cell's inductance, the wavefront must carry charge and flux in a fixed ratio — that ratio is \(Z_0\). Three things it is <em>not</em>:</p>
+<ul>
+  <li>It is <b>not a resistance you can measure with an ohmmeter</b> — an infinite (or matched) line <em>looks like</em> \(Z_0\) from its input, but no power is dissipated in "\(Z_0\)"; it is carried away by the wave.</li>
+  <li>It does not depend on line <em>length</em> — only on geometry and dielectric.</li>
+  <li>It is not the DC loop resistance \(R'l\), which is a loss term.</li>
+</ul>
+
+<div class="box history">
+  <div class="box-title"><span class="ic">📜</span>Why 50 Ω? The 30/77 compromise</div>
+  <p>For an air-dielectric coax cable you can optimize the diameter ratio \(D/d\): <b>minimum attenuation</b> occurs at \(Z_0 \approx 77\,\Omega\), <b>maximum power handling</b> (before breakdown) at \(Z_0 \approx 30\,\Omega\), maximum voltage rating at ≈ 60 Ω. In the 1930s, radar engineers split the difference — the geometric mean \(\sqrt{30 \cdot 77} \approx 48\,\Omega\) — and the world standardized on <b>50 Ω</b>. Cable TV chose <b>75 Ω</b> instead: reception needs low loss, not power handling, and 75 Ω sits near the loss optimum <em>and</em> near the 73 Ω of a half-wave dipole (Section 8). Two numbers, and you now understand every RF connector catalog.</p>
+</div>
+
+<div class="table-wrap">
+<table class="data">
+<thead><tr><th>Line type</th><th>Typical \(Z_0\)</th><th>Velocity factor</th><th>Where you meet it</th></tr></thead>
+<tbody>
+<tr><td>Coax RG-58 / RG-213 (<span class="de">Koaxialkabel</span>)</td><td>50 Ω</td><td>0.66 (PE)</td><td>lab, antennas, test equipment</td></tr>
+<tr><td>Coax RG-6 (TV)</td><td>75 Ω</td><td>0.85 (foam PE)</td><td>satellite/cable TV</td></tr>
+<tr><td>Microstrip on FR-4 (<span class="de">Mikrostreifenleitung</span>)</td><td>20–120 Ω (width-set)</td><td>≈ 0.5–0.6</td><td>every RF and fast digital PCB</td></tr>
+<tr><td>Twisted pair, CAT-5/6 (<span class="de">verdrillte Zweidrahtleitung</span>)</td><td>100 Ω (differential)</td><td>≈ 0.65</td><td>Ethernet, CAN (120 Ω), USB (90 Ω)</td></tr>
+<tr><td>Free space (Module 12)</td><td>\(Z_{F0} = \sqrt{\mu_0/\varepsilon_0} \approx 377\,\Omega\)</td><td>1</td><td>the "transmission line" antennas launch into</td></tr>
+</tbody>
+</table>
+</div>
+
+<p>For sinusoidal steady state (phasors, Module 05) we describe position along the line by the <strong>electrical length</strong> \(\beta l\), with phase constant \(\beta = 2\pi/\lambda = \omega/v\). A line is "a quarter wave long" <em>at a given frequency</em> — the same 5 cm of cable is electrically short at 10 MHz and three-quarters of a wavelength at 2.25 GHz. Electrical length, not physical length, is what matters in everything below.</p>
+
+<div class="box german">
+  <div class="box-title"><span class="ic">🇩🇪</span>Vokabeln</div>
+  <p>high-frequency engineering = <span class="de">Hochfrequenztechnik (HF)</span> · transmission line = <span class="de">Leitung</span> · characteristic impedance = <span class="de">Wellenwiderstand</span> · reflection coefficient = <span class="de">Reflexionsfaktor</span> · standing wave = <span class="de">stehende Welle</span> · VSWR = <span class="de">Stehwellenverhältnis (SWV)</span> · matching = <span class="de">Anpassung</span> · quarter-wave transformer = <span class="de">λ/4-Transformator</span> · scattering parameters = <span class="de">Streuparameter</span> · antenna gain = <span class="de">Antennengewinn</span> · free-space path loss = <span class="de">Freiraumdämpfung</span> · EMC = <span class="de">Elektromagnetische Verträglichkeit (EMV)</span> · interference source/victim = <span class="de">Störquelle / Störsenke</span> · coupling path = <span class="de">Koppelpfad</span> · decoupling capacitor = <span class="de">Abblockkondensator</span> · ground plane = <span class="de">Masseebene</span> · shielding = <span class="de">Schirmung</span> · common-mode choke = <span class="de">Gleichtaktdrossel</span> · radiated emission = <span class="de">Störaussendung</span> · immunity = <span class="de">Störfestigkeit</span></p>
+</div>
+
+<h2 id="reflections">3. Reflections and standing waves</h2>
+
+<h3 id="gamma">3.1 The reflection coefficient Γ — derivation</h3>
+<p>Terminate a line \(Z_0\) with a load \(Z_L\). At the load, <em>two</em> constraints must hold simultaneously: the wave physics demands \(u^+/i^+ = Z_0\) and \(u^-/i^- = -Z_0\) (the backward wave carries current the other way), while Ohm's law at the load demands \(u/i = Z_L\) for the <em>totals</em> \(u = u^+ + u^-\), \(i = i^+ + i^-\). If \(Z_L \neq Z_0\), a single forward wave cannot satisfy both — the load <em>must</em> generate a reflected wave. How big? Divide the two totals:</p>
+\[ Z_L = \frac{u^+ + u^-}{\frac{u^+}{Z_0} - \frac{u^-}{Z_0}} = Z_0\,\frac{1 + u^-/u^+}{1 - u^-/u^+}. \]
+<p>Solve for the ratio \(\underline{\Gamma} = u^-/u^+\):</p>
+\[ \boxed{\;\underline{\Gamma} = \frac{Z_L - Z_0}{Z_L + Z_0}\;} \qquad |\underline{\Gamma}| \le 1 \ \text{for passive loads}. \]
+<p>Three canonical cases, worth memorizing with their bounce intuition:</p>
+<div class="table-wrap">
+<table class="data">
+<thead><tr><th>Load</th><th>Γ</th><th>Bounce intuition</th></tr></thead>
+<tbody>
+<tr><td><b>Matched</b>, \(Z_L = Z_0\) (<span class="de">angepasst</span>)</td><td>0</td><td>the load "feels like more line" — the wave is fully absorbed, no echo</td></tr>
+<tr><td><b>Open</b>, \(Z_L \to \infty\) (<span class="de">Leerlauf</span>)</td><td>+1</td><td>current must be zero at the end; the reflected wave cancels the current and <em>doubles the voltage</em></td></tr>
+<tr><td><b>Short</b>, \(Z_L = 0\) (<span class="de">Kurzschluss</span>)</td><td>−1</td><td>voltage must be zero; the wave flips sign and bounces back inverted, current doubles</td></tr>
+</tbody>
+</table>
+</div>
+
+<div class="box intuition">
+  <div class="box-title"><span class="ic">💡</span>Intuition: the rope-and-wall picture</div>
+  <p>Send a pulse down a rope. Tied to a rigid wall (short circuit): the pulse reflects inverted. Free end (open circuit): it reflects upright, and the free end whips to double amplitude. Tied to a second rope of identical weight (matched): the pulse passes through, no echo. Impedance mismatch on a cable behaves <em>exactly</em> like a change of rope density — reflections are the universal behavior of waves at boundaries, from ropes to ultrasound to light hitting glass.</p>
+</div>
+
+<h3 id="vswr">3.2 Standing waves, VSWR, return loss</h3>
+<p>In sinusoidal steady state the forward and reflected waves superpose along the line. Where they arrive in phase, the amplitude envelope is \( |u^+|(1 + |\Gamma|) \); a quarter wavelength away they oppose, giving \( |u^+|(1 - |\Gamma|) \). The interference pattern <em>does not move</em> — a <strong>standing wave</strong> (<span class="de">stehende Welle</span>) with maxima and minima locked to the load position, repeating every \(\lambda/2\). The classic quality measure is the <strong>voltage standing wave ratio</strong>:</p>
+\[ \boxed{\;\mathrm{VSWR} = \frac{U_{max}}{U_{min}} = \frac{1 + |\underline{\Gamma}|}{1 - |\underline{\Gamma}|}\;} \in [1, \infty). \]
+<p>VSWR = 1 means matched; VSWR = ∞ means total reflection. An antenna-tuner's "SWR meter" measures exactly this by sampling the forward and reflected waves with a directional coupler. Equivalent, and preferred in datasheets, is the <strong>return loss</strong> (<span class="de">Rückflussdämpfung</span>):</p>
+\[ RL = -20 \log_{10} |\underline{\Gamma}| \ \ \mathrm{dB} \qquad\text{(bigger = better; matched} \to \infty\text{)}. \]
+<p>Since power goes with amplitude squared, the <em>reflected power fraction</em> is \(|\Gamma|^2\) and the power delivered to the load is \(1 - |\Gamma|^2\).</p>
+
+<div class="example">
+  <div class="ex-head"><span class="ex-tag">Worked example</span> Γ, VSWR and return loss for a complex load</div>
+  <div class="ex-body">
+    <p>A load \(Z_L = 25 + \mathrm{j}25\,\Omega\) terminates a 50 Ω line. Find \(\underline{\Gamma}\), VSWR, return loss, and the reflected power fraction.</p>
+    <div class="step"><span class="step-label">Step 1 — reflection coefficient:</span>
+      \[ \underline{\Gamma} = \frac{(25 + \mathrm{j}25) - 50}{(25 + \mathrm{j}25) + 50} = \frac{-25 + \mathrm{j}25}{75 + \mathrm{j}25} = \frac{-1 + \mathrm{j}}{3 + \mathrm{j}} = \frac{(-1+\mathrm{j})(3-\mathrm{j})}{10} = -0.2 + \mathrm{j}\,0.4 . \]</div>
+    <div class="step"><span class="step-label">Step 2 — magnitude and angle:</span>
+      \( |\underline{\Gamma}| = \sqrt{0.04 + 0.16} = 0.447\), \(\ \arg\underline{\Gamma} = 117^\circ \).</div>
+    <div class="step"><span class="step-label">Step 3 — VSWR:</span>
+      \( \mathrm{VSWR} = \frac{1 + 0.447}{1 - 0.447} = \frac{1.447}{0.553} \approx 2.6 \). An SWR meter would read "2.6 : 1".</div>
+    <div class="step"><span class="step-label">Step 4 — return loss and power:</span>
+      \( RL = -20\log_{10} 0.447 = 7.0\,\mathrm{dB} \); reflected power \( |\Gamma|^2 = 20\,\% \), delivered \(80\,\%\).</div>
+    <div class="result-line">\(\underline{\Gamma} = 0.447\angle 117^\circ\), VSWR ≈ 2.6, RL = 7 dB — a poor match by modern standards (specs typically demand RL &gt; 10 dB, i.e. VSWR &lt; 2).</div>
+  </div>
+</div>
+
+<div class="widget">
+  <div class="w-head"><span class="ic">🧪</span>Interactive — standing-wave explorer <span class="w-tag">simulation</span></div>
+  <div class="w-body">
+    <p class="small mt0">A 2λ-long 50 Ω line drives the load at the right end. The amber curve is the instantaneous voltage; the blue curves are the standing-wave envelope \(\pm|U(x)|\). Set \(R_L = 50, X_L = 0\): flat envelope, a pure traveling wave. Set \(R_L = 0\) or drag \(R_L\) high: the wave stops traveling and just "breathes" — a standing wave with fixed nodes. A reactive load (\(X_L \ne 0\)) shifts the node positions without changing VSWR.</p>
+    <div id="w-standing"></div>
+  </div>
+</div>
+
+<div class="box pitfall">
+  <div class="box-title"><span class="ic">🚫</span>Classic pitfall: "reflected power heats the transmitter"</div>
+  <p>Reflected power does not automatically burn up the source. What actually happens: the reflected wave re-reflects at the source (if the source is also mismatched) and the steady state settles into whatever the total circuit dictates. The real dangers of high VSWR are (1) voltage maxima on the line exceeding breakdown, (2) a transmitter output stage seeing an impedance far from its design load and overheating or folding back power, and (3) in the exam: forgetting that \(|\Gamma| > 1\) is impossible for passive loads — if you compute one, you made a sign error.</p>
+</div>
+
+<h2 id="timedomain">4. Time domain: bounce diagrams and signal integrity</h2>
+
+<p>Now the digital designer's view. Launch a voltage <em>step</em> into a mismatched line and watch the echoes. A driver \(U_q\) with source resistance \(R_S\) launches, by voltage divider against the line's input impedance (which is exactly \(Z_0\) until the first echo returns!),</p>
+\[ u_1 = U_q \frac{Z_0}{R_S + Z_0}. \]
+<p>This step travels for one line delay \(T = l/v\), reflects at the load with \(\Gamma_L\), travels back, reflects at the source with \(\Gamma_S = \frac{R_S - Z_0}{R_S + Z_0}\), and so on — each end's voltage is the running <em>sum</em> of every wave that has arrived. The bookkeeping tool is the <strong>bounce diagram</strong> (<span class="de">Impulsfahrplan</span> — "pulse timetable", a wonderfully German word):</p>
+
+<figure>
+  <div class="fig-frame">
+  <svg class="diagram" viewBox="0 0 620 330" role="img" aria-label="Bounce diagram for a step into an open line">
+    <!-- vertical position lines -->
+    <line x1="150" y1="45" x2="150" y2="300" stroke="var(--text-soft)" stroke-width="2"/>
+    <line x1="470" y1="45" x2="470" y2="300" stroke="var(--text-soft)" stroke-width="2"/>
+    <text x="150" y="30" text-anchor="middle" font-size="13">source end, Γ_S = −1/3</text>
+    <text x="470" y="30" text-anchor="middle" font-size="13">load end (open), Γ_L = +1</text>
+    <!-- time labels -->
+    <text x="128" y="64" text-anchor="end" font-size="12" fill="var(--text-faint)">t = 0</text>
+    <!-- zigzag -->
+    <line x1="150" y1="60" x2="470" y2="110" stroke="var(--accent)" stroke-width="2.2" marker-end="url(#arrBn)"/>
+    <text x="300" y="72" text-anchor="middle" font-size="13" fill="var(--accent)">+2.20 V</text>
+    <line x1="470" y1="110" x2="150" y2="160" stroke="var(--accent)" stroke-width="2.2" marker-end="url(#arrBn)"/>
+    <text x="320" y="123" text-anchor="middle" font-size="13" fill="var(--accent)">+2.20 V  (×Γ_L = +1)</text>
+    <line x1="150" y1="160" x2="470" y2="210" stroke="var(--accent-2)" stroke-width="2.2" marker-end="url(#arrBn2)"/>
+    <text x="300" y="172" text-anchor="middle" font-size="13" fill="var(--accent-2)">−0.73 V  (×Γ_S = −1/3)</text>
+    <line x1="470" y1="210" x2="150" y2="260" stroke="var(--accent-2)" stroke-width="2.2" marker-end="url(#arrBn2)"/>
+    <text x="320" y="222" text-anchor="middle" font-size="13" fill="var(--accent-2)">−0.73 V</text>
+    <!-- accumulated node voltages -->
+    <text x="490" y="112" font-size="13" font-weight="700">4.40 V</text>
+    <text x="490" y="128" font-size="11" fill="var(--text-faint)">t = T</text>
+    <text x="60" y="162" font-size="13" font-weight="700">3.67 V</text>
+    <text x="60" y="178" font-size="11" fill="var(--text-faint)">t = 2T</text>
+    <text x="490" y="212" font-size="13" font-weight="700">2.93 V</text>
+    <text x="490" y="228" font-size="11" fill="var(--text-faint)">t = 3T</text>
+    <text x="60" y="262" font-size="13" font-weight="700">3.18 V</text>
+    <text x="60" y="278" font-size="11" fill="var(--text-faint)">t = 4T</text>
+    <text x="310" y="316" text-anchor="middle" font-size="12" fill="var(--text-faint)">accumulated voltages shown at each arrival → ringing around the final 3.30 V</text>
+    <defs>
+      <marker id="arrBn" markerWidth="9" markerHeight="9" refX="7" refY="4.5" orient="auto"><path d="M0 0 L8 4.5 L0 9 z" fill="var(--accent)"/></marker>
+      <marker id="arrBn2" markerWidth="9" markerHeight="9" refX="7" refY="4.5" orient="auto"><path d="M0 0 L8 4.5 L0 9 z" fill="var(--accent-2)"/></marker>
+    </defs>
+  </svg>
+  </div>
+  <figcaption><b>Fig. 4.1</b> — Bounce diagram for the worked example below: a 3.3 V CMOS driver (\(R_S = 25\,\Omega\)) into an open-ended 50 Ω trace. Position runs left–right, time runs downward; each diagonal is one transit, each bounce multiplies by the local Γ.</figcaption>
+</figure>
+
+<div class="example">
+  <div class="ex-head"><span class="ex-tag">Worked example</span> The first three reflections, by hand</div>
+  <div class="ex-body">
+    <p>A 3.3 V step from a driver with \(R_S = 25\,\Omega\) enters a \(Z_0 = 50\,\Omega\), \(T = 1\,\mathrm{ns}\) trace, open at the far end (a CMOS gate input ≈ open). Compute the load-end voltage for the first few nanoseconds.</p>
+    <div class="step"><span class="step-label">Step 1 — reflection coefficients and launch:</span>
+      \( \Gamma_L = +1 \) (open), \( \Gamma_S = \frac{25-50}{25+50} = -\tfrac13 \), launched step \( u_1 = 3.3 \cdot \frac{50}{75} = 2.20\,\mathrm{V} \).</div>
+    <div class="step"><span class="step-label">Step 2 — first arrival, t = T:</span>
+      incident 2.20 V + reflected \(1 \cdot 2.20\) V ⇒ load jumps to <b>4.40 V</b> — an overshoot beyond the 3.3 V supply!</div>
+    <div class="step"><span class="step-label">Step 3 — echo returns, t = 2T (source), t = 3T (load):</span>
+      the 2.20 V echo hits the source, re-reflects as \( -\tfrac13 \cdot 2.20 = -0.733\,\mathrm{V} \); source end reads \(2.20 + 2.20 - 0.733 = 3.67\,\mathrm{V}\). At \(t = 3T\) that −0.733 V wave arrives at the open end and doubles: load drops by 1.467 V to <b>2.93 V</b>.</div>
+    <div class="step"><span class="step-label">Step 4 — the pattern:</span>
+      each round trip multiplies the circulating wave by \(\Gamma_S \Gamma_L = -\tfrac13\): the load rings 4.40 → 2.93 → 3.42 → … converging geometrically on \(U_q = 3.30\,\mathrm{V}\) (open load ⇒ full source voltage finally).</div>
+    <div class="result-line">Ringing between 4.4 V and 2.9 V for several nanoseconds — enough to double-clock an edge-triggered input and to overstress protection diodes. This is why fast digital lines are terminated.</div>
+  </div>
+</div>
+
+<div class="widget">
+  <div class="w-head"><span class="ic">🧪</span>Interactive — bounce diagram: step into a mismatched line <span class="w-tag">simulation</span></div>
+  <div class="w-body">
+    <p class="small mt0">Voltage vs. time at both ends of the line (time in units of the line delay \(T\)). Reproduce the worked example (\(R_S = 25\,\Omega\), open load), then try <b>series termination</b> \(R_S = 50\,\Omega\): one clean step, no ringing — the echo is absorbed on its <em>first</em> return. Then try a matched 50 Ω load: no echo at all, but note the level is halved (the divider) unless the far end is high-impedance.</p>
+    <div id="w-bounce"></div>
+  </div>
+</div>
+
+<div class="box key">
+  <div class="box-title"><span class="ic">🔑</span>Key idea: why termination resistors exist</div>
+  <p>You can kill reflections at either end. <b>Series termination</b> (<span class="de">Serienterminierung</span>): make \(R_S + R_{driver} = Z_0\); the half-amplitude step doubles at the open far end to full swing, and the returning echo dies at the source. Costs one resistor, no static power — the default for point-to-point digital (DDR address lines, clocks). <b>Parallel termination</b>: put \(Z_0\) at the far end; clean incident wave, but continuous DC current — used where the line must be matched at all times (high-speed serial links use variants: Thévenin, AC-coupled, on-die termination). The 120 Ω resistors at both ends of every CAN bus are exactly this.</p>
+</div>
+
+<h2 id="smith">5. The Smith chart — the RF engineer's map</h2>
+
+<p>Impedance along a mismatched line is a moving target: the input impedance of a line of length \(l\) terminated in \(Z_L\) is</p>
+\[ Z_{in} = Z_0\, \frac{Z_L + \mathrm{j} Z_0 \tan\beta l}{Z_0 + \mathrm{j} Z_L \tan\beta l}, \]
+<p>which repeats every \(\lambda/2\) and swaps short↔open every \(\lambda/4\). Computing with this in 1939 (no calculators) was misery, so Phillip Smith drew the calculation instead. The <strong>Smith chart</strong> (<span class="de">Smith-Diagramm</span>) is simply the complex <b>Γ-plane</b> — a unit circle, since \(|\Gamma| \le 1\) — with a curvilinear grid showing which <em>normalized impedance</em> \(z = Z/Z_0\) corresponds to each point via \(\Gamma = (z-1)/(z+1)\). How to read it:</p>
+<ul>
+  <li><b>Center</b> = \(\Gamma = 0\) = perfect match (\(z = 1\), i.e. 50 Ω). Distance from center = \(|\Gamma|\); the rim = total reflection.</li>
+  <li><b>Circles of constant resistance</b> \(r\): nested circles all tangent at the right edge. <b>Arcs of constant reactance</b> \(x\): upper half inductive (+j), lower half capacitive (−j). The horizontal axis is purely resistive; its left end is the short (\(\Gamma = -1\)), right end the open (\(\Gamma = +1\)).</li>
+  <li><b>Moving along a lossless line toward the generator rotates the point clockwise</b> around the center at constant \(|\Gamma|\) — one full turn per \(\lambda/2\). (That's the \(e^{-\mathrm{j}2\beta l}\) factor the reflected wave picks up.) Circles about the center are therefore constant-VSWR circles.</li>
+  <li>Adding a <b>series</b> L or C moves along the constant-\(r\) circle; adding a <b>shunt</b> element moves along a constant-<em>conductance</em> circle (the chart mirrored left-right). Matching = choreographing moves that end at the center.</li>
+</ul>
+
+<div class="widget">
+  <div class="w-head"><span class="ic">🧪</span>Interactive — Smith chart <span class="w-tag">simulation</span></div>
+  <div class="w-body">
+    <p class="small mt0">Drag \(R_L\) and \(X_L\) and watch \(\Gamma\) move on the chart; the dashed circle is the constant-VSWR circle. Then switch the overlay to the <b>L-network demo</b>: it traces the two-move match of a 100 Ω load narrated below — a shunt-C slide along the \(g = 0.5\) conductance circle to reach the \(r = 1\) circle, then a series-L slide along \(r = 1\) up to the center.</p>
+    <div id="w-smith"></div>
+  </div>
+</div>
+
+<p><b>A worked match, narrated on the chart</b> (the widget draws it): match \(Z_L = 100\,\Omega\) to 50 Ω at \(f = 2.45\,\mathrm{GHz}\). Normalized \(z_L = 2\), sitting on the positive real axis right of center. (1) A <b>shunt capacitor</b> adds normalized susceptance \(+\mathrm{j}b\) to \(y_L = 1/2\): we slide along the \(g = 0.5\) circle until we land on the \(r = 1\) resistance circle, which happens at \(y = 0.5 + \mathrm{j}0.5\), i.e. \(z = 1 - \mathrm{j}1\). Required: \(b = 0.5 \Rightarrow B = 0.5/50 = 10\,\mathrm{mS} \Rightarrow C = B/\omega = 0.65\,\mathrm{pF}\). (2) A <b>series inductor</b> adds \(+\mathrm{j}x\): slide up the \(r = 1\) circle from \(-\mathrm{j}1\) to the center. Required: \(x = 1 \Rightarrow X = 50\,\Omega \Rightarrow L = X/\omega = 3.25\,\mathrm{nH}\). Two tiny SMD parts, and 100 Ω looks like 50 Ω — at this one frequency.</p>
+
+<h2 id="matching">6. Impedance matching — <span class="de">Anpassung</span></h2>
+
+<p>Why match? Two reasons, one from each half of this course. From Module 04: a source delivers <b>maximum power</b> into a conjugate-matched load, \(Z_L = Z_i^*\) — and at RF, where every dB of signal is precious, you cannot afford the mismatch loss. From Section 3: matching <b>eliminates reflections</b>, hence no standing waves, no ringing, no frequency ripple from echo interference. The generic toolkit:</p>
+
+<h3 id="lnet">6.1 L-networks</h3>
+<p>Two reactive elements (no loss!) in an L shape can match any two resistances \(R_{hi} > R_{lo}\). Design formulas — define the network Q:</p>
+\[ Q = \sqrt{\frac{R_{hi}}{R_{lo}} - 1}, \qquad X_{ser} = Q\,R_{lo} \ \ (\text{series side, at } R_{lo}), \qquad X_{par} = \frac{R_{hi}}{Q} \ \ (\text{shunt side, across } R_{hi}). \]
+<p>Choose L or C for each position to taste (the choice flips which frequencies are rejected — a low-pass L-match doubles as a harmonic filter for transmitters). The catch: the match is exact at one frequency, with fractional bandwidth roughly \(1/Q\). The 100 Ω → 50 Ω example above is this formula with \(Q = 1\).</p>
+
+<h3 id="quarterwave">6.2 The quarter-wave transformer</h3>
+<p>Set \(l = \lambda/4\) in the \(Z_{in}\) formula: \(\tan\beta l \to \infty\) and</p>
+\[ \boxed{\;Z_{in} = \frac{Z_0^2}{Z_L} \quad\Rightarrow\quad Z_T = \sqrt{Z_0 \, Z_L}\;} \]
+<p>A quarter-wave line of impedance \(Z_T\) equal to the geometric mean makes \(Z_L\) look like \(Z_0\). Intuition: the reflections from the two ends of the transformer are equal in size and, after the extra \(2 \times \lambda/4 = \lambda/2\) round trip, opposite in phase — they cancel.</p>
+
+<div class="example">
+  <div class="ex-head"><span class="ex-tag">Worked example</span> Quarter-wave transformer for a patch antenna</div>
+  <div class="ex-body">
+    <p>A 2.45 GHz microstrip patch antenna presents \(Z_L = 200\,\Omega\) at its edge. Design a quarter-wave microstrip transformer to a 50 Ω feed line (FR-4, effective permittivity \(\varepsilon_{eff} \approx 3.3\) for a narrow trace).</p>
+    <div class="step"><span class="step-label">Step 1 — transformer impedance:</span>
+      \( Z_T = \sqrt{50 \cdot 200} = \sqrt{10\,000} = 100\,\Omega \) — a conveniently thin trace.</div>
+    <div class="step"><span class="step-label">Step 2 — guided wavelength:</span>
+      \( \lambda = \frac{c_0}{f\sqrt{\varepsilon_{eff}}} = \frac{3\cdot 10^8}{2.45 \cdot 10^9 \cdot \sqrt{3.3}} \approx \frac{122.4\,\mathrm{mm}}{1.82} \approx 67\,\mathrm{mm} \).</div>
+    <div class="step"><span class="step-label">Step 3 — physical length:</span>
+      \( l = \lambda/4 \approx 16.8\,\mathrm{mm} \).</div>
+    <div class="result-line">A 100 Ω, ≈ 17 mm trace section. Sanity check: at 2.45 GHz exactly, \(Z_{in} = 100^2/200 = 50\,\Omega\) ✓. Narrowband by nature (the length is only λ/4 at one frequency) — fine for WiFi's few-percent band.</div>
+  </div>
+</div>
+
+<p><b>Stub matching</b> (<span class="de">Stichleitungsanpassung</span>): instead of discrete L and C, short lengths of open- or short-circuited line provide any desired reactance (\(Z_{in} = \mathrm{j}Z_0\tan\beta l\) for a shorted stub) — pure copper, no components, standard above a few GHz where lumped parts stop behaving. Design is the same two-move Smith-chart dance.</p>
+
+<h2 id="sparams">7. S-parameters — how RF networks are actually characterized</h2>
+
+<p>Low-frequency two-port descriptions (Z, Y, h parameters, Module 05) require terminating ports in opens or shorts to measure. At GHz frequencies you <em>cannot build</em> a clean open (fringing capacitance, radiation) or short (lead inductance), and many devices oscillate when terminated that way. The fix: describe the network by what it does to <b>waves</b>, with every port terminated in the system impedance \(Z_0\) — the one termination that is easy and stable. The <strong>scattering parameters</strong> (<span class="de">Streuparameter</span>) relate incoming wave amplitudes \(a_i\) to outgoing \(b_i\):</p>
+\[ \begin{pmatrix} b_1 \\ b_2 \end{pmatrix} = \begin{pmatrix} S_{11} & S_{12} \\ S_{21} & S_{22} \end{pmatrix} \begin{pmatrix} a_1 \\ a_2 \end{pmatrix} \]
+<ul>
+  <li>\(S_{11}\): <b>input reflection</b> — precisely the \(\underline{\Gamma}\) of Section 3, seen at port 1 with port 2 matched.</li>
+  <li>\(S_{21}\): <b>forward transmission</b> — gain of an amplifier, insertion loss of a filter or cable.</li>
+  <li>\(S_{12}\): reverse transmission (isolation — you want ≈ 0 for an amplifier, or it may oscillate).</li>
+  <li>\(S_{22}\): output reflection.</li>
+</ul>
+<p>All are complex and frequency-dependent; datasheets quote magnitudes in dB: \(20\log_{10}|S_{ij}|\). Because S-parameters are wave <em>amplitude</em> ratios, powers go with the square:</p>
+
+<div class="table-wrap">
+<table class="data">
+<thead><tr><th>\(|S_{11}|\) in dB</th><th>reflected power</th><th>VSWR</th><th>verdict for an antenna port</th></tr></thead>
+<tbody>
+<tr><td>−3 dB</td><td>50 %</td><td>5.8</td><td>broken</td></tr>
+<tr><td>−6 dB</td><td>25 %</td><td>3.0</td><td>poor</td></tr>
+<tr><td>−10 dB</td><td>10 %</td><td>1.92</td><td>the standard "good enough" spec line</td></tr>
+<tr><td>−20 dB</td><td>1 %</td><td>1.22</td><td>very good</td></tr>
+<tr><td>−30 dB</td><td>0.1 %</td><td>1.07</td><td>lab-grade match</td></tr>
+</tbody>
+</table>
+</div>
+
+<p>The instrument that measures S-parameters is the <strong>vector network analyzer</strong> (VNA, <span class="de">Netzwerkanalysator</span>) — it launches a swept sinusoid, separates forward and reflected waves with directional couplers, and records complex ratios. Before measuring, you <em>calibrate</em> with known standards (short, open, load, through) to move the measurement reference plane to the tips of your cables; removing the effect of fixturing beyond that plane is called <b>de-embedding</b>. A 100 € NanoVNA does today what filled a rack in 1990 — buy one; it makes this entire module tangible.</p>
+
+<h2 id="antennas">8. Antennas — <span class="de">Antennen</span></h2>
+
+<h3 id="radiation">8.1 How a wire radiates</h3>
+<p>A static charge has a static field; a charge in uniform motion has a field that moves along with it. But <b>accelerate</b> a charge and the field lines cannot update everywhere instantly — the "news" of the changed position propagates outward at \(c\), and the kink between old and new field patterns is a transverse pulse of E and H that carries energy away forever: <b>radiation</b> (Module 12 gives the honest field-theory version). An antenna is a structure shaped so that the accelerating charges (AC currents) create kinks that reinforce in useful directions. Radiated power grows with frequency (for a short wire, \(P \propto f^2 l^2 I^2\)) — which is why your 50 Hz mains cord doesn't radiate measurably but the same cord carrying 100 MHz noise is an excellent transmitter. Remember that sentence; it is half of EMC.</p>
+
+<h3 id="dipole">8.2 The half-wave dipole and the monopole</h3>
+<p>Cut a wire to \(\lambda/2\) total, feed it in the middle: the <strong>half-wave dipole</strong> (<span class="de">Halbwellendipol</span>). It is a resonant structure — the current standing wave fits exactly, zero at the tips, maximum at the feed — so the reactance cancels and the feed sees a nearly pure resistance:</p>
+\[ Z_{dipole} \approx 73\,\Omega \ (+\,\mathrm{j}42\,\Omega \text{ exactly at } l = \lambda/2\text{; trimmed} \approx 5\,\% \text{ shorter for resonance}). \]
+<p>Its pattern is a donut around the wire: maximum broadside, zero off the ends. Gain over an isotropic radiator: 2.15 dBi. Slice a dipole in half and stand it on a conducting plane — the <strong>monopole</strong> (<span class="de">Monopol/Viertelwellenstrahler</span>): the plane mirrors the missing half. Length \(\lambda/4\), impedance half a dipole's ≈ 36 Ω, and it explains every car antenna and the ground-plane pads under WiFi PCB antennas. The ground plane <em>is half the antenna</em> — a "bad ground" is a bad antenna.</p>
+
+<figure>
+  <div class="fig-frame">
+  <svg class="diagram" viewBox="0 0 640 270" role="img" aria-label="Half-wave dipole with current distribution and radiation pattern">
+    <!-- dipole -->
+    <line x1="150" y1="35" x2="150" y2="118" stroke="var(--text-soft)" stroke-width="3.5"/>
+    <line x1="150" y1="138" x2="150" y2="221" stroke="var(--text-soft)" stroke-width="3.5"/>
+    <circle cx="150" cy="122" r="3.5" class="node"/>
+    <circle cx="150" cy="134" r="3.5" class="node"/>
+    <path class="wire" d="M150 122 H96 M150 134 H96"/>
+    <text x="88" y="133" text-anchor="end" font-size="13">feed</text>
+    <!-- current distribution -->
+    <path d="M150 35 Q196 128 150 221" fill="none" stroke="var(--accent)" stroke-width="2.2" stroke-dasharray="7 5"/>
+    <text x="205" y="132" font-size="13" fill="var(--accent)">I(z)</text>
+    <text x="150" y="250" text-anchor="middle" font-size="13">total length λ/2</text>
+    <!-- pattern -->
+    <line x1="470" y1="30" x2="470" y2="226" stroke="var(--text-faint)" stroke-width="1.5" stroke-dasharray="5 5"/>
+    <ellipse cx="411" cy="128" rx="56" ry="42" fill="none" stroke="var(--accent-2)" stroke-width="2.2"/>
+    <ellipse cx="529" cy="128" rx="56" ry="42" fill="none" stroke="var(--accent-2)" stroke-width="2.2"/>
+    <text x="470" y="250" text-anchor="middle" font-size="13" fill="var(--accent-2)">E-plane pattern (cut through the "donut")</text>
+    <text x="470" y="22" text-anchor="middle" font-size="12" fill="var(--text-faint)">no radiation off the ends</text>
+    <text x="352" y="132" text-anchor="end" font-size="12" fill="var(--accent-2)">max</text>
+  </svg>
+  </div>
+  <figcaption><b>Fig. 8.1</b> — Half-wave dipole: the current standing wave \(I(z)\) peaks at the center feed and vanishes at the tips. Radiation is maximal broadside and zero along the wire axis; rotating the figure-8 cut about the wire axis gives the 3-D donut.</figcaption>
+</figure>
+
+<h3 id="gain">8.3 Gain, directivity, EIRP, polarization</h3>
+<p><b>Directivity</b> \(D\): how much stronger the antenna radiates in its best direction than an ideal isotropic radiator spreading the same power evenly. <b>Gain</b> \(G = \eta D\) additionally counts ohmic/dielectric losses (η is often &gt; 90 % for good antennas); quoted in <b>dBi</b> (relative to isotropic) or dBd (relative to a dipole, = dBi − 2.15). Antennas don't create power — they <em>focus</em> it, trading beamwidth for gain. <b>EIRP</b> (equivalent isotropically radiated power) \(= P_{tx} \cdot G_{tx}\) is what regulations limit (e.g. 100 mW = 20 dBm EIRP for 2.4 GHz WiFi in the EU). <b>Polarization</b> (<span class="de">Polarisation</span>): the orientation of the E-field — linear (vertical/horizontal) or circular (GPS, to survive orientation changes and ionospheric rotation). Cross-polarized antennas can lose 20+ dB: mounting a receiver antenna horizontal under a vertical transmitter is a classic field failure.</p>
+
+<div class="table-wrap">
+<table class="data">
+<thead><tr><th>Antenna</th><th>Typical gain</th><th>Character</th><th>Where</th></tr></thead>
+<tbody>
+<tr><td>Half-wave dipole</td><td>2.15 dBi</td><td>omnidirectional donut, ≈ 73 Ω</td><td>FM radio, reference antenna</td></tr>
+<tr><td>λ/4 monopole over ground</td><td>≈ 5 dBi (with plane)</td><td>omni, needs its ground plane</td><td>cars, handhelds, IoT PCBs</td></tr>
+<tr><td>Patch (microstrip)</td><td>6–9 dBi</td><td>hemispherical beam, flat, cheap etched copper</td><td>GPS receivers, phased-array elements</td></tr>
+<tr><td>Yagi–Uda</td><td>10–15 dBi</td><td>directors focus a dipole's beam along a boom</td><td>TV rooftops, amateur radio, 1926 Japan</td></tr>
+<tr><td>Horn</td><td>10–20 dBi</td><td>flared waveguide, ultra-predictable → lab gain standard</td><td>EMC test ranges, radar feeds</td></tr>
+<tr><td>Parabolic dish</td><td>\(G \approx \eta\left(\frac{\pi D}{\lambda}\right)^2\), 30–60 dBi</td><td>gain grows with (diameter/λ)²</td><td>satellite links, radio astronomy</td></tr>
+<tr><td>Phased array</td><td>element gain + \(10\log_{10}N\)</td><td>beam steered <em>electronically</em> by per-element phase — beamforming</td><td>5G massive MIMO, Starlink terminals, radar</td></tr>
+</tbody>
+</table>
+</div>
+
+<h2 id="link">9. Propagation and the link budget</h2>
+
+<h3 id="fspl">9.1 Free-space path loss — derived in three lines</h3>
+<p>An isotropic transmitter of power \(P_t\) spreads its energy over an ever-growing sphere; at distance \(d\) the power <em>density</em> is \(S = P_t/(4\pi d^2)\) — the inverse-square law, pure geometry, no absorption. A receiving antenna collects power proportional to its <b>effective aperture</b>, which for an isotropic antenna is \(A_e = \lambda^2/4\pi\) (a beautiful result from reciprocity — bigger wavelengths are "easier to catch"). Received power:</p>
+\[ P_r = S \cdot A_e = \frac{P_t}{4\pi d^2}\cdot\frac{\lambda^2}{4\pi} = P_t \left(\frac{\lambda}{4\pi d}\right)^2 . \]
+<p>The factor is the <strong>free-space path loss</strong> (<span class="de">Freiraumdämpfung</span>) \( \mathrm{FSPL} = (4\pi d/\lambda)^2 \). With antenna gains at both ends we get the <strong>Friis transmission equation</strong> (Harald Friis, Bell Labs 1946):</p>
+\[ \boxed{\;P_r = P_t\, G_t\, G_r \left(\frac{\lambda}{4\pi d}\right)^{\!2}\;}
+\qquad\text{in dB: } P_r = P_t + G_t + G_r - \underbrace{\left(20\log_{10} d_{km} + 20\log_{10} f_{MHz} + 32.45\right)}_{\mathrm{FSPL\ in\ dB}} . \]
+<p>Note the structure: <b>+6 dB per doubling of distance or frequency</b> of loss. The frequency term is not absorption — it's the shrinking capture aperture of a fixed-gain receive antenna. (Fix the antenna <em>areas</em> instead, as satellite dishes do, and higher frequency actually helps.)</p>
+
+<div class="example">
+  <div class="ex-head"><span class="ex-tag">Worked example</span> How far does WiFi really reach?</div>
+  <div class="ex-body">
+    <p>2.4 GHz WiFi: \(P_t = 100\,\mathrm{mW} = 20\,\mathrm{dBm}\), antenna gains 2 dBi each, receiver sensitivity \(-85\,\mathrm{dBm}\) (for a mid-rate modulation). Free-space range?</p>
+    <div class="step"><span class="step-label">Step 1 — allowed path loss:</span>
+      \( L_{max} = 20 + 2 + 2 - (-85) = 109\,\mathrm{dB} \).</div>
+    <div class="step"><span class="step-label">Step 2 — FSPL at 1 m reference:</span>
+      \( \mathrm{FSPL}(1\,\mathrm{m}) = 20\log_{10}(4\pi \cdot 1 / 0.125) \approx 40\,\mathrm{dB} \). Every decade of distance adds 20 dB.</div>
+    <div class="step"><span class="step-label">Step 3 — solve:</span>
+      \( 20\log_{10}(d/1\,\mathrm{m}) = 109 - 40 = 69\,\mathrm{dB} \Rightarrow d = 10^{3.45} \approx 2.8\,\mathrm{km} \).</div>
+    <div class="result-line">≈ 2.8 km in free space — yet your router dies two rooms away. The difference is walls (5–15 dB each), multipath fading (plan 20–30 dB margin), body loss, and interference. Link budgets are exercises in honest pessimism.</div>
+  </div>
+</div>
+
+<div class="widget">
+  <div class="w-head"><span class="ic">🧪</span>Interactive — Friis link budget <span class="w-tag">simulation</span></div>
+  <div class="w-body">
+    <p class="small mt0">Received power vs. distance on a log axis — a straight line at −20 dB/decade. The dashed horizontal line is the receiver sensitivity; where the curve crosses it is your free-space range. Watch the range shrink as you raise the frequency at fixed gains, and grow 10× for every 20 dB you add to the budget.</p>
+    <div id="w-friis"></div>
+  </div>
+</div>
+
+<p><b>Reality beyond free space:</b> signals reach the receiver over many paths (reflections off walls, ground, buildings) that interfere — <strong>multipath fading</strong> (<span class="de">Mehrwegeausbreitung</span>): moving half a wavelength can swing the signal 30 dB (why your car radio goes quiet at <em>exactly</em> one position at the traffic light). Statistics (Rayleigh/Rice fading), OFDM, and MIMO are the countermeasures — Module 22's territory. And "line of sight" needs more than a visual line: most of the energy travels in the <strong>first Fresnel zone</strong>, an ellipsoid of radius \(r = \sqrt{\lambda d_1 d_2/(d_1+d_2)}\) around the direct ray (≈ 17 m mid-path for a 10 km link at 2.4 GHz!) — clip it with a treetop and the "clear" link loses several dB.</p>
+
+<h2 id="emc">10. EMC — <span class="de">Elektromagnetische Verträglichkeit</span></h2>
+
+<p>Everything so far was about signals you <em>want</em>. EMC is the same physics applied to signals you don't: every product must (a) not disturb others — <b>emission</b> (<span class="de">Störaussendung</span>) — and (b) function despite disturbances — <b>immunity</b> (<span class="de">Störfestigkeit</span>). In the EU this is law (the EMC Directive behind the <b>CE mark</b>); in engineering it is the discipline that decides whether your prototype becomes a product. Every EMC problem — every single one — decomposes into the model:</p>
+
+<figure>
+  <div class="fig-frame">
+  <svg class="diagram" viewBox="0 0 640 250" role="img" aria-label="EMC interference model: source, coupling path, victim">
+    <rect x="30" y="45" width="160" height="64" rx="10" fill="none" stroke="var(--accent)" stroke-width="2"/>
+    <text x="110" y="72" text-anchor="middle" font-size="14" font-weight="700">Source</text>
+    <text x="110" y="93" text-anchor="middle" font-size="12" fill="var(--text-soft)">Störquelle</text>
+    <rect x="240" y="45" width="160" height="64" rx="10" fill="none" stroke="var(--text-soft)" stroke-width="2"/>
+    <text x="320" y="72" text-anchor="middle" font-size="14" font-weight="700">Coupling path</text>
+    <text x="320" y="93" text-anchor="middle" font-size="12" fill="var(--text-soft)">Koppelpfad</text>
+    <rect x="450" y="45" width="160" height="64" rx="10" fill="none" stroke="var(--accent-2)" stroke-width="2"/>
+    <text x="530" y="72" text-anchor="middle" font-size="14" font-weight="700">Victim</text>
+    <text x="530" y="93" text-anchor="middle" font-size="12" fill="var(--text-soft)">Störsenke</text>
+    <line x1="190" y1="77" x2="232" y2="77" class="wire" marker-end="url(#arrEmc)"/>
+    <line x1="400" y1="77" x2="442" y2="77" class="wire" marker-end="url(#arrEmc)"/>
+    <text x="110" y="136" text-anchor="middle" font-size="12" fill="var(--text-faint)">switching converter,</text>
+    <text x="110" y="152" text-anchor="middle" font-size="12" fill="var(--text-faint)">motor drive, ESD, clock</text>
+    <text x="530" y="136" text-anchor="middle" font-size="12" fill="var(--text-faint)">ADC input, radio RX,</text>
+    <text x="530" y="152" text-anchor="middle" font-size="12" fill="var(--text-faint)">sensor, reset line</text>
+    <text x="320" y="140" text-anchor="middle" font-size="12.5" fill="var(--text-soft)">1 · conducted (common impedance)</text>
+    <text x="320" y="160" text-anchor="middle" font-size="12.5" fill="var(--text-soft)">2 · capacitive (dV/dt)</text>
+    <text x="320" y="180" text-anchor="middle" font-size="12.5" fill="var(--text-soft)">3 · inductive (dI/dt)</text>
+    <text x="320" y="200" text-anchor="middle" font-size="12.5" fill="var(--text-soft)">4 · radiated (EM wave)</text>
+    <text x="320" y="232" text-anchor="middle" font-size="12" fill="var(--text-faint)">break ANY box in the chain and the problem disappears</text>
+    <defs><marker id="arrEmc" markerWidth="9" markerHeight="9" refX="7" refY="4.5" orient="auto">
+      <path d="M0 0 L8 4.5 L0 9 z" fill="var(--text-soft)"/></marker></defs>
+  </svg>
+  </div>
+  <figcaption><b>Fig. 10.1</b> — The universal EMC model. Diagnosis means identifying all three boxes; the cheapest fix is usually at the coupling path — and the paths come in exactly four flavors.</figcaption>
+</figure>
+
+<p>The four coupling paths, each with its physics and its fix:</p>
+<ol>
+  <li><b>Conducted / common-impedance coupling</b> (<span class="de">galvanische Kopplung</span>): two circuits share a piece of conductor (a "ground" wire, a supply trace). Circuit A's return current × shared impedance = voltage injected into circuit B. Fix: <b>don't share</b> — star grounding for low frequency, and at high frequency a solid <b>ground plane</b>, whose spreading inductance is minuscule. This is why "ground" bounce plagues bad layouts (recall the ground symbol is a fiction — copper has impedance, Module 04's ideal node does not exist at 100 MHz).</li>
+  <li><b>Capacitive coupling</b> (<span class="de">kapazitive Kopplung</span>): parasitic capacitance between nearby conductors injects current \(i = C_{par}\,\mathrm{d}V/\mathrm{d}t\). Driven by fast <em>voltage</em> edges; the victim sees more the higher its impedance. Fix: distance, and a grounded <b>shield</b> between aggressor and victim (the injected current drains to ground instead) — the reason sensitive analog nodes get guard traces.</li>
+  <li><b>Inductive coupling</b> (<span class="de">induktive Kopplung</span>): a changing current's magnetic field threads the victim's loop, inducing \(u = M\,\mathrm{d}I/\mathrm{d}t\) (Module 07). Driven by fast <em>current</em> edges; received in proportion to <b>loop area</b>. Fix: <b>minimize loop area</b> on both sides — run signal and return adjacent, use ground planes (the return current flows directly under the trace), and <b>twist pairs</b>: each twist reverses the induced polarity, cancelling pickup. Twisted pair is loop-area engineering, nothing more.</li>
+  <li><b>Radiated coupling</b> (<span class="de">Strahlungskopplung</span>): at distances beyond ≈ λ/2π the field detaches and propagates as a wave; cables and slots act as the antennas of Section 8 — unintentionally. Fix: kill the antennas (short cables, filtered at entry) and shield (Section 12).</li>
+</ol>
+
+<div class="box warn">
+  <div class="box-title"><span class="ic">⚠️</span>Ask "where does the return current flow?"</div>
+  <p>The single most valuable EMC habit. Every signal current returns to its source — through <em>some</em> path. At DC it takes the path of least <em>resistance</em>; above ≈ 100 kHz it takes the path of least <em>inductance</em>, which means <b>directly underneath its trace</b> in the ground plane (that hugging minimizes loop area automatically). Cut a slot in the plane and the return current must detour around it — you have built a large loop, i.e. an antenna, out of pure absent-mindedness. Split ground planes "for cleanliness" cause more EMC failures than they cure; if you must split, never route signals across the gap.</p>
+</div>
+
+<h2 id="decoupling">11. Decoupling and PCB layout — EMC you can solder</h2>
+
+<h3 id="decap">11.1 The decoupling capacitor, explained properly</h3>
+<p>When a logic gate switches, it demands an ampere-scale current spike within nanoseconds. The power supply is centimetres (= many nanohenries) away and cannot respond in time: \(u = L\,\mathrm{d}i/\mathrm{d}t\) with 10 nH and 1 A/ns is a 10 V droop — game over. The <strong>decoupling capacitor</strong> (<span class="de">Abblockkondensator</span>) is a <b>local charge reservoir</b>: placed millimetres from the IC's supply pins, it delivers the spike over a tiny loop and gets refilled slowly by the supply. Its two jobs: hold the local voltage up, and — the EMC job — <b>keep the high-frequency current loop small</b> so it can't couple or radiate.</p>
+<p>But a real capacitor is a series C–L–R chain: its leads and internal structure add an <b>equivalent series inductance</b> (ESL, ~1 nH for an 0603 ceramic). Impedance:</p>
+\[ |Z(f)| = \left| \frac{1}{\mathrm{j}\omega C} + \mathrm{j}\omega L_{ESL} + R_{ESR} \right|, \qquad f_{res} = \frac{1}{2\pi\sqrt{L_{ESL}\, C}} . \]
+<p>Below the <b>self-resonant frequency</b> it is a capacitor; above, <b>it is an inductor</b> — a 100 nF ceramic with 1 nH resonates at \( f_{res} = 1/(2\pi\sqrt{10^{-9}\cdot 10^{-7}}) \approx 16\,\mathrm{MHz} \) and is inductive at the frequencies of your 100 MHz clock's harmonics. Countermeasures: smaller packages (less ESL), <em>shortest possible</em> via connections, and paralleling — many small capacitors halve the ESL with each doubling of count. (Paralleling <em>different</em> values, e.g. 100 nF ∥ 1 nF, broadens coverage but creates an anti-resonance peak between the two resonances where the pair is briefly <em>worse</em> — modern practice often prefers many identical 100 nF parts plus the plane capacitance.) Rule of thumb that survives all fashion cycles: <b>one ~100 nF ceramic per supply pin, as close as physically possible, via straight to the plane</b>.</p>
+
+<h3 id="layout">11.2 PCB layout rules for EMC</h3>
+<ul>
+  <li><b>Use an unbroken ground plane</b> adjacent to every signal layer. It gives controlled \(Z_0\), minimal loop areas, and low common impedance — one measure that attacks three coupling paths at once.</li>
+  <li><b>Keep fast loops tiny:</b> the switching loop of a DC/DC converter (switch–diode–input cap) is the #1 emission source on most boards; place those three parts touching each other.</li>
+  <li><b>Route critical signals first</b> (clocks, RF, resets), short and over solid plane; never across plane splits; guard analog inputs.</li>
+  <li><b>Filter at the border:</b> every cable leaving the enclosure is an antenna. π-filters, ferrites, and ESD diodes belong <em>at the connector</em>, not 5 cm inland.</li>
+  <li><b>Slow down what you can:</b> use the slowest edge rate that still works (series resistors, driver strength settings). Emissions follow \( \mathrm{d}i/\mathrm{d}t \) — free EMC margin.</li>
+</ul>
+
+<div class="box intuition">
+  <div class="box-title"><span class="ic">💡</span>Intuition: EMC is transmission lines + antennas, replayed as a horror film</div>
+  <p>Nothing in Sections 10–12 is new physics. A noisy trace over a slot is a transmission line with its return path amputated. A heatsink is a patch antenna at some frequency. An enclosure seam is a slot antenna. Every EMC "mystery" yields to the questions this module already taught: What is the loop? What is the wavelength? Where does the return current flow? What is the antenna?</p>
+</div>
+
+<h2 id="shielding">12. Shielding, filtering, standards &amp; testing</h2>
+
+<h3 id="shields">12.1 Shielding and the treachery of apertures</h3>
+<p>A conductive enclosure (<span class="de">Schirmung</span>) attenuates fields by reflection (impedance mismatch between wave and metal — the same Γ physics as Section 3!) and absorption (skin-effect decay inside the metal, Module 12). Solid metal gives 100+ dB effortlessly. The problem is never the metal — it is the <b>holes</b>. A slot of length \(l\) behaves as a <b>slot antenna</b> (Babinet's complement of a dipole): it radiates efficiently as \(l\) approaches \(\lambda/2\), and a useful estimate of the shielding effectiveness that remains is</p>
+\[ SE \approx 20 \log_{10}\!\left(\frac{\lambda}{2\,l}\right) \mathrm{dB} \quad (l < \lambda/2), \]
+<p>reaching <b>0 dB — no shield at all — at \(l = \lambda/2\)</b>. A 15 cm seam is resonant at 1 GHz. That is why RF enclosures use conductive gaskets, why shielded rooms have finger-stock doors, and why one long thin gap is far worse than many small round holes of the same total area. Cable shields continue the enclosure: a coax shield grounded through a 5 cm pigtail has nanohenries in series — at 100 MHz the pigtail, not the shield, sets the performance (360° gland terminations exist for this reason).</p>
+
+<h3 id="filtering">12.2 Filtering, common mode, ESD</h3>
+<p>Noise on cables travels in two modes: <b>differential</b> (out on one wire, back on the other — small loop) and <b>common mode</b> (<span class="de">Gleichtakt</span>: same direction on <em>all</em> wires, returning through the earth/chassis — a huge loop, hence the dominant radiator above ~30 MHz). The <strong>common-mode choke</strong> (<span class="de">Gleichtaktdrossel</span>) — both conductors wound on one ferrite core — presents high impedance to common mode while differential flux cancels: your laptop brick's mains filter and the ferrite blob on the monitor cable are exactly this. <b>Feedthrough capacitors</b> mounted in the shield wall filter right at the boundary with near-zero ESL. And <b>ESD/surge</b> (<span class="de">Überspannungsschutz</span>): human-body discharges reach 8–15 kV with sub-ns edges (an EMC event par excellence); TVS diodes at every external connector, with short fat traces to chassis, are the standard armor — IEC 61000-4-2 defines the test gun.</p>
+
+<h3 id="standards">12.3 Standards and the test day</h3>
+<p>The EU <b>EMC Directive 2014/30/EU</b> makes conformity mandatory for the CE mark; harmonized standards define the numbers — emissions largely per <b>CISPR</b> (e.g. CISPR 32/EN 55032 for multimedia: <b>Class A</b> industrial vs. the ~10 dB stricter <b>Class B</b> residential limits), immunity per the <b>IEC 61000-4-x</b> series (ESD, radiated fields, burst, surge). The measurement narrative, so it's not abstract: your device sits on a turntable in an <b>anechoic chamber</b> (<span class="de">Absorberhalle</span> — a shielded room lined with pyramidal ferrite/foam absorbers, a lab-made free space). A calibrated antenna 3 m or 10 m away feeds an EMI receiver that sweeps 30 MHz–1 GHz+ while the table rotates and the antenna height scans, hunting the worst case. Emission peaks poking above the limit line are your clocks' harmonics, each traceable to a loop or cable you now know how to fix. Test-lab days cost four figures — which is why the habits of Sections 10–11 are cheaper than any retrofit. Radiated immunity is the mirror image: the chamber blasts your product with 3–10 V/m while you watch it for misbehavior.</p>
+
+<div class="box history">
+  <div class="box-title"><span class="ic">📜</span>Where this module leads</div>
+  <p>Transmission lines and S-parameters are the language of Module 22 (communications systems) and of every datasheet above 100 MHz. The field theory underneath is Module 12. Power electronics (M17) is the EMC source you will fight most often; digital design (M14/M15) is the victim. And the Smith chart — 85 years old — still ships as the default display of every VNA on Earth. Few diagrams have aged so well.</p>
+</div>
+
+<h2 id="summary">13. Formula summary — <span class="de">Formelsammlung</span></h2>
+
+<div class="table-wrap">
+<table class="data">
+<thead><tr><th>Concept</th><th>Formula</th><th>Remember as</th></tr></thead>
+<tbody>
+<tr><td>Lumped-element boundary</td><td>\( l < \lambda/10, \quad \lambda = v/f \)</td><td>electrically small → Kirchhoff OK</td></tr>
+<tr><td>Edge bandwidth</td><td>\( f_{knee} \approx 0.35/t_r \)</td><td>the edge, not the clock</td></tr>
+<tr><td>Telegrapher's equations</td><td>\( -\partial_x u = L'\partial_t i,\ \ -\partial_x i = C'\partial_t u \) (lossless)</td><td>KVL/KCL per length slice</td></tr>
+<tr><td>Characteristic impedance</td><td>\( Z_0 = \sqrt{L'/C'} \)</td><td>the U/I ratio a traveling wave wants</td></tr>
+<tr><td>Propagation velocity</td><td>\( v = 1/\sqrt{L'C'} = c_0/\sqrt{\varepsilon_r} \)</td><td>FR-4: ≈ 15 cm/ns</td></tr>
+<tr><td>Reflection coefficient</td><td>\( \underline{\Gamma} = \dfrac{Z_L - Z_0}{Z_L + Z_0} \)</td><td>0 matched · +1 open · −1 short</td></tr>
+<tr><td>VSWR</td><td>\( \mathrm{VSWR} = \dfrac{1+|\Gamma|}{1-|\Gamma|} \)</td><td>envelope max/min</td></tr>
+<tr><td>Return loss</td><td>\( RL = -20\log_{10}|\Gamma| \); reflected power \( = |\Gamma|^2 \)</td><td>−10 dB S₁₁ ⇒ 10 % power reflected</td></tr>
+<tr><td>Line input impedance</td><td>\( Z_{in} = Z_0 \dfrac{Z_L + \mathrm{j}Z_0\tan\beta l}{Z_0 + \mathrm{j}Z_L\tan\beta l} \)</td><td>repeats every λ/2, inverts every λ/4</td></tr>
+<tr><td>Quarter-wave transformer</td><td>\( Z_T = \sqrt{Z_0 Z_L} \)</td><td>geometric-mean stepping stone</td></tr>
+<tr><td>L-network</td><td>\( Q = \sqrt{R_{hi}/R_{lo} - 1},\ X_{ser} = QR_{lo},\ X_{par} = R_{hi}/Q \)</td><td>two parts match anything (once)</td></tr>
+<tr><td>Friis / FSPL</td><td>\( P_r = P_t G_t G_r \left(\lambda/4\pi d\right)^2 \)</td><td>−6 dB per doubling of d or f</td></tr>
+<tr><td>Half-wave dipole</td><td>\( Z \approx 73\,\Omega \), G = 2.15 dBi; monopole: λ/4, ≈ 36 Ω</td><td>the reference antenna</td></tr>
+<tr><td>Dish gain</td><td>\( G = \eta(\pi D/\lambda)^2 \)</td><td>area in wavelengths²</td></tr>
+<tr><td>Capacitor self-resonance</td><td>\( f_{res} = \dfrac{1}{2\pi\sqrt{L_{ESL} C}} \)</td><td>above it, your capacitor is an inductor</td></tr>
+<tr><td>Slot leakage</td><td>\( SE \approx 20\log_{10}(\lambda/2l) \)</td><td>seam = slot antenna; 0 dB at λ/2</td></tr>
+</tbody>
+</table>
+</div>
+
+<h2 id="exercises">14. Exercises</h2>
+<p>Work these on paper — Γ and dB arithmetic must become reflex.</p>
+
+<div class="exercise">
+  <p class="ex-q"><span class="ex-num">E1</span>A 10 cm microstrip trace on FR-4 (\(\varepsilon_{eff} = 3.24\)) carries a 1.8 GHz signal. Find the propagation velocity, the wavelength, the trace's electrical length in wavelengths, and its delay. <span class="diff easy">easy</span></p>
+  <details><summary>Show solution</summary>
+    <div class="solution">
+      \( v = c_0/\sqrt{3.24} = 3\cdot10^8/1.8 = 1.67\cdot 10^8\,\mathrm{m/s} \).
+      \( \lambda = v/f = 1.67\cdot 10^8 / 1.8\cdot 10^9 = 9.3\,\mathrm{cm} \).
+      Electrical length: \( 10/9.3 \approx 1.08\,\lambda \) — more than a full wavelength, emphatically a transmission line (λ/10 would be 9.3 mm!).
+      Delay: \( \tau = l/v = 0.1/1.67\cdot10^8 = 0.60\,\mathrm{ns} \). Sanity check with the 6 ps/mm rule: 10 cm × 6 ps/mm = 0.6 ns ✓.
+    </div>
+  </details>
+</div>
+
+<div class="exercise">
+  <p class="ex-q"><span class="ex-num">E2</span>A 75 Ω TV antenna is connected (lazily) to a 50 Ω receiver input. Compute Γ, VSWR, return loss, and the fraction of power lost to the mismatch. <span class="diff easy">easy</span></p>
+  <details><summary>Show solution</summary>
+    <div class="solution">
+      \( \Gamma = \frac{75-50}{75+50} = 0.2 \), \( \mathrm{VSWR} = \frac{1.2}{0.8} = 1.5 \), \( RL = -20\log_{10}0.2 = 14\,\mathrm{dB} \).
+      Reflected power: \( |\Gamma|^2 = 4\,\% \) → mismatch loss \( -10\log_{10}(0.96) = 0.18\,\mathrm{dB} \).
+      Remark: 0.18 dB is negligible for TV reception — which is why 50/75 Ω adapters often contain no matching network at all. Mismatch matters when Γ is large or when reflections cause ripple/ghosting, not for every small deviation.
+    </div>
+  </details>
+</div>
+
+<div class="exercise">
+  <p class="ex-q"><span class="ex-num">E3</span>Design a quarter-wave coaxial transformer to feed a 73 Ω dipole from 50 Ω coax at 435 MHz (amateur band). The transformer coax has velocity factor 0.66. Give \(Z_T\) and the physical length. <span class="diff med">medium</span></p>
+  <details><summary>Show solution</summary>
+    <div class="solution">
+      \( Z_T = \sqrt{50 \cdot 73} = \sqrt{3650} \approx 60.4\,\Omega \) — awkward, but 60 Ω coax exists; in practice one often accepts VSWR 1.46 instead, or uses a 75 Ω section for partial matching.
+      Wavelength in the cable: \( \lambda = 0.66 \cdot c_0/f = 0.66 \cdot 0.690\,\mathrm{m} = 0.455\,\mathrm{m} \) → \( l = \lambda/4 = 11.4\,\mathrm{cm} \).
+      Check: \( Z_{in} = 60.4^2/73 = 50.0\,\Omega \) ✓. Note the length is λ/4 <em>in the cable</em>, not in air — forgetting the velocity factor is the classic build error.
+    </div>
+  </details>
+</div>
+
+<div class="exercise">
+  <p class="ex-q"><span class="ex-num">E4</span>A 5 V step from a source with \(R_S = 75\,\Omega\) drives a 50 Ω line, open at the far end. Tabulate the load-end voltage after the 1st, 2nd, and 3rd arrivals, and give the final value. <span class="diff med">medium</span></p>
+  <details><summary>Show solution</summary>
+    <div class="solution">
+      Launch: \( u_1 = 5\cdot\frac{50}{125} = 2\,\mathrm{V} \); \( \Gamma_L = +1 \), \( \Gamma_S = \frac{75-50}{125} = +0.2 \).
+      Load arrivals add \( u_1(\Gamma_S\Gamma_L)^k (1+\Gamma_L) \): at \(T\): \(2\cdot 2 = 4.00\,\mathrm{V}\); at \(3T\): \(+2\cdot 0.2\cdot 2 = +0.80 \Rightarrow 4.80\,\mathrm{V}\); at \(5T\): \(+2\cdot 0.04\cdot2 = +0.16 \Rightarrow 4.96\,\mathrm{V}\).
+      Final value: open load, no DC current → \(5\,\mathrm{V}\) exactly.
+      Because \(\Gamma_S > 0\), the approach is monotonic (a "slow staircase"), not ringing — an over-damped-looking edge on the oscilloscope. Ringing needs reflection coefficients of opposite sign at the two ends.
+    </div>
+  </details>
+</div>
+
+<div class="exercise">
+  <p class="ex-q"><span class="ex-num">E5</span>A 433 MHz remote transmits 10 dBm through a 0 dBi antenna. The receiver (0 dBi antenna) needs −100 dBm. Compute the received power at 50 m free space and the link margin; then the maximum free-space range. <span class="diff med">medium</span></p>
+  <details><summary>Show solution</summary>
+    <div class="solution">
+      FSPL(50 m) \( = 20\log_{10}(50) + 20\log_{10}(433\cdot10^6) - 147.55 = 34.0 + 172.7 - 147.55 = 59.1\,\mathrm{dB} \).
+      \( P_r = 10 - 59.1 = -49.1\,\mathrm{dBm} \) → margin \( = -49.1-(-100) \approx 51\,\mathrm{dB} \). Huge — as expected for a garage-door range check.
+      Max range: allowed FSPL = 110 dB → \( 20\log_{10} d = 110 + 147.55 - 172.7 = 84.8 \Rightarrow d \approx 17\,\mathrm{km} \).
+      Reality: buildings, ground reflection and a 20–30 dB fade margin shrink this to hundreds of metres — but it shows why sub-GHz ISM bands (433/868 MHz) are loved for IoT: at 2.4 GHz the same budget gives ~5× less range (FSPL +15 dB).
+    </div>
+  </details>
+</div>
+
+<div class="exercise">
+  <p class="ex-q"><span class="ex-num">E6</span>Match a 10 Ω electrically-short antenna to 50 Ω at 27 MHz with an L-network (series element at the antenna, shunt element on the 50 Ω side). Find Q, both reactances, and component values. <span class="diff hard">challenge</span></p>
+  <details><summary>Show solution</summary>
+    <div class="solution">
+      \( Q = \sqrt{50/10 - 1} = 2 \).
+      Series side (at \(R_{lo} = 10\,\Omega\)): \( X_{ser} = Q R_{lo} = 20\,\Omega \). Choose an inductor: \( L = X/\omega = 20/(2\pi\cdot 27\cdot 10^6) = 118\,\mathrm{nH} \).
+      Shunt side (across \(R_{hi} = 50\,\Omega\)): \( X_{par} = R_{hi}/Q = 25\,\Omega \). Choose a capacitor: \( C = 1/(\omega\cdot 25) = 236\,\mathrm{pF} \).
+      Verify: \(10 + \mathrm{j}20\,\Omega\) in parallel-with-C: admittance \( \frac{1}{10+\mathrm{j}20} + \mathrm{j}\frac{1}{25} = \frac{10-\mathrm{j}20}{500} + \mathrm{j}0.04 = 0.02 + \mathrm{j}0\ \mathrm{S} = 1/50\,\Omega \) ✓.
+      Bandwidth ≈ \( f/Q \approx 13\,\mathrm{MHz} \) — comfortably wide here; matching 1 Ω would need Q = 7 and get touchy. (A real short antenna also has capacitive reactance to cancel first — this exercise matched only the radiation resistance.)
+    </div>
+  </details>
+</div>
+
+<div class="exercise">
+  <p class="ex-q"><span class="ex-num">E7</span>An enclosure has a 5 cm ventilation slot. (a) At what frequency does the slot leak like a half-wave antenna? (b) Estimate its shielding effectiveness at 1 GHz. (c) The same open area is provided as five 1 cm slots — new SE at 1 GHz? What does this teach about seam design? <span class="diff hard">challenge</span></p>
+  <details><summary>Show solution</summary>
+    <div class="solution">
+      (a) \( l = \lambda/2 \Rightarrow \lambda = 10\,\mathrm{cm} \Rightarrow f = 3\,\mathrm{GHz} \) — right in the WiFi/Bluetooth/radar neighborhood.
+      (b) At 1 GHz, \( \lambda = 30\,\mathrm{cm} \): \( SE \approx 20\log_{10}\!\left(\frac{30}{2\cdot 5}\right) = 20\log_{10}3 \approx 9.5\,\mathrm{dB} \) — a nearly worthless shield.
+      (c) Each 1 cm slot: \( SE \approx 20\log_{10}(30/2) = 23.5\,\mathrm{dB} \); five slots add ≈ \(10\log_{10}5 \approx 7\,\mathrm{dB}\) of leakage → ≈ 16.5 dB net, still ~7 dB better — and the advantage grows at higher f.
+      Lesson: <b>many short openings beat one long one</b>; it is the longest dimension of an aperture that radiates, not its area. Hence honeycomb vents and closely-spaced screws along seams.
+    </div>
+  </details>
+</div>
+
+<h2 id="quiz">15. Self-assessment</h2>
+
+<div class="quiz" data-quiz-title="Module 21 — Self-test">
+<script type="application/json">
+[
+ {"q":"A 100 MHz signal travels on FR-4 (v ≈ 1.5·10⁸ m/s). Above roughly what interconnect length does lumped circuit theory fail (λ/10 rule)?",
+  "opts":["1.5 m","15 cm","30 cm","1.5 cm"],"a":1,
+  "explain":"\\(\\lambda = v/f = 1.5\\cdot10^8/10^8 = 1.5\\,\\mathrm{m}\\), so \\(\\lambda/10 = 15\\,\\mathrm{cm}\\). In air it would be 30 cm — the dielectric halves the wavelength."},
+ {"q":"The characteristic impedance Z₀ = 50 Ω of a cable means…",
+  "opts":["the cable dissipates power in an internal 50 Ω resistance","a traveling wave on the cable carries voltage and current in the ratio 50 V/A","the DC resistance of the loop is 50 Ω","the cable is exactly 50 Ω long electrically"],"a":1,
+  "explain":"\\(Z_0 = \\sqrt{L'/C'}\\) is the U/I ratio of a single traveling wave — a property of geometry and dielectric, not a dissipative resistor and independent of length. A matched line merely *looks* like 50 Ω because the wave never comes back."},
+ {"q":"A 100 Ω load terminates a 50 Ω line. Γ and VSWR are…",
+  "opts":["Γ = 1/3, VSWR = 2","Γ = 1/2, VSWR = 3","Γ = 2, VSWR = 0.5","Γ = 1/3, VSWR = 1.5"],"a":0,
+  "explain":"\\(\\Gamma = \\frac{100-50}{100+50} = \\frac{1}{3}\\); \\(\\mathrm{VSWR} = \\frac{1+1/3}{1-1/3} = 2\\). Handy check: for purely resistive loads with \\(R_L > Z_0\\), VSWR is simply \\(R_L/Z_0\\)."},
+ {"q":"A voltage step arrives at the open end of a transmission line. The voltage there…",
+  "opts":["drops to zero, since no current can flow","stays at the incident value","doubles, because the reflected wave adds in phase","inverts, because Γ = −1"],"a":2,
+  "explain":"Open end: Γ = +1. The reflected wave superposes constructively, so the end voltage is \\((1+\\Gamma)u^+ = 2u^+\\). It is the *current* that must be zero there — the reflection cancels it. (Γ = −1 is the short circuit.)"},
+ {"q":"An antenna port shows S₁₁ = −20 dB. What fraction of the incident power is reflected?",
+  "opts":["20 %","10 %","1 %","0.1 %"],"a":2,
+  "explain":"\\(|\\Gamma| = 10^{-20/20} = 0.1\\); reflected power \\(= |\\Gamma|^2 = 0.01 = 1\\,\\%\\). S-parameters are amplitude ratios, so power needs the square — the classic factor-of-two-in-dB trap."},
+ {"q":"To match a 450 Ω folded-dipole feed to 50 Ω with a quarter-wave transformer, the transformer impedance must be…",
+  "opts":["250 Ω","400 Ω","150 Ω","95 Ω"],"a":2,
+  "explain":"\\(Z_T = \\sqrt{Z_0 Z_L} = \\sqrt{50\\cdot450} = \\sqrt{22500} = 150\\,\\Omega\\) — the geometric mean, not the arithmetic mean (250 Ω)."},
+ {"q":"A car FM antenna (~100 MHz) works as a λ/4 monopole. Its ideal length is about…",
+  "opts":["3 m","1.5 m","75 cm","7.5 cm"],"a":2,
+  "explain":"\\(\\lambda = c/f = 3\\,\\mathrm{m}\\), so \\(\\lambda/4 = 75\\,\\mathrm{cm}\\) — matching real whip antennas. The car body is the other half of the antenna (image in the ground plane)."},
+ {"q":"In free space, doubling the distance between two antennas changes the received power by…",
+  "opts":["−3 dB","−6 dB","−12 dB","−20 dB"],"a":1,
+  "explain":"Friis: \\(P_r \\propto 1/d^2\\), and \\(10\\log_{10}(1/4) = -6\\,\\mathrm{dB}\\). The often-quoted −20 dB corresponds to a *decade* of distance, not a doubling."},
+ {"q":"A sensor cable picks up interference proportional to dI/dt in a nearby motor cable. The most directly targeted fix is…",
+  "opts":["thicker cable insulation","twisting the sensor pair to minimize loop area","adding a series resistor at the sensor","raising the sensor supply voltage"],"a":1,
+  "explain":"dI/dt pickup is inductive (magnetic) coupling: induced voltage ∝ mutual inductance ∝ victim loop area. Twisting cancels the pickup twist by twist. Insulation thickness is irrelevant to magnetic fields, and a series resistor doesn't reduce the induced EMF."},
+ {"q":"A 100 nF decoupling capacitor with 1 nH of ESL is used at 100 MHz. It behaves as…",
+  "opts":["a nearly ideal 100 nF capacitor","a 0.016 Ω resistance","an inductor, since 100 MHz is above its ≈16 MHz self-resonance","an open circuit"],"a":2,
+  "explain":"\\(f_{res} = \\frac{1}{2\\pi\\sqrt{LC}} = \\frac{1}{2\\pi\\sqrt{10^{-9}\\cdot10^{-7}}} \\approx 16\\,\\mathrm{MHz}\\). Above resonance the ESL dominates: \\(|Z| \\approx \\omega L \\approx 0.63\\,\\Omega\\) and rising. This is why placement (loop inductance) matters more than capacitance value at VHF."}
+]
+</script>
+</div>
+
+<script>
+document.addEventListener("ee-ready", () => {
+
+  const Z0 = 50;
+  function gammaOf(R, X) {
+    const d = (R + Z0) * (R + Z0) + X * X;
+    return { r: ((R - Z0) * (R + Z0) + X * X) / d, i: (2 * Z0 * X) / d };
+  }
+  const gAbs = g => Math.hypot(g.r, g.i);
+  const vswrOf = m => (m > 0.999 ? "∞" : ((1 + m) / (1 - m)).toFixed(2));
+  const rlOf = m => (m < 1e-4 ? "> 80 dB" : (-20 * Math.log10(m)).toFixed(1) + " dB");
+
+  /* --- 1. Standing-wave explorer --- */
+  EE.custom({
+    mount: "#w-standing", height: 330, animate: true,
+    params: [
+      { key: "RL", label: "Load resistance R_L", min: 0, max: 300, step: 5, value: 150, unit: "Ω", fmt: v => v.toFixed(0) },
+      { key: "XL", label: "Load reactance X_L", min: -150, max: 150, step: 5, value: 0, unit: "Ω", fmt: v => v.toFixed(0) }
+    ],
+    readouts: [
+      { label: "|Γ|", fn: p => gAbs(gammaOf(p.RL, p.XL)).toFixed(3) },
+      { label: "VSWR", fn: p => vswrOf(gAbs(gammaOf(p.RL, p.XL))) },
+      { label: "Return loss", fn: p => rlOf(gAbs(gammaOf(p.RL, p.XL))) }
+    ],
+    draw: (ctx, w, h, p, H) => {
+      const v = H.makeView(
+        { min: 0, max: 2, label: "position along the line in λ  (generator left, load right)" },
+        { min: -2.3, max: 2.3, label: "voltage (normalized)" });
+      H.drawFrame(v);
+      const g = gammaOf(p.RL, p.XL);
+      const wt = 1.6 * H.t;
+      /* total phasor P(x) = e^{-jθ} + Γ e^{+jθ}, θ = 2πx (load at x = 2λ) */
+      const Pofx = x => {
+        const th = 2 * Math.PI * x;
+        const c = Math.cos(th), s = Math.sin(th);
+        return { r: c + g.r * c - g.i * s, i: -s + g.r * s + g.i * c };
+      };
+      const env = x => Math.hypot(Pofx(x).r, Pofx(x).i);
+      const inst = x => { const P = Pofx(x); return P.r * Math.cos(wt) - P.i * Math.sin(wt); };
+      const incident = x => Math.cos(wt - 2 * Math.PI * x);
+      H.drawCurve(v, env, H.color(0), { width: 2.2 });
+      H.drawCurve(v, x => -env(x), H.color(0), { width: 2.2 });
+      H.drawCurve(v, incident, H.ink.muted, { width: 1.2, dash: [4, 5] });
+      H.drawCurve(v, inst, H.color(2), { width: 2.4 });
+      /* legend + load marker */
+      ctx.font = "600 11.5px system-ui, sans-serif"; ctx.textAlign = "left"; ctx.textBaseline = "top";
+      ctx.fillStyle = H.color(0); ctx.fillText("envelope ±|U(x)|", v.padL + 8, v.padT + 6);
+      ctx.fillStyle = H.color(2); ctx.fillText("instantaneous u(x,t)", v.padL + 8, v.padT + 22);
+      ctx.fillStyle = H.ink.muted; ctx.fillText("incident wave alone (dashed)", v.padL + 8, v.padT + 38);
+      ctx.strokeStyle = H.ink.axis; ctx.lineWidth = 2;
+      ctx.beginPath(); ctx.moveTo(v.X(2), v.Y(-2.3)); ctx.lineTo(v.X(2), v.Y(2.3)); ctx.stroke();
+      ctx.fillStyle = H.ink.primary; ctx.textAlign = "right";
+      ctx.fillText("Z_L", v.X(2) - 6, v.padT + 6);
+    }
+  });
+
+  /* --- 2. Bounce diagram: step into a mismatched line --- */
+  function bounceWaves(p) {
+    const gs = (p.Rs - Z0) / (p.Rs + Z0);
+    const RL = +p.RL;
+    const gl = RL > 1e9 ? 1 : (RL - Z0) / (RL + Z0);
+    const v1 = 3.3 * Z0 / (p.Rs + Z0);
+    return { gs, gl, v1 };
+  }
+  EE.functionPlot({
+    mount: "#w-bounce", height: 300,
+    x: { min: 0, max: 8, label: "time in units of line delay T" },
+    y: { min: -0.5, max: 6.6, label: "voltage in V" },
+    params: [
+      { key: "Rs", label: "Source resistance R_S", min: 10, max: 200, step: 5, value: 25, unit: "Ω", fmt: v => v.toFixed(0) },
+      { key: "RL", label: "Load", type: "select", value: 1e12, options: [
+        { label: "open (CMOS input)", value: 1e12 },
+        { label: "1 kΩ", value: 1000 },
+        { label: "50 Ω (matched)", value: 50 },
+        { label: "10 Ω", value: 10 }
+      ] }
+    ],
+    curves: [
+      { label: "", color: 0, fn: (t, p) => {
+          const { gs, gl, v1 } = bounceWaves(p);
+          let V = t > 0 ? v1 : 0;
+          for (let k = 1; k <= 24; k++) {
+            if (t >= 2 * k) V += v1 * Math.pow(gl, k) * Math.pow(gs, k - 1) * (1 + gs);
+            else break;
+          }
+          return V;
+        } },
+      { label: "u at load end", color: 5, fn: (t, p) => {
+          const { gs, gl, v1 } = bounceWaves(p);
+          let V = 0;
+          for (let k = 0; k <= 24; k++) {
+            if (t >= 2 * k + 1) V += v1 * Math.pow(gs * gl, k) * (1 + gl);
+            else break;
+          }
+          return V;
+        } }
+    ],
+    annotations: p => {
+      const RL = +p.RL;
+      const vf = RL > 1e9 ? 3.3 : 3.3 * RL / (p.Rs + RL);
+      const { v1 } = bounceWaves(p);
+      return [
+        { type: "hline", y: vf, label: "final value " + vf.toFixed(2) + " V" },
+        { type: "point", x: 0.5, y: v1, label: "u at source end" }
+      ];
+    },
+    readouts: [
+      { label: "Γ_S", fn: p => bounceWaves(p).gs.toFixed(3) },
+      { label: "Γ_L", fn: p => bounceWaves(p).gl.toFixed(3) },
+      { label: "launched step u₁", fn: p => bounceWaves(p).v1.toFixed(2) + " V" }
+    ]
+  });
+
+  /* --- 3. Smith chart --- */
+  EE.custom({
+    mount: "#w-smith", height: 400,
+    params: [
+      { key: "R", label: "Load resistance R_L", min: 0, max: 250, step: 5, value: 100, unit: "Ω", fmt: v => v.toFixed(0) },
+      { key: "X", label: "Load reactance X_L", min: -200, max: 200, step: 5, value: 50, unit: "Ω", fmt: v => v.toFixed(0) },
+      { key: "mode", label: "Overlay", type: "select", value: "point", options: [
+        { label: "point only", value: "point" },
+        { label: "L-match demo (100 Ω → 50 Ω)", value: "match" }
+      ] }
+    ],
+    readouts: [
+      { label: "z = Z_L/50", fn: p => (p.R / 50).toFixed(2) + (p.X >= 0 ? " + j" : " − j") + Math.abs(p.X / 50).toFixed(2) },
+      { label: "Γ", fn: p => { const g = gammaOf(p.R, p.X); return gAbs(g).toFixed(3) + " ∠ " + (Math.atan2(g.i, g.r) * 180 / Math.PI).toFixed(0) + "°"; } },
+      { label: "VSWR", fn: p => vswrOf(gAbs(gammaOf(p.R, p.X))) },
+      { label: "Return loss", fn: p => rlOf(gAbs(gammaOf(p.R, p.X))) }
+    ],
+    draw: (ctx, w, h, p, H) => {
+      const k = H.ink;
+      const cx = w / 2, cy = h / 2 - 6, Rp = Math.min(h / 2 - 40, w / 2 - 60);
+      const U = g => cx + g.r * Rp, V = g => cy - g.i * Rp;
+      /* clip to unit circle for the grid */
+      ctx.save();
+      ctx.beginPath(); ctx.arc(cx, cy, Rp, 0, 7); ctx.clip();
+      /* constant-resistance circles */
+      for (const r of [0.2, 0.5, 1, 2, 5]) {
+        ctx.strokeStyle = r === 1 ? k.axis : k.grid; ctx.lineWidth = r === 1 ? 1.4 : 1;
+        ctx.beginPath();
+        ctx.arc(cx + (r / (1 + r)) * Rp, cy, Rp / (1 + r), 0, 7);
+        ctx.stroke();
+      }
+      /* constant-reactance arcs */
+      for (const x of [0.2, 0.5, 1, 2, 5]) {
+        for (const s of [1, -1]) {
+          ctx.strokeStyle = k.grid; ctx.lineWidth = 1;
+          ctx.beginPath();
+          ctx.arc(cx + Rp, cy - s * Rp / x, Rp / x, 0, 7);
+          ctx.stroke();
+        }
+      }
+      /* real axis */
+      ctx.strokeStyle = k.axis; ctx.lineWidth = 1.2;
+      ctx.beginPath(); ctx.moveTo(cx - Rp, cy); ctx.lineTo(cx + Rp, cy); ctx.stroke();
+      ctx.restore();
+      /* rim */
+      ctx.strokeStyle = k.axis; ctx.lineWidth = 1.6;
+      ctx.beginPath(); ctx.arc(cx, cy, Rp, 0, 7); ctx.stroke();
+      /* labels */
+      ctx.font = "10.5px system-ui, sans-serif"; ctx.fillStyle = k.muted;
+      ctx.textAlign = "center"; ctx.textBaseline = "top";
+      for (const r of [0.2, 0.5, 2, 5])
+        ctx.fillText(String(r), cx + ((r - 1) / (r + 1)) * Rp, cy + 4);
+      for (const x of [0.5, 1, 2]) {
+        const u = (x * x - 1) / (x * x + 1), vv = 2 * x / (1 + x * x);
+        ctx.textBaseline = "middle";
+        ctx.fillText("+j" + x, cx + u * Rp * 1.09, cy - vv * Rp * 1.09);
+        ctx.fillText("−j" + x, cx + u * Rp * 1.09, cy + vv * Rp * 1.09);
+      }
+      ctx.textBaseline = "middle"; ctx.textAlign = "right";
+      ctx.fillText("short (Γ=−1)", cx - Rp - 6, cy - 12);
+      ctx.textAlign = "left";
+      ctx.fillText("open (Γ=+1)", cx + Rp + 6, cy - 12);
+      ctx.textAlign = "center"; ctx.textBaseline = "bottom";
+      ctx.fillText("↻ clockwise = toward generator, one turn = λ/2", cx, cy - Rp - 26);
+      /* L-match demo trace */
+      if (p.mode === "match") {
+        const zpath = [];
+        for (let s = 0; s <= 40; s++) { // shunt C: y = 0.5 + jb, b: 0 → 0.5
+          const b = 0.5 * s / 40, den = 0.25 + b * b;
+          zpath.push({ zr: 0.5 / den, zi: -b / den, leg: 0 });
+        }
+        for (let s = 1; s <= 40; s++) // series L: z = 1 − j(1−t)
+          zpath.push({ zr: 1, zi: -1 + s / 40, leg: 1 });
+        for (const leg of [0, 1]) {
+          ctx.strokeStyle = H.color(leg ? 4 : 3); ctx.lineWidth = 2.6;
+          ctx.beginPath();
+          let started = false;
+          for (const q of zpath) {
+            if (q.leg !== leg) continue;
+            const g = gammaOf(q.zr * 50, q.zi * 50);
+            started ? ctx.lineTo(U(g), V(g)) : ctx.moveTo(U(g), V(g));
+            started = true;
+          }
+          ctx.stroke();
+        }
+        const knee = gammaOf(50, -50);
+        ctx.font = "600 11px system-ui, sans-serif"; ctx.textAlign = "left"; ctx.textBaseline = "top";
+        ctx.fillStyle = H.color(3); ctx.fillText("① shunt C (g = 0.5 circle)", U(gammaOf(100, -30)) + 10, V(gammaOf(100, -30)));
+        ctx.fillStyle = H.color(4); ctx.fillText("② series L (r = 1 circle)", U(knee) + 10, V(knee) + 10);
+        for (const q of [gammaOf(100, 0), knee, { r: 0, i: 0 }]) {
+          ctx.fillStyle = k.primary;
+          ctx.beginPath(); ctx.arc(U(q), V(q), 3.5, 0, 7); ctx.fill();
+        }
+      }
+      /* user's point + VSWR circle */
+      const g = gammaOf(p.R, p.X), m = gAbs(g);
+      ctx.strokeStyle = H.color(2); ctx.setLineDash([5, 4]); ctx.lineWidth = 1.4;
+      ctx.beginPath(); ctx.arc(cx, cy, m * Rp, 0, 7); ctx.stroke();
+      ctx.setLineDash([]);
+      ctx.strokeStyle = H.color(0); ctx.lineWidth = 1.6;
+      ctx.beginPath(); ctx.moveTo(cx, cy); ctx.lineTo(U(g), V(g)); ctx.stroke();
+      ctx.fillStyle = H.color(0);
+      ctx.beginPath(); ctx.arc(U(g), V(g), 5.5, 0, 7); ctx.fill();
+      ctx.strokeStyle = k.surface; ctx.lineWidth = 2; ctx.stroke();
+      ctx.font = "700 12px system-ui, sans-serif"; ctx.textAlign = "left"; ctx.textBaseline = "bottom";
+      ctx.fillText("Γ", U(g) + 8, V(g) - 6);
+      /* center dot */
+      ctx.fillStyle = k.muted;
+      ctx.beginPath(); ctx.arc(cx, cy, 2.5, 0, 7); ctx.fill();
+      ctx.font = "10.5px system-ui, sans-serif"; ctx.textBaseline = "top"; ctx.textAlign = "left";
+      ctx.fillText("match", cx + 5, cy + 4);
+    }
+  });
+
+  /* --- 4. Friis link budget --- */
+  function fspl(d, fGHz) { return 20 * Math.log10(d * fGHz * 1e9) - 147.55; }
+  EE.functionPlot({
+    mount: "#w-friis", height: 300,
+    x: { min: 1, max: 100000, log: true, label: "distance d in m (log)", hoverFmt: d => "d = " + EE.si(d, "m") },
+    y: { min: -145, max: 30, label: "received power in dBm" },
+    params: [
+      { key: "f", label: "Frequency", min: 0.4, max: 6, step: 0.1, value: 2.4, unit: "GHz", fmt: v => v.toFixed(1) },
+      { key: "Pt", label: "TX power", min: 0, max: 30, step: 1, value: 20, unit: "dBm", fmt: v => v.toFixed(0) },
+      { key: "G", label: "Antenna gains G_t + G_r", min: 0, max: 24, step: 1, value: 4, unit: "dBi", fmt: v => v.toFixed(0) },
+      { key: "S", label: "RX sensitivity", min: -110, max: -50, step: 1, value: -85, unit: "dBm", fmt: v => v.toFixed(0) }
+    ],
+    curves: [
+      { label: "P_r (free space)", color: 0, fn: (d, p) => p.Pt + p.G - fspl(d, p.f) },
+      { label: "with 25 dB fade margin", color: 2, dash: [6, 4], fn: (d, p) => p.Pt + p.G - fspl(d, p.f) - 25 }
+    ],
+    annotations: p => {
+      const dmax = Math.pow(10, (p.Pt + p.G - p.S + 147.55 - 20 * Math.log10(p.f * 1e9)) / 20);
+      const a = [{ type: "hline", y: p.S, label: "sensitivity" }];
+      if (dmax >= 1 && dmax <= 100000) a.push({ type: "vline", x: dmax, label: "range " + EE.si(dmax, "m") });
+      return a;
+    },
+    readouts: [
+      { label: "FSPL at 100 m", fn: p => fspl(100, p.f).toFixed(1) + " dB" },
+      { label: "Free-space range", fn: p => EE.si(Math.pow(10, (p.Pt + p.G - p.S + 147.55 - 20 * Math.log10(p.f * 1e9)) / 20), "m") },
+      { label: "Margin at 100 m", fn: p => (p.Pt + p.G - fspl(100, p.f) - p.S).toFixed(1) + " dB" }
+    ]
+  });
+});
+</script>
+
+</article>
+</main>
+</div>
+</body>
+</html>

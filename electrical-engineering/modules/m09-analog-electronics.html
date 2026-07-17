@@ -1,0 +1,930 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>M09 · Analog Circuit Design — EE Knowledge Base</title>
+<link rel="stylesheet" href="../../assets/vendor/katex/katex.min.css">
+<link rel="stylesheet" href="../../assets/css/style.css">
+<script src="../../assets/vendor/katex/katex.min.js" defer></script>
+<script src="../../assets/vendor/katex/auto-render.min.js" defer></script>
+<script src="../curriculum.js" defer></script>
+<script src="../../assets/js/app.js" defer></script>
+<script src="../../assets/js/widgets.js" defer></script>
+</head>
+<body data-module="m09">
+<div class="layout">
+<main class="content">
+<article class="article">
+
+<span class="eyebrow">🔬 Electronics · Module 09</span>
+<h1>Analog Circuit Design <span class="muted" style="font-weight:400;font-size:1.4rem">· <span class="de">Analoge Schaltungstechnik</span></span></h1>
+<p class="lead">Every microphone signal, every sensor reading, every radio wave arrives as a few millivolts of fragile analog reality — and something must make it bigger, cleaner, and stronger without wrecking it. This module builds the art of amplification from a single transistor up to the operational amplifier, and then reveals the one idea — negative feedback — that turns imperfect silicon into circuits of almost mathematical precision.</p>
+
+<div class="page-meta">
+  <span><b>Corresponds to:</b> Elektronik / Schaltungstechnik (3rd–4th semester)</span>
+  <span><b>Prerequisites:</b> Modules 05, 08</span>
+  <span><b>Study time:</b> ≈ 7–9 h</span>
+</div>
+
+<h2 id="amplification">1. What amplification actually means</h2>
+
+<p>An <strong>amplifier</strong> (<span class="de">Verstärker</span>) takes a small signal and produces a larger copy of it. That sounds like getting something for nothing — it is not. The extra energy comes from a DC power supply; the input signal merely <em>controls</em> how that supply energy is delivered to the load. The defining figure of merit is the <strong>gain</strong> (<span class="de">Verstärkung</span>):</p>
+\[ A_u = \frac{u_{\text{out}}}{u_{\text{in}}} \quad\text{(voltage gain)}, \qquad
+   A_i = \frac{i_{\text{out}}}{i_{\text{in}}}, \qquad
+   A_p = \frac{P_{\text{out}}}{P_{\text{in}}} = A_u \cdot A_i . \]
+
+<div class="box intuition">
+  <div class="box-title"><span class="ic">💡</span>Intuition: the control valve</div>
+  <p>Think of a huge water main with a valve. Your hand on the valve wheel expends a few watts; the water flow it controls carries kilowatts. Nobody claims the valve "creates" power — it <em>modulates</em> a pre-existing flow. A transistor is precisely such a valve for electrons: a small gate/base signal modulates a large supply current. Amplification is controlled energy conversion, never energy creation. This is also why every amplifier schematic has supply rails: no supply, no gain.</p>
+</div>
+
+<p>A real amplifier is characterized by more than gain. As seen from outside it behaves like a two-port (Module 05) with three headline parameters:</p>
+<ul>
+  <li><strong>Input resistance</strong> \(r_{\text{in}}\) (<span class="de">Eingangswiderstand</span>) — the load the amplifier presents to whatever drives it. Should usually be <em>high</em>, so the source is not loaded down (recall the loaded voltage divider, Module 04).</li>
+  <li><strong>Output resistance</strong> \(r_{\text{out}}\) (<span class="de">Ausgangswiderstand</span>) — the internal resistance of the amplifier acting as a source. Should usually be <em>low</em>, so gain does not collapse when a load is attached.</li>
+  <li><strong>Bandwidth</strong> (<span class="de">Bandbreite</span>) — the frequency range over which the gain holds up. No amplifier is fast forever (Section 6).</li>
+</ul>
+<p>The ideal voltage amplifier is therefore: \(r_{\text{in}} \to \infty\), \(r_{\text{out}} \to 0\), gain constant at all frequencies. Keep this wish list in mind — the op-amp will come astonishingly close.</p>
+
+<h2 id="decibels">2. The decibel — the logarithmic language of gain</h2>
+
+<p>Amplifier stages are cascaded, and cascaded gains <em>multiply</em>: a ×20 preamp into a ×50 power stage gives ×1000. Multiplying awkward numbers all day is miserable, so engineering adopted a logarithmic measure in which cascading becomes <em>addition</em>: the <strong>decibel</strong> (<span class="de">Dezibel</span>, dB). The definition is fundamentally a <em>power</em> ratio:</p>
+\[ A_p\big|_{\mathrm{dB}} = 10 \, \log_{10}\frac{P_2}{P_1}. \]
+<p>For voltages the story has a factor-of-two twist. Since \(P = U^2/R\), a voltage ratio enters the power ratio <em>squared</em> (assuming equal resistance levels), and \(\log(x^2) = 2\log x\):</p>
+\[ \boxed{\; A_u\big|_{\mathrm{dB}} = 20 \, \log_{10}\left|\frac{U_2}{U_1}\right| \;} \qquad
+   A_p\big|_{\mathrm{dB}} = 10 \, \log_{10}\frac{P_2}{P_1}. \]
+<p>The two definitions are deliberately consistent: doubling the voltage into a fixed resistor quadruples the power, and indeed \(20\log 2 = 10 \log 4 \approx 6\;\mathrm{dB}\). One physical situation, one dB number — that is the whole point of the 20-vs-10 rule.</p>
+
+<div class="box warn">
+  <div class="box-title"><span class="ic">⚠️</span>20 for voltage, 10 for power — never mix them</div>
+  <p>"The filter attenuates by 3 dB" means the <em>power</em> is halved and the <em>voltage</em> is down to \(1/\sqrt{2} \approx 70.7\,\%\). Both statements are the same 3 dB. If you compute \(10\log\) of a voltage ratio you are off by exactly a factor 2 in dB — a classic exam and lab-report error. Also note: dB is a <em>ratio</em>, dimensionless. Absolute levels need a reference suffix: <b>dBm</b> (power re 1 mW — ubiquitous in RF and telecom), <b>dBV</b> (voltage re 1 V), <b>dB(A)</b> (acoustics, weighted).</p>
+</div>
+
+<p>Fluency in dB means knowing a handful of anchor values cold — everything else is composition, e.g. \(\times 40 = \times 10 \times 4 \;\hat{=}\; 20\,\mathrm{dB} + 12\,\mathrm{dB} = 32\,\mathrm{dB}\):</p>
+
+<div class="table-wrap">
+<table class="data">
+<thead><tr><th>Voltage ratio</th><th>dB (20 log)</th><th>Power ratio</th><th>Read it as</th></tr></thead>
+<tbody>
+<tr><td>1</td><td>0 dB</td><td>1</td><td>unity — no change</td></tr>
+<tr><td>\(\sqrt{2} \approx 1.41\)</td><td>+3 dB</td><td>2</td><td>power doubled; <em>the</em> bandwidth-edge value</td></tr>
+<tr><td>2</td><td>+6 dB</td><td>4</td><td>voltage doubled</td></tr>
+<tr><td>10</td><td>+20 dB</td><td>100</td><td>one decade of voltage</td></tr>
+<tr><td>100</td><td>+40 dB</td><td>10<sup>4</sup></td><td>two decades</td></tr>
+<tr><td>1000</td><td>+60 dB</td><td>10<sup>6</sup></td><td>typical audio preamp headroom</td></tr>
+<tr><td>\(1/\sqrt{2} \approx 0.707\)</td><td>−3 dB</td><td>1/2</td><td>half power — cutoff frequency definition</td></tr>
+<tr><td>0.5</td><td>−6 dB</td><td>1/4</td><td>voltage halved</td></tr>
+<tr><td>0.1</td><td>−20 dB</td><td>1/100</td><td>one decade down</td></tr>
+</tbody>
+</table>
+</div>
+
+<p>Because a first-order filter rolls off as \(1/\omega\) (Module 05), its stopband slope is <strong>−20 dB per decade</strong> (equivalently −6 dB per octave); a second-order filter falls at −40 dB/decade. These slope values will label every Bode plot for the rest of your degree.</p>
+
+<div class="example">
+  <div class="ex-head"><span class="ex-tag">Worked example</span> dB fluency: a signal chain</div>
+  <div class="ex-body">
+    <p>A microphone delivers 2 mV. The chain: preamp +26 dB → tone filter −3 dB (at the frequency of interest) → power stage +34 dB. What voltage reaches the loudspeaker terminal, and what is the total gain as a plain factor?</p>
+    <div class="step"><span class="step-label">Step 1 — add the dB values:</span>
+      \( 26 - 3 + 34 = 57\,\mathrm{dB} \). Cascaded stages just add — this is why dB exists.</div>
+    <div class="step"><span class="step-label">Step 2 — back to a linear factor:</span>
+      \( A_u = 10^{57/20} = 10^{2.85} \approx 708 \). Sanity check by anchors: \(57 = 20 + 20 + 20 - 6 + 3 \Rightarrow 10\cdot10\cdot10\cdot\tfrac12\cdot\sqrt2 \approx 707\) ✓</div>
+    <div class="step"><span class="step-label">Step 3 — output voltage:</span>
+      \( u_{\text{out}} = 708 \cdot 2\,\mathrm{mV} \approx 1.42\,\mathrm{V} \).</div>
+    <div class="result-line">Total gain 57 dB ≙ ×708; output ≈ 1.4 V. Notice how the anchor-value decomposition let us verify \(10^{2.85}\) without a calculator.</div>
+  </div>
+</div>
+
+<h2 id="biasing">3. Biasing and the operating point</h2>
+
+<h3 id="why-bias">3.1 Why an amplifier needs DC bias</h3>
+<p>Here is the problem Module 08 left us with: a transistor is a <em>one-quadrant, nonlinear</em> device. An NPN transistor or n-MOSFET conducts only when its input voltage exceeds a threshold (\(U_{BE} \approx 0.7\,\mathrm{V}\), or \(U_{GS} &gt; U_{th}\)), and even then the current grows exponentially or quadratically — nothing like the proportional behavior an amplifier must deliver. Feed a small audio sine (±50 mV around zero) directly into a bare transistor and the output is silence: the device never turns on.</p>
+<p>The fix: superimpose the small signal on a constant DC level that holds the transistor in the middle of its useful region. This DC condition — a chosen quiescent current \(I_D\) (or \(I_C\)) and quiescent voltages with <em>no signal applied</em> — is the <strong>operating point</strong> (<span class="de">Arbeitspunkt</span>), often marked Q (quiescent). Designing the resistor network that establishes and stabilizes it is called <strong>biasing</strong> (<span class="de">Arbeitspunkteinstellung</span>, the bias voltage itself: <span class="de">Vorspannung</span>).</p>
+
+<h3 id="small-signal">3.2 The small-signal idea — linearization at the operating point</h3>
+<p>Now the beautiful trick. Around the operating point, expand the transistor's nonlinear characteristic \(i_D(u_{GS})\) as a Taylor series (Module 02):</p>
+\[ i_D(U_{GS,Q} + u_{gs}) = I_{D,Q} + \underbrace{\left.\frac{\mathrm{d}i_D}{\mathrm{d}u_{GS}}\right|_{Q}}_{\textstyle g_m} u_{gs} \;+\; \frac{1}{2}\left.\frac{\mathrm{d}^2 i_D}{\mathrm{d}u_{GS}^2}\right|_Q u_{gs}^2 + \dots \]
+<p>If the signal excursion \(u_{gs}\) is <em>small</em>, the quadratic and higher terms are negligible and the device behaves — for the signal — like a perfectly linear element with one parameter, the <strong>transconductance</strong> (<span class="de">Steilheit</span>):</p>
+\[ \boxed{\; i_d = g_m \, u_{gs} \;} \qquad g_m = \left.\frac{\mathrm{d}i_D}{\mathrm{d}u_{GS}}\right|_{Q} \]
+<p>For a MOSFET in saturation (\(i_D = \tfrac{k}{2}(u_{GS}-U_{th})^2\)): \(g_m = k\,(U_{GS,Q}-U_{th}) = \dfrac{2 I_{D,Q}}{U_{GS,Q}-U_{th}}\). For a BJT the exponential characteristic gives the remarkably clean \(g_m = I_{C,Q}/U_T\) with the thermal voltage \(U_T \approx 25\,\mathrm{mV}\) — at 1 mA collector current, <em>every</em> BJT on Earth has \(g_m = 40\,\mathrm{mS}\).</p>
+<p>Notation convention (worth internalizing now, it is used everywhere): \(u_{GS} = U_{GS,Q} + u_{gs}\) — capital letter + capital subscript = total DC + signal; capital + Q = operating point; lowercase + lowercase subscript = small signal only.</p>
+
+<div class="box key">
+  <div class="box-title"><span class="ic">🔑</span>Key idea: two circuits in one</div>
+  <p>Every transistor amplifier is analyzed <em>twice</em>. First the <b>DC analysis</b> (<span class="de">Großsignal</span>): capacitors open, signal source off — find the operating point. Then the <b>small-signal analysis</b> (<span class="de">Kleinsignal</span>): DC sources become their internal resistances (ideal voltage supplies → AC ground!), capacitors become shorts (at signal frequencies), and the transistor becomes its linearized model \(i_d = g_m u_{gs}\). The nonlinear problem splits into two linear ones. All the linear machinery of Modules 04–05 — superposition, Thévenin, nodal analysis — now applies to a transistor circuit.</p>
+</div>
+
+<h3 id="coupling">3.3 Coupling capacitors</h3>
+<p>One practical question remains: how do we add the AC signal to the DC bias without the signal source disturbing the bias (or the bias pushing DC into the source)? With a <strong>coupling capacitor</strong> (<span class="de">Koppelkondensator</span>). A capacitor blocks DC completely (\(Z_C \to \infty\) at \(f = 0\)) but is nearly a short at signal frequencies (\(|Z_C| = 1/\omega C\) small). It is a frequency-selective wall: bias stays inside the stage, signal passes through. The price: together with the input resistance it forms a high-pass with cutoff \(f_c = 1/(2\pi r_{\text{in}} C)\), so \(C\) must be sized large enough that \(f_c\) lies below the lowest signal frequency — this is why audio amplifiers historically bristled with 10 µF electrolytics.</p>
+
+<h2 id="common-source">4. One stage in depth: the common-source amplifier</h2>
+
+<p>The workhorse single-transistor voltage amplifier is the <strong>common-source stage</strong> (<span class="de">Sourceschaltung</span>) — for BJTs, the identical-in-spirit common-emitter stage (<span class="de">Emitterschaltung</span>). Signal enters the gate, leaves the drain, and the source terminal is common to input and output loops:</p>
+
+<figure>
+  <div class="fig-frame">
+  <svg class="diagram" viewBox="0 0 640 370" role="img" aria-label="Common-source amplifier with bias divider and coupling capacitors">
+    <!-- VDD rail -->
+    <path class="wire" d="M240 40 H480"/>
+    <text x="530" y="45" font-size="14" fill="var(--text-soft)">U<tspan baseline-shift="sub" font-size="10">DD</tspan> = +12 V</text>
+    <circle cx="480" cy="40" r="4" class="node"/>
+    <!-- RD -->
+    <path class="wire" d="M400 40 V70"/>
+    <rect x="388" y="70" width="24" height="60" fill="none" stroke="var(--text-soft)" stroke-width="2"/>
+    <text x="424" y="104" font-size="14">R<tspan baseline-shift="sub" font-size="10">D</tspan></text>
+    <path class="wire" d="M400 130 V178"/>
+    <!-- drain node / output -->
+    <circle cx="400" cy="160" r="4" class="node"/>
+    <path class="wire" d="M400 160 H470"/>
+    <!-- C2 coupling -->
+    <line x1="470" y1="144" x2="470" y2="176" class="wire" stroke-width="2.4"/>
+    <line x1="480" y1="144" x2="480" y2="176" class="wire" stroke-width="2.4"/>
+    <text x="475" y="132" text-anchor="middle" font-size="13">C₂</text>
+    <path class="wire" d="M480 160 H560"/>
+    <circle cx="560" cy="160" r="4" class="node"/>
+    <text x="560" y="188" text-anchor="middle" font-size="14" fill="var(--accent)">u<tspan baseline-shift="sub" font-size="10">out</tspan></text>
+    <!-- MOSFET -->
+    <line x1="376" y1="176" x2="376" y2="204" stroke="var(--text-soft)" stroke-width="2.6"/>
+    <line x1="368" y1="178" x2="368" y2="202" stroke="var(--text-soft)" stroke-width="2"/>
+    <path class="wire" d="M376 178 H400 M376 202 H400 V240"/>
+    <path class="wire" d="M340 190 H368"/>
+    <text x="410" y="196" font-size="13" fill="var(--text-soft)">M₁</text>
+    <!-- source arrow (n-channel) -->
+    <path d="M378 198 L392 202 L378 206 z" fill="var(--text-soft)"/>
+    <!-- source to ground -->
+    <path class="wire" d="M400 240 V260"/>
+    <path class="wire" d="M385 260 H415 M390 267 H410 M395 274 H405"/>
+    <!-- gate node & bias divider -->
+    <circle cx="300" cy="190" r="4" class="node"/>
+    <path class="wire" d="M300 190 H340"/>
+    <path class="wire" d="M300 40 V88"/>
+    <circle cx="300" cy="40" r="4" class="node"/>
+    <rect x="288" y="88" width="24" height="60" fill="none" stroke="var(--text-soft)" stroke-width="2"/>
+    <text x="268" y="122" text-anchor="end" font-size="14">R₁</text>
+    <path class="wire" d="M300 148 V190 M300 190 V230"/>
+    <rect x="288" y="230" width="24" height="60" fill="none" stroke="var(--text-soft)" stroke-width="2"/>
+    <text x="268" y="264" text-anchor="end" font-size="14">R₂</text>
+    <path class="wire" d="M300 290 V304"/>
+    <path class="wire" d="M285 304 H315 M290 311 H310 M295 318 H305"/>
+    <!-- C1 coupling -->
+    <path class="wire" d="M186 190 H220"/>
+    <line x1="220" y1="174" x2="220" y2="206" class="wire" stroke-width="2.4"/>
+    <line x1="230" y1="174" x2="230" y2="206" class="wire" stroke-width="2.4"/>
+    <text x="225" y="162" text-anchor="middle" font-size="13">C₁</text>
+    <path class="wire" d="M230 190 H300"/>
+    <!-- signal source -->
+    <circle cx="120" cy="230" r="22" fill="none" stroke="var(--text-soft)" stroke-width="2"/>
+    <path d="M108 230 q6 -10 12 0 q6 10 12 0" fill="none" stroke="var(--text-soft)" stroke-width="1.8"/>
+    <path class="wire" d="M120 208 V190 H186"/>
+    <path class="wire" d="M120 252 V278"/>
+    <path class="wire" d="M105 278 H135 M110 285 H130 M115 292 H125"/>
+    <text x="78" y="234" text-anchor="end" font-size="14" fill="var(--accent)">u<tspan baseline-shift="sub" font-size="10">in</tspan></text>
+    <!-- ID arrow -->
+    <line x1="440" y1="60" x2="440" y2="95" stroke="var(--accent)" stroke-width="2" marker-end="url(#arrCS)"/>
+    <text x="452" y="82" font-size="13" fill="var(--accent)">I<tspan baseline-shift="sub" font-size="10">D</tspan></text>
+    <defs><marker id="arrCS" markerWidth="9" markerHeight="9" refX="7" refY="4.5" orient="auto">
+      <path d="M0 0 L8 4.5 L0 9 z" fill="var(--accent)"/></marker></defs>
+  </svg>
+  </div>
+  <figcaption><b>Fig. 4.1</b> — Common-source amplifier. R₁/R₂ set the gate bias (a voltage divider — Module 04 pays rent again), R<sub>D</sub> converts drain current to output voltage, C₁/C₂ couple the signal in and out without disturbing the DC operating point.</figcaption>
+</figure>
+
+<h3 id="cs-gain">4.1 The gain, derived in three lines</h3>
+<p>Small-signal reasoning, walking the signal through the stage:</p>
+<ol>
+  <li>The input voltage appears (through C₁) directly between gate and source: \(u_{gs} = u_{\text{in}}\).</li>
+  <li>The transistor converts it to a drain-current wiggle: \(i_d = g_m u_{gs}\).</li>
+  <li>That current flows through \(R_D\) from the supply. The supply rail is AC ground (its voltage does not wiggle), so the drain voltage moves by \(u_{\text{out}} = -\,i_d R_D\): when the current <em>increases</em>, the drop across \(R_D\) increases and the drain is pulled <em>down</em>.</li>
+</ol>
+\[ \boxed{\; A_u = \frac{u_{\text{out}}}{u_{\text{in}}} = -\,g_m R_D \;} \]
+<p>The minus sign means the stage <strong>inverts</strong>: a rising input gives a falling output — a 180° phase shift, not a defect. Typical numbers: \(I_{D,Q} = 1\,\mathrm{mA}\) at an overdrive of 0.2 V gives \(g_m = 2 \cdot 1\,\mathrm{mA}/0.2\,\mathrm{V} = 10\,\mathrm{mS}\); with \(R_D = 2\,\mathrm{k\Omega}\), \(A_u = -20\) (26 dB). One transistor, one resistor: a ×20 amplifier.</p>
+
+<h3 id="cs-io">4.2 Input and output resistance</h3>
+<p>Looking into the gate, a MOSFET draws essentially no current — the stage's input resistance is set by the bias divider, \(r_{\text{in}} = R_1 \parallel R_2\) (hundreds of kΩ if you choose generously). Looking back into the output, the signal source you "see" is the drain current source behind \(R_D\); killing the sources leaves \(r_{\text{out}} \approx R_D\) — a few kΩ, uncomfortably high. Load the stage with anything comparable to \(R_D\) and the gain sags exactly like a loaded voltage divider. Single transistor stages are good at <em>voltage gain</em> but poor at <em>driving</em>; fixing that is one of the op-amp's jobs.</p>
+
+<h3 id="degeneration">4.3 Source degeneration — feedback before we name it</h3>
+<p>The gain \(-g_m R_D\) has a flaw: \(g_m\) depends on temperature and varies transistor-to-transistor by tens of percent. Insert a resistor \(R_S\) between source and ground and something remarkable happens. If \(i_d\) tries to grow, the drop \(i_d R_S\) raises the source potential, which <em>reduces</em> \(u_{gs}\), which pulls \(i_d\) back down — the stage resists its own variations. Quantitatively (KVL around the input loop: \(u_{\text{in}} = u_{gs} + i_d R_S\), with \(i_d = g_m u_{gs}\)):</p>
+\[ A_u = -\,\frac{g_m R_D}{1 + g_m R_S} \;\xrightarrow{\;g_m R_S \gg 1\;}\; -\,\frac{R_D}{R_S}. \]
+<p>For large loop strength the transistor's wobbly \(g_m\) <em>cancels out</em>: the gain is set by a ratio of resistors, which can be matched to 0.1 %. We traded raw gain for precision and stability. Remember this trade — it is negative feedback in embryo, and Section 6 will make it the central principle of all analog design.</p>
+
+<h2 id="opamp">5. The operational amplifier</h2>
+
+<p>Chaining transistor stages to get high gain, high \(r_{\text{in}}\) and low \(r_{\text{out}}\) is routine but tedious — so the industry did it once, extremely well, and put it in a five-pin package. The <strong>operational amplifier</strong> (<span class="de">Operationsverstärker</span>, OpAmp, German abbreviation "OPV") is a differential-input voltage amplifier with enormous gain:</p>
+\[ u_{\text{out}} = A_0 \,(u_+ - u_-), \qquad A_0 \approx 10^5 \dots 10^7 \ \text{(open-loop gain, } 100{-}140\ \mathrm{dB}). \]
+<p>The name comes from analog computers of the 1940s–60s, where these amplifiers performed mathematical <em>operations</em> — summing, integrating — on voltages. Used <em>bare</em>, an op-amp is nearly useless as an amplifier: with \(A_0 = 10^5\) and ±12 V rails, any input difference beyond ±120 µV slams the output into a supply rail. The magic appears only when we close a feedback loop around it. For analysis with negative feedback, two <strong>golden rules</strong> describe the ideal op-amp:</p>
+
+<div class="box key">
+  <div class="box-title"><span class="ic">🔑</span>Key idea: the two golden rules</div>
+  <p><b>Rule 1 — no input current:</b> the inputs draw \(i_+ = i_- = 0\) (infinite input resistance).<br>
+  <b>Rule 2 — virtual short:</b> with <em>negative feedback in place</em>, the output does whatever is necessary to drive the input difference to zero: \(u_+ = u_-\) (<span class="de">virtueller Kurzschluss</span>).<br>
+  Rule 2 is not a property of the chip but of the feedback loop: if \(u_-\) dipped below \(u_+\), the huge gain would raise \(u_{\text{out}}\), and the feedback network would push \(u_-\) back up. Equilibrium exists only at \(u_+ \approx u_-\) (the residual difference is \(u_{\text{out}}/A_0\) — microvolts). Every op-amp circuit in this section is solved with just these two rules plus KCL.</p>
+</div>
+
+<h3 id="inverting">5.1 The inverting amplifier — full derivation</h3>
+
+<figure>
+  <div class="fig-frame">
+  <svg class="diagram" viewBox="0 0 640 300" role="img" aria-label="Inverting amplifier schematic">
+    <!-- input terminal -->
+    <circle cx="60" cy="125" r="4" class="node"/>
+    <text x="60" y="105" text-anchor="middle" font-size="14" fill="var(--accent)">u<tspan baseline-shift="sub" font-size="10">in</tspan></text>
+    <path class="wire" d="M60 125 H140"/>
+    <!-- R1 -->
+    <rect x="140" y="113" width="70" height="24" fill="none" stroke="var(--text-soft)" stroke-width="2"/>
+    <text x="175" y="104" text-anchor="middle" font-size="14">R₁</text>
+    <path class="wire" d="M210 125 H300"/>
+    <!-- summing node -->
+    <circle cx="300" cy="125" r="5" class="node"/>
+    <text x="288" y="243" font-size="12.5" fill="var(--accent-2)">virtual ground: u₋ ≈ 0 V</text>
+    <path d="M295 230 Q285 190 296 140" fill="none" stroke="var(--accent-2)" stroke-width="1.6" stroke-dasharray="4 4" marker-end="url(#arrIV2)"/>
+    <!-- feedback path R2 -->
+    <path class="wire" d="M300 125 V60 H330"/>
+    <rect x="330" y="48" width="70" height="24" fill="none" stroke="var(--text-soft)" stroke-width="2"/>
+    <text x="365" y="40" text-anchor="middle" font-size="14">R₂</text>
+    <path class="wire" d="M400 60 H500 V150"/>
+    <!-- op-amp triangle -->
+    <path d="M330 100 L330 200 L455 150 Z" fill="none" stroke="var(--text-soft)" stroke-width="2"/>
+    <path class="wire" d="M300 125 H330"/>
+    <text x="342" y="130" font-size="15">−</text>
+    <text x="342" y="182" font-size="15">+</text>
+    <!-- plus input to ground -->
+    <path class="wire" d="M330 177 H312 V225"/>
+    <path class="wire" d="M297 225 H327 M302 232 H322 M307 239 H317"/>
+    <!-- output -->
+    <circle cx="500" cy="150" r="5" class="node"/>
+    <path class="wire" d="M455 150 H580"/>
+    <circle cx="580" cy="150" r="4" class="node"/>
+    <text x="580" y="130" text-anchor="middle" font-size="14" fill="var(--accent)">u<tspan baseline-shift="sub" font-size="10">out</tspan></text>
+    <!-- currents -->
+    <line x1="240" y1="112" x2="280" y2="112" stroke="var(--accent)" stroke-width="2" marker-end="url(#arrIV)"/>
+    <text x="260" y="100" text-anchor="middle" font-size="13" fill="var(--accent)">i₁</text>
+    <line x1="320" y1="88" x2="320" y2="72" stroke="var(--accent)" stroke-width="2" marker-end="url(#arrIV)"/>
+    <text x="334" y="84" font-size="13" fill="var(--accent)">i₂</text>
+    <defs>
+      <marker id="arrIV" markerWidth="9" markerHeight="9" refX="7" refY="4.5" orient="auto"><path d="M0 0 L8 4.5 L0 9 z" fill="var(--accent)"/></marker>
+      <marker id="arrIV2" markerWidth="8" markerHeight="8" refX="6" refY="4" orient="auto"><path d="M0 0 L7 4 L0 8 z" fill="var(--accent-2)"/></marker>
+    </defs>
+  </svg>
+  </div>
+  <figcaption><b>Fig. 5.1</b> — The inverting amplifier (<span class="de">invertierender Verstärker</span>). Feedback through R₂ returns to the − input: negative feedback, golden rules apply. The summing node sits at 0 V without being connected to ground — a <em>virtual</em> ground.</figcaption>
+</figure>
+
+<p>Derivation, using nothing but the golden rules and KCL:</p>
+<ol>
+  <li>The + input is grounded, so Rule 2 forces \(u_- = u_+ = 0\). The inverting input is a <strong>virtual ground</strong> (<span class="de">virtuelle Masse</span>): 0 V, yet no current flows into ground there.</li>
+  <li>Current through \(R_1\): \(\;i_1 = \dfrac{u_{\text{in}} - 0}{R_1}\).</li>
+  <li>Rule 1: none of it enters the op-amp, so all of it must continue through \(R_2\): \(i_2 = i_1\).</li>
+  <li>Output voltage: \(\;u_{\text{out}} = 0 - i_2 R_2 = -\dfrac{R_2}{R_1}\,u_{\text{in}}\).</li>
+</ol>
+\[ \boxed{\; A_u = -\frac{R_2}{R_1} \;} \]
+<p>The gain is set purely by a resistor ratio — the op-amp's own \(A_0\), with all its temperature drift and unit-to-unit spread, has vanished from the formula (exactly the source-degeneration effect of Section 4.3, taken to its logical conclusion). Input resistance: the source looking in sees the virtual ground behind \(R_1\), so \(r_{\text{in}} = R_1\) — finite, and a genuine drawback of this topology. Output resistance: milliohms, thanks to feedback (Section 6).</p>
+
+<div class="widget">
+  <div class="w-head"><span class="ic">🧪</span>Interactive — inverting amplifier with real rails <span class="w-tag">simulation</span></div>
+  <div class="w-body">
+    <p class="small mt0">Set the gain with \(R_1\), \(R_2\) and watch the output sine (inverted!). Then raise the input amplitude or the gain until the ideal output would exceed the supply rails: the op-amp <em>clips</em> — the tops of the sine are sliced flat at the rails (saturation, heard as harsh distortion in audio). No feedback trickery can push the output beyond its power supply.</p>
+    <div id="w-invamp"></div>
+  </div>
+</div>
+
+<div class="box pitfall">
+  <div class="box-title"><span class="ic">🚫</span>Classic pitfall: golden rules without negative feedback</div>
+  <p>Students happily write \(u_+ = u_-\) for <em>any</em> op-amp circuit. Rule 2 holds <b>only when negative feedback is active</b>: a path from output back to the <em>inverting</em> input, and an output that is not stuck at a rail. In a comparator (no feedback, Section 7) or a Schmitt trigger (positive feedback) the inputs are <em>not</em> equal — applying the virtual short there produces confident nonsense. Always check where the feedback goes before invoking the rules.</p>
+</div>
+
+<h3 id="noninverting">5.2 Non-inverting amplifier and the voltage follower</h3>
+<p>Feed the signal into the + input instead, with the feedback divider \(R_2\)/\(R_1\) from output to − input. Rule 2: \(u_- = u_+ = u_{\text{in}}\). Rule 1 means the divider is unloaded, so \(u_- = u_{\text{out}} \dfrac{R_1}{R_1 + R_2}\). Equate:</p>
+\[ \boxed{\; A_u = 1 + \frac{R_2}{R_1} \;} \qquad \text{(non-inverting, } A_u \ge 1) \]
+<p>No inversion, and — because the signal enters the op-amp's input directly — nearly infinite input resistance. Note the gain can never be below 1.</p>
+<p>The special case \(R_2 = 0\) (direct feedback wire, \(R_1 \to \infty\)) is the <strong>voltage follower</strong> or buffer (<span class="de">Spannungsfolger / Impedanzwandler</span>): \(A_u = 1\). Gain one sounds pointless until you recall Section 1: this circuit converts a feeble source (say a pH electrode with \(r_{\text{out}} = 100\,\mathrm{M\Omega}\), able to supply nanoamps) into a stiff source with \(r_{\text{out}}\) of milliohms that can drive a cable and an ADC. It amplifies not voltage but <em>current capability</em> — impedance conversion is half of real-world analog design.</p>
+
+<div class="example">
+  <div class="ex-head"><span class="ex-tag">Worked example</span> Design: sensor 0–50 mV → ADC 0–5 V</div>
+  <div class="ex-body">
+    <p>A pressure sensor outputs 0–50 mV with \(r_{\text{out}} = 20\,\mathrm{k\Omega}\); the microcontroller's ADC wants 0–5 V. Design the amplifier and check it with a 3 MHz-GBW op-amp for signals up to 10 kHz.</p>
+    <div class="step"><span class="step-label">Step 1 — required gain:</span>
+      \( A_u = 5\,\mathrm{V} / 50\,\mathrm{mV} = 100 \) (40 dB). Positive gain, no inversion wanted.</div>
+    <div class="step"><span class="step-label">Step 2 — choose topology:</span> with a 20 kΩ source, an inverting amp is out: its \(r_{\text{in}} = R_1\) would form a divider with the sensor and wreck the accuracy (to keep the loading error below 1 % we would need \(R_1 &gt; 2\,\mathrm{M\Omega}\), forcing \(R_2 = 200\,\mathrm{M\Omega}\) — absurd). Take the <b>non-inverting</b> amp: \(r_{\text{in}} \approx \infty\), the sensor is unloaded.</div>
+    <div class="step"><span class="step-label">Step 3 — resistor values:</span>
+      \( 1 + R_2/R_1 = 100 \Rightarrow R_2 = 99\,R_1 \). Choose \(R_1 = 1\,\mathrm{k\Omega}\), \(R_2 = 99\,\mathrm{k\Omega}\) (or E96 values 1.00 k / 99.0 k... practically 1 k + 100 k gives gain 101, then trim in software). kΩ-range values keep resistor noise and op-amp bias-current errors small without loading the output.</div>
+    <div class="step"><span class="step-label">Step 4 — bandwidth check (anticipating Section 6):</span>
+      closed-loop bandwidth \( \approx \mathrm{GBW}/A_u = 3\,\mathrm{MHz}/100 = 30\,\mathrm{kHz} &gt; 10\,\mathrm{kHz} \) ✓ (with 1 dB to spare at 10 kHz: \(f/f_c = 0.33\), droop \(= 10\log(1+0.11) \approx 0.5\,\mathrm{dB}\)).</div>
+    <div class="result-line">Non-inverting, \(R_1 = 1\,\mathrm{k\Omega}\), \(R_2 = 99\,\mathrm{k\Omega}\), gain 100 — and the topology choice mattered as much as the arithmetic.</div>
+  </div>
+</div>
+
+<h3 id="summing-diff">5.3 Summing and difference amplifiers</h3>
+<p>Because the inverting input is a virtual ground, currents from several sources arriving there simply add (KCL) without the sources interacting — each one sees ground. The <strong>summing amplifier</strong> (<span class="de">Summierverstärker</span>):</p>
+\[ u_{\text{out}} = -R_f \left( \frac{u_1}{R_1} + \frac{u_2}{R_2} + \frac{u_3}{R_3} \right) \]
+<p>— a weighted sum with resistor-programmable weights. This is literally an audio mixing desk channel bus, and with weights 1, 2, 4, 8 it is a digital-to-analog converter (Module 14).</p>
+<p>The <strong>difference amplifier</strong> (<span class="de">Differenzverstärker</span>) applies \(u_1\) through \(R_1\) to the − input and \(u_2\) through an identical \(R_1\)–\(R_2\) divider to the + input. With both resistor pairs matched:</p>
+\[ u_{\text{out}} = \frac{R_2}{R_1}\,(u_2 - u_1). \]
+<p>It amplifies the <em>difference</em> and rejects what is common to both inputs — vital for sensors on long cables where both wires pick up the same 50 Hz hum. The rejection quality (CMRR, common-mode rejection ratio, <span class="de">Gleichtaktunterdrückung</span>) depends brutally on resistor matching: 0.1 % resistors limit CMRR to ≈ 60 dB. For serious instrumentation one uses the three-op-amp <strong>instrumentation amplifier</strong> (<span class="de">Instrumentenverstärker</span>): two followers buffer the inputs (infinite \(r_{\text{in}}\)), one difference stage subtracts, and the whole gain is set by a single resistor — bought as one laser-trimmed IC (INA128 and friends) with CMRR &gt; 100 dB.</p>
+
+<h3 id="int-diff">5.4 Integrator and differentiator</h3>
+<p>Replace \(R_2\) with a capacitor \(C\) and the feedback current charges it: \(i_1 = u_{\text{in}}/R\) flows onto \(C\), so \(u_{\text{out}} = -u_C\) accumulates:</p>
+\[ \boxed{\; u_{\text{out}}(t) = -\frac{1}{RC}\int_0^t u_{\text{in}}(\tau)\,\mathrm{d}\tau + u_{\text{out}}(0) \;} \]
+<p>The <strong>integrator</strong> (<span class="de">Integrierer</span>). In the frequency domain \( \underline{H}(j\omega) = -\dfrac{1}{j\omega RC} \): magnitude falls at −20 dB/decade over <em>all</em> frequencies with unity gain at \(\omega = 1/RC\), phase −90° — an idealized low-pass taken to its limit. It is the core of function generators, analog computers, PID controllers (the "I") and delta-sigma ADCs. Practical caveat: at DC the gain is infinite, so the tiniest input offset integrates relentlessly until the output hits a rail; real integrators add a large resistor across \(C\) to leak the drift away.</p>
+<p>Swapping R and C gives the <strong>differentiator</strong> (<span class="de">Differenzierer</span>): \(u_{\text{out}} = -RC\,\dfrac{\mathrm{d}u_{\text{in}}}{\mathrm{d}t}\), gain <em>rising</em> at +20 dB/decade — a high-pass without end. That rising response amplifies high-frequency noise and invites oscillation, so pure differentiators are rare in practice; a series resistor is added to tame the response above the band of interest.</p>
+
+<div class="example">
+  <div class="ex-head"><span class="ex-tag">Worked example</span> Integrator: square wave in, triangle out</div>
+  <div class="ex-body">
+    <p>A ±2 V square wave at 5 kHz drives an integrator with \(R = 10\,\mathrm{k\Omega}\), \(C = 10\,\mathrm{nF}\). Find the output waveform and its amplitude.</p>
+    <div class="step"><span class="step-label">Step 1 — what shape?</span> During each half-period the input is <em>constant</em> (±2 V), so the output ramps <em>linearly</em> with slope \( \mp u_{\text{in}}/(RC) \). Alternating ramps = a triangle wave (inverted relative to the square).</div>
+    <div class="step"><span class="step-label">Step 2 — slope:</span>
+      \( RC = 10^4 \cdot 10^{-8} = 10^{-4}\,\mathrm{s} \), so \( |\mathrm{d}u/\mathrm{d}t| = 2\,\mathrm{V}/10^{-4}\,\mathrm{s} = 20\,\mathrm{V/ms} \).</div>
+    <div class="step"><span class="step-label">Step 3 — amplitude:</span> the ramp runs for a half-period \(T/2 = 100\,\mathrm{µs}\):
+      \( \Delta u = 20\,\mathrm{V/ms} \cdot 0.1\,\mathrm{ms} = 2\,\mathrm{V} \) peak-to-peak, i.e. a ±1 V triangle centered on 0.</div>
+    <div class="result-line">±1 V triangle at 5 kHz. Sanity check via the frequency domain: the square's fundamental (\(\hat u_1 = 4\cdot2/\pi \approx 2.55\,\mathrm{V}\)) sees gain \(1/(\omega RC) = 1/(2\pi \cdot 5000 \cdot 10^{-4}) \approx 0.32\) → \(\approx 0.81\,\mathrm{V}\) fundamental — consistent with a ±1 V triangle (whose fundamental is \(8/\pi^2 \approx 0.81\) of its peak ✓).</div>
+  </div>
+</div>
+
+<h2 id="feedback">6. Negative feedback — the central principle</h2>
+
+<p>Step back and see what Sections 4.3 and 5 kept doing: sacrifice raw gain, get precision. Harold Black formalized this in 1927. Let a forward amplifier of gain \(A\) drive the output, and let a network \(\beta\) (typically a mere voltage divider) feed a fraction of the output back and <em>subtract</em> it from the input:</p>
+
+<figure>
+  <div class="fig-frame">
+  <svg class="diagram" viewBox="0 0 640 240" role="img" aria-label="Negative feedback block diagram">
+    <!-- input -->
+    <line x1="40" y1="100" x2="124" y2="100" class="wire" marker-end="url(#arrFB)"/>
+    <text x="58" y="88" font-size="14" fill="var(--text-soft)">u<tspan baseline-shift="sub" font-size="10">in</tspan></text>
+    <!-- summing junction -->
+    <circle cx="150" cy="100" r="20" fill="none" stroke="var(--text-soft)" stroke-width="2"/>
+    <line x1="138" y1="100" x2="162" y2="100" class="wire"/>
+    <line x1="150" y1="88" x2="150" y2="112" class="wire"/>
+    <text x="128" y="82" font-size="14" fill="var(--text-soft)">+</text>
+    <text x="164" y="140" font-size="14" fill="var(--text-soft)">−</text>
+    <!-- error to A -->
+    <line x1="170" y1="100" x2="248" y2="100" class="wire" marker-end="url(#arrFB)"/>
+    <text x="208" y="86" text-anchor="middle" font-size="13" fill="var(--accent-2)">u<tspan baseline-shift="sub" font-size="10">e</tspan></text>
+    <text x="208" y="52" text-anchor="middle" font-size="12" fill="var(--text-soft)">u<tspan baseline-shift="sub" font-size="9">e</tspan> = u<tspan baseline-shift="sub" font-size="9">in</tspan> − βu<tspan baseline-shift="sub" font-size="9">out</tspan></text>
+    <!-- forward block -->
+    <rect x="250" y="70" width="130" height="60" rx="8" fill="none" stroke="var(--accent)" stroke-width="2.2"/>
+    <text x="315" y="106" text-anchor="middle" font-size="16" fill="var(--accent)">A</text>
+    <!-- output -->
+    <line x1="380" y1="100" x2="574" y2="100" class="wire" marker-end="url(#arrFB)"/>
+    <circle cx="470" cy="100" r="5" class="node"/>
+    <text x="556" y="88" font-size="14" fill="var(--text-soft)">u<tspan baseline-shift="sub" font-size="10">out</tspan></text>
+    <!-- feedback path -->
+    <path class="wire" d="M470 100 V185 H386"/>
+    <rect x="256" y="160" width="130" height="50" rx="8" fill="none" stroke="var(--accent-2)" stroke-width="2.2"/>
+    <text x="321" y="191" text-anchor="middle" font-size="15" fill="var(--accent-2)">β</text>
+    <path class="wire" d="M256 185 H150 V122" marker-end="url(#arrFB)"/>
+    <defs><marker id="arrFB" markerWidth="9" markerHeight="9" refX="7" refY="4.5" orient="auto">
+      <path d="M0 0 L8 4.5 L0 9 z" fill="var(--text-soft)"/></marker></defs>
+  </svg>
+  </div>
+  <figcaption><b>Fig. 6.1</b> — Black's feedback structure. The amplifier only ever sees the tiny error \(u_e\); the loop forces \(\beta u_{\text{out}}\) to track \(u_{\text{in}}\). In the non-inverting amp, \(A\) is the op-amp and \(\beta = R_1/(R_1{+}R_2)\) is the feedback divider.</figcaption>
+</figure>
+
+<p>Solve the loop: \(u_{\text{out}} = A\,u_e = A\,(u_{\text{in}} - \beta u_{\text{out}})\), hence</p>
+\[ \boxed{\; A_{\text{cl}} = \frac{u_{\text{out}}}{u_{\text{in}}} = \frac{A}{1 + A\beta} \;\xrightarrow{\;A\beta \gg 1\;}\; \frac{1}{\beta} \;} \]
+<p>The product \(A\beta\) is the <strong>loop gain</strong> (<span class="de">Schleifenverstärkung</span>) — the currency in which all feedback benefits are paid. If it is large, the closed-loop gain depends only on \(\beta\): only on resistors. Check with the non-inverting amp: \(\beta = R_1/(R_1+R_2)\Rightarrow A_{\text{cl}} = 1 + R_2/R_1\) ✓.</p>
+
+<h3 id="desensitization">6.1 Gain desensitization, quantified</h3>
+<p>How much does \(A_{\text{cl}}\) care about \(A\)? Differentiate \(A_{\text{cl}} = A/(1+A\beta)\):</p>
+\[ \frac{\mathrm{d}A_{\text{cl}}}{A_{\text{cl}}} = \frac{1}{1 + A\beta}\,\frac{\mathrm{d}A}{A}. \]
+<p>Relative variations of the raw amplifier are <em>divided by the loop gain</em>. Worked numbers: an op-amp with \(A = 10^5\), specified only within <b>±50 %</b> (open-loop gain really is that sloppy — it varies with temperature, supply and specimen), configured for \(A_{\text{cl}} = 10\) (\(\beta = 0.1\), loop gain \(A\beta = 10^4\)):</p>
+\[ \frac{\mathrm{d}A_{\text{cl}}}{A_{\text{cl}}} = \frac{\pm 50\,\%}{1 + 10^4} \approx \pm 0.005\,\% . \]
+<p>Verify with brute force: \(A = 10^5 \Rightarrow A_{\text{cl}} = \frac{10^5}{1+10^4} = 9.9990\); let \(A\) collapse to half, \(A = 5\cdot10^4 \Rightarrow A_{\text{cl}} = \frac{5\cdot10^4}{1+5\cdot10^3} = 9.9980\). The amplifier lost <em>half</em> its gain and the circuit changed by 0.01 %. That is why analog designers barely glance at the open-loop gain spec: any surplus is instantly converted into precision.</p>
+
+<div class="box history">
+  <div class="box-title"><span class="ic">📜</span>Black's ferry ride, 1927</div>
+  <p>Harold Black had spent years at Bell Labs fighting distortion in telephone repeater amplifiers — thousands of vacuum-tube stages in series across the continent, each adding its own nonlinearity. On the Lackawanna ferry to Manhattan on 6 August 1927 the idea struck him; he sketched the feedback equation on his newspaper. The patent office resisted for nine years ("an amplifier that throws away gain — absurd"), and colleagues warned the loop would always oscillate. The stability question was legitimate — answered by Nyquist (1932) and Bode (1940), giving us the stability theory you will meet in control engineering (Module 16). Today essentially <em>every</em> precision analog system — and every control loop from a chip's voltage regulator to a rocket's guidance — runs on Black's idea.</p>
+</div>
+
+<h3 id="gbw">6.2 Bandwidth extension and the gain–bandwidth product</h3>
+<p>A real (internally compensated) op-amp has a single-pole open-loop response: huge DC gain \(A_0\) that starts falling at −20 dB/decade from a very low corner \(f_p\) (often just 10 Hz!). Above the corner \(|A(f)| \approx A_0 f_p / f\): gain × frequency is constant. This constant is the <strong>gain–bandwidth product</strong> (<span class="de">Verstärkungs-Bandbreite-Produkt</span>):</p>
+\[ \mathrm{GBW} = A_0 f_p = |A(f)| \cdot f . \]
+<p>Close the loop and the same trade appears at your gain level: the closed-loop corner frequency is where the falling open-loop gain meets your demanded gain:</p>
+\[ \boxed{\; f_c \approx \frac{\mathrm{GBW}}{A_{\text{cl}}} \;} \]
+<p>Feedback <em>buys bandwidth with surplus gain</em>: the loop gain that desensitized \(A_{\text{cl}}\) also holds the response flat until there is no surplus left. Worked example: a µA741-class op-amp has GBW = 1 MHz. At gain 1000 (60 dB) it is flat only to 1 kHz — useless even for audio. At gain 10: 100 kHz. As a follower (gain 1): the full 1 MHz. Need 40 dB of gain across 100 kHz? Then you need GBW ≥ 10 MHz, or you split the job into two ×10 stages (each needs only 1 MHz — cascading relaxes the requirement multiplicatively, another reason multi-stage design survives).</p>
+
+<div class="widget">
+  <div class="w-head"><span class="ic">🧪</span>Interactive — the gain–bandwidth trade-off <span class="w-tag">Bode plot</span></div>
+  <div class="w-body">
+    <p class="small mt0">Closed-loop frequency response of a non-inverting amplifier. Raise the demanded gain and watch the bandwidth shrink so that gain × bandwidth stays pinned at the GBW — the corner slides along the −20 dB/decade open-loop roll-off. The phase plot shows the single-pole −45° point at \(f_c\).</p>
+    <div id="w-gbw"></div>
+  </div>
+</div>
+
+<h3 id="distortion">6.3 Distortion reduction</h3>
+<p>Nonlinearity is a signal-dependent gain error, and feedback divides <em>all</em> gain errors by \(1 + A\beta\). An output stage with an ugly 10 % kink in its transfer curve, wrapped in a loop with a loop gain of 1000, shows a residual distortion of roughly 0.01 %. This — not exotic transistors — is why a 30 € audio amplifier IC achieves 0.003 % THD. The same division also applies to the output resistance (\(r_{\text{out}}\) drops by \(1+A\beta\), to milliohms) and to hum injected inside the loop. Feedback is a universal error-squasher; the only sin it cannot fix is clipping (once the output hits the rail, there is no gain left to close the loop — see the widget in Section 5).</p>
+
+<h2 id="comparator">7. Comparators and positive feedback</h2>
+
+<h3 id="comp-vs-opamp">7.1 The comparator — an op-amp with no loop</h3>
+<p>Remove all feedback and the op-amp's huge gain becomes a feature: the output can only sit at one rail or the other, depending on the sign of \(u_+ - u_-\). Used this way the device is a <strong>comparator</strong> (<span class="de">Komparator</span>) — a 1-bit answer to "is the signal above the threshold?", the bridge from analog to digital (Module 13 onward). Dedicated comparator ICs (LM311, LM393) are built for this job: they switch in nanoseconds and have logic-compatible outputs, but are <em>not</em> internally compensated and must never be used as amplifiers — just as a compensated op-amp makes a sluggish comparator (its compensation capacitor limits slewing, Section 10).</p>
+
+<h3 id="schmitt">7.2 The Schmitt trigger — hysteresis from positive feedback</h3>
+<p>A bare comparator has a fatal flaw with real, noisy signals: near the threshold, every noise wiggle re-crosses it, and the output <em>chatters</em> — dozens of spurious edges per genuine transition. Imagine a thermostat set to 20.0 °C switching the heating on and off ten times a minute as the sensor reading flickers by ±0.1 K. The cure is deliberately applied <strong>positive feedback</strong> (<span class="de">Mitkopplung</span>): feed a fraction of the output back to the <em>non-inverting</em> input, so the act of switching <em>moves the threshold away</em> from the signal. This is the <strong>Schmitt trigger</strong> (Otto Schmitt, 1937 — invented, delightfully, to model squid neurons).</p>
+<p>Take the inverting configuration: signal on the − input, and a divider \(R_1\) (to ground), \(R_2\) (to output) setting \(u_+ = \beta\,u_{\text{out}}\) with \(\beta = \frac{R_1}{R_1+R_2}\). Derive the thresholds:</p>
+<ol>
+  <li>Suppose the output is high, \(u_{\text{out}} = +U_{\text{sat}}\). Then the effective threshold is \(u_+ = +\beta U_{\text{sat}}\). The output flips only when the input <em>rises past</em> \(U_{T+} = +\beta U_{\text{sat}}\).</li>
+  <li>The instant it flips, \(u_{\text{out}} = -U_{\text{sat}}\) and the threshold <em>jumps down</em> to \(U_{T-} = -\beta U_{\text{sat}}\). To flip back, the input must fall all the way below \(U_{T-}\).</li>
+</ol>
+\[ \boxed{\; U_{T\pm} = \pm\,\beta\, U_{\text{sat}}, \qquad \Delta U_H = U_{T+} - U_{T-} = 2\,\frac{R_1}{R_1+R_2}\,U_{\text{sat}} \;} \]
+<p>The gap \(\Delta U_H\) is the <strong>hysteresis</strong> (<span class="de">Hysterese</span>): the circuit remembers its last decision and demands real evidence, not noise, to change its mind. Any noise smaller than \(\Delta U_H\) cannot cause chatter. The thermostat becomes: heat ON below 19.5 °C, OFF above 20.5 °C — a 1 K deadband, and the furnace cycles calmly.</p>
+
+<figure>
+  <div class="fig-frame">
+  <svg class="diagram" viewBox="0 0 560 300" role="img" aria-label="Schmitt trigger transfer characteristic with hysteresis loop">
+    <!-- axes -->
+    <line x1="60" y1="150" x2="510" y2="150" stroke="var(--text-soft)" stroke-width="1.6" marker-end="url(#arrST)"/>
+    <line x1="280" y1="270" x2="280" y2="34" stroke="var(--text-soft)" stroke-width="1.6" marker-end="url(#arrST)"/>
+    <text x="516" y="168" font-size="13" fill="var(--text-soft)">u<tspan baseline-shift="sub" font-size="10">in</tspan></text>
+    <text x="292" y="42" font-size="13" fill="var(--text-soft)">u<tspan baseline-shift="sub" font-size="10">out</tspan></text>
+    <!-- saturation levels -->
+    <line x1="60" y1="70" x2="510" y2="70" stroke="var(--text-faint)" stroke-dasharray="5 5"/>
+    <line x1="60" y1="230" x2="510" y2="230" stroke="var(--text-faint)" stroke-dasharray="5 5"/>
+    <text x="60" y="62" font-size="12" fill="var(--text-soft)">+U<tspan baseline-shift="sub" font-size="9">sat</tspan></text>
+    <text x="60" y="248" font-size="12" fill="var(--text-soft)">−U<tspan baseline-shift="sub" font-size="9">sat</tspan></text>
+    <!-- upper branch: out=+Usat valid until UT+ (x=350) -->
+    <line x1="90" y1="70" x2="350" y2="70" stroke="var(--accent)" stroke-width="2.6"/>
+    <line x1="350" y1="70" x2="350" y2="230" stroke="var(--accent)" stroke-width="2.6"/>
+    <!-- lower branch: out=-Usat valid down to UT- (x=210) -->
+    <line x1="480" y1="230" x2="210" y2="230" stroke="var(--accent-2)" stroke-width="2.6"/>
+    <line x1="210" y1="230" x2="210" y2="70" stroke="var(--accent-2)" stroke-width="2.6"/>
+    <!-- direction arrows -->
+    <line x1="250" y1="70" x2="300" y2="70" stroke="var(--accent)" stroke-width="2.4" marker-end="url(#arrSTa)"/>
+    <line x1="350" y1="130" x2="350" y2="180" stroke="var(--accent)" stroke-width="2.4" marker-end="url(#arrSTa)"/>
+    <line x1="330" y1="230" x2="270" y2="230" stroke="var(--accent-2)" stroke-width="2.4" marker-end="url(#arrSTb)"/>
+    <line x1="210" y1="170" x2="210" y2="120" stroke="var(--accent-2)" stroke-width="2.4" marker-end="url(#arrSTb)"/>
+    <!-- threshold labels -->
+    <text x="358" y="196" font-size="12.5" fill="var(--text-soft)">U<tspan baseline-shift="sub" font-size="9">T+</tspan></text>
+    <text x="176" y="112" font-size="12.5" fill="var(--text-soft)">U<tspan baseline-shift="sub" font-size="9">T−</tspan></text>
+    <!-- hysteresis width -->
+    <line x1="210" y1="188" x2="350" y2="188" stroke="var(--text-faint)" stroke-width="1.4" stroke-dasharray="3 4"/>
+    <text x="280" y="206" text-anchor="middle" font-size="12" fill="var(--text-soft)">ΔU<tspan baseline-shift="sub" font-size="9">H</tspan></text>
+    <defs>
+      <marker id="arrST" markerWidth="9" markerHeight="9" refX="7" refY="4.5" orient="auto"><path d="M0 0 L8 4.5 L0 9 z" fill="var(--text-soft)"/></marker>
+      <marker id="arrSTa" markerWidth="9" markerHeight="9" refX="7" refY="4.5" orient="auto"><path d="M0 0 L8 4.5 L0 9 z" fill="var(--accent)"/></marker>
+      <marker id="arrSTb" markerWidth="9" markerHeight="9" refX="7" refY="4.5" orient="auto"><path d="M0 0 L8 4.5 L0 9 z" fill="var(--accent-2)"/></marker>
+    </defs>
+  </svg>
+  </div>
+  <figcaption><b>Fig. 7.1</b> — Transfer characteristic of the inverting Schmitt trigger. Upper branch: path while the input rises (output flips at \(U_{T+}\)); lower branch: path while it falls (flips back at \(U_{T-}\)). The enclosed rectangle is the hysteresis — a one-bit memory drawn as a curve.</figcaption>
+</figure>
+
+<div class="widget">
+  <div class="w-head"><span class="ic">🧪</span>Interactive — Schmitt trigger vs. noisy signal <span class="w-tag">simulation</span></div>
+  <div class="w-body">
+    <p class="small mt0">A slow sine buried in noise drives an inverting comparator. With hysteresis at zero you get a plain comparator: count the transitions — it chatters at every crossing. Now widen the hysteresis until the transition count drops to the ideal 8 (two per period). Then increase the noise and see how much hysteresis you need to stay clean: the rule is \(\Delta U_H \gtrsim 2 \times\) peak noise.</p>
+    <div id="w-schmitt"></div>
+  </div>
+</div>
+
+<h2 id="active-filters">8. Active filters</h2>
+
+<h3 id="first-order-active">8.1 First order: an RC filter with benefits</h3>
+<p>Passive RC filters (Module 05) suffer when loaded — the load resistance becomes part of the filter and shifts the cutoff. Put the RC network into an op-amp circuit and the problem vanishes. The <strong>active low-pass</strong>: an inverting amplifier with \(C\) in parallel with \(R_2\):</p>
+\[ \underline{H}(j\omega) = -\frac{R_2}{R_1}\cdot\frac{1}{1 + j\omega R_2 C}, \qquad f_c = \frac{1}{2\pi R_2 C}. \]
+<p>At low frequencies the capacitor is open and the gain is \(-R_2/R_1\) — the filter can <em>amplify</em> while filtering. Above \(f_c\) the capacitor progressively shorts out \(R_2\): −20 dB/decade. Swap the capacitor into the input branch (in series with \(R_1\)) and you get the matching <strong>active high-pass</strong>. The op-amp's near-zero output resistance means the next stage never detunes this one: filters become LEGO bricks that cascade cleanly — the property that makes higher-order filters practical.</p>
+
+<h3 id="sallen-key">8.2 Second order: the Sallen–Key stage and Q</h3>
+<p>Steeper filtering needs second-order sections with <em>complex</em> pole pairs — something two cascaded RCs can never provide (two real poles give a droopy, gradual knee). Passively you would need an inductor; actively, a little positive feedback through a capacitor does the job. The classic <strong>Sallen–Key low-pass</strong> (1955): two Rs, two Cs, and a follower whose output bootstraps the first capacitor. Its transfer function is the standard second-order low-pass:</p>
+\[ \underline{H}(s) = \frac{1}{1 + \dfrac{s}{\omega_0 Q} + \dfrac{s^2}{\omega_0^2}}, \qquad
+   \omega_0 = \frac{1}{\sqrt{R_1 R_2 C_1 C_2}}, \quad
+   Q = \frac{\sqrt{R_1 R_2 C_1 C_2}}{(R_1 + R_2)\,C_2} \;\overset{R_1=R_2}{=}\; \frac12\sqrt{\frac{C_1}{C_2}} . \]
+<p>The <strong>quality factor</strong> \(Q\) (<span class="de">Güte</span>, same Q as in resonant circuits, Module 05) shapes the knee: \(Q &lt; 0.5\) — two real poles, sluggish; \(Q = 1/\sqrt{2} \approx 0.707\) — <em>maximally flat</em> passband; \(Q &gt; 0.707\) — the response <em>peaks</em> by \(\approx 20\log_{10} Q\) dB near \(f_0\) before falling. High Q buys a sharper corner at the price of peaking (and ringing in the time domain — the two are the same physics).</p>
+
+<div class="widget">
+  <div class="w-head"><span class="ic">🧪</span>Interactive — Sallen–Key low-pass: the role of Q <span class="w-tag">Bode plot</span></div>
+  <div class="w-body">
+    <p class="small mt0">Sweep \(Q\) from overdamped to strongly peaking and watch the knee morph; the stopband slope is always −40 dB/decade. At \(Q = 0.707\) (Butterworth) the passband is maximally flat — nudge Q either way and you either droop early or grow a resonant bump. The phase always passes −90° at \(f_0\).</p>
+    <div id="w-sallenkey"></div>
+  </div>
+</div>
+
+<p><strong>Filter families in one paragraph:</strong> a real specification ("flat to 1 kHz, −60 dB by 4 kHz") is met by cascading second-order sections with specific \((f_0, Q)\) recipes, and the recipes have names. <b>Butterworth</b> (<span class="de">Potenzfilter</span>): maximally flat passband, honest all-rounder. <b>Chebyshev</b>: steepest cutoff for a given order, paid for with ripple in the passband and worse ringing. <b>Bessel</b> (<span class="de">Thomson-Filter</span>): sacrifices steepness for a maximally flat <em>group delay</em> — all frequencies delayed equally, so pulses and square waves pass undistorted; the choice wherever waveform shape matters (audio crossovers, data acquisition anti-aliasing before precise time-domain measurements). Same circuit topology, different component values — the design tables live in every filter handbook and in tools like TI's FilterPro.</p>
+
+<h2 id="oscillators">9. Oscillators — amplifiers that feed themselves</h2>
+
+<p>Positive feedback, dosed carefully, does more than make Schmitt triggers: it makes signal <em>sources</em>. Take an amplifier \(A\) and return its output through a frequency-selective network \(\beta(j\omega)\) to its input <em>without</em> any external signal. A self-sustaining oscillation at frequency \(f_0\) exists exactly when a signal completes the loop and arrives back as its identical self — the <strong>Barkhausen criterion</strong> (<span class="de">Schwingbedingung</span>, Heinrich Barkhausen, 1921):</p>
+\[ \boxed{\; |\underline{A}\,\underline{\beta}(j\omega_0)| = 1 \quad\text{and}\quad \arg\big(\underline{A}\,\underline{\beta}(j\omega_0)\big) = 0° \;(n\cdot360°) \;} \]
+<p>Phase condition selects the frequency; magnitude condition sustains the amplitude. In practice the loop gain is set slightly above 1 so oscillation reliably starts from noise, and some gentle nonlinearity trims it back to exactly 1 as the amplitude grows.</p>
+
+<div class="example">
+  <div class="ex-head"><span class="ex-tag">Worked example</span> Wien bridge oscillator</div>
+  <div class="ex-body">
+    <p>The Wien network — series RC feeding parallel RC (equal R, equal C) — is placed from the op-amp output back to the + input. Where does it oscillate, and what gain must the amplifier provide? Take \(R = 1.59\,\mathrm{k\Omega}\), \(C = 100\,\mathrm{nF}\).</p>
+    <div class="step"><span class="step-label">Step 1 — feedback ratio of the Wien network:</span> with \(\underline{Z}_s = R + \tfrac{1}{j\omega C}\) (series) and \(\underline{Z}_p = R \parallel \tfrac{1}{j\omega C} = \tfrac{R}{1+j\omega RC}\):
+      \[ \underline{\beta} = \frac{\underline{Z}_p}{\underline{Z}_s + \underline{Z}_p} = \frac{1}{3 + j\left(\omega RC - \frac{1}{\omega RC}\right)} . \]</div>
+    <div class="step"><span class="step-label">Step 2 — phase condition:</span> \(\arg\underline{\beta} = 0\) requires the imaginary term to vanish: \(\omega_0 RC = 1/(\omega_0 RC)\), i.e.
+      \( f_0 = \dfrac{1}{2\pi RC} = \dfrac{1}{2\pi \cdot 1590 \cdot 10^{-7}} \approx 1.0\,\mathrm{kHz} \).</div>
+    <div class="step"><span class="step-label">Step 3 — magnitude condition:</span> at \(f_0\), \(\underline{\beta} = 1/3\). The amplifier must therefore supply exactly \(A = 3\): a non-inverting amp with \(R_2/R_1 = 2\).</div>
+    <div class="result-line">\(f_0 \approx 1\,\mathrm{kHz}\), amplifier gain 3.00. The catch: gain 2.99 → the oscillation dies; 3.01 → it grows until clipping. Real Wien oscillators use an amplitude-dependent element in \(R_1\) — classically a small incandescent lamp whose resistance rises as it warms — to regulate the gain to exactly 3 with a clean, low-distortion sine.</div>
+  </div>
+</div>
+
+<div class="box history">
+  <div class="box-title"><span class="ic">📜</span>The oscillator that started Silicon Valley</div>
+  <p>The lamp-stabilized Wien bridge oscillator was Bill Hewlett's master's thesis at Stanford (1939). He and Dave Packard built it in a Palo Alto garage as the HP200A audio oscillator; Walt Disney bought eight of the follow-up model to mix the soundtrack of <em>Fantasia</em>. The garage is now a California Historic Landmark — "Birthplace of Silicon Valley". Elegant analog design, literally foundational.</p>
+</div>
+
+<p>Not every oscillator needs a sine. <strong>Relaxation oscillators</strong> (<span class="de">Kippschwingungen</span>) charge a capacitor toward one Schmitt-trigger threshold, flip, discharge toward the other, flip back — producing square (and, at the capacitor, quasi-triangular) waves with \(f \approx \frac{1}{2RC\,\ln\frac{1+\beta}{1-\beta}}\) (derivation: Exercise E7 — it is Module 06's RC step response applied twice per period). The legendary <b>555 timer</b> (1972, still produced by the hundreds of millions per year) is exactly this: two comparators at \(\tfrac13 U_{CC}\) and \(\tfrac23 U_{CC}\), a flip-flop, and a discharge transistor. For serious frequency stability, none of the above suffices: quartz crystal oscillators (Module 21) hold \(10^{-6}\) where RC oscillators drift at \(10^{-2}\).</p>
+
+<h2 id="real-opamps">10. Real op-amps — reading the datasheet</h2>
+
+<p>The golden rules describe a fictional device. Real op-amps deviate in ways that dominate practical design, so let us break each idealization honestly:</p>
+<ul>
+  <li><strong>Input offset voltage</strong> \(U_{os}\) (<span class="de">Offsetspannung</span>): the two inputs are never perfectly matched; the op-amp behaves as if a small DC source (0.1–5 mV, precision types &lt; 25 µV) sat in series with one input. It is amplified by the full <em>noise gain</em> \(1 + R_2/R_1\): a 2 mV offset in a gain-100 stage produces a 0.2 V output error — catastrophic for the 0–5 V sensor design of Section 5. Drifts with temperature (µV/K); zero-drift (chopper) op-amps fix this by design.</li>
+  <li><strong>Input bias current</strong> \(I_B\) (<span class="de">Eingangsruhestrom</span>): the inputs do draw current — µA for old bipolar parts (µA741), pA for FET/CMOS inputs. Flowing through your feedback resistors it creates additional offset (\(I_B \cdot R\)); with a 1 µF integrator capacitor, 80 nA of bias current ramps the output by 80 mV per second all by itself. High-impedance sources (pH probes, photodiodes) demand FET inputs.</li>
+  <li><strong>Finite GBW</strong>: Section 6.2 — check \(f_c = \mathrm{GBW}/A_{\text{cl}}\) against your signal band, with margin, because gain error grows well below \(f_c\).</li>
+  <li><strong>Slew rate</strong> SR (<span class="de">Anstiegsgeschwindigkeit</span>): the maximum <em>rate of change</em> of the output voltage, set by the internal compensation capacitor being charged with a finite current: \(\mathrm{SR} = (\mathrm{d}u/\mathrm{d}t)_{max}\), typically 0.5 V/µs (µA741) to &gt;1000 V/µs. This is a <em>large-signal, nonlinear</em> limit, distinct from GBW: a sine \(u = \hat{U}\sin\omega t\) needs a peak slope \(\omega\hat{U}\), so undistorted output requires
+  \[ \boxed{\; f \le f_{max} = \frac{\mathrm{SR}}{2\pi \hat{U}} \;} \]
+  Beyond it, sines leave as triangles. Small signals may still be fine at that frequency — GBW limits the small, SR the large.</li>
+  <li><strong>Output swing / rail-to-rail</strong>: classic op-amps leave 1.5–2 V unreachable near each rail; <b>rail-to-rail</b> output stages get within millivolts — essential at today's 3.3 V single supplies, where losing 2×1.5 V would leave almost nothing. "Rail-to-rail input" is a separate spec (common-mode range); read both.</li>
+</ul>
+
+<div class="example">
+  <div class="ex-head"><span class="ex-tag">Worked example</span> Slew-rate limit of a 10 V, 100 kHz sine</div>
+  <div class="ex-body">
+    <p>An amplifier must deliver \(\hat{U} = 10\,\mathrm{V}\) at \(f = 100\,\mathrm{kHz}\). (a) What slew rate is required? (b) Up to what frequency could a µA741 (SR = 0.5 V/µs) deliver this amplitude? (c) Could the 741 still amplify a 100 mV signal at 100 kHz?</p>
+    <div class="step"><span class="step-label">Step (a) — required SR:</span> maximum slope of a sine is at the zero crossing:
+      \( \left(\frac{\mathrm{d}u}{\mathrm{d}t}\right)_{max} = \omega\hat{U} = 2\pi \cdot 10^5 \cdot 10 \approx 6.28\cdot10^6\,\mathrm{V/s} = 6.3\,\mathrm{V/µs} \). We need a ≥ 10 V/µs part for margin (e.g. TL072: 13 V/µs ✓).</div>
+    <div class="step"><span class="step-label">Step (b) — 741's full-power bandwidth:</span>
+      \( f_{max} = \frac{\mathrm{SR}}{2\pi\hat{U}} = \frac{0.5\cdot10^6\,\mathrm{V/s}}{2\pi \cdot 10\,\mathrm{V}} \approx 8.0\,\mathrm{kHz} \). Thirteen times too slow — a 10 V, 100 kHz "sine" from a 741 is a 0.5 V/µs triangle.</div>
+    <div class="step"><span class="step-label">Step (c) — small signal:</span> at \(\hat U = 0.1\,\mathrm{V}\): required SR \(= 2\pi\cdot10^5\cdot0.1 \approx 0.063\,\mathrm{V/µs}\) ✓ slew-safe. But now check GBW: 1 MHz / 100 kHz = 10 — only gain 10 is available with zero margin. The two limits are independent gates; a signal must pass both.</div>
+    <div class="result-line">6.3 V/µs required; the 741 manages 10 V only to 8 kHz. Slew rate scales with <em>amplitude × frequency</em> — halve the swing, double the reachable frequency.</div>
+  </div>
+</div>
+
+<div class="box key">
+  <div class="box-title"><span class="ic">🔑</span>Reading the datasheet — a 60-second protocol</div>
+  <p>Given any op-amp datasheet, extract in order: <b>(1)</b> supply range &amp; rail-to-rail? — does it work at your voltage at all; <b>(2)</b> GBW vs. your gain × bandwidth; <b>(3)</b> slew rate vs. \(2\pi f \hat U\) of your <em>largest, fastest</em> output; <b>(4)</b> \(U_{os}\) × noise gain vs. your error budget; <b>(5)</b> \(I_B\) × your resistance level; <b>(6)</b> input voltage noise \(e_n\) (nV/√Hz) if you amplify µV signals; <b>(7)</b> output current vs. your load. Anything spec'd "typical" may legally be worse — design against the "max/min" column. And beware: the front-page headline numbers are chosen by marketing, the table on page 5 by engineers.</p>
+</div>
+
+<div class="table-wrap">
+<table class="data">
+<thead><tr><th>Op-amp (era)</th><th>GBW</th><th>Slew rate</th><th>U<sub>os</sub> (typ)</th><th>I<sub>B</sub></th><th>Character</th></tr></thead>
+<tbody>
+<tr><td>µA741 (1968, bipolar)</td><td>1 MHz</td><td>0.5 V/µs</td><td>1 mV</td><td>80 nA</td><td>the historic default; teaching relic</td></tr>
+<tr><td>TL072 (1978, JFET)</td><td>3 MHz</td><td>13 V/µs</td><td>3 mV</td><td>65 pA</td><td>audio workhorse, high-Z inputs</td></tr>
+<tr><td>OPA2188 (zero-drift CMOS)</td><td>2 MHz</td><td>0.8 V/µs</td><td>6 µV</td><td>160 pA</td><td>precision DC, sensor front-ends</td></tr>
+<tr><td>OPA855 (high-speed bipolar)</td><td>8 GHz</td><td>2750 V/µs</td><td>0.5 mV</td><td>µA range</td><td>photodiode/optical receivers</td></tr>
+</tbody>
+</table>
+</div>
+
+<div class="box german">
+  <div class="box-title"><span class="ic">🇩🇪</span>Vokabeln</div>
+  <p>amplifier = <span class="de">Verstärker</span> · gain = <span class="de">Verstärkung</span> · operating point = <span class="de">Arbeitspunkt</span> · bias(ing) = <span class="de">Vorspannung / Arbeitspunkteinstellung</span> · small-signal = <span class="de">Kleinsignal-</span> · transconductance = <span class="de">Steilheit</span> · coupling capacitor = <span class="de">Koppelkondensator</span> · common-source/-emitter stage = <span class="de">Source-/Emitterschaltung</span> · op-amp = <span class="de">Operationsverstärker (OPV)</span> · virtual short = <span class="de">virtueller Kurzschluss</span> · negative/positive feedback = <span class="de">Gegenkopplung/Mitkopplung</span> · loop gain = <span class="de">Schleifenverstärkung</span> · gain–bandwidth product = <span class="de">Verstärkungs-Bandbreite-Produkt</span> · comparator = <span class="de">Komparator</span> · hysteresis = <span class="de">Hysterese</span> · cutoff frequency = <span class="de">Grenzfrequenz</span> · quality factor = <span class="de">Güte</span> · oscillation condition = <span class="de">Schwingbedingung</span> · offset voltage = <span class="de">Offsetspannung</span> · slew rate = <span class="de">Anstiegsgeschwindigkeit</span></p>
+</div>
+
+<h2 id="summary">11. Formula summary — <span class="de">Formelsammlung</span></h2>
+
+<div class="table-wrap">
+<table class="data">
+<thead><tr><th>Concept</th><th>Formula</th><th>Remember as</th></tr></thead>
+<tbody>
+<tr><td>Voltage gain in dB</td><td>\( 20\log_{10}|U_2/U_1| \)</td><td>20 for voltage, 10 for power</td></tr>
+<tr><td>dB anchors</td><td>\( \times2 \,\hat{=}\, 6\,\mathrm{dB},\ \times10 \,\hat{=}\, 20\,\mathrm{dB},\ \tfrac{1}{\sqrt2} \,\hat{=}\, -3\,\mathrm{dB} \)</td><td>cascade = add dB</td></tr>
+<tr><td>Transconductance</td><td>\( g_m = \mathrm{d}i_D/\mathrm{d}u_{GS}|_Q \); BJT: \( g_m = I_C/U_T \)</td><td>Taylor's 1st term at the OP</td></tr>
+<tr><td>Common source</td><td>\( A_u = -g_m R_D \); degenerated: \( \approx -R_D/R_S \)</td><td>inverting; \(R_S\) = proto-feedback</td></tr>
+<tr><td>Inverting amp</td><td>\( A_u = -R_2/R_1 \), \( r_{in} = R_1 \)</td><td>virtual ground at −</td></tr>
+<tr><td>Non-inverting amp</td><td>\( A_u = 1 + R_2/R_1 \ge 1 \)</td><td>huge \(r_{in}\); buffer for \(R_2{=}0\)</td></tr>
+<tr><td>Summing / difference</td><td>\( -R_f\sum u_k/R_k \) / \( \tfrac{R_2}{R_1}(u_2-u_1) \)</td><td>KCL at virtual ground</td></tr>
+<tr><td>Integrator</td><td>\( u_{out} = -\tfrac{1}{RC}\int u_{in}\,\mathrm{d}t \)</td><td>−20 dB/dec, −90°, drifts at DC</td></tr>
+<tr><td>Feedback</td><td>\( A_{cl} = \dfrac{A}{1+A\beta} \to \dfrac{1}{\beta} \)</td><td>errors ÷ (1+Aβ)</td></tr>
+<tr><td>Gain–bandwidth</td><td>\( f_c = \mathrm{GBW}/A_{cl} \)</td><td>gain × bandwidth = const</td></tr>
+<tr><td>Schmitt trigger</td><td>\( U_{T\pm} = \pm\beta U_{sat},\ \Delta U_H = 2\beta U_{sat} \)</td><td>hysteresis beats chatter</td></tr>
+<tr><td>2nd-order low-pass</td><td>\( \underline H = \big(1 + \tfrac{s}{\omega_0 Q} + \tfrac{s^2}{\omega_0^2}\big)^{-1} \)</td><td>\(Q=0.707\): Butterworth flat</td></tr>
+<tr><td>Barkhausen</td><td>\( |\underline A\underline\beta| = 1,\ \arg = 0° \)</td><td>phase picks \(f_0\), magnitude sustains</td></tr>
+<tr><td>Wien bridge</td><td>\( f_0 = \tfrac{1}{2\pi RC},\ \beta = \tfrac13 \Rightarrow A = 3 \)</td><td>HP's garage circuit</td></tr>
+<tr><td>Slew-rate limit</td><td>\( f_{max} = \mathrm{SR}/(2\pi\hat U) \)</td><td>big + fast = slew-limited</td></tr>
+</tbody>
+</table>
+</div>
+
+<h2 id="exercises">12. Exercises</h2>
+<p>Design on paper first — resistor values and all — then check against the solutions.</p>
+
+<div class="exercise">
+  <p class="ex-q"><span class="ex-num">E1</span>An inverting amplifier has \(R_1 = 2.2\,\mathrm{k\Omega}\), \(R_2 = 22\,\mathrm{k\Omega}\). Find the gain (linear and dB), the output for \(u_{in} = 0.3\sin(\omega t)\,\mathrm{V}\), and the input resistance. <span class="diff easy">easy</span></p>
+  <details><summary>Show solution</summary>
+    <div class="solution">
+      \( A_u = -22/2.2 = -10 \), i.e. \(20\log 10 = 20\,\mathrm{dB}\) (the sign does not enter the dB value).
+      Output: \( u_{out} = -3.0\sin(\omega t)\,\mathrm{V} \) — ten times larger and inverted (180° phase).
+      Input resistance: the source drives into the virtual ground through \(R_1\), so \( r_{in} = 2.2\,\mathrm{k\Omega} \) — modest; a high-impedance source would sag here, which is why Section 5.2's design chose the non-inverting topology.
+    </div>
+  </details>
+</div>
+
+<div class="exercise">
+  <p class="ex-q"><span class="ex-num">E2</span>Convert fluently: (a) a gain of ×355 to dB; (b) −34 dB to a voltage ratio; (c) an amplifier chain of +12 dB, +12 dB, −6 dB driving 8 Ω: if 0.5 V enters, what power reaches the load? <span class="diff easy">easy</span></p>
+  <details><summary>Show solution</summary>
+    <div class="solution">
+      (a) \( 20\log_{10} 355 = 20 \cdot 2.55 = 51\,\mathrm{dB} \). Anchor check: \(355 \approx 100 \cdot 2 \cdot \sqrt2 \cdot 1.25\), and \(40 + 6 + 3 + 2 = 51\,\mathrm{dB}\) ✓.
+      (b) \( 10^{-34/20} = 10^{-1.7} \approx 0.02 \) (−34 = −40 + 6: \(0.01 \times 2 = 0.02\) ✓).
+      (c) Total \(12+12-6 = 18\,\mathrm{dB} \Rightarrow \times 10^{0.9} \approx 7.94\). Output ≈ \(0.5 \cdot 7.94 = 3.97\,\mathrm{V}\); power \(P = U^2/R = 3.97^2/8 \approx 2.0\,\mathrm{W}\) (using RMS-in ⇒ RMS-out).
+    </div>
+  </details>
+</div>
+
+<div class="exercise">
+  <p class="ex-q"><span class="ex-num">E3</span>A common-source stage runs at \(I_{D,Q} = 0.5\,\mathrm{mA}\) with overdrive \(U_{GS,Q}-U_{th} = 0.25\,\mathrm{V}\) and \(R_D = 6.8\,\mathrm{k\Omega}\). Find \(g_m\), the gain (linear + dB), and the gain if a source resistor \(R_S = 250\,\Omega\) is added. What did \(R_S\) buy? <span class="diff med">medium</span></p>
+  <details><summary>Show solution</summary>
+    <div class="solution">
+      \( g_m = \frac{2 I_D}{U_{ov}} = \frac{2\cdot0.5\,\mathrm{mA}}{0.25\,\mathrm{V}} = 4\,\mathrm{mS} \).
+      Undegenerated: \( A_u = -g_m R_D = -4\,\mathrm{mS}\cdot6.8\,\mathrm{k\Omega} = -27.2 \) → \(20\log 27.2 \approx 28.7\,\mathrm{dB}\).
+      With \(R_S\): \( A_u = \frac{-g_m R_D}{1+g_m R_S} = \frac{-27.2}{1+4\cdot0.25} = \frac{-27.2}{2} = -13.6 \).
+      Bought: half the gain traded for stability. Sensitivity check — if temperature shifts \(g_m\) by +20 % (to 4.8 mS), the raw gain moves to −32.6 (+20 %), but the degenerated gain only to \(-32.6/(1+4.8\cdot0.25) = -14.8\) (+9 %): variations are divided by \(1 + g_m R_S\), exactly the feedback formula of Section 6. (Amusingly, here \(g_m R_S = 1\) makes the asymptotic limit \(-R_D/R_S = -27.2\) numerically equal to the raw gain — pure coincidence of the chosen values; the limit is approached only for \(g_m R_S \gg 1\).)
+    </div>
+  </details>
+</div>
+
+<div class="exercise">
+  <p class="ex-q"><span class="ex-num">E4</span>Design an inverting Schmitt trigger with \(U_{sat} = \pm 12\,\mathrm{V}\) whose thresholds are \(\pm 0.6\,\mathrm{V}\). Choose sensible resistors. How much peak noise can the input tolerate without chattering? <span class="diff med">medium</span></p>
+  <details><summary>Show solution</summary>
+    <div class="solution">
+      Required \(\beta = U_{T+}/U_{sat} = 0.6/12 = 0.05 = \frac{R_1}{R_1+R_2}\) → \( R_2 = 19\,R_1 \).
+      Pick \(R_1 = 1\,\mathrm{k\Omega}\), \(R_2 = 19\,\mathrm{k\Omega}\) (E24: 1 k / 18 k gives ±0.63 V, fine). kΩ-range keeps the divider stiff against bias currents without loading the output.
+      Hysteresis width \(\Delta U_H = 1.2\,\mathrm{V}\): noise up to ±0.6 V peak riding on the signal cannot re-cross both thresholds, so the output stays clean — provided the <em>signal</em> itself swings well beyond ±0.6 V.
+    </div>
+  </details>
+</div>
+
+<div class="exercise">
+  <p class="ex-q"><span class="ex-num">E5</span>A non-inverting amplifier with gain 50 uses an op-amp with GBW = 1 MHz and \(U_{os} = 2\,\mathrm{mV}\). Find (a) the closed-loop bandwidth, (b) the DC output error from the offset, (c) the gain error at 10 kHz. <span class="diff med">medium</span></p>
+  <details><summary>Show solution</summary>
+    <div class="solution">
+      (a) \( f_c = \mathrm{GBW}/A_{cl} = 10^6/50 = 20\,\mathrm{kHz} \).
+      (b) The offset is amplified by the noise gain (= 50 here): \( 50 \cdot 2\,\mathrm{mV} = 100\,\mathrm{mV} \) of DC error at the output — 2 % of a 5 V full scale, before the signal even arrives.
+      (c) Single-pole response: \( |A(f)|/A_{cl} = 1/\sqrt{1+(f/f_c)^2} = 1/\sqrt{1+0.25} = 0.894 \) → the gain is 10.6 % low (−0.97 dB) at 10 kHz. Moral: "bandwidth 20 kHz" does not mean "accurate to 20 kHz" — for 1 % flatness you must stay below \(f_c/7\) (since \(1/\sqrt{1+(1/7)^2}\approx0.99\)).
+    </div>
+  </details>
+</div>
+
+<div class="exercise">
+  <p class="ex-q"><span class="ex-num">E6</span>Design a unity-gain Sallen–Key Butterworth low-pass with \(f_0 = 1\,\mathrm{kHz}\) using equal resistors and \(C_1 = 22\,\mathrm{nF}\). Then state its attenuation at 10 kHz. <span class="diff hard">challenge</span></p>
+  <details><summary>Show solution</summary>
+    <div class="solution">
+      Butterworth ⇒ \(Q = 1/\sqrt2 = 0.707\). Equal-R design: \( Q = \tfrac12\sqrt{C_1/C_2} \Rightarrow C_1/C_2 = 4Q^2 = 2 \Rightarrow C_2 = 11\,\mathrm{nF} \) (use 10 nF, giving \(Q = 0.74\) — 0.4 dB of peaking, usually acceptable; or parallel 10 nF + 1 nF).
+      Resistors: \( \omega_0 = \frac{1}{\sqrt{R^2 C_1 C_2}} \Rightarrow R = \frac{1}{2\pi f_0\sqrt{C_1 C_2}} = \frac{1}{2\pi\cdot10^3\cdot\sqrt{22\cdot11}\,\mathrm{nF}} = \frac{1}{2\pi\cdot10^3\cdot15.6\cdot10^{-9}} \approx 10.2\,\mathrm{k\Omega} \) → 10 kΩ, then \(f_0\) is 2 % high; fine.
+      At 10 kHz (\(r = f/f_0 = 10\)): \( |H| = 1/\sqrt{(1-100)^2 + (10/0.707)^2} \approx 1/\sqrt{9801+200} = 1/100 \) → −40 dB, exactly the −40 dB/decade promise of a second-order filter.
+    </div>
+  </details>
+</div>
+
+<div class="exercise">
+  <p class="ex-q"><span class="ex-num">E7</span>Derive the oscillation frequency of the Schmitt-trigger relaxation oscillator: an inverting Schmitt trigger (\(\beta = 0.5\), \(U_{sat} = \pm10\,\mathrm{V}\)) whose output charges a capacitor through \(R = 10\,\mathrm{k\Omega}\), \(C = 10\,\mathrm{nF}\), the capacitor voltage driving the − input. <span class="diff hard">challenge</span></p>
+  <details><summary>Show solution</summary>
+    <div class="solution">
+      Say the output has just switched to +10 V with the capacitor at the lower threshold \(-\beta U_{sat} = -5\,\mathrm{V}\). The capacitor charges toward +10 V (RC exponential, Module 06): \( u_C(t) = 10 - 15e^{-t/RC} \). It reaches the upper threshold +5 V when \( e^{-t/RC} = \frac{10-5}{15} = \frac{1-\beta}{... } \) — generally \( t_{1/2} = RC\ln\frac{1+\beta}{1-\beta} \). Here: \( t_{1/2} = RC\ln 3 \).
+      Full period \( T = 2RC\ln 3 = 2\cdot10^{-4}\cdot1.0986 \approx 220\,\mathrm{µs} \Rightarrow f \approx 4.55\,\mathrm{kHz} \).
+      Sanity: larger hysteresis (β→1) → the capacitor must travel farther → slower; f depends only on RC and β, not on \(U_{sat}\) (both the travel distance and the drive scale with \(U_{sat}\) and cancel) — which is why this humble circuit is surprisingly supply-tolerant, just like its industrial cousin, the 555.
+    </div>
+  </details>
+</div>
+
+<h2 id="quiz">13. Self-assessment</h2>
+
+<div class="quiz" data-quiz-title="Module 09 — Self-test">
+<script type="application/json">
+[
+ {"q":"An inverting amplifier has R₁ = 10 kΩ and R₂ = 150 kΩ. Its gain is…",
+  "opts":["+15, i.e. 23.5 dB","−15, i.e. 23.5 dB","−15, i.e. 11.8 dB","−16, i.e. 24.1 dB"],"a":1,
+  "explain":"\\(A_u = -R_2/R_1 = -15\\); in dB: \\(20\\log_{10}15 \\approx 23.5\\,\\mathrm{dB}\\). The minus sign is a 180° phase inversion and does not appear in the dB magnitude."},
+ {"q":"A stage has +6 dB of voltage gain. Voltage and power grow by factors…",
+  "opts":["2 and 2","2 and 4","4 and 2","6 and 36"],"a":1,
+  "explain":"+6 dB means voltage ×2 (\\(20\\log 2 \\approx 6\\)) and hence power ×4 (\\(10\\log 4 \\approx 6\\)). Same dB number, different linear factors — that is the 20/10 consistency rule."},
+ {"q":"The primary purpose of a coupling capacitor at an amplifier input is to…",
+  "opts":["filter out high-frequency noise","increase the gain at low frequencies","pass the AC signal while blocking DC so the bias point is undisturbed","protect the transistor from overvoltage"],"a":2,
+  "explain":"A capacitor is open at DC and (nearly) a short at signal frequencies: the source cannot disturb the DC operating point, and no bias current flows back into the source. Side effect: a high-pass corner at \\(f_c = 1/(2\\pi r_{in} C)\\)."},
+ {"q":"The virtual-short rule u₊ = u₋ may be applied…",
+  "opts":["to every circuit containing an op-amp","only when negative feedback is active and the output is not saturated","only when the op-amp has rail-to-rail inputs","only at DC"],"a":1,
+  "explain":"The rule is a consequence of the feedback loop, not of the chip: the output must be able to drive the input difference to zero. Comparators (no feedback) and Schmitt triggers (positive feedback) violate it — a top misconception in exams."},
+ {"q":"The minimum voltage gain of a (resistive) non-inverting op-amp amplifier is…",
+  "opts":["0","1","−1","set only by GBW"],"a":1,
+  "explain":"\\(A_u = 1 + R_2/R_1 \\ge 1\\): with \\(R_2 = 0\\) you get the voltage follower. To attenuate or invert you need the inverting topology (or a passive divider first)."},
+ {"q":"An op-amp with GBW = 8 MHz is configured for 40 dB of closed-loop gain. Its bandwidth is about…",
+  "opts":["200 kHz","80 kHz","8 MHz","2 MHz"],"a":1,
+  "explain":"40 dB is a gain of 100, so \\(f_c = \\mathrm{GBW}/A_{cl} = 8\\,\\mathrm{MHz}/100 = 80\\,\\mathrm{kHz}\\). Gain × bandwidth stays constant along the −20 dB/decade open-loop roll-off."},
+ {"q":"An op-amp with slew rate 1 V/µs must output a sine of 5 V amplitude. The maximum undistorted frequency is roughly…",
+  "opts":["200 kHz","1 MHz","32 kHz","64 kHz"],"a":2,
+  "explain":"\\(f_{max} = \\mathrm{SR}/(2\\pi\\hat U) = 10^6/(2\\pi\\cdot5) \\approx 31.8\\,\\mathrm{kHz}\\). Above this the output cannot follow the sine's zero-crossing slope \\(\\omega\\hat U\\) and degenerates into a triangle."},
+ {"q":"Negative feedback with loop gain Aβ = 999 reduces a ±40 % open-loop gain variation to about…",
+  "opts":["±4 %","±0.04 %","±40 %","±0.4 %"],"a":1,
+  "explain":"Relative variations divide by \\(1 + A\\beta = 1000\\): \\(40\\,\\%/1000 = 0.04\\,\\%\\). The same factor reduces distortion and output resistance — feedback converts surplus gain into precision."},
+ {"q":"A Schmitt trigger differs from a plain comparator in that it…",
+  "opts":["has higher gain","switches thresholds after each transition, creating a hysteresis that rejects noise","uses negative feedback to stabilize its gain","works only with square-wave inputs"],"a":1,
+  "explain":"Positive feedback moves the threshold to \\(\\pm\\beta U_{sat}\\) depending on the present output state. Noise smaller than the hysteresis width \\(2\\beta U_{sat}\\) cannot re-trigger it — no chattering, unlike the bare comparator."},
+ {"q":"For a self-sustaining sinusoidal oscillation, the Barkhausen criterion demands a loop gain of…",
+  "opts":["magnitude ≫ 1 at all frequencies","magnitude 1 and phase 0° (or n·360°) at the oscillation frequency","magnitude 1 and phase 180°","magnitude 0.5 with positive phase"],"a":1,
+  "explain":"The returning signal must reproduce itself exactly: \\(|\\underline A\\underline\\beta| = 1\\), \\(\\arg(\\underline A\\underline\\beta) = 0°\\). The phase condition selects \\(f_0\\) (e.g. \\(f_0 = 1/2\\pi RC\\) in the Wien bridge, where the amp must then supply exactly A = 3)."}
+]
+</script>
+</div>
+
+<script>
+document.addEventListener("ee-ready", () => {
+
+  /* ---- Widget 1: inverting amplifier with clipping at the rails ---- */
+  EE.functionPlot({
+    mount: "#w-invamp", height: 300,
+    x: { min: 0, max: 2, label: "t in ms" },
+    y: p => ({ min: -1.3 * p.Ur, max: 1.3 * p.Ur, label: "u in V" }),
+    params: [
+      { key: "R1", label: "R₁", min: 1, max: 20, step: 0.5, value: 10, unit: "kΩ", fmt: v => v.toFixed(1) },
+      { key: "R2", label: "R₂ (feedback)", min: 10, max: 200, step: 1, value: 47, unit: "kΩ", fmt: v => v.toFixed(0) },
+      { key: "Ua", label: "Input amplitude û_in", min: 0.05, max: 3, step: 0.05, value: 1, unit: "V", fmt: v => v.toFixed(2) },
+      { key: "Ur", label: "Supply rails ±U_s", min: 3, max: 15, step: 0.5, value: 12, unit: "V", fmt: v => v.toFixed(1) }
+    ],
+    curves: [
+      { label: "u_in", color: 0, fn: (t, p) => p.Ua * Math.sin(2 * Math.PI * t) },
+      { label: "u_out", color: 5, fn: (t, p) => {
+          const ideal = -(p.R2 / p.R1) * p.Ua * Math.sin(2 * Math.PI * t);
+          return Math.max(-p.Ur, Math.min(p.Ur, ideal));
+        } }
+    ],
+    annotations: p => [
+      { type: "hline", y: p.Ur, label: "+rail" },
+      { type: "hline", y: -p.Ur, label: "−rail" }
+    ],
+    readouts: [
+      { label: "Gain −R₂/R₁", fn: p => "−" + (p.R2 / p.R1).toFixed(2) },
+      { label: "|A| in dB", fn: p => (20 * Math.log10(p.R2 / p.R1)).toFixed(1) + " dB" },
+      { label: "Ideal û_out", fn: p => ((p.R2 / p.R1) * p.Ua).toFixed(2) + " V" },
+      { label: "Clipping?", fn: p => (p.R2 / p.R1) * p.Ua > p.Ur ? "YES — saturated at the rails" : "no — linear" }
+    ]
+  });
+
+  /* ---- Widget 2: gain-bandwidth trade-off (closed-loop Bode) ---- */
+  EE.bodePlot({
+    mount: "#w-gbw", fmin: 10, fmax: 1e8,
+    magRange: { min: -20, max: 70 }, phaseRange: { min: -110, max: 10 },
+    magLabel: "|A_cl| in dB", phaseLabel: "∠A_cl in °",
+    params: [
+      { key: "GBW", label: "Gain–bandwidth product", min: 0.2, max: 10, step: 0.2, value: 1, unit: "MHz", fmt: v => v.toFixed(1) },
+      { key: "GdB", label: "Ideal closed-loop gain", min: 0, max: 60, step: 1, value: 40, unit: "dB", fmt: v => v.toFixed(0) }
+    ],
+    mag: (f, p) => {
+      const G = Math.pow(10, p.GdB / 20), fc = p.GBW * 1e6 / G;
+      return 20 * Math.log10(G) - 10 * Math.log10(1 + (f / fc) * (f / fc));
+    },
+    phase: (f, p) => {
+      const G = Math.pow(10, p.GdB / 20), fc = p.GBW * 1e6 / G;
+      return -Math.atan(f / fc) * 180 / Math.PI;
+    },
+    annotations: (p, which) => {
+      const G = Math.pow(10, p.GdB / 20), fc = p.GBW * 1e6 / G;
+      if (which === "mag") return [
+        { type: "vline", x: fc, label: "f_c = GBW/A_cl" },
+        { type: "hline", y: p.GdB - 3, label: "−3 dB" }
+      ];
+      return [{ type: "vline", x: fc, label: "−45° at f_c" }];
+    },
+    readouts: [
+      { label: "Closed-loop gain", fn: p => "×" + EE.fmt(Math.pow(10, p.GdB / 20)) },
+      { label: "Bandwidth f_c", fn: p => EE.si(p.GBW * 1e6 / Math.pow(10, p.GdB / 20), "Hz") },
+      { label: "Gain × bandwidth", fn: p => EE.si(p.GBW * 1e6, "Hz") + " (constant!)" }
+    ]
+  });
+
+  /* ---- Widget 3: Schmitt trigger vs. noisy input (deterministic noise) ---- */
+  let schmittStats = { up: 0, dn: 0, count: 0 };
+  function schmittSim(p) {
+    /* deterministic pseudo-noise built from incommensurate sines — no Math.random */
+    const N = 1600, T = 0.040, Us = 5;
+    const half = p.hyst / 2;
+    const tArr = new Array(N + 1), uArr = new Array(N + 1), yArr = new Array(N + 1);
+    let out = Us, count = 0;
+    for (let i = 0; i <= N; i++) {
+      const t = T * i / N;
+      const noise = (Math.sin(2 * Math.PI * 2870 * t + 0.9)
+        + 0.7 * Math.sin(2 * Math.PI * 4133 * t + 2.1)
+        + 0.5 * Math.sin(2 * Math.PI * 6577 * t + 4.2)
+        + 0.3 * Math.sin(2 * Math.PI * 9391 * t + 1.7)) / 2.5;
+      const u = 2.5 * Math.sin(2 * Math.PI * 100 * t) + p.noise * noise;
+      /* inverting Schmitt: high output flips low when u > +half, low flips high when u < −half */
+      if (out > 0 && u > half) { out = -Us; count++; }
+      else if (out < 0 && u < -half) { out = Us; count++; }
+      tArr[i] = t; uArr[i] = u; yArr[i] = out;
+    }
+    schmittStats = { up: half, dn: -half, count };
+    return { tArr, uArr, yArr, N, T, Us };
+  }
+  EE.custom({
+    mount: "#w-schmitt", height: 390,
+    params: [
+      { key: "hyst", label: "Hysteresis width ΔU_H", min: 0, max: 3, step: 0.05, value: 0, unit: "V", fmt: v => v.toFixed(2) },
+      { key: "noise", label: "Noise amplitude (peak)", min: 0, max: 1.5, step: 0.05, value: 0.6, unit: "V", fmt: v => v.toFixed(2) }
+    ],
+    draw: (ctx, w, h, p, H) => {
+      const sim = schmittSim(p);
+      const k = H.ink;
+      const x0 = 52, x1 = w - 14;
+      const X = t => x0 + (t / sim.T) * (x1 - x0);
+      /* top panel: input, u ∈ [−4.2, 4.2] → y ∈ [16, 196] */
+      const y1t = 16, y1b = 196;
+      const Y1 = u => y1t + (1 - (u + 4.2) / 8.4) * (y1b - y1t);
+      /* bottom panel: output, u ∈ [−6.5, 6.5] → y ∈ [226, 366] */
+      const y2t = 226, y2b = 366;
+      const Y2 = u => y2t + (1 - (u + 6.5) / 13) * (y2b - y2t);
+
+      ctx.font = "11.5px system-ui, sans-serif";
+      /* frames + zero lines */
+      for (const [yt, yb, Y] of [[y1t, y1b, Y1], [y2t, y2b, Y2]]) {
+        ctx.strokeStyle = k.axis; ctx.lineWidth = 1;
+        ctx.strokeRect(x0, yt, x1 - x0, yb - yt);
+        ctx.strokeStyle = k.grid;
+        ctx.beginPath(); ctx.moveTo(x0, Y(0)); ctx.lineTo(x1, Y(0)); ctx.stroke();
+      }
+      /* time ticks every 10 ms */
+      ctx.fillStyle = k.muted; ctx.textAlign = "center"; ctx.textBaseline = "top";
+      for (let ms = 0; ms <= 40; ms += 10) {
+        const x = X(ms / 1000);
+        ctx.fillText(ms + " ms", x, y2b + 5);
+        ctx.strokeStyle = k.grid;
+        ctx.beginPath(); ctx.moveTo(x, y2t); ctx.lineTo(x, y2b); ctx.stroke();
+        ctx.beginPath(); ctx.moveTo(x, y1t); ctx.lineTo(x, y1b); ctx.stroke();
+      }
+      /* threshold lines (top panel) */
+      const half = p.hyst / 2;
+      ctx.strokeStyle = H.color(2); ctx.setLineDash([5, 4]); ctx.lineWidth = 1.5;
+      ctx.beginPath(); ctx.moveTo(x0, Y1(half)); ctx.lineTo(x1, Y1(half)); ctx.stroke();
+      ctx.beginPath(); ctx.moveTo(x0, Y1(-half)); ctx.lineTo(x1, Y1(-half)); ctx.stroke();
+      ctx.setLineDash([]);
+      ctx.fillStyle = H.color(2); ctx.textAlign = "left"; ctx.textBaseline = "bottom";
+      ctx.fillText("U_T+ = " + half.toFixed(2) + " V", x0 + 6, Y1(half) - 2);
+      ctx.textBaseline = "top";
+      ctx.fillText("U_T−", x0 + 6, Y1(-half) + 2);
+      /* input curve */
+      ctx.strokeStyle = H.color(0); ctx.lineWidth = 1.8;
+      ctx.beginPath();
+      for (let i = 0; i <= sim.N; i++) {
+        const x = X(sim.tArr[i]), y = Y1(Math.max(-4.2, Math.min(4.2, sim.uArr[i])));
+        i ? ctx.lineTo(x, y) : ctx.moveTo(x, y);
+      }
+      ctx.stroke();
+      /* output curve (step) */
+      ctx.strokeStyle = H.color(5); ctx.lineWidth = 2.2;
+      ctx.beginPath();
+      for (let i = 0; i <= sim.N; i++) {
+        const x = X(sim.tArr[i]), y = Y2(sim.yArr[i]);
+        if (!i) ctx.moveTo(x, y);
+        else { ctx.lineTo(x, Y2(sim.yArr[i - 1])); ctx.lineTo(x, y); }
+      }
+      ctx.stroke();
+      /* panel labels */
+      ctx.fillStyle = H.color(0); ctx.font = "600 12px system-ui, sans-serif";
+      ctx.textAlign = "left"; ctx.textBaseline = "top";
+      ctx.fillText("input: 100 Hz sine + noise (V)", x0 + 6, y1t + 4);
+      ctx.fillStyle = H.color(5);
+      ctx.fillText("comparator output (inverting, ±5 V)", x0 + 6, y2t + 4);
+    },
+    readouts: [
+      { label: "Thresholds U_T±", fn: p => "±" + (p.hyst / 2).toFixed(2) + " V" },
+      { label: "Output transitions (ideal: 8)", fn: () => schmittStats.count + (schmittStats.count > 8 ? "  ⚠ chattering!" : "  ✓ clean") }
+    ]
+  });
+
+  /* ---- Widget 4: Sallen-Key low-pass with Q ---- */
+  EE.bodePlot({
+    mount: "#w-sallenkey", fmin: 20, fmax: 1e5,
+    magRange: { min: -60, max: 20 }, phaseRange: { min: -190, max: 10 },
+    magLabel: "|H| in dB", phaseLabel: "∠H in °",
+    params: [
+      { key: "f0", label: "Corner frequency f₀", min: 200, max: 10000, step: 100, value: 2000, unit: "Hz", fmt: v => v.toFixed(0) },
+      { key: "Q", label: "Quality factor Q", min: 0.3, max: 5, step: 0.05, value: 0.71, unit: "", fmt: v => v.toFixed(2) }
+    ],
+    mag: (f, p) => {
+      const r = f / p.f0;
+      return -10 * Math.log10(Math.pow(1 - r * r, 2) + Math.pow(r / p.Q, 2));
+    },
+    phase: (f, p) => {
+      const r = f / p.f0;
+      return -Math.atan2(r / p.Q, 1 - r * r) * 180 / Math.PI;
+    },
+    annotations: (p, which) => {
+      if (which === "mag") {
+        const a = [{ type: "vline", x: p.f0, label: "f₀" }];
+        if (p.Q > 0.8) {
+          const fp = p.f0 * Math.sqrt(1 - 1 / (2 * p.Q * p.Q));
+          const pk = 20 * Math.log10(p.Q / Math.sqrt(1 - 1 / (4 * p.Q * p.Q)));
+          a.push({ type: "point", x: fp, y: pk, label: "peak +" + pk.toFixed(1) + " dB" });
+        }
+        return a;
+      }
+      return [{ type: "vline", x: p.f0, label: "−90° at f₀" }];
+    },
+    readouts: [
+      { label: "Peaking", fn: p => p.Q > 0.7071
+          ? "+" + (20 * Math.log10(p.Q / Math.sqrt(1 - 1 / (4 * p.Q * p.Q)))).toFixed(1) + " dB"
+          : "none (Q ≤ 0.707)" },
+      { label: "Character", fn: p => p.Q < 0.6 ? "overdamped (droopy knee)" : p.Q <= 0.8 ? "≈ Butterworth (maximally flat)" : "underdamped (peaking, rings in time domain)" },
+      { label: "|H| at 10·f₀", fn: () => "≈ −40 dB (2nd order)" }
+    ]
+  });
+});
+</script>
+
+</article>
+</main>
+</div>
+</body>
+</html>

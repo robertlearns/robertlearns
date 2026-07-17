@@ -1,0 +1,834 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>M05 · AC Circuits &amp; Phasors — EE Knowledge Base</title>
+<link rel="stylesheet" href="../../assets/vendor/katex/katex.min.css">
+<link rel="stylesheet" href="../../assets/css/style.css">
+<script src="../../assets/vendor/katex/katex.min.js" defer></script>
+<script src="../../assets/vendor/katex/auto-render.min.js" defer></script>
+<script src="../curriculum.js" defer></script>
+<script src="../../assets/js/app.js" defer></script>
+<script src="../../assets/js/widgets.js" defer></script>
+</head>
+<body data-module="m05">
+<div class="layout">
+<main class="content">
+<article class="article">
+
+<span class="eyebrow">⚡ Fundamentals of Electrical Engineering · Module 05</span>
+<h1>AC Circuits &amp; Phasors <span class="muted" style="font-weight:400;font-size:1.4rem">· <span class="de">Wechselstromtechnik</span></span></h1>
+<p class="lead">Every outlet on the planet delivers a sinusoid, and every filter, motor, transformer, and power line is designed in the language of this module: complex amplitudes. The phasor transform turns the differential equations of L and C into ordinary algebra — after this module, AC circuit analysis is Module 04 with complex numbers, and that is not a metaphor but a theorem.</p>
+
+<div class="page-meta">
+  <span><b>Corresponds to:</b> Grundlagen der Elektrotechnik II (2nd semester)</span>
+  <span><b>Prerequisites:</b> Modules 01, 04</span>
+  <span><b>Study time:</b> ≈ 6–8 h</span>
+</div>
+
+<h2 id="why-ac">1. Why the world runs on AC</h2>
+
+<p>Direct current (<span class="de">Gleichstrom</span>) came first. Yet from about 1890 onward the world electrified with <strong>alternating current</strong> (<span class="de">Wechselstrom</span>) — current that reverses direction periodically, following a sine wave. Two physical facts decided this, and both are worth understanding rather than memorizing.</p>
+
+<p><strong>1. Rotation produces sinusoids for free.</strong> Spin a wire loop in a magnetic field (that is what every generator is, from a bicycle dynamo to a 1.5 GW nuclear turbo-generator). The magnetic flux through the loop varies as \(\cos(\omega t)\) with the rotation angle, and Faraday's law of induction (Module 07) makes the induced voltage its derivative:</p>
+\[ u(t) = \hat{u}\,\sin(\omega t). \]
+<p>A sinusoid is not a design choice; it is what rotating machinery naturally emits. Forcing a generator to produce DC requires a mechanical commutator — sparking brushes, wear, maintenance.</p>
+
+<p><strong>2. Only changing currents can be transformed.</strong> A transformer (Module 07) couples two coils through a shared magnetic flux, and induction only responds to <em>change</em>: \(u = N\,\mathrm{d}\Phi/\mathrm{d}t\). Feed it DC and it does nothing (worse: it overheats). Feed it AC and it converts voltage levels with ~99 % efficiency and no moving parts. Why does that matter? Transmission losses are \(P_{loss} = I^2 R_{line}\). To push 100 MW through a line, you want maximum voltage and minimum current: at 400 kV you need 250 A; at 230 V you would need 435&nbsp;000 A — the line would vaporize. AC lets us step up to hundreds of kilovolts for transport and back down to 230 V at your wall, cheaply, at every substation.</p>
+
+<div class="box history">
+  <div class="box-title"><span class="ic">📜</span>The war of currents — and its modern plot twist</div>
+  <p>In the late 1880s, Thomas Edison (DC, low voltage, a power plant every few kilometers) fought George Westinghouse and Nikola Tesla (AC, transformable, long lines) in one of the nastiest marketing wars in engineering history — Edison publicly electrocuted animals with AC to brand it lethal. Physics won anyway: AC lit the 1893 Chicago World's Fair and harnessed Niagara Falls in 1895, and the grid went alternating worldwide. The twist: today, power electronics (Module 18) can transform DC too, and for very long or undersea links <b>HVDC</b> transmission actually beats AC (no reactive line losses — a concept you will understand by Section 8). Modern grids (Module 19) are AC with strategic DC arteries. Edison lost the war but is winning some late battles.</p>
+</div>
+
+<p>There is also a mathematical reason the sinusoid rules: it is the <em>eigenfunction</em> of linear time-invariant systems. Put a sine into any circuit of R, L, C and out comes a sine of the <em>same frequency</em> — only amplitude and phase change. No other waveform survives a circuit unchanged in shape. This single fact is what makes the phasor method of Section 4 possible.</p>
+
+<h2 id="sinusoid">2. The sinusoid — four numbers describe everything</h2>
+
+<p>The general sinusoidal voltage is</p>
+\[ u(t) = \hat{u}\,\sin(\omega t + \varphi_u), \]
+<p>and because a sine of known frequency is fully determined by so little, the entire waveform is pinned down by:</p>
+<ul>
+  <li><strong>Amplitude</strong> \(\hat{u}\) (<span class="de">Scheitelwert/Amplitude</span>) — the peak value. The hat \(\hat{\ }\) marks peak values throughout German literature.</li>
+  <li><strong>Period</strong> \(T\) (<span class="de">Periodendauer</span>) — time for one full cycle, in seconds.</li>
+  <li><strong>Frequency</strong> \(f = 1/T\) (<span class="de">Frequenz</span>) — cycles per second, in hertz (Hz), honoring Heinrich Hertz.</li>
+  <li><strong>Phase angle</strong> \(\varphi_u\) (<span class="de">Nullphasenwinkel</span>) — where in its cycle the wave sits at \(t=0\); it encodes timing relative to a reference.</li>
+</ul>
+<p>Because the sine function needs its argument in radians, we bundle \(2\pi f\) into the <strong>angular frequency</strong> (<span class="de">Kreisfrequenz</span>):</p>
+\[ \boxed{\;\omega = 2\pi f = \frac{2\pi}{T}\;} \qquad [\omega] = \mathrm{s^{-1}} \ \text{(rad/s)}. \]
+
+<p>For the European grid: \(f = 50\,\mathrm{Hz}\), so \(T = 20\,\mathrm{ms}\) and \(\omega = 2\pi \cdot 50 \approx 314.16\,\mathrm{s^{-1}}\). (North America uses 60 Hz — a historical accident of early equipment choices, frozen forever by installed base. Nothing fundamental prefers either.) The 50 Hz value itself was a compromise: low enough for early machines, high enough that lamps don't visibly flicker.</p>
+
+<figure>
+  <div class="fig-frame">
+  <svg class="diagram" viewBox="0 0 640 260" role="img" aria-label="Anatomy of a sinusoid: amplitude, period, phase shift">
+    <!-- axes -->
+    <line x1="40" y1="125" x2="612" y2="125" class="wire"/>
+    <line x1="50" y1="230" x2="50" y2="25" class="wire"/>
+    <text x="620" y="140" font-size="13" text-anchor="end">t</text>
+    <text x="62" y="32" font-size="13">u(t)</text>
+    <!-- peak dashes -->
+    <line x1="50" y1="45" x2="510" y2="45" stroke="var(--text-faint)" stroke-dasharray="4 5"/>
+    <line x1="50" y1="205" x2="330" y2="205" stroke="var(--text-faint)" stroke-dasharray="4 5"/>
+    <!-- main sine -->
+    <path d="M50 125 L62 108 L74 92 L86 78 L98 66 L110 56 L122 49 L134 45 L146 45 L158 49 L170 56 L182 66 L194 78 L206 92 L218 108 L230 125 L242 142 L254 158 L266 172 L278 184 L290 194 L302 201 L314 205 L326 205 L338 201 L350 194 L362 184 L374 172 L386 158 L398 142 L410 125 L422 108 L434 92 L446 78 L458 66 L470 56 L482 49 L494 45 L506 45 L518 49 L530 56 L542 66 L554 78 L566 92 L578 108 L590 125"
+      fill="none" stroke="var(--accent)" stroke-width="2.4"/>
+    <!-- shifted sine (leads by phi) -->
+    <path d="M50 62 L62 53 L74 48 L86 45 L98 46 L110 51 L122 58 L134 69 L146 82 L158 97 L170 113 L182 130 L194 146 L206 162 L218 176 L230 188 L242 197 L254 202 L266 205 L278 204 L290 199 L302 192 L314 181 L326 168 L338 153 L350 137 L362 120 L374 104 L386 88 L398 74 L410 62 L422 53 L434 48 L446 45 L458 46 L470 51 L482 58 L494 69 L506 82 L518 97 L530 113 L542 130 L554 146 L566 162 L578 176 L590 188"
+      fill="none" stroke="var(--accent-2)" stroke-width="2" stroke-dasharray="7 5"/>
+    <!-- amplitude arrow at first peak x=140 -->
+    <line x1="140" y1="123" x2="140" y2="49" stroke="var(--text-soft)" stroke-width="1.8" marker-end="url(#f2arr)"/>
+    <text x="128" y="90" font-size="14" text-anchor="end">û</text>
+    <!-- period bracket between rising zero crossings x=50 and x=410 -->
+    <line x1="50" y1="238" x2="410" y2="238" stroke="var(--text-soft)" stroke-width="1.8" marker-start="url(#f2arrL)" marker-end="url(#f2arr)"/>
+    <line x1="50" y1="230" x2="50" y2="246" stroke="var(--text-soft)"/>
+    <line x1="410" y1="230" x2="410" y2="246" stroke="var(--text-soft)"/>
+    <text x="230" y="232" font-size="14" text-anchor="middle">T = 1/f</text>
+    <!-- labels -->
+    <text x="560" y="105" font-size="13" fill="var(--accent)">sin(ωt)</text>
+    <text x="536" y="180" font-size="13" fill="var(--accent-2)">sin(ωt + φ)</text>
+    <defs>
+      <marker id="f2arr" markerWidth="9" markerHeight="9" refX="7" refY="4.5" orient="auto"><path d="M0 0 L8 4.5 L0 9 z" fill="var(--text-soft)"/></marker>
+      <marker id="f2arrL" markerWidth="9" markerHeight="9" refX="1" refY="4.5" orient="auto"><path d="M8 0 L0 4.5 L8 9 z" fill="var(--text-soft)"/></marker>
+    </defs>
+  </svg>
+  </div>
+  <figcaption><b>Fig. 2.1</b> — Anatomy of a sinusoid. The dashed curve has the same amplitude and frequency but a positive phase angle φ: it reaches its peak <em>earlier</em> — it <em>leads</em> (<span class="de">eilt vor</span>). Phase is timing expressed as an angle: a shift of \(T/4\) is 90°.</figcaption>
+</figure>
+
+<div class="box warn">
+  <div class="box-title"><span class="ic">⚠️</span>Phase is always relative — fix the convention now</div>
+  <p>A single sinusoid's phase is arbitrary (you choose when \(t=0\) is). What matters physically is the <em>difference</em> between two sinusoids. Throughout this module (and German convention) the <strong>phase shift</strong> is \(\varphi = \varphi_u - \varphi_i\): voltage phase minus current phase. Positive \(\varphi\) means the current lags the voltage (inductive behavior); negative \(\varphi\) means the current leads (capacitive). Getting this subtraction backwards flips the sign of reactive power in Section 8 — decide once, stay consistent forever.</p>
+</div>
+
+<div class="box german">
+  <div class="box-title"><span class="ic">🇩🇪</span>Vokabeln</div>
+  <p>alternating current = <span class="de">Wechselstrom</span> · amplitude/peak value = <span class="de">Scheitelwert</span> · RMS value = <span class="de">Effektivwert</span> · phasor = <span class="de">(komplexer) Zeiger</span> · impedance = <span class="de">Impedanz / Scheinwiderstand</span> · reactance = <span class="de">Blindwiderstand</span> · active/reactive/apparent power = <span class="de">Wirk-/Blind-/Scheinleistung</span> · power factor = <span class="de">Leistungsfaktor</span> · three-phase current = <span class="de">Drehstrom</span> · star/delta connection = <span class="de">Stern-/Dreieckschaltung</span> · phase (winding) quantity = <span class="de">Stranggröße</span> · line conductor = <span class="de">Außenleiter</span> · neutral = <span class="de">Neutralleiter</span></p>
+</div>
+
+<h2 id="rms">3. Average and RMS — what "230 V" actually means</h2>
+
+<p>How do you state "the" value of a quantity that spends half its time negative? The arithmetic mean of a sine over a period is exactly zero — true, and useless. The meaningful average comes from asking about <strong>power</strong>: what DC voltage would heat a resistor equally hard as this AC waveform does on average?</p>
+
+<p>Instantaneous power in a resistor is \(p(t) = u^2(t)/R\). Its average over one period:</p>
+\[ \bar{P} = \frac{1}{T}\int_0^T \frac{u^2(t)}{R}\,\mathrm{d}t \;\stackrel{!}{=}\; \frac{U^2}{R} \quad\Longrightarrow\quad U = \sqrt{\frac{1}{T}\int_0^T u^2(t)\,\mathrm{d}t}. \]
+<p>Read the recipe off the formula, right to left: square the waveform, take the mean, take the root — the <strong>root-mean-square</strong> or <strong>RMS value</strong> (<span class="de">Effektivwert</span>).</p>
+
+<h3 id="rms-sine">3.1 Deriving the famous factor 1/√2</h3>
+<p>For \(u(t) = \hat{u}\sin(\omega t)\), use the identity \(\sin^2 x = \tfrac{1}{2}\bigl(1 - \cos 2x\bigr)\):</p>
+\[ U^2 = \frac{1}{T}\int_0^T \hat{u}^2 \sin^2(\omega t)\,\mathrm{d}t
+     = \frac{\hat{u}^2}{T}\int_0^T \Bigl(\tfrac12 - \tfrac12\cos(2\omega t)\Bigr)\mathrm{d}t
+     = \frac{\hat{u}^2}{T}\cdot\frac{T}{2} = \frac{\hat{u}^2}{2}, \]
+<p>because the \(\cos(2\omega t)\) term averages to zero over any whole number of periods. Hence</p>
+\[ \boxed{\;U = \frac{\hat{u}}{\sqrt{2}} \approx 0.707\,\hat{u}\;}\qquad\text{(sinusoid only!)} \]
+<p>So "230 V mains" is the RMS value. The actual peak at your wall socket is</p>
+\[ \hat{u} = \sqrt{2}\cdot 230\,\mathrm{V} \approx 325\,\mathrm{V}, \]
+<p>and the peak-to-peak swing is 650 V. This is why capacitors in mains-connected equipment are rated 400 V or more, and why touching "just 230 V" involves 325 V crests. Unless stated otherwise, <em>every AC voltage or current you will ever quote — nameplates, multimeters, grid data — is an RMS value.</em></p>
+
+<div class="box key">
+  <div class="box-title"><span class="ic">🔑</span>Key idea: RMS makes the DC formulas survive</div>
+  <p>The entire point of RMS values is that the DC power formulas of Module 04 keep working: \(P = U I = I^2 R = U^2/R\) holds for AC in a resistor if U and I are RMS. One convention, and forty formulas carry over unchanged. (For L and C there is a twist — Section 8.)</p>
+</div>
+
+<h3 id="rms-other">3.2 RMS of other waveforms</h3>
+<p>The factor \(1/\sqrt{2}\) belongs to the sine alone. Run the square–mean–root recipe on other shapes (each with peak \(\hat{u}\)):</p>
+
+<div class="table-wrap">
+<table class="data">
+<thead><tr><th>Waveform</th><th>RMS value</th><th>Crest factor \(\hat{u}/U\)</th><th>Where it appears</th></tr></thead>
+<tbody>
+<tr><td>DC</td><td>\(U = \hat{u}\)</td><td>1</td><td>batteries</td></tr>
+<tr><td>Square wave (±\(\hat{u}\))</td><td>\(U = \hat{u}\)</td><td>1</td><td>digital clocks, inverters</td></tr>
+<tr><td>Sine</td><td>\(U = \hat{u}/\sqrt{2} \approx 0.707\,\hat{u}\)</td><td>\(\sqrt{2} \approx 1.41\)</td><td>the grid</td></tr>
+<tr><td>Triangle / sawtooth</td><td>\(U = \hat{u}/\sqrt{3} \approx 0.577\,\hat{u}\)</td><td>\(\sqrt{3} \approx 1.73\)</td><td>ramp generators, PWM carriers</td></tr>
+<tr><td>Half-wave rectified sine</td><td>\(U = \hat{u}/2\)</td><td>2</td><td>crude rectifiers (Module 08)</td></tr>
+</tbody>
+</table>
+</div>
+
+<div class="box pitfall">
+  <div class="box-title"><span class="ic">🚫</span>Classic pitfall: "average-responding" meters</div>
+  <p>Cheap multimeters do not compute RMS. They measure the rectified <em>average</em> and multiply by 1.11 — the correct ratio <em>for a sine</em>. On any other waveform (dimmer outputs, inverter power, PWM) the reading is simply wrong, sometimes by 30 %+. Instruments that genuinely square-mean-root are labeled <b>"True RMS"</b>. Also never confuse the RMS value with the arithmetic mean: for the grid, the mean is 0 V, the RMS is 230 V. Exam setters love this distinction.</p>
+</div>
+
+<h2 id="phasors">4. The phasor transform — turning calculus into algebra</h2>
+
+<p>Now the intellectual centerpiece. Circuits with L and C obey differential equations, because \(u_L = L\,\mathrm{d}i/\mathrm{d}t\) and \(i_C = C\,\mathrm{d}u/\mathrm{d}t\). Solving coupled ODEs for every network would be miserable. Euler's formula from Module 01 rescues us:</p>
+\[ e^{jx} = \cos x + j\sin x . \]
+<p>(Electrical engineers write \(j\) for the imaginary unit — \(i\) is taken by current.) Any sinusoid can be written as the real projection of a rotating complex number:</p>
+\[ u(t) = \hat{u}\cos(\omega t + \varphi_u) = \operatorname{Re}\Bigl\{\underbrace{\hat{u}\,e^{j\varphi_u}}_{\hat{\underline{u}}}\; e^{j\omega t}\Bigr\}. \]
+<p>Picture \(\hat{u}\,e^{j(\omega t + \varphi_u)}\) as an arrow of length \(\hat{u}\) rotating counterclockwise in the complex plane at \(\omega\) rad/s; the physical waveform is its shadow on the real axis. Here is the crucial observation: in a linear circuit driven at one frequency, <em>every</em> voltage and current rotates at the same \(\omega\). The factor \(e^{j\omega t}\) is shared by everyone — so we agree to stop writing it. What remains is a complex constant per signal, the <strong>phasor</strong> (<span class="de">komplexer Zeiger</span>, underlined in German notation):</p>
+\[ \underline{U} = U e^{j\varphi_u} \qquad \text{(complex RMS phasor: magnitude = RMS value, angle = phase)}. \]
+
+<p>Why go through all this? Because of what differentiation does to \(e^{j\omega t}\):</p>
+\[ \frac{\mathrm{d}}{\mathrm{d}t}\, e^{j\omega t} = j\omega\, e^{j\omega t}. \]
+<p>Differentiation in time becomes <em>multiplication by \(j\omega\)</em> in the phasor domain; integration becomes division by \(j\omega\). And multiplying by \(j = e^{j\pi/2}\) is geometrically a 90° rotation. The whole apparatus of calculus collapses into complex multiplication:</p>
+\[ \boxed{\;\frac{\mathrm{d}}{\mathrm{d}t} \;\longleftrightarrow\; j\omega\;} \]
+
+<div class="box intuition">
+  <div class="box-title"><span class="ic">💡</span>Intuition: the phasor is a frozen snapshot</div>
+  <p>Imagine photographing all the rotating arrows of a circuit with a strobe light synchronized to \(\omega\). Every arrow appears frozen; only their lengths and relative angles remain — that photograph <em>is</em> the phasor diagram. Since all arrows rotate together, their relationships never change, so the frozen picture contains everything except the (shared, boring) rotation itself. Solve the geometry of the photo, then let it spin again to recover the time functions.</p>
+</div>
+
+<div class="box warn">
+  <div class="box-title"><span class="ic">⚠️</span>The fine print of the phasor method</div>
+  <p>Phasors are valid only under three conditions: (1) the circuit is <b>linear</b> (R, L, C, linear sources — no diodes), (2) everything oscillates at <b>one single frequency</b> \(\omega\), (3) we look at the <b>steady state</b> (<span class="de">eingeschwungener Zustand</span>), after switch-on transients have died away. Transients get their own tools in Module 06, and multiple frequencies are handled by superposition — one phasor analysis per frequency (Fourier, Module 03).</p>
+</div>
+
+<h2 id="impedance">5. Impedance — R, L and C get complex resistances</h2>
+
+<p>Define, in perfect analogy to Ohm's law, the <strong>impedance</strong> (<span class="de">Impedanz, Scheinwiderstand</span>) of a two-terminal element as the complex ratio</p>
+\[ \underline{Z} = \frac{\underline{U}}{\underline{I}} = Z\,e^{j\varphi}, \qquad [\underline{Z}] = \Omega, \]
+<p>where \(Z = |\underline{Z}|\) scales the amplitude and \(\varphi = \varphi_u - \varphi_i\) is the phase shift the element imposes. Now derive \(\underline{Z}\) for each element from its physical law — this is the module's central calculation, so we do all three honestly.</p>
+
+<h3 id="imp-r">5.1 The resistor: Z = R</h3>
+<p>The law \(u = R\,i\) contains no derivative, so in phasors simply</p>
+\[ \underline{U} = R\,\underline{I} \quad\Longrightarrow\quad \boxed{\;\underline{Z}_R = R\;} \qquad \varphi = 0. \]
+<p>Voltage and current rise and fall in lockstep — <em>in phase</em>. A resistor is frequency-blind: 50 Hz or 5 MHz, same behavior.</p>
+
+<h3 id="imp-l">5.2 The inductor: Z = jωL — current lags 90°</h3>
+<p>An inductor (<span class="de">Spule</span>) opposes changes of current: \(u_L = L\,\dfrac{\mathrm{d}i}{\mathrm{d}t}\). Apply the transform (\(\mathrm{d}/\mathrm{d}t \to j\omega\)):</p>
+\[ \underline{U} = j\omega L\,\underline{I} \quad\Longrightarrow\quad \boxed{\;\underline{Z}_L = j\omega L\;} \qquad Z_L = \omega L,\quad \varphi = +90^\circ. \]
+<p>The magnitude \(X_L = \omega L\) is the inductive <strong>reactance</strong> (<span class="de">Blindwiderstand</span>): it grows linearly with frequency. At DC (\(\omega = 0\)) the inductor is a plain wire; at high frequency it chokes current off — hence the component name "choke" (<span class="de">Drossel</span>). The factor \(+j\) says the voltage phasor points 90° ahead of the current phasor: <strong>the current lags the voltage by a quarter period</strong>. Physically: the voltage must first be applied, and only then does the current ramp up through it — the inductance resists the change.</p>
+
+<h3 id="imp-c">5.3 The capacitor: Z = 1/(jωC) — current leads 90°</h3>
+<p>A capacitor (<span class="de">Kondensator</span>) draws current only while its voltage changes: \(i_C = C\,\dfrac{\mathrm{d}u}{\mathrm{d}t}\). Transforming:</p>
+\[ \underline{I} = j\omega C\,\underline{U} \quad\Longrightarrow\quad \boxed{\;\underline{Z}_C = \frac{1}{j\omega C} = -\frac{j}{\omega C}\;} \qquad Z_C = \frac{1}{\omega C},\quad \varphi = -90^\circ. \]
+<p>The reactance \(X_C = 1/(\omega C)\) <em>falls</em> with frequency: at DC a capacitor is an open circuit (blocks); at high frequency it approaches a short (passes). The \(-j\) says the current points 90° ahead of the voltage: <strong>the current leads</strong>. Physically: charge must flow <em>first</em>, and only the accumulated charge then builds the voltage.</p>
+
+<div class="box intuition">
+  <div class="box-title"><span class="ic">💡</span>Remembering who leads: "ELI the ICE man"</div>
+  <p>In an inductor (L), EMF E before current I: <b>ELI</b>. In a capacitor (C), current I before voltage E: <b>ICE</b>. The German mnemonic says the same: <span class="de">„Bei Induktivitäten die Ströme sich verspäten; im Kondensator eilt der Strom vor."</span> Physically both follow from which quantity stores the energy: the inductor's energy sits in the current (\(\tfrac12 L i^2\)) — current cannot jump; the capacitor's sits in the voltage (\(\tfrac12 C u^2\)) — voltage cannot jump.</p>
+</div>
+
+<figure>
+  <div class="fig-frame">
+  <svg class="diagram" viewBox="0 0 660 220" role="img" aria-label="Phasor diagrams for R, L and C">
+    <!-- R -->
+    <line x1="30" y1="100" x2="200" y2="100" stroke="var(--text-faint)"/>
+    <line x1="105" y1="30" x2="105" y2="165" stroke="var(--text-faint)"/>
+    <line x1="105" y1="100" x2="190" y2="100" stroke="var(--accent)" stroke-width="2.6" marker-end="url(#f5u)"/>
+    <text x="172" y="88" font-size="13" fill="var(--accent)">U</text>
+    <line x1="105" y1="107" x2="158" y2="107" stroke="var(--accent-2)" stroke-width="2.6" marker-end="url(#f5i)"/>
+    <text x="132" y="126" font-size="13" fill="var(--accent-2)">I</text>
+    <text x="105" y="192" font-size="14" text-anchor="middle" font-weight="600">R: in phase</text>
+    <text x="105" y="210" font-size="12" text-anchor="middle" fill="var(--text-soft)">Z = R,  φ = 0°</text>
+    <!-- L -->
+    <line x1="250" y1="100" x2="420" y2="100" stroke="var(--text-faint)"/>
+    <line x1="325" y1="30" x2="325" y2="165" stroke="var(--text-faint)"/>
+    <line x1="325" y1="100" x2="410" y2="100" stroke="var(--accent)" stroke-width="2.6" marker-end="url(#f5u)"/>
+    <text x="392" y="88" font-size="13" fill="var(--accent)">U</text>
+    <line x1="325" y1="100" x2="325" y2="155" stroke="var(--accent-2)" stroke-width="2.6" marker-end="url(#f5i)"/>
+    <text x="336" y="150" font-size="13" fill="var(--accent-2)">I</text>
+    <path d="M357 100 A32 32 0 0 1 325 132" fill="none" stroke="var(--text-soft)" stroke-width="1.3"/>
+    <text x="352" y="128" font-size="11" fill="var(--text-soft)">90°</text>
+    <text x="325" y="192" font-size="14" text-anchor="middle" font-weight="600">L: current lags</text>
+    <text x="325" y="210" font-size="12" text-anchor="middle" fill="var(--text-soft)">Z = jωL,  φ = +90°</text>
+    <!-- C -->
+    <line x1="470" y1="100" x2="640" y2="100" stroke="var(--text-faint)"/>
+    <line x1="545" y1="30" x2="545" y2="165" stroke="var(--text-faint)"/>
+    <line x1="545" y1="100" x2="630" y2="100" stroke="var(--accent)" stroke-width="2.6" marker-end="url(#f5u)"/>
+    <text x="612" y="88" font-size="13" fill="var(--accent)">U</text>
+    <line x1="545" y1="100" x2="545" y2="45" stroke="var(--accent-2)" stroke-width="2.6" marker-end="url(#f5i)"/>
+    <text x="556" y="55" font-size="13" fill="var(--accent-2)">I</text>
+    <path d="M577 100 A32 32 0 0 0 545 68" fill="none" stroke="var(--text-soft)" stroke-width="1.3"/>
+    <text x="572" y="80" font-size="11" fill="var(--text-soft)">90°</text>
+    <text x="545" y="192" font-size="14" text-anchor="middle" font-weight="600">C: current leads</text>
+    <text x="545" y="210" font-size="12" text-anchor="middle" fill="var(--text-soft)">Z = 1/(jωC),  φ = −90°</text>
+    <defs>
+      <marker id="f5u" markerWidth="9" markerHeight="9" refX="7" refY="4.5" orient="auto"><path d="M0 0 L8 4.5 L0 9 z" fill="var(--accent)"/></marker>
+      <marker id="f5i" markerWidth="9" markerHeight="9" refX="7" refY="4.5" orient="auto"><path d="M0 0 L8 4.5 L0 9 z" fill="var(--accent-2)"/></marker>
+    </defs>
+  </svg>
+  </div>
+  <figcaption><b>Fig. 5.1</b> — Phasor diagrams of the three passive elements (voltage taken as phase reference along the real axis). The 90° shifts are exact and frequency-independent; only the <em>lengths</em> change with ω.</figcaption>
+</figure>
+
+<div class="widget">
+  <div class="w-head"><span class="ic">🧪</span>Interactive — voltage &amp; current phasors for R, L, C <span class="w-tag">simulation</span></div>
+  <div class="w-body">
+    <p class="small mt0">Switch the element and watch both pictures at once: the rotating phasors (left) and the waveforms they project (right). For L, the current waveform crosses zero a quarter period <em>after</em> the voltage; for C, a quarter period <em>before</em>. Pause the animation and the phasor diagram of Fig. 5.1 stares back at you.</p>
+    <div id="w-rlc-phasor"></div>
+  </div>
+</div>
+
+<h2 id="rlc">6. Combining impedances — the series RLC circuit</h2>
+
+<p>Impedances obey the same combination rules as resistances — series impedances add, parallel impedances combine reciprocally — <em>because Kirchhoff's laws hold for phasors</em> (sums of sinusoids of one frequency correspond to sums of their phasors). For the workhorse case, R, L and C in series:</p>
+\[ \underline{Z} = R + j\omega L + \frac{1}{j\omega C} = R + j\underbrace{\Bigl(\omega L - \frac{1}{\omega C}\Bigr)}_{X \;=\; \text{net reactance}}. \]
+<p>Real part: resistance (dissipates). Imaginary part: reactance (stores and returns). Magnitude and phase follow from the complex-plane geometry:</p>
+\[ \boxed{\;Z = \sqrt{R^2 + \Bigl(\omega L - \tfrac{1}{\omega C}\Bigr)^2}, \qquad \varphi = \arctan\frac{\omega L - \tfrac{1}{\omega C}}{R}\;} \]
+<p>Notice the sign war inside the bracket: \(\omega L\) grows with frequency, \(1/(\omega C)\) shrinks. At low frequency the capacitor dominates (\(X &lt; 0\), current leads — capacitive); at high frequency the inductor dominates (\(X &gt; 0\), current lags — inductive). At exactly one frequency they cancel:</p>
+\[ \omega_0 L = \frac{1}{\omega_0 C} \quad\Longrightarrow\quad \omega_0 = \frac{1}{\sqrt{LC}}, \qquad f_0 = \frac{1}{2\pi\sqrt{LC}}. \]
+<p>There \(\underline{Z} = R\), purely resistive, and the current peaks: <strong>resonance</strong> (<span class="de">Resonanz</span>). Module 06 builds radios, filters and quality factors on this single cancellation; here, just watch it happen in the widget below.</p>
+
+<figure>
+  <div class="fig-frame">
+  <svg class="diagram" viewBox="0 0 700 240" role="img" aria-label="Series RLC circuit and its impedance triangle">
+    <!-- source -->
+    <circle cx="70" cy="120" r="24" fill="none" stroke="var(--text-soft)" stroke-width="2"/>
+    <path d="M58 120 q6 -10 12 0 q6 10 12 0" fill="none" stroke="var(--text-soft)" stroke-width="1.8"/>
+    <text x="32" y="125" font-size="13" text-anchor="middle">u(t)</text>
+    <!-- wires + series elements -->
+    <path class="wire" d="M70 96 V50 H120"/>
+    <rect x="120" y="38" width="64" height="24" fill="none" stroke="var(--text-soft)" stroke-width="2"/>
+    <text x="152" y="28" font-size="14" text-anchor="middle">R</text>
+    <path class="wire" d="M184 50 H234"/>
+    <rect x="234" y="40" width="64" height="20" fill="var(--text-soft)"/>
+    <text x="266" y="28" font-size="14" text-anchor="middle">L</text>
+    <path class="wire" d="M298 50 H348"/>
+    <line x1="348" y1="30" x2="348" y2="70" stroke="var(--text-soft)" stroke-width="2.5"/>
+    <line x1="360" y1="30" x2="360" y2="70" stroke="var(--text-soft)" stroke-width="2.5"/>
+    <text x="354" y="20" font-size="14" text-anchor="middle">C</text>
+    <path class="wire" d="M360 50 H400 V190 H70 V144"/>
+    <!-- current arrow -->
+    <line x1="88" y1="50" x2="112" y2="50" stroke="var(--accent-2)" stroke-width="2.2" marker-end="url(#f6i)"/>
+    <text x="98" y="40" font-size="13" fill="var(--accent-2)">i(t)</text>
+    <!-- impedance triangle -->
+    <line x1="460" y1="175" x2="600" y2="175" stroke="var(--accent)" stroke-width="2.6" marker-end="url(#f6a)"/>
+    <text x="528" y="196" font-size="14" text-anchor="middle" fill="var(--accent)">R</text>
+    <line x1="600" y1="175" x2="600" y2="75" stroke="var(--accent-2)" stroke-width="2.6" marker-end="url(#f6i)"/>
+    <text x="612" y="118" font-size="14" fill="var(--accent-2)">X = ωL −</text>
+    <text x="620" y="136" font-size="14" fill="var(--accent-2)">1/(ωC)</text>
+    <line x1="460" y1="175" x2="598" y2="77" stroke="var(--text-soft)" stroke-width="2.6" marker-end="url(#f6z)"/>
+    <text x="510" y="112" font-size="14" fill="var(--text-soft)">|Z|</text>
+    <path d="M496 175 A36 36 0 0 0 489 154" fill="none" stroke="var(--text-soft)" stroke-width="1.4"/>
+    <text x="505" y="163" font-size="12" fill="var(--text-soft)">φ</text>
+    <text x="530" y="228" font-size="12" text-anchor="middle" fill="var(--text-soft)">impedance triangle (here X &gt; 0: inductive)</text>
+    <defs>
+      <marker id="f6a" markerWidth="9" markerHeight="9" refX="7" refY="4.5" orient="auto"><path d="M0 0 L8 4.5 L0 9 z" fill="var(--accent)"/></marker>
+      <marker id="f6i" markerWidth="9" markerHeight="9" refX="7" refY="4.5" orient="auto"><path d="M0 0 L8 4.5 L0 9 z" fill="var(--accent-2)"/></marker>
+      <marker id="f6z" markerWidth="9" markerHeight="9" refX="7" refY="4.5" orient="auto"><path d="M0 0 L8 4.5 L0 9 z" fill="var(--text-soft)"/></marker>
+    </defs>
+  </svg>
+  </div>
+  <figcaption><b>Fig. 6.1</b> — Series RLC circuit (IEC symbols: resistor = open box, inductor = filled box, capacitor = plates) and the impedance triangle: \(\underline{Z} = R + jX\) drawn as a vector. \(|Z|\) is the hypotenuse, φ the angle at the origin.</figcaption>
+</figure>
+
+<div class="example">
+  <div class="ex-head"><span class="ex-tag">Worked example</span> A series RLC at mains frequency</div>
+  <div class="ex-body">
+    <p>\(R = 100\,\Omega\), \(L = 200\,\mathrm{mH}\), \(C = 10\,\mathrm{\mu F}\) in series across the 230 V / 50 Hz grid. Find the impedance, the current, and the phase relationship.</p>
+    <div class="step"><span class="step-label">Step 1 — the two reactances at ω = 314.16 s⁻¹:</span>
+      \( X_L = \omega L = 314.16 \cdot 0.2 \approx 62.8\,\Omega \), \(\quad X_C = \frac{1}{\omega C} = \frac{1}{314.16 \cdot 10^{-5}} \approx 318.3\,\Omega \).</div>
+    <div class="step"><span class="step-label">Step 2 — net impedance:</span>
+      \( \underline{Z} = 100 + j(62.8 - 318.3) = (100 - j255.5)\,\Omega \). Magnitude:
+      \( Z = \sqrt{100^2 + 255.5^2} \approx 274\,\Omega \); phase \( \varphi = \arctan(-255.5/100) \approx -68.6^\circ \).</div>
+    <div class="step"><span class="step-label">Step 3 — current:</span>
+      \( I = U/Z = 230/274 \approx 0.84\,\mathrm{A} \), and since φ &lt; 0 the circuit is capacitive: the current <em>leads</em> the voltage by 68.6°.</div>
+    <div class="step"><span class="step-label">Step 4 — sanity check via resonance:</span>
+      \( f_0 = \frac{1}{2\pi\sqrt{0.2 \cdot 10^{-5}}} \approx 113\,\mathrm{Hz} \). We drive at 50 Hz, well <em>below</em> resonance — capacitive behavior expected ✓.</div>
+    <div class="result-line">\(\underline{Z} \approx (100 - j255.5)\,\Omega = 274\,\Omega\,\angle{-68.6^\circ}\), \(I \approx 0.84\,\mathrm{A}\), current leads.</div>
+  </div>
+</div>
+
+<div class="box pitfall">
+  <div class="box-title"><span class="ic">🚫</span>Classic pitfall: adding magnitudes</div>
+  <p>\(|Z_1 + Z_2| \neq |Z_1| + |Z_2|\)! In the example above, \(100\,\Omega + 62.8\,\Omega + 318.3\,\Omega = 481\,\Omega\) is <em>wrong</em> — the true magnitude is 274 Ω, because the inductive and capacitive parts point in <em>opposite</em> imaginary directions and partially cancel. Always add impedances as complex numbers first, take the magnitude last. The same trap exists for power in Section 8: \(S \ne P + Q\).</p>
+</div>
+
+<div class="widget">
+  <div class="w-head"><span class="ic">🧪</span>Interactive — series RLC impedance vs. frequency <span class="w-tag">simulation</span></div>
+  <div class="w-body">
+    <p class="small mt0">The V-shaped curve is the signature of series RLC: capacitive slope falling on the left, inductive slope rising on the right, and the minimum \(|Z| = R\) at resonance \(f_0\) (dashed marker). Move the evaluation frequency \(f\) across \(f_0\) and watch the phase readout snap from negative (current leads) to positive (current lags). Shrink \(R\) and the notch gets sharper — that sharpness becomes "quality factor Q" in Module 06.</p>
+    <div id="w-zrlc"></div>
+  </div>
+</div>
+
+<h2 id="analysis">7. Circuit analysis in the phasor domain — Module 04, upgraded</h2>
+
+<p>Here is the payoff, stated as a theorem: <em>every</em> DC analysis technique of Module 04 — Kirchhoff's laws, series/parallel reduction, voltage and current dividers, nodal analysis, Thévenin/Norton, superposition — remains valid verbatim if you replace real resistances by complex impedances and real values by phasors. The proofs carry over because all those techniques relied only on linearity, and complex arithmetic is linear.</p>
+
+<p>The recipe for any steady-state AC problem:</p>
+<ol>
+  <li><b>Transform:</b> sinusoids → phasors, elements → impedances \(R,\; j\omega L,\; 1/(j\omega C)\) at the given ω.</li>
+  <li><b>Solve</b> with Module 04 machinery — now with complex numbers (Module 01 arithmetic: add in Cartesian form, multiply/divide in polar form).</li>
+  <li><b>Transform back:</b> \(\underline{U} = U e^{j\varphi}\) → \(u(t) = \sqrt{2}\,U \sin(\omega t + \varphi)\).</li>
+</ol>
+
+<h3 id="divider">7.1 The complex voltage divider — and your first filter</h3>
+<p>The divider formula survives untouched:</p>
+\[ \frac{\underline{U}_2}{\underline{U}_{in}} = \frac{\underline{Z}_2}{\underline{Z}_1 + \underline{Z}_2}. \]
+<p>But something remarkable has happened: because impedances depend on ω, <em>the divider ratio now depends on frequency</em>. A humble two-component divider has become a <strong>filter</strong>. Take \(\underline{Z}_1 = R\) and \(\underline{Z}_2 = 1/(j\omega C)\) — the <strong>RC low-pass</strong> (<span class="de">Tiefpass</span>):</p>
+\[ \underline{H}(j\omega) = \frac{\underline{U}_{out}}{\underline{U}_{in}} = \frac{1/(j\omega C)}{R + 1/(j\omega C)} = \frac{1}{1 + j\omega RC}. \]
+<p>At low ω: \(\underline{H} \to 1\) (capacitor ≈ open, everything reaches the output). At high ω: \(\underline{H} \to 0\) (capacitor ≈ short, output collapses). The boundary is the <strong>cutoff frequency</strong> (<span class="de">Grenzfrequenz</span>) \(\omega_c = 1/(RC)\), where \(|\underline{H}| = 1/\sqrt{2}\). The full frequency-response story (Bode plots, decibels, cascading) is Module 06's opening act; here we nail one frequency by hand.</p>
+
+<div class="example">
+  <div class="ex-head"><span class="ex-tag">Worked example</span> RC low-pass at one frequency, by complex divider</div>
+  <div class="ex-body">
+    <p>\(R = 1\,\mathrm{k\Omega}\), \(C = 100\,\mathrm{nF}\). The input is \(u_{in}(t)\) with RMS value 5 V at \(f = 1\,\mathrm{kHz}\). Find the output phasor.</p>
+    <div class="step"><span class="step-label">Step 1 — capacitor impedance at ω = 2π·1000 ≈ 6283 s⁻¹:</span>
+      \( \underline{Z}_C = \frac{1}{j\,6283 \cdot 10^{-7}} = -j\,1592\,\Omega \).</div>
+    <div class="step"><span class="step-label">Step 2 — divider (using ωRC = 6283 · 10⁻⁴ ≈ 0.628):</span>
+      \[ \underline{H} = \frac{1}{1 + j\,0.628}, \qquad |\underline{H}| = \frac{1}{\sqrt{1 + 0.628^2}} \approx 0.847, \quad \varphi_H = -\arctan(0.628) \approx -32.1^\circ. \]</div>
+    <div class="step"><span class="step-label">Step 3 — output:</span>
+      \( U_{out} = 0.847 \cdot 5 \approx 4.23\,\mathrm{V} \), lagging the input by 32.1°. In the time domain: \( u_{out}(t) = \sqrt{2}\cdot 4.23 \sin(6283\,t - 0.561) \,\mathrm{V} \).</div>
+    <div class="step"><span class="step-label">Step 4 — sanity check:</span> cutoff is \( f_c = \frac{1}{2\pi RC} \approx 1.59\,\mathrm{kHz} \); we drive below cutoff, so most (85 %) of the signal should pass ✓.</div>
+    <div class="result-line">\(\underline{U}_{out} \approx 4.23\,\mathrm{V}\,\angle{-32.1^\circ}\) — one complex division replaced a differential equation.</div>
+  </div>
+</div>
+
+<div class="box key">
+  <div class="box-title"><span class="ic">🔑</span>Key idea: one method, the whole curriculum</div>
+  <p>Phasor-domain analysis is arguably the highest-leverage technique in the EE curriculum. Filters (M06), transformer models (M07), amplifier frequency response (M09), transmission lines (M12), machine equivalent circuits (M17), grid load flow (M19) — all are "draw the circuit, insert impedances, crank the complex algebra". If Module 04's toolbox plus this module's transform sit firmly, roughly a third of the degree becomes routine.</p>
+</div>
+
+<h2 id="power">8. Power in AC circuits — active, reactive, apparent</h2>
+
+<p>Multiply the instantaneous voltage and current — with a phase shift φ between them — and watch what the product does. With \(u(t) = \sqrt{2}\,U\sin(\omega t)\) and \(i(t) = \sqrt{2}\,I\sin(\omega t - \varphi)\):</p>
+\[ p(t) = u(t)\,i(t) = 2UI\sin(\omega t)\sin(\omega t - \varphi) \]
+<p>Using \(2\sin a \sin b = \cos(a-b) - \cos(a+b)\):</p>
+\[ \boxed{\;p(t) = \underbrace{UI\cos\varphi}_{\text{constant}} \;-\; \underbrace{UI\cos(2\omega t - \varphi)}_{\text{oscillates at }2\omega}\;} \]
+<p>Dissect this remarkable formula:</p>
+<ul>
+  <li>The power pulsates at <em>twice</em> the grid frequency — 100 Hz in Europe. (That is the hum of transformers and the flicker of cheap LED lamps.)</li>
+  <li>Its time average is \(P = UI\cos\varphi\) — the <strong>active power</strong> (<span class="de">Wirkleistung</span>), in watts. Only this does net work: heat, light, torque.</li>
+  <li>If \(\varphi \neq 0\), \(p(t)\) dips <em>negative</em> twice per cycle: the load momentarily pushes energy <em>back</em> into the source. That returned energy sloshes back and forth, doing nothing useful — but the current carrying it is real and heats every wire it passes through.</li>
+</ul>
+<p>The bookkeeping quantities for this sloshing:</p>
+\[ P = UI\cos\varphi \;\;[\mathrm{W}], \qquad Q = UI\sin\varphi \;\;[\mathrm{var}], \qquad S = UI \;\;[\mathrm{VA}], \qquad S^2 = P^2 + Q^2. \]
+<p><strong>Reactive power</strong> \(Q\) (<span class="de">Blindleistung</span>, unit volt-ampere-reactive) measures the oscillating, non-working exchange — positive for inductive loads (motors, transformers), negative for capacitive ones. <strong>Apparent power</strong> \(S\) (<span class="de">Scheinleistung</span>, unit VA) is what the wiring actually experiences: the product of RMS voltage and RMS current, regardless of their timing. The ratio is the <strong>power factor</strong> (<span class="de">Leistungsfaktor</span>) \(\cos\varphi = P/S\). Everything fits in one right triangle — and the elegant closed form is the <strong>complex power</strong>:</p>
+\[ \boxed{\;\underline{S} = \underline{U}\,\underline{I}^{\,*} = P + jQ\;} \]
+<p>The conjugate on \(\underline{I}\) is essential: it makes the angle of \(\underline{S}\) equal \(\varphi_u - \varphi_i = \varphi\), so inductive loads get \(Q &gt; 0\) by convention. Without the star, the sign of Q would come out wrong.</p>
+
+<figure>
+  <div class="fig-frame">
+  <svg class="diagram" viewBox="0 0 560 230" role="img" aria-label="Power triangle: P, Q, S and angle phi">
+    <line x1="110" y1="180" x2="360" y2="180" stroke="var(--accent)" stroke-width="3" marker-end="url(#f8p)"/>
+    <text x="235" y="205" font-size="14" text-anchor="middle" fill="var(--accent)">P = S·cos φ   (W — does the work)</text>
+    <line x1="360" y1="180" x2="360" y2="52" stroke="var(--accent-2)" stroke-width="3" marker-end="url(#f8q)"/>
+    <text x="376" y="120" font-size="14" fill="var(--accent-2)">Q = S·sin φ</text>
+    <text x="376" y="140" font-size="12" fill="var(--accent-2)">(var — sloshes)</text>
+    <line x1="110" y1="180" x2="357" y2="55" stroke="var(--text-soft)" stroke-width="3" marker-end="url(#f8s)"/>
+    <text x="222" y="102" font-size="14" fill="var(--text-soft)" text-anchor="middle" transform="rotate(-27 222 102)">S = U·I   (VA — sizes the wires)</text>
+    <path d="M162 180 A52 52 0 0 0 156 157" fill="none" stroke="var(--text-soft)" stroke-width="1.4"/>
+    <text x="174" y="168" font-size="13" fill="var(--text-soft)">φ</text>
+    <defs>
+      <marker id="f8p" markerWidth="9" markerHeight="9" refX="7" refY="4.5" orient="auto"><path d="M0 0 L8 4.5 L0 9 z" fill="var(--accent)"/></marker>
+      <marker id="f8q" markerWidth="9" markerHeight="9" refX="7" refY="4.5" orient="auto"><path d="M0 0 L8 4.5 L0 9 z" fill="var(--accent-2)"/></marker>
+      <marker id="f8s" markerWidth="9" markerHeight="9" refX="7" refY="4.5" orient="auto"><path d="M0 0 L8 4.5 L0 9 z" fill="var(--text-soft)"/></marker>
+    </defs>
+  </svg>
+  </div>
+  <figcaption><b>Fig. 8.1</b> — The power triangle, which is just the impedance triangle of Fig. 6.1 scaled by \(I^2\). Note \(S \neq P + Q\): they add like the sides of a right triangle, \(S = \sqrt{P^2 + Q^2}\).</figcaption>
+</figure>
+
+<div class="widget">
+  <div class="w-head"><span class="ic">🧪</span>Interactive — instantaneous power p(t) = u·i <span class="w-tag">simulation</span></div>
+  <div class="w-body">
+    <p class="small mt0">Watch the power waveform (red) pulsate at 100 Hz around its average P (dashed line). At φ = 0 it never goes negative — all energy flows one way. Drag φ toward ±90° and the negative lobes grow: energy is being returned to the source. At exactly ±90° the average is zero — pure reactive exchange, current flowing, nothing accomplished.</p>
+    <div id="w-power"></div>
+  </div>
+</div>
+
+<h3 id="why-q">8.1 Why utilities care about your cos φ</h3>
+<p>Suppose a factory needs \(P = 400\,\mathrm{kW}\) of real power. At \(\cos\varphi = 1\) the grid must deliver \(S = 400\,\mathrm{kVA}\); at \(\cos\varphi = 0.7\) it must deliver \(S = 571\,\mathrm{kVA}\) — 43 % more current through every transformer, cable and breaker between the power plant and the machine, and roughly <em>double</em> the \(I^2R\) line losses, for the same useful work. That is why utilities meter reactive energy for industrial customers and charge penalties, typically when the average \(\cos\varphi\) drops below about 0.9. Households are (so far) not billed for it — your washing machine motor's reactive power is a gift from the utility.</p>
+
+<h3 id="pfc">8.2 Power-factor correction — <span class="de">Blindleistungskompensation</span></h3>
+<p>The fix is elegant: inductive loads take \(Q &gt; 0\), capacitors take \(Q &lt; 0\) — so bolt a capacitor bank <em>in parallel</em> with the load and let the reactive power circulate locally between L and C instead of through 50 km of grid. The capacitor must supply the difference between the load's reactive power and the target:</p>
+\[ Q_C = P\,(\tan\varphi_1 - \tan\varphi_2), \qquad C = \frac{Q_C}{\omega U^2}, \]
+<p>where \(\varphi_1\) is the uncorrected and \(\varphi_2\) the target phase angle (the capacitor formula follows from \(Q_C = U^2/X_C = \omega C U^2\)).</p>
+
+<div class="example">
+  <div class="ex-head"><span class="ex-tag">Worked example</span> Sizing a PFC capacitor for a motor</div>
+  <div class="ex-body">
+    <p>A single-phase induction motor draws \(P = 4\,\mathrm{kW}\) at \(\cos\varphi_1 = 0.70\) from 230 V / 50 Hz. Size the parallel capacitor to reach \(\cos\varphi_2 = 0.95\), and compare the line currents.</p>
+    <div class="step"><span class="step-label">Step 1 — the two tangents:</span>
+      \(\varphi_1 = \arccos 0.70 = 45.6^\circ \Rightarrow \tan\varphi_1 = 1.020\); \(\quad\varphi_2 = \arccos 0.95 = 18.2^\circ \Rightarrow \tan\varphi_2 = 0.329\).</div>
+    <div class="step"><span class="step-label">Step 2 — reactive power to compensate:</span>
+      \( Q_C = 4000\,(1.020 - 0.329) \approx 2.77\,\mathrm{kvar} \).</div>
+    <div class="step"><span class="step-label">Step 3 — capacitance:</span>
+      \( C = \frac{Q_C}{\omega U^2} = \frac{2766}{314.16 \cdot 230^2} \approx 166\,\mathrm{\mu F} \) — a chunky motor-run capacitor, but standard.</div>
+    <div class="step"><span class="step-label">Step 4 — payoff in current:</span>
+      before: \( I_1 = \frac{P}{U\cos\varphi_1} = \frac{4000}{230 \cdot 0.70} \approx 24.8\,\mathrm{A} \); after: \( I_2 = \frac{4000}{230 \cdot 0.95} \approx 18.3\,\mathrm{A} \).</div>
+    <div class="result-line">\(C \approx 166\,\mathrm{\mu F}\) cuts the line current by 26 % — the motor works exactly as before, but the wiring, breaker and utility see a far friendlier load.</div>
+  </div>
+</div>
+
+<div class="box warn">
+  <div class="box-title"><span class="ic">⚠️</span>Don't overcompensate</div>
+  <p>Aiming for \(\cos\varphi = 1.00\) exactly is asking for trouble: if the motor is then unloaded or disconnected, the capacitor bank makes the site <em>capacitive</em>, which utilities dislike just as much, and the parallel LC combination can resonate with grid harmonics (Section 6's resonance, in the worst possible place). Practice targets 0.92–0.98 inductive, often with switched capacitor stages. Full compensation design lives in Module 19.</p>
+</div>
+
+<h2 id="three-phase">9. Three-phase systems — <span class="de">Drehstrom</span></h2>
+
+<p>Look again at the power widget: single-phase power <em>pulsates</em> at 100 Hz, dropping to zero twice per cycle. A motor fed this way delivers pulsating torque; a generator feels pulsating counter-torque. The fix, due largely to Dobrowolski and Tesla (~1890): generate <strong>three</strong> sinusoids, shifted by 120° each, on three conductors L1, L2, L3 (<span class="de">Außenleiter</span>):</p>
+\[ u_1 = \hat{u}\sin(\omega t), \qquad u_2 = \hat{u}\sin(\omega t - 120^\circ), \qquad u_3 = \hat{u}\sin(\omega t - 240^\circ). \]
+<p>Three reasons this specific arrangement conquered the world:</p>
+<ul>
+  <li><b>Constant power.</b> With balanced resistive loads, total instantaneous power is \(p(t) \propto \sin^2\!\omega t + \sin^2(\omega t - 120^\circ) + \sin^2(\omega t - 240^\circ) = \tfrac{3}{2}\) — <em>constant</em>. The 100 Hz pulsation of each phase cancels in the sum. Motors run smooth; generators load evenly.</li>
+  <li><b>The phasors sum to zero:</b> \(\underline{U}_1 + \underline{U}_2 + \underline{U}_3 = 0\) (three unit vectors 120° apart close a triangle). Consequence: the return currents of three balanced loads cancel, and the return conductor can be thin — or absent. Three phases move triple power over three wires instead of six.</li>
+  <li><b>A rotating magnetic field for free.</b> Three coils, 120° apart in space, fed with currents 120° apart in time, produce a magnetic field vector that physically rotates at ω. Put a piece of conductive metal in it and it spins: that is the induction motor, the workhorse of industry — built without brushes or contacts. Module 17 lives on this.</li>
+</ul>
+
+<h3 id="star-delta">9.1 Star and delta — <span class="de">Stern- und Dreieckschaltung</span></h3>
+
+<figure>
+  <div class="fig-frame">
+  <svg class="diagram" viewBox="0 0 680 300" role="img" aria-label="Star (wye) and delta connections of three impedances">
+    <!-- STAR -->
+    <text x="160" y="26" font-size="15" text-anchor="middle" font-weight="600">Star (Y) — Stern</text>
+    <!-- terminals -->
+    <circle cx="160" cy="52" r="4" class="node"/><text x="178" y="56" font-size="13">L1</text>
+    <circle cx="52" cy="248" r="4" class="node"/><text x="30" y="270" font-size="13">L2</text>
+    <circle cx="268" cy="248" r="4" class="node"/><text x="278" y="270" font-size="13">L3</text>
+    <!-- center N -->
+    <circle cx="160" cy="180" r="5" class="node"/>
+    <text x="160" y="164" font-size="13" text-anchor="middle" font-weight="600">N</text>
+    <!-- spokes with boxes -->
+    <path class="wire" d="M160 52 V78"/>
+    <rect x="148" y="78" width="24" height="56" fill="none" stroke="var(--text-soft)" stroke-width="2"/>
+    <path class="wire" d="M160 134 V180"/>
+    <path class="wire" d="M52 248 L84 227"/>
+    <rect x="80" y="196" width="52" height="24" fill="none" stroke="var(--text-soft)" stroke-width="2" transform="rotate(-32 106 208)"/>
+    <path class="wire" d="M128 201 L160 180"/>
+    <path class="wire" d="M268 248 L236 227"/>
+    <rect x="188" y="196" width="52" height="24" fill="none" stroke="var(--text-soft)" stroke-width="2" transform="rotate(32 214 208)"/>
+    <path class="wire" d="M192 201 L160 180"/>
+    <!-- neutral wire -->
+    <path class="wire" d="M160 180 H305" stroke-dasharray="6 5"/>
+    <text x="288" y="170" font-size="12" fill="var(--text-soft)">N wire</text>
+    <!-- voltage arrows -->
+    <line x1="120" y1="66" x2="120" y2="168" stroke="var(--accent)" stroke-width="2" marker-end="url(#f9a)"/>
+    <text x="112" y="122" font-size="12.5" fill="var(--accent)" text-anchor="end">U_ph = 230 V</text>
+    <path d="M186 60 Q 300 120 282 236" fill="none" stroke="var(--accent-2)" stroke-width="2" marker-end="url(#f9b)"/>
+    <text x="286" y="106" font-size="12.5" fill="var(--accent-2)">U_L = 400 V</text>
+    <!-- DELTA -->
+    <text x="520" y="26" font-size="15" text-anchor="middle" font-weight="600">Delta (Δ) — Dreieck</text>
+    <circle cx="520" cy="60" r="4" class="node"/><text x="538" y="56" font-size="13">L1</text>
+    <circle cx="420" cy="248" r="4" class="node"/><text x="396" y="270" font-size="13">L2</text>
+    <circle cx="620" cy="248" r="4" class="node"/><text x="630" y="270" font-size="13">L3</text>
+    <!-- sides with boxes -->
+    <path class="wire" d="M520 60 L484 128"/>
+    <rect x="436" y="140" width="56" height="24" fill="none" stroke="var(--text-soft)" stroke-width="2" transform="rotate(-62 464 152)"/>
+    <path class="wire" d="M446 186 L420 248"/>
+    <path class="wire" d="M520 60 L556 128"/>
+    <rect x="528" y="140" width="56" height="24" fill="none" stroke="var(--text-soft)" stroke-width="2" transform="rotate(62 556 152)"/>
+    <path class="wire" d="M574 186 L620 248"/>
+    <path class="wire" d="M420 248 H472"/>
+    <rect x="472" y="236" width="56" height="24" fill="none" stroke="var(--text-soft)" stroke-width="2"/>
+    <path class="wire" d="M528 248 H620"/>
+    <!-- voltage arrow: line voltage across one side -->
+    <line x1="432" y1="260" x2="608" y2="260" stroke="var(--accent-2)" stroke-width="2" marker-end="url(#f9b)"/>
+    <text x="520" y="284" font-size="12.5" text-anchor="middle" fill="var(--accent-2)">U across winding = U_L = 400 V</text>
+    <defs>
+      <marker id="f9a" markerWidth="9" markerHeight="9" refX="7" refY="4.5" orient="auto"><path d="M0 0 L8 4.5 L0 9 z" fill="var(--accent)"/></marker>
+      <marker id="f9b" markerWidth="9" markerHeight="9" refX="7" refY="4.5" orient="auto"><path d="M0 0 L8 4.5 L0 9 z" fill="var(--accent-2)"/></marker>
+    </defs>
+  </svg>
+  </div>
+  <figcaption><b>Fig. 9.1</b> — The two ways to connect three loads (or generator windings). Star: each load sits between a line and the shared neutral point N. Delta: each load sits directly between two lines. Same three terminals to the outside world.</figcaption>
+</figure>
+
+<p>Two vocabularies to keep apart (<span class="de">Stranggrößen</span> vs. <span class="de">Leitergrößen</span>):</p>
+<ul>
+  <li><b>Phase quantities</b> \(U_{ph}, I_{ph}\): across/through one load or winding ("Strang").</li>
+  <li><b>Line quantities</b> \(U_L, I_L\): between two lines / in one line conductor.</li>
+</ul>
+<p>In a <b>star</b>, the line-to-line voltage is the phasor <em>difference</em> of two phase voltages. Two unit phasors 120° apart differ by a vector of length \(2\sin 60^\circ = \sqrt{3}\):</p>
+\[ \text{Star:}\quad U_L = \sqrt{3}\,U_{ph}, \quad I_L = I_{ph} \qquad\qquad \text{Delta:}\quad U_L = U_{ph}, \quad I_L = \sqrt{3}\,I_{ph}. \]
+<p>This is exactly the German low-voltage grid: phase voltage \(U_{ph} = 230\,\mathrm{V}\) (line to neutral — your socket), line voltage \(U_L = \sqrt{3} \cdot 230 \approx 400\,\mathrm{V}\) (line to line — your stove, heat pump, or workshop's "<span class="de">Starkstrom</span>" outlet). The famous 230/400 V pair is one system described two ways, tied by \(\sqrt{3}\).</p>
+
+<p>Balanced total power comes out identical for both connections when expressed in line quantities:</p>
+\[ P = 3\,U_{ph} I_{ph} \cos\varphi = \boxed{\;\sqrt{3}\; U_L\, I_L \cos\varphi\;} \qquad (\text{star: } 3 \cdot \tfrac{U_L}{\sqrt3} \cdot I_L = \sqrt3\,U_L I_L). \]
+
+<div class="example">
+  <div class="ex-head"><span class="ex-tag">Worked example</span> A three-phase motor's nameplate, decoded</div>
+  <div class="ex-body">
+    <p>An induction motor is rated \(P = 15\,\mathrm{kW}\) (mechanical ≈ electrical here for simplicity) at 400 V, \(\cos\varphi = 0.85\). Find the line current, apparent power, and reactive power.</p>
+    <div class="step"><span class="step-label">Step 1 — line current:</span>
+      \( I_L = \frac{P}{\sqrt{3}\,U_L \cos\varphi} = \frac{15\,000}{1.732 \cdot 400 \cdot 0.85} \approx 25.5\,\mathrm{A} \).</div>
+    <div class="step"><span class="step-label">Step 2 — apparent power:</span>
+      \( S = \sqrt{3}\,U_L I_L = 1.732 \cdot 400 \cdot 25.5 \approx 17.6\,\mathrm{kVA} \).</div>
+    <div class="step"><span class="step-label">Step 3 — reactive power:</span>
+      \( Q = \sqrt{S^2 - P^2} = \sqrt{17.6^2 - 15^2} \approx 9.3\,\mathrm{kvar} \) (inductive, as for any induction motor).</div>
+    <div class="result-line">\(I_L \approx 25.5\,\mathrm{A}\) per line — which is why this motor gets a 32 A three-phase breaker, and why its feed cable has 4–5 conductors but each is modest in cross-section.</div>
+  </div>
+</div>
+
+<h3 id="neutral">9.2 The neutral conductor — hero of imbalance</h3>
+<p>In a balanced star system, the three load currents are equal in magnitude and 120° apart, so their phasor sum — the current returning through the neutral (<span class="de">Neutralleiter</span>) — is exactly zero. The neutral is then redundant. Real buildings, however, are never perfectly balanced: apartments hang single-phase loads on L1, L2, L3 semi-randomly. The neutral carries the imbalance:</p>
+\[ \underline{I}_N = \underline{I}_1 + \underline{I}_2 + \underline{I}_3. \]
+<p>Lose the neutral in an unbalanced star (a classic, dangerous fault called <span class="de">Nullleiterbruch</span>) and the star point drifts: lightly loaded phases see far more than 230 V — appliances burn out. This is why the neutral must never be fused or switched alone.</p>
+
+<div class="widget">
+  <div class="w-head"><span class="ic">🧪</span>Interactive — three phasors, 120° apart <span class="w-tag">simulation</span></div>
+  <div class="w-body">
+    <p class="small mt0">The three phase voltages as rotating phasors, plus their sum (the neutral current, for identical resistive loads). Balanced (slider at 100 %), the sum is a flat line at zero — three currents, no return current. Now reduce the L3 amplitude and watch the sum come alive: that is exactly the current your building's neutral conductor carries.</p>
+    <div id="w-threephase"></div>
+  </div>
+</div>
+
+<div class="box history">
+  <div class="box-title"><span class="ic">📜</span>Where this module flows next</div>
+  <p>Resonance and frequency response become filters and Bode plots in <b>Module 06</b>; magnetic coupling turns phasors into transformer models in <b>Module 07</b>; the rotating field of Section 9 becomes synchronous and induction machines in <b>Module 17</b>; complex power scales up to national grid load-flow in <b>Module 19</b>; and the \(j\omega\) that replaced \(\mathrm{d}/\mathrm{d}t\) here generalizes to the Laplace variable \(s = \sigma + j\omega\) in <b>Module 06/13</b> — phasors are the \(\sigma = 0\) slice of that bigger picture.</p>
+</div>
+
+<h2 id="summary">10. Formula summary — <span class="de">Formelsammlung</span></h2>
+
+<div class="table-wrap">
+<table class="data">
+<thead><tr><th>Concept</th><th>Formula</th><th>Remember as</th></tr></thead>
+<tbody>
+<tr><td>Sinusoid</td><td>\( u(t) = \hat{u}\sin(\omega t + \varphi_u) \)</td><td>amplitude · frequency · phase</td></tr>
+<tr><td>Angular frequency</td><td>\( \omega = 2\pi f = 2\pi/T \)</td><td>50 Hz → ω ≈ 314 s⁻¹, T = 20 ms</td></tr>
+<tr><td>RMS (sine)</td><td>\( U = \hat{u}/\sqrt{2} \)</td><td>230 V mains → û ≈ 325 V</td></tr>
+<tr><td>Phasor transform</td><td>\( \mathrm{d}/\mathrm{d}t \leftrightarrow j\omega \)</td><td>calculus → algebra</td></tr>
+<tr><td>Impedances</td><td>\( \underline{Z}_R = R,\; \underline{Z}_L = j\omega L,\; \underline{Z}_C = \tfrac{1}{j\omega C} \)</td><td>L: i lags 90°; C: i leads 90°</td></tr>
+<tr><td>Series RLC</td><td>\( \underline{Z} = R + j(\omega L - \tfrac{1}{\omega C}) \)</td><td>resonance at \( \omega_0 = 1/\sqrt{LC} \)</td></tr>
+<tr><td>Complex divider</td><td>\( \underline{U}_2/\underline{U}_{in} = \underline{Z}_2/(\underline{Z}_1{+}\underline{Z}_2) \)</td><td>frequency-dependent → a filter</td></tr>
+<tr><td>RC low-pass</td><td>\( \underline{H} = \tfrac{1}{1+j\omega RC},\; \omega_c = 1/RC \)</td><td>\(|H| = 1/\sqrt2\) at cutoff</td></tr>
+<tr><td>Power trio</td><td>\( P = UI\cos\varphi,\; Q = UI\sin\varphi,\; S = UI \)</td><td>\( S^2 = P^2 + Q^2 \) (triangle!)</td></tr>
+<tr><td>Complex power</td><td>\( \underline{S} = \underline{U}\,\underline{I}^{\,*} = P + jQ \)</td><td>conjugate makes inductive Q &gt; 0</td></tr>
+<tr><td>PFC capacitor</td><td>\( Q_C = P(\tan\varphi_1 - \tan\varphi_2),\; C = Q_C/(\omega U^2) \)</td><td>let Q circulate locally</td></tr>
+<tr><td>Three-phase (star)</td><td>\( U_L = \sqrt{3}\,U_{ph} \)</td><td>230 V / 400 V</td></tr>
+<tr><td>Three-phase power</td><td>\( P = \sqrt{3}\,U_L I_L \cos\varphi \)</td><td>constant p(t) when balanced</td></tr>
+<tr><td>Neutral current</td><td>\( \underline{I}_N = \underline{I}_1 + \underline{I}_2 + \underline{I}_3 \)</td><td>zero if balanced</td></tr>
+</tbody>
+</table>
+</div>
+
+<h2 id="exercises">11. Exercises</h2>
+<p>Phasor fluency is finger memory — do these with a pencil and a polar–Cartesian-capable calculator before peeking.</p>
+
+<div class="exercise">
+  <p class="ex-q"><span class="ex-num">E1</span>The North American grid runs at 120 V (RMS) / 60 Hz. Find the peak voltage, the angular frequency, and the period. <span class="diff easy">easy</span></p>
+  <details><summary>Show solution</summary>
+    <div class="solution">
+      \( \hat{u} = \sqrt{2}\cdot 120 \approx 170\,\mathrm{V} \); \( \omega = 2\pi\cdot 60 \approx 377\,\mathrm{s^{-1}} \); \( T = 1/60 \approx 16.7\,\mathrm{ms} \).
+      Sanity check: the US peak (170 V) is barely half the European one (325 V) — one reason US wiring uses larger currents for the same power, and why 120 V shocks are somewhat more survivable.
+    </div>
+  </details>
+</div>
+
+<div class="exercise">
+  <p class="ex-q"><span class="ex-num">E2</span>A \(2.2\,\mathrm{\mu F}\) capacitor is connected to 230 V. Find its reactance and current at 50 Hz, and its reactance at 5 kHz. <span class="diff easy">easy</span></p>
+  <details><summary>Show solution</summary>
+    <div class="solution">
+      At 50 Hz: \( X_C = \frac{1}{\omega C} = \frac{1}{314.16 \cdot 2.2\cdot 10^{-6}} \approx 1447\,\Omega \) → \( I = 230/1447 \approx 0.16\,\mathrm{A} \), leading the voltage by 90°.
+      At 5 kHz (ω = 31 416 s⁻¹): \( X_C \approx 14.5\,\Omega \) — a hundred times smaller, because \(X_C \propto 1/f\). This 1/f behavior is why capacitors "short out" high-frequency noise in every power supply (decoupling capacitors, Module 08/10).
+    </div>
+  </details>
+</div>
+
+<div class="exercise">
+  <p class="ex-q"><span class="ex-num">E3</span>A coil with \(R = 40\,\Omega\) and \(L = 95.5\,\mathrm{mH}\) (its winding resistance and inductance in series) hangs on the 230 V / 50 Hz grid. Find \(\underline{Z}\), the current, cos φ, and the active power. <span class="diff med">medium</span></p>
+  <details><summary>Show solution</summary>
+    <div class="solution">
+      \( X_L = \omega L = 314.16 \cdot 0.0955 \approx 30\,\Omega \), so \( \underline{Z} = (40 + j30)\,\Omega = 50\,\Omega\,\angle 36.9^\circ \) (the 3-4-5 triangle!).
+      \( I = 230/50 = 4.6\,\mathrm{A} \), lagging by 36.9°; \( \cos\varphi = R/Z = 40/50 = 0.8 \).
+      \( P = UI\cos\varphi = 230 \cdot 4.6 \cdot 0.8 \approx 846\,\mathrm{W} \). Cross-check: \( P = I^2 R = 4.6^2 \cdot 40 = 846\,\mathrm{W} \) ✓ — only the resistance dissipates; the inductance's 635 var just slosh.
+    </div>
+  </details>
+</div>
+
+<div class="exercise">
+  <p class="ex-q"><span class="ex-num">E4</span>Derive the RMS value of a symmetric triangle wave with peak \(\hat{u}\), and confirm the table entry \(\hat{u}/\sqrt{3}\). <span class="diff med">medium</span></p>
+  <details><summary>Show solution</summary>
+    <div class="solution">
+      By symmetry, integrate over the first quarter period, where the wave is the ramp \( u(t) = \hat{u}\,\frac{t}{T/4} \):
+      \[ U^2 = \frac{1}{T/4}\int_0^{T/4} \hat{u}^2 \frac{t^2}{(T/4)^2}\,\mathrm{d}t = \frac{\hat{u}^2}{(T/4)^3}\cdot\frac{(T/4)^3}{3} = \frac{\hat{u}^2}{3}. \]
+      So \( U = \hat{u}/\sqrt{3} \approx 0.577\,\hat{u} \) ✓. The triangle spends more time near zero than the sine does, so its RMS is lower (0.577 &lt; 0.707) — squaring punishes time spent at small values.
+    </div>
+  </details>
+</div>
+
+<div class="exercise">
+  <p class="ex-q"><span class="ex-num">E5</span>Design an RC low-pass with cutoff \(f_c = 1\,\mathrm{kHz}\) using \(R = 3.3\,\mathrm{k\Omega}\). Then compute the magnitude of the transfer function at 10 kHz. <span class="diff med">medium</span></p>
+  <details><summary>Show solution</summary>
+    <div class="solution">
+      From \( f_c = \frac{1}{2\pi RC} \): \( C = \frac{1}{2\pi \cdot 3300 \cdot 1000} \approx 48\,\mathrm{nF} \) (pick the standard value 47 nF; \(f_c\) shifts to 1.03 kHz — fine).
+      At 10 kHz, \( \omega RC = f/f_c = 10 \), so \( |\underline{H}| = \frac{1}{\sqrt{1 + 10^2}} \approx 0.0995 \approx 1/10 \).
+      A decade above cutoff, a first-order low-pass attenuates by a factor ≈ 10 (−20 dB) — the "20 dB per decade" slope you will meet formally in Module 06.
+    </div>
+  </details>
+</div>
+
+<div class="exercise">
+  <p class="ex-q"><span class="ex-num">E6</span>A workshop's single-phase machine park draws \(P = 11\,\mathrm{kW}\) at \(\cos\varphi_1 = 0.65\) from 230 V / 50 Hz, and the utility demands at least 0.92. Derive the correction formula \(Q_C = P(\tan\varphi_1 - \tan\varphi_2)\) from the power triangle, then size the capacitor. <span class="diff hard">challenge</span></p>
+  <details><summary>Show solution</summary>
+    <div class="solution">
+      <b>Derivation:</b> Active power P is untouched by a parallel capacitor (it draws ideally none). Before correction the load's reactive power is \( Q_1 = P\tan\varphi_1 \) (from the triangle: \(Q = P \tan\varphi\)); the target state needs \( Q_2 = P\tan\varphi_2 \). The capacitor must absorb the difference: \( Q_C = Q_1 - Q_2 = P(\tan\varphi_1 - \tan\varphi_2) \). With \( Q_C = U^2/X_C = \omega C U^2 \) follows \( C = Q_C/(\omega U^2) \).<br><br>
+      <b>Numbers:</b> \( \tan(\arccos 0.65) = 1.169 \), \( \tan(\arccos 0.92) = 0.426 \).
+      \( Q_C = 11\,000\,(1.169 - 0.426) \approx 8.2\,\mathrm{kvar} \);
+      \( C = \frac{8170}{314.16 \cdot 230^2} \approx 490\,\mathrm{\mu F} \).
+      Sanity check: line current falls from \( \frac{11000}{230\cdot0.65} \approx 74\,\mathrm{A} \) to \( \frac{11000}{230\cdot0.92} \approx 52\,\mathrm{A} \) — 30 % less copper heating. (Real installations this size would use a switched 400 V three-phase capacitor bank, but the physics is identical.)
+    </div>
+  </details>
+</div>
+
+<div class="exercise">
+  <p class="ex-q"><span class="ex-num">E7</span>An unbalanced star on 230/400 V feeds purely resistive loads: \(I_1 = 10\,\mathrm{A}\), \(I_2 = 8\,\mathrm{A}\), \(I_3 = 4\,\mathrm{A}\) (each in phase with its own phase voltage). Compute the neutral current as a phasor and its magnitude. <span class="diff hard">challenge</span></p>
+  <details><summary>Show solution</summary>
+    <div class="solution">
+      Take \(\underline{U}_1\) as reference; the currents are then \( \underline{I}_1 = 10\angle 0^\circ \), \( \underline{I}_2 = 8\angle{-120^\circ} \), \( \underline{I}_3 = 4\angle{+120^\circ} \) (A). Convert to Cartesian:
+      \[ \underline{I}_N = 10 + 8\bigl(-\tfrac12 - j\tfrac{\sqrt3}{2}\bigr) + 4\bigl(-\tfrac12 + j\tfrac{\sqrt3}{2}\bigr) = (10 - 4 - 2) + j\,\tfrac{\sqrt3}{2}(4 - 8) = 4 - j\,3.46\,\mathrm{A}. \]
+      Magnitude: \( I_N = \sqrt{16 + 12} = \sqrt{28} \approx 5.3\,\mathrm{A} \), at −40.9°.
+      Sanity checks: were the loads balanced (10/10/10), the sum would vanish; and \(I_N\) (5.3 A) is smaller than the largest imbalance suggests naively (10−4 = 6 A would be the two-phase-only intuition) because the three directions partially cancel. Note \(I_N\) is <em>not</em> \(10-8-4\) — phasors, never bare magnitudes.
+    </div>
+  </details>
+</div>
+
+<h2 id="quiz">12. Self-assessment</h2>
+
+<div class="quiz" data-quiz-title="Module 05 — Self-test">
+<script type="application/json">
+[
+ {"q":"European mains is \"230 V, 50 Hz\". The peak voltage at the socket is about…",
+  "opts":["230 V","325 V","400 V","163 V"],"a":1,
+  "explain":"Quoted AC voltages are RMS values. Peak: \\(\\hat{u} = \\sqrt{2}\\cdot 230 \\approx 325\\,\\mathrm{V}\\). The \\(1/\\sqrt{2}\\) relation holds for sinusoids only."},
+ {"q":"The period of the 50 Hz grid voltage is…",
+  "opts":["50 ms","2 ms","20 ms","314 ms"],"a":2,
+  "explain":"\\(T = 1/f = 1/50\\,\\mathrm{Hz} = 20\\,\\mathrm{ms}\\). Don't confuse with \\(\\omega = 2\\pi f \\approx 314\\,\\mathrm{s^{-1}}\\), which is the angular frequency."},
+ {"q":"The RMS value of a waveform is defined as the value that…",
+  "opts":["equals the arithmetic mean of the waveform","a DC source would need to deliver the same average power into a resistor","equals 70.7 % of the peak for every waveform","the waveform exceeds half of the time"],"a":1,
+  "explain":"RMS is defined through equivalent heating power: \\(U = \\sqrt{\\overline{u^2}}\\). The 0.707 factor is specific to sines — a square wave has RMS = peak, a triangle has \\(\\hat{u}/\\sqrt{3}\\)."},
+ {"q":"Which statement about a capacitor in AC is correct?",
+  "opts":["Its impedance magnitude grows with frequency","It blocks high frequencies and passes DC","Its current leads its voltage by 90°","Its voltage leads its current by 90°"],"a":2,
+  "explain":"From \\(i = C\\,\\mathrm{d}u/\\mathrm{d}t\\): \\(\\underline{Z}_C = 1/(j\\omega C)\\) — magnitude falls with f (passes high frequencies, blocks DC), and the current leads (ICE)."},
+ {"q":"An impedance is \\(\\underline{Z} = (30 + j40)\\,\\Omega\\). Its magnitude and power factor are…",
+  "opts":["70 Ω and 0.43","50 Ω and 0.6","50 Ω and 0.8","35 Ω and 0.75"],"a":1,
+  "explain":"\\(|Z| = \\sqrt{30^2 + 40^2} = 50\\,\\Omega\\) (3-4-5 triangle) and \\(\\cos\\varphi = R/|Z| = 30/50 = 0.6\\). Adding 30 + 40 = 70 is the classic magnitude-adding error."},
+ {"q":"In a purely inductive load, the current…",
+  "opts":["lags the voltage by 90°","leads the voltage by 90°","is in phase with the voltage","lags the voltage by 45°"],"a":0,
+  "explain":"\\(\\underline{Z}_L = j\\omega L\\): the +j rotates the voltage 90° ahead of the current — ELI. Physically, current through an inductance cannot jump; it ramps up after the voltage is applied."},
+ {"q":"Reactive power Q does no net work. Why do utilities still penalize a poor cos φ?",
+  "opts":["They don't — reactive power is free for all customers","Because Q consumes fuel directly at the power plant","Because the reactive current is real and causes I²R losses and occupies transformer/line capacity","Because reactive power damages household electronics"],"a":2,
+  "explain":"The energy sloshes back and forth without being consumed, but the current carrying it heats every conductor on the way (\\(I^2R\\)) and uses up equipment ratings (VA). Hence penalties below cos φ ≈ 0.9 for industry — and capacitor banks as the cure."},
+ {"q":"Complex power is defined as \\(\\underline{S} = \\underline{U}\\,\\underline{I}^{\\,*}\\) (with conjugated current) so that…",
+  "opts":["the magnitude comes out as P instead of S","an inductive load yields positive Q by convention","the formula also works for DC","voltage and current can be swapped freely"],"a":1,
+  "explain":"Conjugating makes \\(\\arg\\underline{S} = \\varphi_u - \\varphi_i = \\varphi\\), so \\(Q = UI\\sin\\varphi > 0\\) for inductive loads (current lagging). Without the star, Q's sign flips and the convention breaks."},
+ {"q":"In the European low-voltage grid, 230 V and 400 V are…",
+  "opts":["two separate networks with different transformers","phase-to-neutral and phase-to-phase voltage of the same star system, ratio √3","RMS and peak value of the same voltage","the voltages of delta and star customers respectively"],"a":1,
+  "explain":"One three-phase star system: line-to-neutral \\(U_{ph} = 230\\,\\mathrm{V}\\), line-to-line \\(U_L = \\sqrt{3}\\cdot 230 \\approx 400\\,\\mathrm{V}\\). The √3 comes from the phasor difference of two voltages 120° apart."},
+ {"q":"A perfectly balanced star-connected load is fed by all three phases. The neutral conductor carries…",
+  "opts":["three times the phase current","the phase current divided by √3","exactly zero current","the sum of the phase current magnitudes"],"a":2,
+  "explain":"The three currents are equal and 120° apart, so their phasor sum vanishes: \\(\\underline{I}_N = \\underline{I}_1 + \\underline{I}_2 + \\underline{I}_3 = 0\\). Only imbalance puts current on the neutral — which is why it can be thinner, but must never be interrupted."}
+]
+</script>
+</div>
+
+<script>
+document.addEventListener("ee-ready", () => {
+
+  /* --- Widget 1: R/L/C voltage & current phasors --- */
+  EE.phasor({
+    mount: "#w-rlc-phasor", height: 300,
+    params: [
+      { key: "el", label: "Element", type: "select", value: "L",
+        options: [
+          { label: "Resistor R — in phase", value: "R" },
+          { label: "Inductor L — current lags 90°", value: "L" },
+          { label: "Capacitor C — current leads 90°", value: "C" }
+        ] }
+    ],
+    phasors: (p, t) => [
+      { mag: 0.95, phase: 0, label: "u(t)", color: 0 },
+      { mag: 0.60, phase: p.el === "R" ? 0 : (p.el === "L" ? -Math.PI / 2 : Math.PI / 2), label: "i(t)", color: 2 }
+    ],
+    readouts: [
+      { label: "Impedance", fn: p => p.el === "R" ? "Z = R (real)" : (p.el === "L" ? "Z = jωL" : "Z = 1/(jωC)") },
+      { label: "Phase shift φ = φu − φi", fn: p => p.el === "R" ? "0°" : (p.el === "L" ? "+90° (current lags)" : "−90° (current leads)") },
+      { label: "Mnemonic", fn: p => p.el === "R" ? "in step" : (p.el === "L" ? "ELI" : "ICE") }
+    ]
+  });
+
+  /* --- Widget 2: series RLC impedance vs frequency --- */
+  const zmag = (f, p) => {
+    const w = 2 * Math.PI * f;
+    const X = w * p.L / 1000 - 1 / (w * p.C * 1e-6);
+    return Math.hypot(p.R, X);
+  };
+  const zphase = (f, p) => {
+    const w = 2 * Math.PI * f;
+    const X = w * p.L / 1000 - 1 / (w * p.C * 1e-6);
+    return Math.atan2(X, p.R) * 180 / Math.PI;
+  };
+  const fres = p => 1 / (2 * Math.PI * Math.sqrt(p.L / 1000 * p.C * 1e-6));
+  EE.functionPlot({
+    mount: "#w-zrlc", height: 300,
+    x: { min: 20, max: 500, label: "f in Hz" },
+    y: p => ({ min: 0, max: 1.12 * Math.max(zmag(20, p), zmag(500, p), 2 * p.R), label: "|Z| in Ω" }),
+    params: [
+      { key: "R", label: "R", min: 10, max: 500, step: 5, value: 100, unit: "Ω", fmt: v => v.toFixed(0) },
+      { key: "L", label: "L", min: 50, max: 500, step: 5, value: 200, unit: "mH", fmt: v => v.toFixed(0) },
+      { key: "C", label: "C", min: 5, max: 50, step: 1, value: 10, unit: "µF", fmt: v => v.toFixed(0) },
+      { key: "f", label: "evaluation frequency f", min: 20, max: 500, step: 1, value: 50, unit: "Hz", fmt: v => v.toFixed(0) }
+    ],
+    curves: [
+      { label: "|Z|(f)", color: 0, fn: (f, p) => zmag(f, p) }
+    ],
+    annotations: p => [
+      { type: "vline", x: fres(p), label: "resonance f₀ (M06)" },
+      { type: "hline", y: p.R, label: "minimum |Z| = R" },
+      { type: "point", x: p.f, y: zmag(p.f, p), label: "your f" }
+    ],
+    readouts: [
+      { label: "f₀ = 1/(2π√LC)", fn: p => EE.si(fres(p), "Hz") },
+      { label: "|Z| at f", fn: p => EE.si(zmag(p.f, p), "Ω") },
+      { label: "φ at f", fn: p => zphase(p.f, p).toFixed(1) + "°" },
+      { label: "Behavior at f", fn: p => zphase(p.f, p) > 1 ? "inductive (current lags)" : (zphase(p.f, p) < -1 ? "capacitive (current leads)" : "resistive (resonance)") }
+    ]
+  });
+
+  /* --- Widget 3: instantaneous power p(t) = u·i --- */
+  EE.functionPlot({
+    mount: "#w-power", height: 320,
+    x: { min: 0, max: 45, label: "t in ms" },
+    y: p => {
+      const s = 230 * p.I;                 /* S = U·I with U = 230 V RMS */
+      return { min: -1.25 * s, max: 2.2 * s, label: "p in W  (u, i scaled)" };
+    },
+    params: [
+      { key: "I", label: "Current I (RMS)", min: 0.5, max: 10, step: 0.1, value: 3, unit: "A", fmt: v => v.toFixed(1) },
+      { key: "phi", label: "Phase shift φ", min: -90, max: 90, step: 1, value: 45, unit: "°", fmt: v => v.toFixed(0) }
+    ],
+    curves: [
+      { label: "u(t) (scaled)", color: 0, dash: [6, 4],
+        fn: (t, p) => 0.9 * 230 * p.I * Math.sin(2 * Math.PI * 50 * t / 1000) },
+      { label: "i(t) (scaled)", color: 1, dash: [6, 4],
+        fn: (t, p) => 0.9 * 230 * p.I * Math.sin(2 * Math.PI * 50 * t / 1000 - p.phi * Math.PI / 180) },
+      { label: "p(t) = u·i", color: 5, fill: true,
+        fn: (t, p) => {
+          const wt = 2 * Math.PI * 50 * t / 1000, ph = p.phi * Math.PI / 180;
+          return 2 * 230 * p.I * Math.sin(wt) * Math.sin(wt - ph);
+        } }
+    ],
+    annotations: p => [
+      { type: "hline", y: 230 * p.I * Math.cos(p.phi * Math.PI / 180), label: "P (average)" }
+    ],
+    readouts: [
+      { label: "P (active)", fn: p => EE.si(230 * p.I * Math.cos(p.phi * Math.PI / 180), "W") },
+      { label: "Q (reactive)", fn: p => EE.si(230 * p.I * Math.sin(p.phi * Math.PI / 180), "var") },
+      { label: "S (apparent)", fn: p => EE.si(230 * p.I, "VA") },
+      { label: "cos φ", fn: p => Math.cos(p.phi * Math.PI / 180).toFixed(3) }
+    ]
+  });
+
+  /* --- Widget 4: three-phase phasors, sum = neutral current --- */
+  EE.phasor({
+    mount: "#w-threephase", height: 320,
+    showSum: true, sumLabel: "sum → neutral",
+    params: [
+      { key: "a3", label: "L3 amplitude (load balance)", min: 0, max: 100, step: 5, value: 100, unit: "%", fmt: v => v.toFixed(0) }
+    ],
+    phasors: (p, t) => [
+      { mag: 0.85, phase: 0, label: "L1", color: 0 },
+      { mag: 0.85, phase: -2 * Math.PI / 3, label: "L2", color: 1 },
+      { mag: 0.85 * p.a3 / 100, phase: 2 * Math.PI / 3, label: "L3", color: 2 }
+    ],
+    readouts: [
+      { label: "Phase separation", fn: p => "120° each" },
+      { label: "|sum| (neutral current)", fn: p => Math.abs(100 - p.a3).toFixed(0) + " % of one phase" },
+      { label: "System state", fn: p => p.a3 === 100 ? "balanced — neutral carries nothing" : "unbalanced — neutral carries the difference" }
+    ]
+  });
+});
+</script>
+
+</article>
+</main>
+</div>
+</body>
+</html>

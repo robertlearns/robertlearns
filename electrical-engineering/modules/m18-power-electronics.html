@@ -1,0 +1,1007 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>M18 · Power Electronics — EE Knowledge Base</title>
+<link rel="stylesheet" href="../../assets/vendor/katex/katex.min.css">
+<link rel="stylesheet" href="../../assets/css/style.css">
+<script src="../../assets/vendor/katex/katex.min.js" defer></script>
+<script src="../../assets/vendor/katex/auto-render.min.js" defer></script>
+<script src="../curriculum.js" defer></script>
+<script src="../../assets/js/app.js" defer></script>
+<script src="../../assets/js/widgets.js" defer></script>
+</head>
+<body data-module="m18">
+<div class="layout">
+<main class="content">
+<article class="article">
+
+<span class="eyebrow">🏭 Power Engineering · Module 18</span>
+<h1>Power Electronics <span class="muted" style="font-weight:400;font-size:1.4rem">· <span class="de">Leistungselektronik</span></span></h1>
+<p class="lead">Every watt that reaches your phone, your laptop, an electric car or the grid from a solar roof has been chopped, transformed and re-assembled by transistors switching tens of thousands of times per second. Power electronics (<span class="de">Leistungselektronik</span>) is the art of converting electrical energy between forms — AC↔DC, one voltage to another — at efficiencies above 95 %, and it is arguably the most consequential EE discipline of the electrified 21st century.</p>
+
+<div class="page-meta">
+  <span><b>Corresponds to:</b> Leistungselektronik (5th–6th semester)</span>
+  <span><b>Prerequisites:</b> Modules 06, 08, 17</span>
+  <span><b>Study time:</b> ≈ 6–8 h</span>
+</div>
+
+<h2 id="dogma">1. The central dogma: switch, don't drop</h2>
+
+<p>Suppose you must feed a 5 V / 2 A load from a 12 V supply. The classical answer is a <strong>linear regulator</strong> (<span class="de">Längsregler</span>): a transistor in series with the load, operated in its <em>active region</em>, continuously "throttling" like a half-closed valve. It works, it is quiet and simple — and it is thermodynamically brutal. The full load current flows through the transistor while it drops the entire excess voltage:</p>
+\[ P_{\text{transistor}} = (U_{in} - U_{out})\, I_{out}, \qquad \eta_{\text{linear}} = \frac{U_{out} I_{out}}{U_{in} I_{out}} = \frac{U_{out}}{U_{in}}. \]
+<p>The efficiency depends <em>only</em> on the voltage ratio — no amount of circuit cleverness inside a linear regulator can beat \(U_{out}/U_{in}\).</p>
+
+<div class="example">
+  <div class="ex-head"><span class="ex-tag">Worked example</span> Linear vs. switcher, 12 V → 5 V at 2 A</div>
+  <div class="ex-body">
+    <p>Compare a linear regulator and a switching converter (<span class="de">Schaltregler</span>, measured \(\eta \approx 95\,\%\)) delivering 5 V / 2 A from a 12 V rail. Ambient 40 °C; the linear pass transistor has \(R_{th,ja} = 60\,\mathrm{K/W}\) without a heatsink and \(T_{j,max}=150\,°\mathrm{C}\).</p>
+    <div class="step"><span class="step-label">Step 1 — linear regulator:</span>
+      \( P_{out} = 5 \cdot 2 = 10\,\mathrm{W} \), \( P_{in} = 12 \cdot 2 = 24\,\mathrm{W} \), so \( \eta = 10/24 \approx 42\,\% \). A full \( (12-5)\cdot 2 = 14\,\mathrm{W} \) — 58 % of everything drawn from the input — becomes heat in one transistor.</div>
+    <div class="step"><span class="step-label">Step 2 — thermal consequence:</span>
+      without a heatsink \( T_j = 40 + 14 \cdot 60 = 880\,°\mathrm{C} \) — instant destruction. To keep \(T_j \le 125\,°\mathrm{C}\) we need \( R_{th} \le (125-40)/14 \approx 6\,\mathrm{K/W} \): a serious finned heatsink, roughly the volume of the entire circuit.</div>
+    <div class="step"><span class="step-label">Step 3 — switching converter:</span>
+      \( P_{in} = 10/0.95 \approx 10.5\,\mathrm{W} \), loss \( \approx 0.53\,\mathrm{W} \) — spread over a MOSFET, an inductor and a diode. No heatsink at all; a patch of PCB copper suffices. Input current drops from 2 A to \(10.5/12 \approx 0.88\,\mathrm{A}\).</div>
+    <div class="result-line">42 % vs. ≈ 95 % efficiency; 14 W vs. 0.5 W of heat. This factor-of-26 in dissipation is why essentially every power supply above a few watts switches.</div>
+  </div>
+</div>
+
+<div class="box key">
+  <div class="box-title"><span class="ic">🔑</span>Key idea: a switch dissipates (almost) nothing</div>
+  <p>For any device, \(P = U \cdot I\). A transistor used as a <em>switch</em> lives in only two states: <b>fully on</b> (\(U \approx 0\), large \(I\) → \(P\approx 0\)) or <b>fully off</b> (\(I \approx 0\), large \(U\) → \(P\approx 0\)). Loss occurs only in the residual on-state drop and in the brief transitions between states. All of power electronics follows from this one observation: <em>chop</em> the energy flow with near-lossless switches, then <em>smooth</em> the chopped waveform with lossless reactive elements — inductors and capacitors — into what the load wants.</p>
+</div>
+
+<div class="widget">
+  <div class="w-head"><span class="ic">🧪</span>Interactive — linear vs. switching efficiency <span class="w-tag">simulation</span></div>
+  <div class="w-body">
+    <p class="small mt0">Efficiency of both approaches versus input voltage. The linear regulator's curve is the pure ratio \(U_{out}/U_{in}\) — it collapses as the input rises. The switcher stays flat near 95 %. Move the operating-point slider and watch the dissipated watts in the readouts: that difference is what your heatsink must handle.</p>
+    <div id="w-linsw"></div>
+  </div>
+</div>
+
+<div class="box history">
+  <div class="box-title"><span class="ic">📜</span>From mercury arcs to wide bandgap</div>
+  <p>Power conversion predates the transistor: rotary converters (motor-generator sets) and mercury-arc valves (<span class="de">Quecksilberdampfgleichrichter</span>) ran railways and electrolysis plants from ~1900. The thyristor (1957) made conversion solid-state; the power MOSFET (late 1970s) and IGBT (1980s) made it fast; SiC and GaN (2010s) are now making it small enough to hide a 65 W charger in a plug. Modules 06 (inductors/capacitors), 08 (semiconductors) and 17 (three-phase AC) supply the ingredients we now assemble.</p>
+</div>
+
+<h2 id="switches">2. The switch toolbox</h2>
+
+<p>Real semiconductor switches are imperfect in characteristic ways; choosing the right one is half the design.</p>
+
+<h3 id="diode">2.1 The power diode — the automatic switch</h3>
+<p>A diode conducts when forward-biased and blocks otherwise — a switch that operates itself. Silicon PN power diodes drop \(U_F \approx 0.8{-}1.1\,\mathrm{V}\); <strong>Schottky diodes</strong> drop ~0.4 V but are limited in voltage (Si-Schottky ≲ 200 V). The hidden defect is <strong>reverse recovery</strong> (<span class="de">Sperrverzögerung</span>): a conducting PN diode is flooded with minority carriers, and when the circuit reverses the voltage, the diode briefly conducts <em>backwards</em> while the stored charge \(Q_{rr}\) is swept out. In a hard-switched converter this recovery current spikes through the transistor at every turn-on — a major loss and EMI source. Schottky and SiC diodes are (nearly) recovery-free, which is a big part of their appeal.</p>
+
+<h3 id="mosfet">2.2 Power MOSFET — fast, resistive, low voltage</h3>
+<p>The power MOSFET (Module 08) conducts like a resistor: on-state loss is \(P = I^2 R_{DS(on)}\), with \(R_{DS(on)}\) from a few mΩ (30 V parts) to hundreds of mΩ (600 V parts). Being majority-carrier devices they switch in tens of nanoseconds. Weakness: \(R_{DS(on)}\) of silicon MOSFETs grows roughly with \(U_{BR}^{2.5}\), so above ~650 V silicon MOSFETs become uneconomic. Every MOSFET also contains an intrinsic anti-parallel <strong>body diode</strong> — free but slow (poor recovery).</p>
+
+<h3 id="igbt">2.3 IGBT — the high-power workhorse</h3>
+<p>The <strong>IGBT</strong> (insulated-gate bipolar transistor, <span class="de">Bipolartransistor mit isolierter Gate-Elektrode</span>) is a MOSFET-driven bipolar device: it drops a roughly constant \(U_{CE(sat)} \approx 1.5{-}2.5\,\mathrm{V}\) like a diode rather than acting as a resistance. At hundreds of amps that fixed drop beats any silicon MOSFET's \(I^2R\). Ratings reach 6.5 kV / 3.6 kA per module. Price: minority-carrier storage causes a turn-off <strong>tail current</strong>, so switching is slower — practical frequencies of a few kHz to ~20 kHz. IGBTs drive trains, trams, industrial motor drives and (still, in many designs) EV inverters.</p>
+
+<h3 id="scr">2.4 Thyristor / SCR — the latching veteran</h3>
+<p>The <strong>thyristor</strong> (SCR, <span class="de">Thyristor</span>) turns on with a gate pulse and then <em>latches</em>: it cannot be turned off by its gate, only by the external current falling to zero. That marries perfectly with the AC mains, whose current crosses zero 100 times a second — <em>line-commutated</em> (<span class="de">netzgeführte</span>) converters. Phase-controlled rectifiers built from SCRs powered a century of DC drives and electrolysis, and thyristors still rule the very top of the power scale: LCC-HVDC links at ±800 kV carry many gigawatts through valves of series-connected thyristors (Section 11).</p>
+
+<h3 id="wbg">2.5 SiC and GaN — the wide-bandgap revolution</h3>
+<p>Silicon carbide (SiC) and gallium nitride (GaN) have ~3× the bandgap of silicon and about <b>10× the critical electric field</b>. A device blocking a given voltage can therefore be made ~10× thinner and more heavily doped, slashing on-resistance and stored charge. The consequences compound:</p>
+<ul>
+  <li><b>Higher voltage:</b> SiC MOSFETs at 1200–3300 V behave like fast, low-loss switches where silicon offered only slow IGBTs.</li>
+  <li><b>Higher frequency:</b> less stored charge → clean, fast edges; GaN converters run at MHz. Since inductor and capacitor size scales as \(1/f_{sw}\) (Section 3), <b>passives shrink</b> dramatically — the physics behind 65 W GaN phone chargers the size of a matchbox.</li>
+  <li><b>Higher temperature:</b> wider bandgap → far smaller leakage at high \(T_j\); SiC junctions run at 175 °C+ comfortably.</li>
+</ul>
+<p>The flagship application is transport: SiC traction inverters (Tesla Model 3 onward, and most 800-V platforms) cut inverter losses by roughly half versus IGBTs, and SiC on-board chargers shrank from bricks to books.</p>
+
+<div class="table-wrap">
+<table class="data">
+<thead><tr><th>Device</th><th>Voltage class</th><th>Current / power</th><th>Switching freq.</th><th>On-state behaviour</th><th>Typical home</th></tr></thead>
+<tbody>
+<tr><td>Si MOSFET</td><td>≤ 650 V</td><td>up to ~100 A</td><td>100 kHz – 1 MHz</td><td>resistive, \(R_{DS(on)}\)</td><td>DC-DC, PC supplies, motor ESCs</td></tr>
+<tr><td>GaN HEMT</td><td>≤ 650 V</td><td>up to ~50 A</td><td>0.3 – 3 MHz</td><td>resistive, no body-diode recovery</td><td>chargers, class-D audio, LiDAR</td></tr>
+<tr><td>SiC MOSFET</td><td>650 V – 3.3 kV</td><td>up to ~500 A (module)</td><td>20 – 200 kHz</td><td>resistive</td><td>EV inverters/OBC, solar, rail aux</td></tr>
+<tr><td>IGBT</td><td>600 V – 6.5 kV</td><td>up to kA (module)</td><td>1 – 20 kHz</td><td>fixed drop \(U_{CE(sat)}\)</td><td>drives, traction, wind, welding</td></tr>
+<tr><td>Thyristor/SCR</td><td>up to 8.5 kV</td><td>multi-kA</td><td>line frequency</td><td>fixed drop, latching</td><td>HVDC (LCC), soft starters, legacy drives</td></tr>
+</tbody>
+</table>
+</div>
+
+<div class="box key">
+  <div class="box-title"><span class="ic">🔑</span>Key idea: the device-choice map</div>
+  <p>Read the table as a map with axes <em>voltage × power × frequency</em>. Low voltage &amp; high frequency → MOSFET/GaN. High voltage &amp; high power at modest frequency → IGBT. Extreme power at line frequency → thyristor. SiC is aggressively colonising the middle ground from both sides — the map is redrawn every decade, the reading skill is permanent.</p>
+</div>
+
+<h2 id="losses">3. Losses, gate drive and the frequency trade-off</h2>
+
+<h3 id="conduction">3.1 Conduction losses</h3>
+<p>While a switch is on it dissipates (<span class="de">Durchlassverluste</span>):</p>
+<ul>
+  <li>MOSFET (resistive): \( P_{cond} = I_{rms}^2 \, R_{DS(on)} \) — note the <em>RMS</em> current, and note \(R_{DS(on)}\) roughly doubles from 25 °C to 125 °C.</li>
+  <li>IGBT / diode (fixed drop): \( P_{cond} \approx U_{CE(sat)} \cdot I_{avg} \) (plus a small resistive term).</li>
+</ul>
+
+<h3 id="switching-loss">3.2 Switching losses — the overlap picture</h3>
+<p>Transitions are not instantaneous. With an inductive load, at turn-on the current must rise <em>before</em> the voltage can fall (and vice versa at turn-off): for tens of nanoseconds the device carries <em>both</em> high voltage <em>and</em> high current. The instantaneous power \(p(t) = u(t)\,i(t)\) spikes to kilowatts; its time-integral is the switching energy per event, \(E_{on} + E_{off}\) (found in every datasheet). Since this happens \(f_{sw}\) times per second (<span class="de">Schaltverluste</span>):</p>
+\[ \boxed{\; P_{sw} = (E_{on} + E_{off}) \cdot f_{sw} \;} \]
+
+<figure>
+  <div class="fig-frame">
+  <svg class="diagram" viewBox="0 0 600 240" role="img" aria-label="Voltage-current overlap during a switching transition producing a power loss pulse">
+    <!-- axes -->
+    <line x1="60" y1="190" x2="560" y2="190" stroke="var(--text-soft)" stroke-width="1.5"/>
+    <line x1="60" y1="30" x2="60" y2="190" stroke="var(--text-soft)" stroke-width="1.5"/>
+    <text x="556" y="208" text-anchor="end" font-size="12" fill="var(--text-soft)">t</text>
+    <!-- power hump (filled) -->
+    <path d="M215 190 Q265 40 315 190 Z" fill="var(--accent-2)" opacity="0.22" stroke="none"/>
+    <path d="M215 190 Q265 40 315 190" fill="none" stroke="var(--accent-2)" stroke-width="2"/>
+    <text x="265" y="95" text-anchor="middle" font-size="13" fill="var(--accent-2)" font-weight="700">p(t) = u·i</text>
+    <text x="265" y="170" text-anchor="middle" font-size="12" fill="var(--accent-2)">area = E_sw</text>
+    <!-- current rises first -->
+    <path d="M60 185 H200 L260 65 H560" fill="none" stroke="var(--accent)" stroke-width="2.4"/>
+    <text x="480" y="58" font-size="13" fill="var(--accent)" font-weight="600">i(t)  (load current)</text>
+    <!-- voltage falls second -->
+    <path d="M60 45 H240 L320 182 H560" fill="none" stroke="var(--text-soft)" stroke-width="2.4" stroke-dasharray="7 4"/>
+    <text x="80" y="36" font-size="13" fill="var(--text-soft)" font-weight="600">u(t)  (blocking voltage)</text>
+    <text x="480" y="176" font-size="12" fill="var(--text-soft)">u ≈ 0 (on)</text>
+    <!-- overlap bracket -->
+    <line x1="200" y1="214" x2="320" y2="214" stroke="var(--text-faint)" stroke-width="1.5"/>
+    <line x1="200" y1="208" x2="200" y2="220" stroke="var(--text-faint)" stroke-width="1.5"/>
+    <line x1="320" y1="208" x2="320" y2="220" stroke="var(--text-faint)" stroke-width="1.5"/>
+    <text x="260" y="232" text-anchor="middle" font-size="11.5" fill="var(--text-faint)">overlap: tens of ns, u·i in the kW range</text>
+  </svg>
+  </div>
+  <figcaption><b>Fig. 3.1</b> — Hard turn-on with an inductive load: current commutates into the switch <em>before</em> its voltage collapses. During the overlap the device briefly dissipates kilowatts; the shaded area is the switching energy \(E_{sw}\) lost per event.</figcaption>
+</figure>
+
+<h3 id="freq-tradeoff">3.3 The efficiency-vs-frequency trade-off</h3>
+<p>Why not switch slowly, then? Because the passive components' job is to store energy for one switching period, and the energy to be buffered per cycle is \(P/f_{sw}\). Required inductance and capacitance for a given current/voltage ripple scale as \(1/f_{sw}\) (we derive this in Section 5). Doubling \(f_{sw}\) halves the size, weight and (roughly) cost of the magnetics — but doubles \(P_{sw}\). Every converter design balances on this seesaw:</p>
+\[ \eta \uparrow \;\Leftrightarrow\; f_{sw}\downarrow \qquad \text{size} \downarrow \;\Leftrightarrow\; f_{sw}\uparrow . \]
+<p>Wide-bandgap devices shift the whole trade-off because their \(E_{sw}\) is 5–10× smaller: same efficiency at 5× the frequency, one-fifth the magnetics. (Resonant "soft-switching" topologies like the LLC, Section 7, cheat the trade-off further by switching at zero voltage.)</p>
+
+<h3 id="gate">3.4 Gate drivers and dead time</h3>
+<p>A MOSFET is "voltage-controlled", yet its gate is a capacitor of several nanofarads (specified as gate charge \(Q_g\), tens of nC). To traverse the switching transition in, say, 20 ns you must move that charge in 20 ns: \(I_{gate} = Q_g/t \approx 50\,\mathrm{nC}/20\,\mathrm{ns} = 2.5\,\mathrm{A}\) — <em>amps</em>, briefly. This is the job of the <strong>gate driver</strong> (<span class="de">Gate-Treiber</span>). Mid-transition the gate voltage stalls on the <strong>Miller plateau</strong>: all driver current is consumed charging the gate-drain capacitance while the drain voltage swings, and a weak driver lingers there — right in the lossy overlap region. High-side switches additionally need a floating or isolated drive (bootstrap circuits, isolated gate drivers).</p>
+<p>In any half-bridge (two switches stacked across the DC bus — the universal building block from Section 6 onward) both switches on simultaneously would short the bus: <strong>shoot-through</strong> (<span class="de">Brückenkurzschluss</span>). Drivers therefore insert a <strong>dead time</strong> (<span class="de">Totzeit</span>) of tens to hundreds of ns in which <em>both</em> are off and current flows through a diode. Too little dead time → shoot-through; too much → extra diode loss and waveform distortion (Section 8.4).</p>
+
+<div class="box pitfall">
+  <div class="box-title"><span class="ic">🚫</span>Classic pitfall: "higher frequency = higher efficiency"</div>
+  <p>Students often assume faster switching must be better because the datasheet transistor is "fast". Backwards: raising \(f_{sw}\) <em>increases</em> loss (\(P_{sw} = E_{sw} f_{sw}\)) and buys you <em>smaller passives</em>, not efficiency. The exam-safe statement: frequency trades efficiency against size. If a question reports a converter mysteriously heating up after \(f_{sw}\) was raised — that is not a mystery.</p>
+</div>
+
+<h2 id="rectifiers">4. Rectifiers: AC → DC</h2>
+
+<h3 id="halfwave">4.1 Half-wave — the recap</h3>
+<p>One diode passes only positive half-waves (M08): output pulses at \(f_{line}\), average \(\hat U/\pi\), terrible ripple, DC current through any upstream transformer. Educational, rarely built. The standard front end is the <strong>full bridge</strong> (<span class="de">Brückengleichrichter</span>, B2): four diodes steer both half-waves the same way through the load, giving \(|u(t)|\) pulsing at \(2f_{line}\).</p>
+
+<h3 id="bridge">4.2 Full bridge with capacitor filter — and the ripple formula</h3>
+
+<figure>
+  <div class="fig-frame">
+  <svg class="diagram" viewBox="0 0 640 290" role="img" aria-label="Full-bridge rectifier with smoothing capacitor and load">
+    <!-- rails -->
+    <path class="wire" d="M220 60 H540"/>
+    <path class="wire" d="M220 230 H540"/>
+    <!-- left leg -->
+    <path class="wire" d="M220 60 V230"/>
+    <!-- right leg -->
+    <path class="wire" d="M320 60 V230"/>
+    <!-- diodes: triangles pointing up, cathode bar on top -->
+    <g stroke="var(--text-soft)" stroke-width="2" fill="var(--text-soft)">
+      <path d="M211 118 L229 118 L220 102 Z"/><line x1="211" y1="100" x2="229" y2="100"/>
+      <path d="M211 198 L229 198 L220 182 Z"/><line x1="211" y1="180" x2="229" y2="180"/>
+      <path d="M311 118 L329 118 L320 102 Z"/><line x1="311" y1="100" x2="329" y2="100"/>
+      <path d="M311 198 L329 198 L320 182 Z"/><line x1="311" y1="180" x2="329" y2="180"/>
+    </g>
+    <text x="196" y="114" text-anchor="end" font-size="13">D₁</text>
+    <text x="196" y="194" text-anchor="end" font-size="13">D₃</text>
+    <text x="344" y="114" font-size="13">D₂</text>
+    <text x="344" y="194" font-size="13">D₄</text>
+    <!-- AC source in the middle branch -->
+    <path class="wire" d="M220 148 H246"/>
+    <path class="wire" d="M294 148 H320"/>
+    <circle cx="270" cy="148" r="24" fill="none" stroke="var(--text-soft)" stroke-width="2"/>
+    <path d="M258 148 q6 -10 12 0 q6 10 12 0" fill="none" stroke="var(--text-soft)" stroke-width="2"/>
+    <text x="270" y="192" text-anchor="middle" font-size="13">u₁(t)</text>
+    <circle cx="220" cy="148" r="4" class="node"/>
+    <circle cx="320" cy="148" r="4" class="node"/>
+    <!-- capacitor -->
+    <path class="wire" d="M430 60 V134 M430 156 V230"/>
+    <line x1="410" y1="134" x2="450" y2="134" stroke="var(--text-soft)" stroke-width="3"/>
+    <line x1="410" y1="156" x2="450" y2="156" stroke="var(--text-soft)" stroke-width="3"/>
+    <text x="460" y="152" font-size="14">C</text>
+    <circle cx="430" cy="60" r="4" class="node"/>
+    <circle cx="430" cy="230" r="4" class="node"/>
+    <!-- load -->
+    <rect x="528" y="115" width="24" height="60" fill="none" stroke="var(--text-soft)" stroke-width="2"/>
+    <path class="wire" d="M540 60 V115 M540 175 V230"/>
+    <text x="562" y="150" font-size="14">R<tspan baseline-shift="sub" font-size="10">load</tspan></text>
+    <!-- polarity + output arrow -->
+    <text x="240" y="48" font-size="14">＋</text>
+    <text x="240" y="252" font-size="14">−</text>
+    <line x1="590" y1="90" x2="590" y2="200" stroke="var(--accent)" stroke-width="2" marker-end="url(#arrB)"/>
+    <text x="602" y="150" font-size="14" fill="var(--accent)">u_d</text>
+    <!-- mini waveform inset -->
+    <g>
+      <path d="M40 250 H180" stroke="var(--text-faint)" stroke-width="1.2"/>
+      <path d="M40 250 Q57 190 75 250 Q92 190 110 250 Q127 190 145 250 Q162 190 180 250" fill="none" stroke="var(--text-faint)" stroke-width="1.5" stroke-dasharray="3 3"/>
+      <path d="M46 205 L75 218 L79 205 L110 218 L114 205 L145 218 L149 205 L180 218" fill="none" stroke="var(--accent)" stroke-width="2"/>
+      <text x="110" y="278" text-anchor="middle" font-size="11.5" fill="var(--text-soft)">u_d(t): sawtooth ripple riding near û</text>
+    </g>
+    <defs><marker id="arrB" markerWidth="9" markerHeight="9" refX="7" refY="4.5" orient="auto"><path d="M0 0 L8 4.5 L0 9 z" fill="var(--accent)"/></marker></defs>
+  </svg>
+  </div>
+  <figcaption><b>Fig. 4.1</b> — Full-bridge rectifier with smoothing capacitor. Diode pairs (D₁, D₄) and (D₂, D₃) conduct on alternate half-waves. The capacitor charges in short pulses near each peak and carries the load in between (inset: dashed \(|u_1|\), solid \(u_d\)).</figcaption>
+</figure>
+
+<p>Add a smoothing capacitor (<span class="de">Glättungskondensator</span>) and the output stays near the peak \(\hat u = \sqrt{2}\,U_{rms}\) minus two diode drops. Between charging pulses — almost the whole half-period \(T/2 = 1/(2f_{line})\) — the capacitor alone supplies the load. From \(i = C\,\mathrm{d}u/\mathrm{d}t\), a constant load current \(I_{load}\) discharging \(C\) for time \(\approx 1/(2f_{line})\) sags by:</p>
+\[ \boxed{\; \Delta U_{pp} \approx \frac{I_{load}}{2 f_{line}\, C} \;} \]
+<p>(Slightly conservative, since recharging consumes part of the half-period — perfect for sizing.)</p>
+
+<div class="example">
+  <div class="ex-head"><span class="ex-tag">Worked example</span> Sizing the bus capacitor of an offline supply</div>
+  <div class="ex-body">
+    <p>A 230 V / 50 Hz bridge rectifier feeds a 60 W converter stage. Allow 30 V peak-to-peak ripple on the DC bus. Size \(C\).</p>
+    <div class="step"><span class="step-label">Step 1 — bus voltage and current:</span>
+      \( \hat u = \sqrt{2}\cdot 230 \approx 325\,\mathrm{V} \); with ripple the average bus is ≈ 310 V, so \( I_{load} \approx 60/310 \approx 0.19\,\mathrm{A} \).</div>
+    <div class="step"><span class="step-label">Step 2 — apply the ripple formula:</span>
+      \( C \ge \dfrac{I_{load}}{2 f \, \Delta U} = \dfrac{0.19}{2 \cdot 50 \cdot 30} \approx 63\,\mathrm{\mu F} \).</div>
+    <div class="step"><span class="step-label">Step 3 — pick a real part:</span> next standard value 68 µF, rated 400 V (325 V peak + mains surges). Check hold-up: the stored energy \( \tfrac12 C \hat u^2 \approx 3.6\,\mathrm{J} \) can bridge a half-cycle mains dropout — a spec many supplies must meet.</div>
+    <div class="result-line">C ≈ 68 µF / 400 V. Rule of thumb confirmed: offline supplies need roughly 1 µF per watt on the high-voltage bus.</div>
+  </div>
+</div>
+
+<h3 id="inrush">4.3 Inrush current</h3>
+<p>At the instant of plug-in the capacitor is empty — through the diodes it looks like a short circuit across the mains, and the first charging spike (<span class="de">Einschaltstromstoß</span>) can reach 50–100 A. Real supplies limit it with an NTC thermistor (high resistance cold, low when warm) or a relay-bypassed resistor. This is the "clack" you hear when big audio amplifiers power up.</p>
+
+<h3 id="pfc">4.4 Power factor correction (PFC)</h3>
+<p>The bridge-plus-capacitor draws current only in narrow spikes at the voltage peaks. Such current is rich in odd harmonics — poor power factor (Module 05), extra RMS current in every cable, and tripped limits: <b>EN 61000-3-2</b> caps the mains harmonics of equipment above 75 W. The fix is <strong>power factor correction</strong> (<span class="de">Leistungsfaktorkorrektur</span>): insert a boost converter (Section 6) between bridge and bus capacitor and control its input current to <em>track the sinusoidal voltage</em>. The mains then sees a nearly ideal resistor (\(\lambda > 0.99\)), while the boost output regulates the bus at ~390 V DC. Every laptop brick, LED driver and EV charger above 75 W contains one.</p>
+
+<h2 id="buck">5. DC-DC converters I: the buck, derived properly</h2>
+
+<p>DC-DC converters (<span class="de">Gleichspannungswandler</span>) are the heart of power electronics. The workhorse analysis tool is one statement about inductors in periodic steady state. Over one switching period \(T\) the inductor current returns to its starting value (otherwise it would ratchet up forever), so from \(u_L = L\,\mathrm{d}i_L/\mathrm{d}t\):</p>
+\[ \boxed{\; \langle u_L \rangle = \frac{1}{T}\int_0^T u_L \,\mathrm{d}t = 0 \;} \qquad \text{(volt-second balance, \textit{Spannungszeitflächen-Gleichgewicht})} \]
+
+<div class="box intuition">
+  <div class="box-title"><span class="ic">💡</span>Intuition: volt-seconds are inductor bookkeeping</div>
+  <p>Volts across an inductor tilt its current up or down; volt·seconds are the accumulated tilt. Steady state means the books balance every cycle: the volt-seconds pushed in while the switch is on must exactly cancel those pulled out while it is off. Write that one equation and any converter's voltage ratio falls out in two lines — no differential equations needed.</p>
+</div>
+
+<h3 id="buck-op">5.1 Buck operation and conversion ratio</h3>
+
+<figure>
+  <div class="fig-frame">
+  <svg class="diagram" viewBox="0 0 690 250" role="img" aria-label="Buck converter schematic">
+    <!-- source -->
+    <circle cx="70" cy="130" r="26" fill="none" stroke="var(--text-soft)" stroke-width="2"/>
+    <line x1="70" y1="104" x2="70" y2="156" class="wire"/>
+    <text x="70" y="178" text-anchor="middle" font-size="14">U<tspan baseline-shift="sub" font-size="10">in</tspan></text>
+    <path class="wire" d="M70 104 V60 H140"/>
+    <path class="wire" d="M70 156 V210 H600"/>
+    <!-- switch -->
+    <circle cx="145" cy="60" r="3.5" class="node"/>
+    <circle cx="205" cy="60" r="3.5" class="node"/>
+    <line x1="148" y1="58" x2="200" y2="34" stroke="var(--text-soft)" stroke-width="2.4"/>
+    <text x="175" y="22" text-anchor="middle" font-size="13">S (PWM at f<tspan baseline-shift="sub" font-size="10">sw</tspan>)</text>
+    <path class="wire" d="M205 60 H285"/>
+    <!-- switch node -->
+    <circle cx="285" cy="60" r="4.5" class="node"/>
+    <text x="285" y="46" text-anchor="middle" font-size="12.5" fill="var(--accent)">switch node u_sw</text>
+    <!-- freewheeling diode -->
+    <path class="wire" d="M285 60 V210"/>
+    <g stroke="var(--text-soft)" stroke-width="2" fill="var(--text-soft)">
+      <path d="M276 148 L294 148 L285 128 Z"/>
+      <line x1="276" y1="126" x2="294" y2="126"/>
+    </g>
+    <text x="264" y="142" text-anchor="end" font-size="13">D <tspan font-size="11" fill="var(--text-soft)">(Freilaufdiode)</tspan></text>
+    <!-- inductor: IEC filled rectangle -->
+    <path class="wire" d="M285 60 H340"/>
+    <rect x="340" y="52" width="86" height="16" fill="var(--text-soft)"/>
+    <text x="383" y="40" text-anchor="middle" font-size="14">L</text>
+    <path class="wire" d="M426 60 H600"/>
+    <!-- iL arrow -->
+    <line x1="440" y1="84" x2="486" y2="84" stroke="var(--accent)" stroke-width="2" marker-end="url(#arrC)"/>
+    <text x="463" y="102" text-anchor="middle" font-size="13" fill="var(--accent)">i_L</text>
+    <!-- capacitor -->
+    <circle cx="510" cy="60" r="4" class="node"/>
+    <path class="wire" d="M510 60 V116 M510 138 V210"/>
+    <line x1="490" y1="116" x2="530" y2="116" stroke="var(--text-soft)" stroke-width="3"/>
+    <line x1="490" y1="138" x2="530" y2="138" stroke="var(--text-soft)" stroke-width="3"/>
+    <text x="474" y="132" text-anchor="end" font-size="14">C</text>
+    <!-- load -->
+    <rect x="588" y="100" width="24" height="60" fill="none" stroke="var(--text-soft)" stroke-width="2"/>
+    <path class="wire" d="M600 60 V100 M600 160 V210"/>
+    <text x="624" y="134" font-size="14">R</text>
+    <!-- output arrow -->
+    <line x1="646" y1="85" x2="646" y2="185" stroke="var(--accent-2)" stroke-width="2" marker-end="url(#arrD)"/>
+    <text x="646" y="72" text-anchor="middle" font-size="14" fill="var(--accent-2)">U_out</text>
+    <circle cx="600" cy="60" r="4" class="node"/>
+    <defs>
+      <marker id="arrC" markerWidth="9" markerHeight="9" refX="7" refY="4.5" orient="auto"><path d="M0 0 L8 4.5 L0 9 z" fill="var(--accent)"/></marker>
+      <marker id="arrD" markerWidth="9" markerHeight="9" refX="7" refY="4.5" orient="auto"><path d="M0 0 L8 4.5 L0 9 z" fill="var(--accent-2)"/></marker>
+    </defs>
+  </svg>
+  </div>
+  <figcaption><b>Fig. 5.1</b> — The buck converter (<span class="de">Tiefsetzsteller</span>). The switch chops \(U_{in}\) into a rectangular wave at the switch node; the LC low-pass hands its average, \(D\,U_{in}\), to the load. The diode "freewheels" the inductor current while S is off.</figcaption>
+</figure>
+
+<p>Let the switch be on for \(D\,T\) (duty cycle \(D\), <span class="de">Tastgrad</span>) and off for \((1-D)T\). Assume the output holds a steady \(U_{out}\) (the LC filter guarantees small ripple) and continuous inductor current:</p>
+<ul>
+  <li><b>S on:</b> switch node = \(U_{in}\); &nbsp; \(u_L = U_{in} - U_{out}\) → \(i_L\) ramps <b>up</b>.</li>
+  <li><b>S off:</b> \(i_L\) cannot stop; it pulls the switch node down until diode D conducts → node ≈ 0; \(u_L = -U_{out}\) → \(i_L\) ramps <b>down</b>.</li>
+</ul>
+<p>Volt-second balance:</p>
+\[ (U_{in} - U_{out})\,D T \;=\; U_{out}\,(1-D)T \quad\Longrightarrow\quad \boxed{\; M = \frac{U_{out}}{U_{in}} = D \;} \]
+<p>The output is simply the <em>time-average of the switch node</em> — a chopped rectangle, low-pass filtered. Ideal efficiency: 100 %, since every element is a switch, an L or a C.</p>
+
+<h3 id="ripple">5.2 Ripple: sizing L and C</h3>
+<p>During the on-time, \(i_L\) rises linearly by the peak-to-peak <strong>current ripple</strong> (<span class="de">Stromwelligkeit</span>):</p>
+\[ \boxed{\; \Delta I_L = \frac{(U_{in} - U_{out})\,D}{L\, f_{sw}} \;}\]
+<p>The triangular ripple component of \(i_L\) flows into \(C\) (the DC part goes to the load). Integrating the triangle gives the output <strong>voltage ripple</strong>:</p>
+\[ \boxed{\; \Delta U_{out} = \frac{\Delta I_L}{8\, f_{sw}\, C} \;} \qquad (+\, \Delta I_L \cdot ESR \text{ for real capacitors}) \]
+<p>Both formulas carry \(f_{sw}\) in the denominator — the quantitative form of "passives shrink with frequency" (Section 3.3). Designers typically choose \(\Delta I_L \approx 20{-}40\,\%\) of the load current: smaller wastes inductor size, larger raises RMS losses and risks…</p>
+
+<h3 id="dcm">5.3 …the CCM/DCM boundary</h3>
+<p>A diode conducts only forward: if the ripple valley \(I_{out} - \Delta I_L/2\) tries to go below zero, the diode simply turns off and \(i_L\) sits at zero for the rest of the period — <strong>discontinuous conduction mode</strong> (DCM, <span class="de">lückender Betrieb</span>). Boundary:</p>
+\[ I_{out} > \frac{\Delta I_L}{2} \; \Leftrightarrow \; \text{CCM} . \]
+<p>In DCM the neat result \(M = D\) fails (\(U_{out}\) rises toward \(U_{in}\) at light load) and the control dynamics change — a classic trap for lightly-loaded designs. A <em>synchronous</em> buck (Section 6.3) replaces the diode with a MOSFET that can conduct backwards, staying in CCM at any load.</p>
+
+<div class="widget">
+  <div class="w-head"><span class="ic">🧪</span>Interactive — buck converter, steady state <span class="w-tag">simulation</span></div>
+  <div class="w-body">
+    <p class="small mt0">All three key waveforms over two switching periods. Try: (1) sweep \(D\) — \(U_{out}\) follows \(D \cdot 12\,\mathrm{V}\); (2) lower \(L\) or raise \(R\) until the mode indicator flips to <b>DCM</b> — watch the inductor current hit zero and the switch node float at \(U_{out}\); (3) double \(f_{sw}\) and watch both ripples halve — that is why high frequency buys small parts.</p>
+    <div id="w-buck"></div>
+  </div>
+</div>
+
+<div class="example">
+  <div class="ex-head"><span class="ex-tag">Worked example</span> Complete buck design: 12 V → 5 V at 2 A</div>
+  <div class="ex-body">
+    <p>Design the power stage: \(U_{in}=12\,\mathrm{V}\), \(U_{out}=5\,\mathrm{V}\), \(I_{out}=2\,\mathrm{A}\), \(f_{sw}=500\,\mathrm{kHz}\). Targets: \(\Delta I_L = 30\,\%\) of \(I_{out}\), \(\Delta U_{out} \le 50\,\mathrm{mV}\).</p>
+    <div class="step"><span class="step-label">Step 1 — duty cycle:</span>
+      \( D = U_{out}/U_{in} = 5/12 \approx 0.417 \). (Real converters run slightly higher to cover losses.)</div>
+    <div class="step"><span class="step-label">Step 2 — inductor:</span> \( \Delta I_L = 0.3 \cdot 2 = 0.6\,\mathrm{A} \);
+      \[ L = \frac{(U_{in}-U_{out})\,D}{\Delta I_L\, f_{sw}} = \frac{7 \cdot 0.417}{0.6 \cdot 5\cdot 10^{5}} \approx 9.7\,\mathrm{\mu H} \;\rightarrow\; 10\,\mathrm{\mu H}. \]
+      Saturation rating: \( \hat i_L = 2 + 0.3 = 2.3\,\mathrm{A} \) → pick a 3 A-rated part.</div>
+    <div class="step"><span class="step-label">Step 3 — CCM check:</span> \( \Delta I_L/2 = 0.3\,\mathrm{A} < 2\,\mathrm{A} \) ✓ — CCM down to 0.3 A load.</div>
+    <div class="step"><span class="step-label">Step 4 — capacitor:</span>
+      \( C \ge \dfrac{\Delta I_L}{8 f_{sw} \Delta U_{out}} = \dfrac{0.6}{8 \cdot 5\cdot10^{5} \cdot 0.05} = 3\,\mathrm{\mu F} \). A 22 µF ceramic gives \(\Delta U_{out} \approx 6.8\,\mathrm{mV}\) plus ESR ripple — ceramics' few-mΩ ESR adds ~2 mV. Ample margin (the extra C also helps load transients).</div>
+    <div class="step"><span class="step-label">Step 5 — semiconductor stress:</span> switch and diode both block \(U_{in}=12\,\mathrm{V}\) (choose ≥ 20 V parts); diode average current \( (1-D) I_{out} \approx 1.17\,\mathrm{A} \).</div>
+    <div class="result-line">D ≈ 0.42, L = 10 µH (3 A), C = 22 µF ceramic, 20 V FET + Schottky (or synchronous FET). This is, almost component for component, the point-of-load converter next to every CPU.</div>
+  </div>
+</div>
+
+<h2 id="boost">6. DC-DC converters II: boost, buck-boost, synchronous</h2>
+
+<h3 id="boost-conv">6.1 Boost — stepping up</h3>
+<p>Swap the roles: inductor at the <em>input</em>, switch to ground, diode to the output (<span class="de">Hochsetzsteller</span>). Switch on: \(u_L = U_{in}\), current ramps up, energy loads into \(L\); switch off: the inductor <em>insists</em> on its current, its voltage flips, and it lifts the node above \(U_{out}\) so the diode delivers. Volt-second balance:</p>
+\[ U_{in}\, D T = (U_{out} - U_{in})(1-D)T \quad\Longrightarrow\quad \boxed{\; M = \frac{U_{out}}{U_{in}} = \frac{1}{1-D} \;} \]
+<p>\(D = 0.5\) doubles the voltage; \(D = 0.9\) gives ×10 — on paper \(M \to \infty\) as \(D \to 1\). Reality disagrees: with the inductor's series resistance \(R_L\) included, \(M = \frac{1}{1-D}\cdot\frac{1}{1 + R_L/\big(R(1-D)^2\big)}\) — the gain peaks (typically around ×5–6) and then <em>collapses</em>, because at extreme \(D\) the inductor current grows as \(I_{out}/(1-D)\) and \(I^2 R_L\) losses eat everything. Boost converters also hide a <em>right-half-plane zero</em>: commanding more output first makes it dip — a control headache we quantify with the tools of Module 14.</p>
+
+<div class="box warn">
+  <div class="box-title"><span class="ic">⚠️</span>The boost has no "off" and no short-circuit protection</div>
+  <p>Trace the path \(U_{in} \to L \to D \to U_{out}\): it conducts even with the switch never closing. A boost's output can never fall below \(U_{in} - U_F\), and a shorted output puts the full input across one inductor and diode — unlimited current. Any real boost (including every PFC stage) needs upstream fusing.</p>
+</div>
+
+<h3 id="buckboost">6.2 Buck-boost — inverting, both directions</h3>
+<p>Third permutation: switch first, then inductor to ground, diode to the output (<span class="de">Inverswandler</span>). The inductor charges from \(U_{in}\) (on) and discharges into the output (off), which comes out <em>negative</em>:</p>
+\[ \boxed{\; M = -\frac{D}{1-D} \;} \]
+<p>\(|M|\) passes through 1 at \(D = 0.5\): one topology steps both up and down. The energy here is fully "trampolined" through the inductor each cycle — which is exactly the idea the flyback (Section 7) makes isolated.</p>
+
+<h3 id="syncrect">6.3 Synchronous rectification</h3>
+<p>At 5 V output, a Schottky diode's 0.45 V drop costs \(0.45/5 = 9\,\%\) efficiency by itself; at 1 V core voltages it would cost 45 %. The cure: replace the diode with a MOSFET switched on exactly when the diode would conduct — <strong>synchronous rectification</strong> (<span class="de">Synchrongleichrichtung</span>). A 5 mΩ FET carrying 2 A drops 10 mV: loss 20 mW instead of 0.9 W, a 45× reduction. Cost: a second gate driver and careful dead time (the body diode covers the gaps). Virtually every modern buck below 20 V output is synchronous.</p>
+
+<h2 id="isolated">7. Isolated converters: the flyback and friends</h2>
+
+<p>Anything plugged into the mains must keep 230 V AC galvanically separated from parts a human can touch: safety standards demand <em>reinforced isolation</em> between mains and output (<span class="de">galvanische Trennung</span>). Isolation also breaks ground loops and lets outputs float. The tool is a <strong>high-frequency transformer</strong> — and because transformer size shrinks with frequency just like inductors, a 100 kHz transformer for 65 W is a 2 cm toroid rather than the fist-sized 50 Hz lump in an old wall wart.</p>
+
+<h3 id="flyback">7.1 Flyback — the phone-charger workhorse</h3>
+<p>Take the buck-boost and split its inductor into two magnetically-coupled windings: the <strong>flyback converter</strong> (<span class="de">Sperrwandler</span>). Its "transformer" is really a <em>coupled inductor</em>: with the primary switch on, current builds in the primary and energy is stored in the core — specifically in a deliberate <b>air gap</b> (recall from Module 06: a gap holds magnetic energy at low flux density, preventing core saturation). The secondary diode blocks during this phase. Switch off → flux must continue → secondary voltage flips polarity, the diode conducts, and the stored energy dumps into the output. With turns ratio \(n = N_s/N_p\):</p>
+\[ \boxed{\; M = \frac{U_{out}}{U_{in}} = n\,\frac{D}{1-D} \;} \]
+<p>One switch, one magnetic part, one diode, isolation and any voltage ratio: unbeatable simplicity below ~100 W. Every phone charger, standby supply and LED bulb driver is a flyback. Modern USB-PD chargers add a GaN primary switch and synchronous secondary to hit 94 % in a plug-sized box.</p>
+<p>Above ~100 W the flyback's peaky currents and gapped-core energy storage become inefficient. The family grows: the <strong>forward converter</strong> (<span class="de">Durchflusswandler</span>) — a buck with a true transformer inserted, transferring energy <em>while</em> the switch is on; and the <strong>LLC resonant converter</strong>, which shapes currents into sinusoids so switches turn on at zero voltage (soft switching) — the standard for server supplies, TVs and EV on-board chargers at 90–98 % efficiency.</p>
+
+<div class="box german">
+  <div class="box-title"><span class="ic">🇩🇪</span>Vokabeln</div>
+  <p>power electronics = <span class="de">Leistungselektronik</span> · switch-mode power supply = <span class="de">Schaltnetzteil</span> · rectifier = <span class="de">Gleichrichter</span> · inverter = <span class="de">Wechselrichter</span> · duty cycle = <span class="de">Tastgrad/Tastverhältnis</span> · buck = <span class="de">Tiefsetzsteller/Abwärtswandler</span> · boost = <span class="de">Hochsetzsteller/Aufwärtswandler</span> · flyback converter = <span class="de">Sperrwandler</span> · freewheeling diode = <span class="de">Freilaufdiode</span> · ripple = <span class="de">Welligkeit</span> · switching losses = <span class="de">Schaltverluste</span> · dead time = <span class="de">Totzeit</span> · gate driver = <span class="de">Gate-Treiber</span> · junction temperature = <span class="de">Sperrschichttemperatur</span> · heatsink = <span class="de">Kühlkörper</span> · galvanic isolation = <span class="de">galvanische Trennung</span> · DC link = <span class="de">Zwischenkreis</span></p>
+</div>
+
+<h2 id="inverters">8. Inverters: DC → AC</h2>
+
+<h3 id="hbridge">8.1 The H-bridge</h3>
+<p>To make AC from DC you need to apply the DC bus to the load in <em>either polarity</em>. Four switches in an <strong>H-bridge</strong> (<span class="de">Vollbrücke</span>) do exactly that:</p>
+
+<figure>
+  <div class="fig-frame">
+  <svg class="diagram" viewBox="0 0 640 280" role="img" aria-label="H-bridge inverter with four switches and load in the cross branch">
+    <!-- rails -->
+    <path class="wire" d="M70 40 H480"/>
+    <path class="wire" d="M70 240 H480"/>
+    <!-- DC source left -->
+    <circle cx="70" cy="140" r="26" fill="none" stroke="var(--text-soft)" stroke-width="2"/>
+    <line x1="70" y1="114" x2="70" y2="166" class="wire"/>
+    <path class="wire" d="M70 114 V40 M70 166 V240"/>
+    <text x="34" y="145" text-anchor="middle" font-size="14">U<tspan baseline-shift="sub" font-size="10">dc</tspan></text>
+    <!-- left leg -->
+    <path class="wire" d="M200 40 V75 M200 105 V175 M200 205 V240"/>
+    <rect x="182" y="75" width="36" height="30" fill="none" stroke="var(--text-soft)" stroke-width="2" rx="4"/>
+    <text x="200" y="95" text-anchor="middle" font-size="13">S₁</text>
+    <rect x="182" y="175" width="36" height="30" fill="none" stroke="var(--text-soft)" stroke-width="2" rx="4"/>
+    <text x="200" y="195" text-anchor="middle" font-size="13">S₃</text>
+    <!-- right leg -->
+    <path class="wire" d="M440 40 V75 M440 105 V175 M440 205 V240"/>
+    <rect x="422" y="75" width="36" height="30" fill="none" stroke="var(--text-soft)" stroke-width="2" rx="4"/>
+    <text x="440" y="95" text-anchor="middle" font-size="13">S₂</text>
+    <rect x="422" y="175" width="36" height="30" fill="none" stroke="var(--text-soft)" stroke-width="2" rx="4"/>
+    <text x="440" y="195" text-anchor="middle" font-size="13">S₄</text>
+    <!-- midpoint nodes + load -->
+    <circle cx="200" cy="140" r="4.5" class="node"/>
+    <circle cx="440" cy="140" r="4.5" class="node"/>
+    <path class="wire" d="M200 140 H285 M355 140 H440"/>
+    <rect x="285" y="128" width="70" height="24" fill="none" stroke="var(--text-soft)" stroke-width="2"/>
+    <text x="320" y="120" text-anchor="middle" font-size="13">load</text>
+    <text x="212" y="130" font-size="12" fill="var(--accent)">A</text>
+    <text x="420" y="130" font-size="12" fill="var(--accent)">B</text>
+    <!-- annotation -->
+    <line x1="285" y1="172" x2="355" y2="172" stroke="var(--accent)" stroke-width="2" marker-end="url(#arrE)"/>
+    <text x="320" y="192" text-anchor="middle" font-size="12.5" fill="var(--accent)">u_AB = +U_dc, 0 or −U_dc</text>
+    <text x="496" y="45" font-size="13">＋</text>
+    <text x="496" y="246" font-size="13">−</text>
+    <defs><marker id="arrE" markerWidth="9" markerHeight="9" refX="7" refY="4.5" orient="auto"><path d="M0 0 L8 4.5 L0 9 z" fill="var(--accent)"/></marker></defs>
+  </svg>
+  </div>
+  <figcaption><b>Fig. 8.1</b> — H-bridge (full bridge): two half-bridge legs, load between the midpoints. (S₁,S₄) on → \(u_{AB}=+U_{dc}\); (S₂,S₃) on → \(-U_{dc}\); both top or both bottom → 0. Same-leg pairs must never conduct together (shoot-through).</figcaption>
+</figure>
+
+<p>Closing (S₁, S₄) applies \(+U_{dc}\) to the load; (S₂, S₃) applies \(-U_{dc}\). Toggle at 50 Hz and you have a <strong>square-wave inverter</strong> — functional (cheap "modified sine" UPSs work this way) but the output contains strong odd harmonics: \( u(t) = \frac{4 U_{dc}}{\pi}\left(\sin\omega t + \tfrac13 \sin 3\omega t + \tfrac15 \sin 5\omega t + \dots\right)\). Motors buzz and heat; electronics complain.</p>
+
+<h3 id="spwm">8.2 Sinusoidal PWM</h3>
+<p>The elegant fix reuses the buck insight — <em>the filtered output follows the duty cycle</em> — but now the duty cycle is <em>modulated sinusoidally</em>. Compare a sinusoidal <b>reference</b> (<span class="de">Sollwert</span>) at the desired output frequency with a triangular <b>carrier</b> (<span class="de">Trägersignal</span>) at \(f_c \gg f_1\): whenever reference &gt; carrier, switch high, else low. The result is <strong>sinusoidal PWM</strong>: a pulse train whose local average traces the sine. With <b>modulation index</b> \(m_a = \hat u_{ref}/\hat u_{carrier}\), the fundamental of the output is</p>
+\[ \hat u_{1} = m_a \, U_{dc} \quad \text{(full bridge, } m_a \le 1). \]
+<p>The harmonics no longer sit at 3rd, 5th, 7th… but cluster around \(f_c\) and its multiples — far above the fundamental, so a small LC filter (or the motor's own inductance) removes them. Pushing \(m_a\) beyond 1 (<em>overmodulation</em>) buys a little more fundamental at the price of returning low-order harmonics.</p>
+
+<div class="widget">
+  <div class="w-head"><span class="ic">🧪</span>Interactive — sinusoidal PWM <span class="w-tag">simulation</span></div>
+  <div class="w-body">
+    <p class="small mt0">Top: sine reference vs. triangle carrier. Bottom: the resulting PWM voltage and its filtered fundamental. Raise the carrier ratio \(f_c/f_1\) — the pulses get finer and the average tracks the sine ever more faithfully. Push \(m_a\) past 1.0 and watch the pulse pattern saturate (overmodulation: flat-topped, low-order harmonics return).</p>
+    <div id="w-spwm"></div>
+  </div>
+</div>
+
+<h3 id="threephase">8.3 Three-phase inverters</h3>
+<p>Add a third half-bridge leg: <b>six switches</b> generate three phase voltages shifted 120° — the universal machine-side converter (Module 17 supplies the three-phase theory). Motor drives control it with <em>space-vector modulation</em> (SVM), a smarter cousin of sine-triangle PWM that treats the three legs as one rotating voltage vector and squeezes ~15 % more usable voltage from the same DC link. Every VFD (<span class="de">Frequenzumrichter</span>), EV inverter and modern wind or solar grid converter is this six-switch bridge plus firmware.</p>
+
+<h3 id="deadtime2">8.4 Dead time, revisited</h3>
+<p>Each leg needs dead time between its top and bottom switch (Section 3.4). During dead time the leg's output voltage is set by the <em>load current's direction</em> (whichever diode it forces on), not by the controller — so each pulse is slightly wrong. At low output voltage these fixed-size errors dominate: dead-time distortion causes torque ripple in slow-turning motors and crossover distortion in class-D amplifiers. Good drives measure the current direction and pre-compensate each edge.</p>
+
+<h2 id="control">9. Closing the loop</h2>
+
+<p>Every converter so far ran open-loop, but \(U_{out}\) must survive input swings and load steps, so a controller adjusts \(D\) continuously. Two standard schemes: <strong>voltage-mode control</strong> — compare \(U_{out}\) to a reference, feed the error through a compensator (a shaped PI/PID, Module 14), let it set the PWM duty; and <strong>current-mode control</strong> — an inner loop regulates the inductor <em>current</em> peak-by-peak, the outer voltage loop merely commands that current. Current mode turns the inductor into a controlled current source: simpler outer-loop dynamics, inherent cycle-by-cycle overcurrent protection, easy paralleling — at the cost of current sensing and a subtle subharmonic instability above \(D = 0.5\) (cured by "slope compensation"). The loop-shaping mathematics — crossover frequency, phase margin, that boost RHP zero — is exactly Module 14 applied to a switching plant.</p>
+
+<h2 id="thermal">10. Thermal design: keeping the junction alive</h2>
+
+<p>Losses do not disappear; they exit through the package as heat, driving the junction temperature \(T_j\) (<span class="de">Sperrschichttemperatur</span>) above ambient. Heat flow behaves like a DC circuit — temperature ↔ voltage, power ↔ current, thermal resistance \(R_{th}\) (K/W) ↔ resistance — so the junction-to-ambient path is a series chain:</p>
+\[ \boxed{\; T_j = T_{amb} + P_{loss}\,\big( R_{th,jc} + R_{th,cs} + R_{th,sa} \big) \;} \]
+<p>junction→case (package, fixed by the device), case→sink (thermal interface material), sink→ambient (your heatsink, <span class="de">Kühlkörper</span> — the only term you control). Silicon must stay below \(T_{j,max}\) = 150–175 °C; designers derate to ~125 °C because failure rates roughly double per 10 K and power cycling fatigues solder and bond wires.</p>
+
+<div class="example">
+  <div class="ex-head"><span class="ex-tag">Worked example</span> IGBT losses and heatsink selection</div>
+  <div class="ex-body">
+    <p>One IGBT in a motor-drive bridge conducts an average 20 A for half of each period with \(U_{CE(sat)} = 1.7\,\mathrm{V}\). Datasheet: \(E_{on}+E_{off} = 4\,\mathrm{mJ}\) at the working point; \(f_{sw} = 8\,\mathrm{kHz}\); \(R_{th,jc} = 0.40\,\mathrm{K/W}\), \(R_{th,cs} = 0.10\,\mathrm{K/W}\); \(T_{amb} = 40\,°\mathrm{C}\) in the cabinet; design limit \(T_j \le 125\,°\mathrm{C}\). Choose the heatsink.</p>
+    <div class="step"><span class="step-label">Step 1 — conduction loss:</span>
+      \( P_{cond} = U_{CE(sat)} \cdot I_{avg} \cdot D = 1.7 \cdot 20 \cdot 0.5 = 17\,\mathrm{W} \).</div>
+    <div class="step"><span class="step-label">Step 2 — switching loss:</span>
+      \( P_{sw} = (E_{on}+E_{off}) f_{sw} = 4\,\mathrm{mJ} \cdot 8000 = 32\,\mathrm{W} \). Note it <em>dominates</em> — typical for IGBTs even at modest frequency.</div>
+    <div class="step"><span class="step-label">Step 3 — total and thermal budget:</span>
+      \( P_{loss} = 49\,\mathrm{W} \). Allowed total resistance: \( R_{th,ja} \le \dfrac{125-40}{49} \approx 1.73\,\mathrm{K/W} \).</div>
+    <div class="step"><span class="step-label">Step 4 — heatsink spec:</span>
+      \( R_{th,sa} \le 1.73 - 0.40 - 0.10 = 1.23\,\mathrm{K/W} \). That is a substantial extruded profile (~10×10×4 cm) in still air, or a much smaller one with a fan (forced air cuts \(R_{th,sa}\) ~3×).</div>
+    <div class="result-line">Heatsink ≤ 1.2 K/W. Sanity check: \(T_j = 40 + 49 \cdot 1.73 \approx 125\,°\mathrm{C}\) ✓ — and if the fan fails, \(T_j\) exceeds 150 °C, which is why drives monitor heatsink temperature.</div>
+  </div>
+</div>
+
+<div class="widget">
+  <div class="w-head"><span class="ic">🧪</span>Interactive — the thermal resistance ladder <span class="w-tag">simulation</span></div>
+  <div class="w-body">
+    <p class="small mt0">Heat flows from junction to ambient through three series resistances; each drops \(\Delta T = P \cdot R_{th}\) like a voltage. Slide the loss power up or worsen the heatsink and watch the junction bar cross the 150 °C limit. Note how little the junction-to-case and interface terms matter once the heatsink is poor — the largest resistance dominates, exactly as in a series circuit.</p>
+    <div id="w-thermal"></div>
+  </div>
+</div>
+
+<h2 id="applications">11. Applications tour — where the watts go</h2>
+
+<h3 id="app-charger">11.1 The phone charger</h3>
+<p>Mains → bridge rectifier (+ small PFC above 75 W) → ~390 V bus → <b>flyback</b> with GaN primary switch at ~150 kHz → synchronous secondary → USB-C. A USB-PD controller <em>negotiates</em> the output (5/9/15/20 V) with the phone over the CC wire and trims the flyback's reference via an optocoupler. 65 W at ~94 % in 30 cm³ — a small monument to every section above.</p>
+
+<h3 id="app-ev">11.2 The EV powertrain</h3>
+
+<figure>
+  <div class="fig-frame">
+  <svg class="diagram" viewBox="0 0 680 250" role="img" aria-label="EV powertrain block diagram: OBC, battery, traction inverter, DC-DC">
+    <defs><marker id="arrF" markerWidth="9" markerHeight="9" refX="7" refY="4.5" orient="auto"><path d="M0 0 L8 4.5 L0 9 z" fill="var(--text-soft)"/></marker></defs>
+    <!-- grid -->
+    <rect x="20" y="60" width="110" height="56" rx="8" fill="none" stroke="var(--text-soft)" stroke-width="2"/>
+    <text x="75" y="84" text-anchor="middle" font-size="13">AC grid</text>
+    <text x="75" y="102" text-anchor="middle" font-size="12" fill="var(--text-soft)">230 V / 11 kW</text>
+    <!-- OBC -->
+    <rect x="170" y="60" width="130" height="56" rx="8" fill="none" stroke="var(--accent)" stroke-width="2"/>
+    <text x="235" y="84" text-anchor="middle" font-size="13" fill="var(--accent)">On-board charger</text>
+    <text x="235" y="102" text-anchor="middle" font-size="12" fill="var(--text-soft)">PFC + LLC (SiC)</text>
+    <!-- battery -->
+    <rect x="340" y="60" width="120" height="56" rx="8" fill="none" stroke="var(--text-soft)" stroke-width="2"/>
+    <text x="400" y="84" text-anchor="middle" font-size="13">HV battery</text>
+    <text x="400" y="102" text-anchor="middle" font-size="12" fill="var(--text-soft)">400–800 V</text>
+    <!-- traction inverter -->
+    <rect x="500" y="24" width="150" height="56" rx="8" fill="none" stroke="var(--accent)" stroke-width="2"/>
+    <text x="575" y="46" text-anchor="middle" font-size="13" fill="var(--accent)">Traction inverter</text>
+    <text x="575" y="64" text-anchor="middle" font-size="12" fill="var(--text-soft)">3-phase, SiC, 150+ kW</text>
+    <!-- motor -->
+    <circle cx="575" cy="150" r="26" fill="none" stroke="var(--text-soft)" stroke-width="2"/>
+    <text x="575" y="155" text-anchor="middle" font-size="14">M</text>
+    <text x="575" y="196" text-anchor="middle" font-size="12" fill="var(--text-soft)">PMSM / induction</text>
+    <!-- dcdc -->
+    <rect x="340" y="160" width="120" height="56" rx="8" fill="none" stroke="var(--accent)" stroke-width="2"/>
+    <text x="400" y="184" text-anchor="middle" font-size="13" fill="var(--accent)">DC-DC 400→12 V</text>
+    <text x="400" y="202" text-anchor="middle" font-size="12" fill="var(--text-soft)">2–3 kW, isolated</text>
+    <!-- 12V loads -->
+    <rect x="180" y="160" width="110" height="56" rx="8" fill="none" stroke="var(--text-soft)" stroke-width="2"/>
+    <text x="235" y="184" text-anchor="middle" font-size="13">12 V loads</text>
+    <text x="235" y="202" text-anchor="middle" font-size="12" fill="var(--text-soft)">ECUs, lights…</text>
+    <!-- arrows -->
+    <line x1="130" y1="88" x2="164" y2="88" class="wire" marker-end="url(#arrF)"/>
+    <line x1="300" y1="88" x2="334" y2="88" class="wire" marker-end="url(#arrF)"/>
+    <line x1="460" y1="76" x2="494" y2="60" class="wire" marker-end="url(#arrF)"/>
+    <line x1="400" y1="116" x2="400" y2="154" class="wire" marker-end="url(#arrF)"/>
+    <line x1="575" y1="80" x2="575" y2="118" class="wire" marker-end="url(#arrF)"/>
+    <line x1="334" y1="188" x2="296" y2="188" class="wire" marker-end="url(#arrF)"/>
+  </svg>
+  </div>
+  <figcaption><b>Fig. 11.1</b> — Power electronics in an EV: three separate converters. The on-board charger (OBC) rectifies with PFC and isolates via LLC; the traction inverter is the six-switch bridge of Section 8.3 running SVM; a 2–3 kW isolated DC-DC replaces the alternator for the 12 V network.</figcaption>
+</figure>
+
+<p>The traction inverter is the crown jewel: 400–800 V bus, 150–300 kW peak, SiC modules at ~10–20 kHz, efficiency ≈ 98–99 %, water-cooled. In regenerative braking it runs <em>backwards</em> — the machine becomes a generator and the same six switches rectify power into the battery. Power electronic converters are inherently bidirectional if you build both current paths.</p>
+
+<h3 id="app-solar">11.3 Solar: MPPT and the string inverter</h3>
+<p>A photovoltaic panel is a current source with a knee: its power \(P = U \cdot I\) has a single <b>maximum power point</b> (MPP) that wanders with sunlight and temperature. Connect the panel straight to a battery or fixed bus and you operate wherever the bus dictates — almost never at the MPP. A DC-DC converter between panel and bus can hold the panel at <em>its</em> best voltage regardless of the output — <strong>maximum power point tracking</strong> (MPPT): perturb the operating point, observe \(\mathrm{d}P\), walk uphill.</p>
+
+<div class="example">
+  <div class="ex-head"><span class="ex-tag">Worked example</span> What MPPT is worth, in watts</div>
+  <div class="ex-body">
+    <p>A panel has \(U_{oc} = 40\,\mathrm{V}\), \(I_{sc} = 10\,\mathrm{A}\), MPP at \(U_{mp} = 33\,\mathrm{V}\), \(I_{mp} = 9\,\mathrm{A}\). Compare charging a 24 V battery (a) directly, (b) through an MPPT converter with \(\eta = 97\,\%\).</p>
+    <div class="step"><span class="step-label">Step 1 — direct connection:</span> the battery clamps the panel at 24 V, well left of the knee, where the panel still delivers nearly \(I_{sc}\): \(I \approx 9.9\,\mathrm{A}\) → \(P \approx 24 \cdot 9.9 \approx 238\,\mathrm{W}\).</div>
+    <div class="step"><span class="step-label">Step 2 — MPPT:</span> converter holds the panel at 33 V / 9 A = 297 W, converts to 24 V at 97 %: \(P_{batt} = 297 \cdot 0.97 \approx 288\,\mathrm{W}\) (i.e. ≈ 12 A into the battery — <em>more output current than input current</em>, which only a converter can do).</div>
+    <div class="step"><span class="step-label">Step 3 — verdict:</span> gain = \(288/238 \approx 1.21\).</div>
+    <div class="result-line">MPPT harvests ≈ 21 % more energy from identical hardware — and far more when the mismatch is worse (cold mornings raise \(U_{mp}\)). That is why even 10 € charge controllers advertise it.</div>
+  </div>
+</div>
+
+<p>A rooftop <strong>string inverter</strong> chains it all: panels in series (~600 V DC) → MPPT boost stage → DC link → three-phase PWM inverter (Section 8) synchronised to the grid, injecting sinusoidal current at unity power factor, with anti-islanding protection. Efficiency ≈ 98 %.</p>
+
+<h3 id="app-ups">11.4 UPS and HVDC — the extremes of scale</h3>
+<p>An <strong>uninterruptible power supply</strong> (<span class="de">unterbrechungsfreie Stromversorgung, USV</span>) is rectifier + battery + inverter; in "double-conversion" units the load <em>always</em> runs from the inverter, so a mains failure changes nothing downstream. At the opposite extreme, <strong>HVDC</strong> (<span class="de">Hochspannungs-Gleichstromübertragung</span>) converts entire power stations: classic thyristor (LCC) links at ±800 kV move 8+ GW across China; modern <em>modular multilevel converters</em> (MMC) stack hundreds of half-bridge cells per arm — IGBT technology synthesising near-perfect 400 kV sinusoids — to connect offshore wind farms and asynchronous grids (Module 19 covers the grid side). Same volt-second physics as the 10 µH buck, scaled by nine orders of magnitude.</p>
+
+<h2 id="summary">12. Formula summary — <span class="de">Formelsammlung</span></h2>
+
+<div class="table-wrap">
+<table class="data">
+<thead><tr><th>Topic</th><th>Formula</th><th>Remember as</th></tr></thead>
+<tbody>
+<tr><td>Linear regulator</td><td>\( \eta = U_{out}/U_{in} \), \( P_{loss} = (U_{in}-U_{out})I \)</td><td>ratio is destiny</td></tr>
+<tr><td>Conduction loss</td><td>\( P = I_{rms}^2 R_{DS(on)} \) or \( U_{CE(sat)} I_{avg} \)</td><td>MOSFET resistive, IGBT fixed drop</td></tr>
+<tr><td>Switching loss</td><td>\( P_{sw} = (E_{on}+E_{off})\, f_{sw} \)</td><td>overlap energy × frequency</td></tr>
+<tr><td>Bridge + C ripple</td><td>\( \Delta U \approx I_{load}/(2 f_{line} C) \)</td><td>C carries the load between peaks</td></tr>
+<tr><td>Volt-second balance</td><td>\( \langle u_L \rangle = 0 \) in steady state</td><td>the master key to every topology</td></tr>
+<tr><td>Buck</td><td>\( M = D \)</td><td>average of the chopped input</td></tr>
+<tr><td>Buck ripple</td><td>\( \Delta I_L = \frac{(U_{in}-U_{out})D}{L f_{sw}} \), \( \Delta U_{out} = \frac{\Delta I_L}{8 f_{sw} C} \)</td><td>passives shrink with \(f_{sw}\)</td></tr>
+<tr><td>CCM condition</td><td>\( I_{out} > \Delta I_L / 2 \)</td><td>diode current can't reverse</td></tr>
+<tr><td>Boost</td><td>\( M = 1/(1-D) \)</td><td>parasitics cap the gain at ~5–6×</td></tr>
+<tr><td>Buck-boost</td><td>\( M = -D/(1-D) \)</td><td>inverting; trampolines all energy through L</td></tr>
+<tr><td>Flyback</td><td>\( M = n\,D/(1-D) \)</td><td>isolated buck-boost, energy in the gap</td></tr>
+<tr><td>SPWM fundamental</td><td>\( \hat u_1 = m_a U_{dc} \) (full bridge)</td><td>harmonics cluster at \(f_c\)</td></tr>
+<tr><td>Thermal chain</td><td>\( T_j = T_{amb} + P\, (R_{th,jc}+R_{th,cs}+R_{th,sa}) \)</td><td>Ohm's law for heat</td></tr>
+</tbody>
+</table>
+</div>
+
+<h2 id="exercises">13. Exercises</h2>
+<p>Reach for the formula table only after you have tried to reconstruct each formula from volt-second balance or from \(P = UI\).</p>
+
+<div class="exercise">
+  <p class="ex-q"><span class="ex-num">E1</span>A linear regulator drops 24 V to 3.3 V at 500 mA. Find its efficiency and dissipation, and the dissipation of a 92 %-efficient buck doing the same job. <span class="diff easy">easy</span></p>
+  <details><summary>Show solution</summary>
+    <div class="solution">
+      Linear: \( \eta = 3.3/24 = 13.8\,\% \); \( P_{loss} = (24-3.3)\cdot 0.5 = 10.35\,\mathrm{W} \) — needs a heatsink for a 1.65 W load!
+      Buck: \( P_{out} = 1.65\,\mathrm{W} \), \( P_{loss} = 1.65\,(1/0.92 - 1) \approx 0.14\,\mathrm{W} \) — 72× less heat. Sanity check: the wider the conversion ratio, the more absurd the linear option becomes; that is why 24 V industrial systems never regulate logic rails linearly.
+    </div>
+  </details>
+</div>
+
+<div class="exercise">
+  <p class="ex-q"><span class="ex-num">E2</span>A buck converts 48 V to 12 V at \(f_{sw} = 200\,\mathrm{kHz}\) with \(L = 33\,\mathrm{\mu H}\). Find \(D\) and \(\Delta I_L\), and the minimum load current for CCM. <span class="diff easy">easy</span></p>
+  <details><summary>Show solution</summary>
+    <div class="solution">
+      \( D = 12/48 = 0.25 \). \( \Delta I_L = \frac{(48-12)\cdot 0.25}{33\cdot10^{-6} \cdot 2\cdot10^{5}} = \frac{9}{6.6} \approx 1.36\,\mathrm{A} \).
+      CCM requires \( I_{out} > \Delta I_L/2 \approx 0.68\,\mathrm{A} \). Below that the converter enters DCM and the output would rise if the controller didn't shrink \(D\). Real 48 V→12 V telecom bricks show exactly this ripple order of magnitude.
+    </div>
+  </details>
+</div>
+
+<div class="exercise">
+  <p class="ex-q"><span class="ex-num">E3</span>A boost converter feeds a 48 V / 96 W load from a 12 V battery, \(\eta = 95\,\%\). Find \(D\) (ideal), the average input current, and the average diode current. <span class="diff med">medium</span></p>
+  <details><summary>Show solution</summary>
+    <div class="solution">
+      \( M = 4 = 1/(1-D) \Rightarrow D = 0.75 \).
+      Input power \( P_{in} = 96/0.95 \approx 101\,\mathrm{W} \) → \( I_{in} = 101/12 \approx 8.4\,\mathrm{A} \) — note the input current is 4× the 2 A output current: step-up converters stress their <em>input</em> side.
+      The diode carries the output current on average: \( I_{D,avg} = I_{out} = 2\,\mathrm{A} \) (it conducts \(8.4\,\mathrm{A}\)-ish for the \(1-D = 25\,\%\) of the time: \(8.4 \cdot 0.25 \approx 2.1\,\mathrm{A}\) ✓, difference = losses/ripple).
+    </div>
+  </details>
+</div>
+
+<div class="exercise">
+  <p class="ex-q"><span class="ex-num">E4</span>A 230 V / 50 Hz bridge rectifier supplies 0.5 A DC. How much capacitance keeps the ripple below 20 V peak-to-peak? What is the approximate minimum bus voltage? <span class="diff med">medium</span></p>
+  <details><summary>Show solution</summary>
+    <div class="solution">
+      \( C \ge \frac{I}{2 f \Delta U} = \frac{0.5}{2\cdot 50 \cdot 20} = 250\,\mathrm{\mu F} \) → choose 330 µF / 400 V.
+      Peak: \( \hat u = \sqrt2 \cdot 230 - 2\cdot 1\,\mathrm{V} \approx 323\,\mathrm{V} \); valley ≈ \(323 - 20 = 303\,\mathrm{V}\).
+      Remark: the downstream converter must regulate over this 303–323 V band — and over the mains tolerance (±10 %) on top. Designers spec input ranges like 90–264 V AC for exactly this reason.
+    </div>
+  </details>
+</div>
+
+<div class="exercise">
+  <p class="ex-q"><span class="ex-num">E5</span>A MOSFET in a buck carries \(I_{rms} = 3\,\mathrm{A}\) with \(R_{DS(on)} = 25\,\mathrm{m\Omega}\) (hot) and loses \(E_{on}+E_{off} = 8\,\mathrm{\mu J}\) per cycle. At what \(f_{sw}\) do switching losses equal conduction losses? What is the total loss there? <span class="diff med">medium</span></p>
+  <details><summary>Show solution</summary>
+    <div class="solution">
+      Conduction: \( P_{cond} = 3^2 \cdot 0.025 = 0.225\,\mathrm{W} \) — independent of frequency.
+      Switching: \( P_{sw} = 8\,\mathrm{\mu J} \cdot f_{sw} \). Equality: \( f_{sw} = \dfrac{0.225\,\mathrm{W}}{8\,\mathrm{\mu J}} = 28\,125\,\mathrm{Hz} \approx 28\,\mathrm{kHz} \). Total loss there: \(2 \cdot 0.225 = 0.45\,\mathrm{W}\).
+      Interpretation: above ~28 kHz this design is switching-loss dominated; running it at 500 kHz would cost \(0.225 + 4 = 4.2\,\mathrm{W}\). To switch fast you need a device with smaller \(E_{sw}\) (better figure of merit, e.g. GaN) — frequency choices always trace back to this crossover.
+    </div>
+  </details>
+</div>
+
+<div class="exercise">
+  <p class="ex-q"><span class="ex-num">E6</span>A TO-247 SiC MOSFET (\(R_{th,jc} = 0.5\,\mathrm{K/W}\)) sits on a heatsink with \(R_{th,sa} = 2.0\,\mathrm{K/W}\) via a pad with \(R_{th,cs} = 0.5\,\mathrm{K/W}\); \(T_{amb} = 45\,°\mathrm{C}\), \(T_{j,max} = 175\,°\mathrm{C}\), derated design limit 135 °C. Find the allowed dissipation, and the new limit if a fan cuts \(R_{th,sa}\) to 0.6 K/W. <span class="diff hard">challenge</span></p>
+  <details><summary>Show solution</summary>
+    <div class="solution">
+      Chain: \( R_{th,ja} = 0.5+0.5+2.0 = 3.0\,\mathrm{K/W} \).
+      \( P_{max} = (135-45)/3.0 = 30\,\mathrm{W} \).
+      With fan: \( R_{th,ja} = 1.6\,\mathrm{K/W} \) → \( P_{max} = 90/1.6 \approx 56\,\mathrm{W} \).
+      Note the diminishing returns: the fan cut the heatsink term by 70 % but total capability less than doubled, because the fixed junction-case and interface terms now dominate. Next lever: a better pad (\(R_{th,cs}\to 0.2\)) or two parallel devices (halving both \(P\) per device <em>and</em> effective \(R_{th,jc}\)). Also check: at 30 W and 3.0 K/W the heatsink surface sits at \(45 + 30\cdot 2.0 = 105\,°\mathrm{C}\) — untouchable; industrial rules require guards above ~70 °C.
+    </div>
+  </details>
+</div>
+
+<div class="exercise">
+  <p class="ex-q"><span class="ex-num">E7</span>A full-bridge inverter on a 400 V DC link uses sinusoidal PWM with \(m_a = 0.9\), \(f_1 = 50\,\mathrm{Hz}\), \(f_c = 10\,\mathrm{kHz}\). Find the RMS fundamental output voltage, and state where the first large harmonic groups appear. Could this inverter feed a 230 V mains-voltage load? <span class="diff hard">challenge</span></p>
+  <details><summary>Show solution</summary>
+    <div class="solution">
+      Fundamental peak: \( \hat u_1 = m_a U_{dc} = 0.9 \cdot 400 = 360\,\mathrm{V} \) → RMS \( 360/\sqrt2 \approx 255\,\mathrm{V} \). Yes — 230 V RMS needs \( \hat u_1 = 325\,\mathrm{V} \), i.e. \( m_a = 325/400 \approx 0.81 \), comfortably inside the linear range (this is why ~400 V is the standard single-phase DC-link voltage).
+      Harmonics: clustered as sidebands around \(f_c = 10\,\mathrm{kHz}\) and multiples (20 kHz, …), i.e. at \(200\times\) the fundamental — easily removed by a small LC filter with cutoff around 1–2 kHz. Compare a square-wave inverter, whose 3rd harmonic at 150 Hz is essentially unfilterable at reasonable size: <em>PWM does not remove harmonic energy, it relocates it to where filtering is cheap</em>.
+    </div>
+  </details>
+</div>
+
+<h2 id="quiz">14. Self-assessment</h2>
+
+<div class="quiz" data-quiz-title="Module 18 — Self-test">
+<script type="application/json">
+[
+ {"q":"Why does a transistor used as a switch dissipate almost no power?",
+  "opts":["Because switching transistors are made of materials without resistance","Because either its voltage or its current is near zero at any time, so P = U·I stays small","Because the inductor absorbs the transistor's losses","Because the duty cycle keeps the average current at zero"],"a":1,
+  "explain":"Fully on: \\(U \\approx 0\\); fully off: \\(I \\approx 0\\). In both states \\(P = U \\cdot I \\approx 0\\). Loss remains only in the residual on-drop and the brief switching transitions — the central dogma of power electronics."},
+ {"q":"A linear regulator converts 15 V to 5 V at 1 A. Its efficiency is…",
+  "opts":["≈ 33 %","≈ 67 %","≈ 90 %","depends on the transistor used"],"a":0,
+  "explain":"\\(\\eta = U_{out}/U_{in} = 5/15 = 33\\,\\%\\), independent of the transistor: 10 V × 1 A = 10 W must be burned as heat. Only a switching converter escapes the ratio."},
+ {"q":"A buck converter runs from 48 V with D = 0.25. Its ideal output is…",
+  "opts":["36 V","24 V","12 V","64 V"],"a":2,
+  "explain":"\\(U_{out} = D \\cdot U_{in} = 0.25 \\cdot 48 = 12\\,\\mathrm{V}\\) — the LC filter passes the average of the chopped switch-node voltage."},
+ {"q":"A boost converter with D = 0.6 from a 12 V source ideally outputs…",
+  "opts":["7.2 V","20 V","30 V","19.2 V"],"a":2,
+  "explain":"\\(M = 1/(1-D) = 1/0.4 = 2.5\\), so \\(U_{out} = 2.5 \\cdot 12 = 30\\,\\mathrm{V}\\). Volt-second balance: \\(12 \\cdot 0.6 = (30-12) \\cdot 0.4\\) ✓."},
+ {"q":"For a 3 kV, 500 A motor-drive switch at a few kHz, the natural device choice is…",
+  "opts":["a silicon power MOSFET","an IGBT (or SiC MOSFET module)","a Schottky diode","a small-signal BJT"],"a":1,
+  "explain":"High voltage + high current + modest frequency is IGBT territory (with SiC MOSFET modules now competing). Silicon MOSFETs become uneconomic above ~650 V because \\(R_{DS(on)}\\) grows steeply with blocking voltage."},
+ {"q":"Raising the switching frequency of a converter primarily…",
+  "opts":["increases efficiency, since transitions finish sooner","shrinks the required inductor and capacitor but increases switching losses","reduces both losses and component size simultaneously","has no effect as long as the duty cycle is constant"],"a":1,
+  "explain":"Ripple formulas carry \\(f_{sw}\\) in the denominator (smaller L, C), but \\(P_{sw} = E_{sw} f_{sw}\\) grows linearly. Frequency trades size against efficiency — it never buys both. The common intuition that 'faster = more efficient' is backwards."},
+ {"q":"A buck: U_in = 24 V, U_out = 12 V, L = 47 µH, f_sw = 200 kHz. The inductor ripple ΔI_L is about…",
+  "opts":["0.13 A","0.64 A","1.3 A","6.4 A"],"a":1,
+  "explain":"\\(D = 0.5\\); \\(\\Delta I_L = (U_{in}-U_{out})D/(L f_{sw}) = 12 \\cdot 0.5 / (47\\cdot10^{-6} \\cdot 2\\cdot10^{5}) \\approx 0.64\\,\\mathrm{A}\\)."},
+ {"q":"In a flyback converter, the transferred energy is temporarily stored…",
+  "opts":["in the output capacitor's dielectric","in the magnetic field, mostly in the core's air gap","in the primary switch's junction capacitance","nowhere — it flows through the transformer instantaneously"],"a":1,
+  "explain":"The flyback 'transformer' is a coupled inductor: energy loads into the gapped core while the switch is on and dumps to the secondary when it turns off. A forward converter, by contrast, transfers energy through a true transformer during the on-time."},
+ {"q":"Dead time in a half-bridge exists to…",
+  "opts":["give the gate driver time to recharge its bootstrap capacitor","prevent both switches conducting at once and shorting the DC bus","let the inductor current fall to zero each cycle","synchronize the PWM with the mains"],"a":1,
+  "explain":"Simultaneous conduction of one leg's two switches is shoot-through — a direct short across the DC link. Dead time guarantees a both-off interval; its side effect is small waveform distortion that good drives compensate."},
+ {"q":"An IGBT dissipates 40 W; R_th junction–case 0.5 K/W, interface 0.5 K/W, heatsink 2.0 K/W, ambient 40 °C. Its junction temperature is…",
+  "opts":["≈ 100 °C","≈ 160 °C","≈ 120 °C","≈ 80 °C"],"a":1,
+  "explain":"\\(T_j = 40 + 40 \\cdot (0.5+0.5+2.0) = 40 + 120 = 160\\,°\\mathrm{C}\\) — above the usual 150 °C limit, so this design needs a better heatsink or less loss. Thermal chains are series resistor circuits for heat."}
+]
+</script>
+</div>
+
+<script>
+document.addEventListener("ee-ready", () => {
+
+  /* ============ shared buck analysis (Vin fixed 12 V) ============ */
+  const VIN = 12;
+  function buckState(p) {
+    const f = p.f * 1e3, L = p.L * 1e-6, C = p.C * 1e-6, R = p.R, D = p.D, T = 1 / f;
+    const K = 2 * L * f / R;
+    let M, mode;
+    if (K >= 1 - D) { mode = "CCM"; M = D; }
+    else { mode = "DCM"; M = 2 / (1 + Math.sqrt(1 + 4 * K / (D * D))); }
+    const Vout = M * VIN, Iout = Vout / R;
+    const dI = (VIN - Vout) * D * T / L;            /* current rise during on-time */
+    const D2 = mode === "CCM" ? (1 - D) : D * (1 - M) / M;  /* diode interval */
+    /* inductor current over one period, N samples */
+    const N = 480, iL = new Array(N + 1);
+    for (let k = 0; k <= N; k++) {
+      const x = k / N; /* t/T */
+      if (mode === "CCM") {
+        const i0 = Iout - dI / 2;
+        iL[k] = x < D ? i0 + dI * (x / D) : i0 + dI * (1 - (x - D) / (1 - D));
+      } else {
+        if (x < D) iL[k] = dI * (x / D);
+        else if (x < D + D2) iL[k] = dI * (1 - (x - D) / D2);
+        else iL[k] = 0;
+      }
+    }
+    /* numeric output ripple: integrate (iL - Iout)/C, remove mean */
+    const v = new Array(N + 1); let acc = 0, mean = 0;
+    for (let k = 0; k <= N; k++) { v[k] = acc; acc += (iL[k] - Iout) * (T / N) / C; }
+    for (let k = 0; k <= N; k++) mean += v[k] / (N + 1);
+    let vmin = 1e9, vmax = -1e9;
+    for (let k = 0; k <= N; k++) { v[k] = Vout + v[k] - mean; vmin = Math.min(vmin, v[k]); vmax = Math.max(vmax, v[k]); }
+    return { mode, M, Vout, Iout, dI, D2, iL, v, dV: vmax - vmin, N, D };
+  }
+
+  /* ============ Widget 1: buck simulator (EE.custom) ============ */
+  EE.custom({
+    mount: "#w-buck", height: 430,
+    params: [
+      { key: "D", label: "Duty cycle D", min: 0.05, max: 0.85, step: 0.01, value: 0.42, fmt: v => v.toFixed(2) },
+      { key: "f", label: "Frequency f_sw", min: 100, max: 1000, step: 10, value: 500, unit: "kHz", fmt: v => v.toFixed(0) },
+      { key: "L", label: "Inductance L", min: 1, max: 47, step: 0.5, value: 10, unit: "µH", fmt: v => v.toFixed(1) },
+      { key: "C", label: "Capacitance C", min: 2, max: 220, step: 1, value: 22, unit: "µF", fmt: v => v.toFixed(0) },
+      { key: "R", label: "Load R", min: 0.5, max: 50, step: 0.5, value: 2.5, unit: "Ω", fmt: v => v.toFixed(1) }
+    ],
+    readouts: [
+      { label: "Mode", fn: p => buckState(p).mode },
+      { label: "U_out", fn: p => buckState(p).Vout.toFixed(2) + " V" },
+      { label: "I_out", fn: p => EE.si(buckState(p).Iout, "A") },
+      { label: "ΔI_L (pp)", fn: p => EE.si(buckState(p).dI, "A") },
+      { label: "ΔU_out (pp)", fn: p => EE.si(buckState(p).dV, "V") }
+    ],
+    draw: (ctx, w, h, p, H) => {
+      const s = buckState(p), k = H.ink;
+      const padL = 64, padR = 14, x0 = padL, pw = w - padL - padR;
+      const panels = [
+        { y0: 12, ph: 116, label: "u_sw", unit: "V", color: H.color(0),
+          min: -0.8, max: VIN * 1.12,
+          val: x => { const xm = x % 1; if (xm < s.D) return VIN; if (xm < s.D + s.D2) return 0; return s.Vout; } },
+        { y0: 150, ph: 116, label: "i_L", unit: "A", color: H.color(1),
+          min: 0, max: Math.max(s.Iout + s.dI / 2, s.dI) * 1.25 + 1e-6,
+          val: x => s.iL[Math.round((x % 1) * s.N)] },
+        { y0: 288, ph: 110, label: "u_out (zoom)", unit: "V", color: H.color(2),
+          min: s.Vout - Math.max(s.dV, 0.02 * s.Vout + 1e-3) * 1.1,
+          max: s.Vout + Math.max(s.dV, 0.02 * s.Vout + 1e-3) * 1.1,
+          val: x => s.v[Math.round((x % 1) * s.N)] }
+      ];
+      ctx.font = "11.5px system-ui, sans-serif";
+      for (const P of panels) {
+        const Y = v => P.y0 + (1 - (v - P.min) / (P.max - P.min)) * P.ph;
+        /* frame + gridline at 0 or Vout */
+        ctx.strokeStyle = k.axis; ctx.lineWidth = 1;
+        ctx.strokeRect(x0, P.y0, pw, P.ph);
+        ctx.strokeStyle = k.grid;
+        const gv = P.label.startsWith("u_out") ? s.Vout : 0;
+        if (gv > P.min && gv < P.max) { ctx.beginPath(); ctx.moveTo(x0, Y(gv)); ctx.lineTo(x0 + pw, Y(gv)); ctx.stroke(); }
+        /* period boundaries + DT marker */
+        ctx.strokeStyle = k.grid;
+        [0.5, 1].forEach(fr => { ctx.beginPath(); ctx.moveTo(x0 + fr * pw, P.y0); ctx.lineTo(x0 + fr * pw, P.y0 + P.ph); ctx.stroke(); });
+        ctx.setLineDash([3, 4]);
+        [s.D / 2, 0.5 + s.D / 2].forEach(fr => { ctx.beginPath(); ctx.moveTo(x0 + fr * pw, P.y0); ctx.lineTo(x0 + fr * pw, P.y0 + P.ph); ctx.stroke(); });
+        ctx.setLineDash([]);
+        /* y labels min/max */
+        ctx.fillStyle = k.muted; ctx.textAlign = "right"; ctx.textBaseline = "middle";
+        ctx.fillText(EE.fmt(P.max) + " " + P.unit, x0 - 6, P.y0 + 7);
+        ctx.fillText(EE.fmt(P.min) + " " + P.unit, x0 - 6, P.y0 + P.ph - 7);
+        /* trace over 2 periods */
+        ctx.strokeStyle = P.color; ctx.lineWidth = 2.2;
+        ctx.beginPath();
+        const NS = 700;
+        for (let i = 0; i <= NS; i++) {
+          const x = (i / NS) * 2;           /* 0..2 periods */
+          const px = x0 + (i / NS) * pw;
+          const py = Math.min(P.y0 + P.ph - 0.5, Math.max(P.y0 + 0.5, Y(P.val(x >= 2 ? 1.9999 : x))));
+          i ? ctx.lineTo(px, py) : ctx.moveTo(px, py);
+        }
+        ctx.stroke();
+        /* panel label */
+        ctx.fillStyle = P.color; ctx.font = "600 12px system-ui, sans-serif";
+        ctx.textAlign = "left"; ctx.textBaseline = "top";
+        ctx.fillText(P.label, x0 + 8, P.y0 + 5);
+        ctx.font = "11.5px system-ui, sans-serif";
+      }
+      /* on/off annotation under first panel */
+      ctx.fillStyle = k.muted; ctx.textAlign = "center"; ctx.textBaseline = "top";
+      ctx.fillText("on", x0 + s.D / 4 * pw, panels[0].y0 + panels[0].ph + 3);
+      ctx.fillText("off", x0 + (s.D / 2 + (0.5 - s.D / 2) / 2) * pw, panels[0].y0 + panels[0].ph + 3);
+      /* time axis label */
+      ctx.fillStyle = k.primary; ctx.font = "600 12px system-ui, sans-serif";
+      ctx.fillText("t  (two switching periods, U_in = 12 V)", x0 + pw / 2, h - 20);
+      /* DCM badge */
+      if (s.mode === "DCM") {
+        ctx.fillStyle = H.color(5); ctx.textAlign = "right";
+        ctx.fillText("DCM — inductor current hits zero", x0 + pw - 8, panels[1].y0 + 5);
+      }
+    }
+  });
+
+  /* ============ Widget 2: linear vs switching efficiency ============ */
+  const swEta = (vin, vout) => Math.min(97, 97 - 6 * (1 - vout / Math.max(vin, vout)));
+  EE.functionPlot({
+    mount: "#w-linsw", height: 300,
+    x: p => ({ min: p.Vout, max: 24, label: "U_in in V" }),
+    y: { min: 0, max: 105, label: "η in %" },
+    params: [
+      { key: "Vout", label: "Output voltage", min: 1.8, max: 12, step: 0.1, value: 5, unit: "V", fmt: v => v.toFixed(1) },
+      { key: "Iout", label: "Load current", min: 0.1, max: 5, step: 0.1, value: 2, unit: "A", fmt: v => v.toFixed(1) },
+      { key: "Vop", label: "Operating point U_in", min: 3, max: 24, step: 0.1, value: 12, unit: "V", fmt: v => v.toFixed(1) }
+    ],
+    curves: [
+      { label: "linear: η = U_out/U_in", color: 5, fn: (vin, p) => vin >= p.Vout ? 100 * p.Vout / vin : NaN },
+      { label: "switcher (measured-style)", color: 0, fn: (vin, p) => vin >= p.Vout ? swEta(vin, p.Vout) : NaN }
+    ],
+    annotations: p => (p.Vop >= p.Vout ? [
+      { type: "vline", x: p.Vop, label: "your U_in" },
+      { type: "point", x: p.Vop, y: 100 * p.Vout / p.Vop, label: (100 * p.Vout / p.Vop).toFixed(0) + " %" },
+      { type: "point", x: p.Vop, y: swEta(p.Vop, p.Vout), label: swEta(p.Vop, p.Vout).toFixed(0) + " %" }
+    ] : []),
+    readouts: [
+      { label: "P_out", fn: p => EE.si(p.Vout * p.Iout, "W") },
+      { label: "Heat, linear", fn: p => p.Vop >= p.Vout ? EE.si((p.Vop - p.Vout) * p.Iout, "W") : "—" },
+      { label: "Heat, switcher", fn: p => { const e = swEta(p.Vop, p.Vout) / 100; return EE.si(p.Vout * p.Iout * (1 / e - 1), "W"); } },
+      { label: "Verdict", fn: p => (p.Vop - p.Vout) * p.Iout > 2 ? "linear needs a heatsink" : "either is fine thermally" }
+    ]
+  });
+
+  /* ============ Widget 3: sinusoidal PWM (EE.custom) ============ */
+  EE.custom({
+    mount: "#w-spwm", height: 380,
+    params: [
+      { key: "ma", label: "Modulation index m_a", min: 0.1, max: 1.15, step: 0.01, value: 0.8, fmt: v => v.toFixed(2) },
+      { key: "N", label: "Carrier ratio f_c/f₁", min: 5, max: 39, step: 2, value: 15, fmt: v => v.toFixed(0) }
+    ],
+    readouts: [
+      { label: "Fundamental û₁/U_dc", fn: p => Math.min(p.ma, 1.05).toFixed(2) + (p.ma > 1 ? " (overmod.)" : "") },
+      { label: "Harmonics cluster at", fn: p => p.N.toFixed(0) + "·f₁ and multiples" }
+    ],
+    draw: (ctx, w, h, p, H) => {
+      const k = H.ink, padL = 56, padR = 14, x0 = padL, pw = w - padL - padR;
+      const ref = x => p.ma * Math.sin(2 * Math.PI * x);
+      const tri = x => (2 / Math.PI) * Math.asin(Math.sin(2 * Math.PI * p.N * x - Math.PI / 2));
+      const pwm = x => ref(x) > tri(x) ? 1 : -1;
+      const panels = [
+        { y0: 14, ph: 150, title: "reference vs. carrier",
+          traces: [
+            { f: tri, color: k.muted, lw: 1.4 },
+            { f: ref, color: H.color(0), lw: 2.4 }
+          ] },
+        { y0: 202, ph: 150, title: "PWM output and fundamental (≈ after LC filter)",
+          traces: [
+            { f: pwm, color: H.color(2), lw: 1.8 },
+            { f: x => Math.min(p.ma, 1) * Math.sin(2 * Math.PI * x), color: H.color(0), lw: 2.4, dash: [7, 5] }
+          ] }
+      ];
+      for (const P of panels) {
+        const Y = v => P.y0 + (1 - (v + 1.25) / 2.5) * P.ph;
+        ctx.strokeStyle = k.axis; ctx.lineWidth = 1;
+        ctx.strokeRect(x0, P.y0, pw, P.ph);
+        ctx.strokeStyle = k.grid;
+        ctx.beginPath(); ctx.moveTo(x0, Y(0)); ctx.lineTo(x0 + pw, Y(0)); ctx.stroke();
+        ctx.fillStyle = k.muted; ctx.font = "11.5px system-ui, sans-serif";
+        ctx.textAlign = "right"; ctx.textBaseline = "middle";
+        ctx.fillText("+U_dc", x0 - 6, Y(1)); ctx.fillText("0", x0 - 6, Y(0)); ctx.fillText("−U_dc", x0 - 6, Y(-1));
+        for (const t of P.traces) {
+          ctx.strokeStyle = t.color; ctx.lineWidth = t.lw;
+          ctx.setLineDash(t.dash || []);
+          ctx.beginPath();
+          const NS = 1600;
+          for (let i = 0; i <= NS; i++) {
+            const x = i / NS, px = x0 + x * pw, py = Y(t.f(x));
+            i ? ctx.lineTo(px, py) : ctx.moveTo(px, py);
+          }
+          ctx.stroke(); ctx.setLineDash([]);
+        }
+        ctx.fillStyle = k.primary; ctx.font = "600 12px system-ui, sans-serif";
+        ctx.textAlign = "left"; ctx.textBaseline = "bottom";
+        ctx.fillText(P.title, x0 + 2, P.y0 - 3);
+      }
+      ctx.fillStyle = k.primary; ctx.font = "600 12px system-ui, sans-serif";
+      ctx.textAlign = "center"; ctx.textBaseline = "bottom";
+      ctx.fillText("one fundamental period", x0 + pw / 2, h - 4);
+    }
+  });
+
+  /* ============ Widget 4: thermal ladder (EE.custom) ============ */
+  EE.custom({
+    mount: "#w-thermal", height: 300,
+    params: [
+      { key: "P", label: "Loss power P", min: 5, max: 150, step: 1, value: 49, unit: "W", fmt: v => v.toFixed(0) },
+      { key: "Rjc", label: "R_th junction–case", min: 0.1, max: 2, step: 0.05, value: 0.4, unit: "K/W", fmt: v => v.toFixed(2) },
+      { key: "Rcs", label: "R_th case–sink", min: 0.05, max: 1, step: 0.05, value: 0.1, unit: "K/W", fmt: v => v.toFixed(2) },
+      { key: "Rsa", label: "R_th sink–ambient", min: 0.1, max: 6, step: 0.05, value: 1.2, unit: "K/W", fmt: v => v.toFixed(2) },
+      { key: "Ta", label: "Ambient T_amb", min: 20, max: 60, step: 1, value: 40, unit: "°C", fmt: v => v.toFixed(0) }
+    ],
+    readouts: [
+      { label: "T_sink", fn: p => (p.Ta + p.P * p.Rsa).toFixed(0) + " °C" },
+      { label: "T_case", fn: p => (p.Ta + p.P * (p.Rsa + p.Rcs)).toFixed(0) + " °C" },
+      { label: "T_junction", fn: p => (p.Ta + p.P * (p.Rsa + p.Rcs + p.Rjc)).toFixed(0) + " °C" },
+      { label: "Margin to 150 °C", fn: p => { const m = 150 - (p.Ta + p.P * (p.Rsa + p.Rcs + p.Rjc)); return m >= 0 ? m.toFixed(0) + " K ✓" : "OVER by " + (-m).toFixed(0) + " K ✗"; } }
+    ],
+    draw: (ctx, w, h, p, H) => {
+      const k = H.ink, padL = 96, padR = 20, x0 = padL, pw = w - padL - padR;
+      const Ts = p.Ta + p.P * p.Rsa, Tc = Ts + p.P * p.Rcs, Tj = Tc + p.P * p.Rjc;
+      const tmax = Math.max(200, Tj * 1.12);
+      const X = t => x0 + (t / tmax) * pw;
+      const rows = [
+        { name: "Junction", T: Tj, color: Tj > 150 ? H.color(5) : H.color(2) },
+        { name: "Case", T: Tc, color: H.color(1) },
+        { name: "Heatsink", T: Ts, color: H.color(0) },
+        { name: "Ambient", T: p.Ta, color: k.muted }
+      ];
+      const rowY = i => 30 + i * 52;
+      /* temperature axis */
+      const axY = 30 + 4 * 52 - 18;
+      ctx.strokeStyle = k.axis; ctx.lineWidth = 1;
+      ctx.beginPath(); ctx.moveTo(x0, axY); ctx.lineTo(x0 + pw, axY); ctx.stroke();
+      ctx.fillStyle = k.muted; ctx.font = "11.5px system-ui, sans-serif";
+      ctx.textAlign = "center"; ctx.textBaseline = "top";
+      for (const t of H.niceTicks(0, tmax, 8)) {
+        ctx.strokeStyle = k.grid;
+        ctx.beginPath(); ctx.moveTo(X(t), 16); ctx.lineTo(X(t), axY); ctx.stroke();
+        ctx.fillText(EE.fmt(t), X(t), axY + 5);
+      }
+      ctx.fillStyle = k.primary; ctx.font = "600 12px system-ui, sans-serif";
+      ctx.fillText("temperature in °C", x0 + pw / 2, axY + 22);
+      /* Tj,max line */
+      ctx.strokeStyle = H.color(5); ctx.setLineDash([6, 4]); ctx.lineWidth = 1.6;
+      ctx.beginPath(); ctx.moveTo(X(150), 14); ctx.lineTo(X(150), axY); ctx.stroke();
+      ctx.setLineDash([]);
+      ctx.fillStyle = H.color(5); ctx.textAlign = "left"; ctx.textBaseline = "top";
+      ctx.font = "600 11px system-ui, sans-serif";
+      ctx.fillText("T_j,max = 150 °C", X(150) + 5, 14);
+      /* bars */
+      rows.forEach((r, i) => {
+        const y = rowY(i);
+        ctx.fillStyle = r.color; ctx.globalAlpha = 0.82;
+        ctx.fillRect(x0, y, Math.max(2, X(r.T) - x0), 22);
+        ctx.globalAlpha = 1;
+        ctx.fillStyle = k.primary; ctx.font = "600 12px system-ui, sans-serif";
+        ctx.textAlign = "right"; ctx.textBaseline = "middle";
+        ctx.fillText(r.name, x0 - 10, y + 11);
+        ctx.textAlign = "left"; ctx.fillStyle = r.color;
+        ctx.fillText(r.T.toFixed(0) + " °C", X(r.T) + 7, y + 11);
+        /* ΔT arrow between this row and the next */
+        if (i < 3) {
+          const dT = r.T - rows[i + 1].T;
+          const midY = y + 37;
+          ctx.strokeStyle = k.muted; ctx.lineWidth = 1.2;
+          ctx.beginPath(); ctx.moveTo(X(rows[i + 1].T), midY); ctx.lineTo(X(r.T), midY); ctx.stroke();
+          ctx.fillStyle = k.muted; ctx.font = "11px system-ui, sans-serif";
+          ctx.textAlign = "left"; ctx.textBaseline = "middle";
+          ctx.fillText("ΔT = " + dT.toFixed(0) + " K", Math.min(X(Math.max(r.T, rows[i + 1].T)) + 58, x0 + pw - 78), midY);
+        }
+      });
+      if (Tj > 150) {
+        ctx.fillStyle = H.color(5); ctx.font = "700 13px system-ui, sans-serif";
+        ctx.textAlign = "right"; ctx.textBaseline = "top";
+        ctx.fillText("⚠ junction over limit", x0 + pw, rowY(0) - 16);
+      }
+    }
+  });
+});
+</script>
+
+</article>
+</main>
+</div>
+</body>
+</html>

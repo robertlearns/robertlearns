@@ -1,0 +1,1218 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>M16 · Microcontrollers &amp; Embedded Systems — EE Knowledge Base</title>
+<link rel="stylesheet" href="../../assets/vendor/katex/katex.min.css">
+<link rel="stylesheet" href="../../assets/css/style.css">
+<script src="../../assets/vendor/katex/katex.min.js" defer></script>
+<script src="../../assets/vendor/katex/auto-render.min.js" defer></script>
+<script src="../curriculum.js" defer></script>
+<script src="../../assets/js/app.js" defer></script>
+<script src="../../assets/js/widgets.js" defer></script>
+</head>
+<body data-module="m16">
+<div class="layout">
+<main class="content">
+<article class="article">
+
+<span class="eyebrow">🎛️ Signals, Control &amp; Computing · Module 16</span>
+<h1>Microcontrollers &amp; Embedded Systems <span class="muted" style="font-weight:400;font-size:1.4rem">· <span class="de">Eingebettete Systeme</span></span></h1>
+<p class="lead">Over 99&nbsp;% of all processors manufactured never sit in anything you would call a computer. They hide in washing machines, insulin pumps, e-bike controllers and the ~100 control units of a modern car — sensing, deciding and actuating on millisecond deadlines for years without a reboot. This module teaches you how those invisible computers work, from the fetch–decode–execute cycle to interrupts, PWM, serial buses and battery budgets.</p>
+
+<div class="page-meta">
+  <span><b>Corresponds to:</b> Mikrocomputertechnik / Eingebettete Systeme (4th–5th semester)</span>
+  <span><b>Prerequisites:</b> Module 10 (digital logic, flip-flops, state machines)</span>
+  <span><b>Study time:</b> ≈ 6–8 h</span>
+</div>
+
+<h2 id="invisible">1. The invisible computer</h2>
+
+<p>An <strong>embedded system</strong> (<span class="de">eingebettetes System</span>) is a computer built <em>into</em> a product to do one job — as opposed to a general-purpose PC that runs whatever you install. The job defines everything: a pacemaker prioritizes reliability and microamp power draw; an engine controller prioritizes guaranteed 100&nbsp;µs reaction times; a smart-lamp controller prioritizes a 30-cent unit price. The engineering discipline is choosing <em>just enough</em> computer.</p>
+
+<p>Some orders of magnitude worth memorizing: roughly <strong>30 billion microcontrollers</strong> ship per year. A mid-range car contains 50–150 <strong>electronic control units</strong> (<span class="de">Steuergeräte</span>, ECUs) networked over CAN buses. Your washing machine has one microcontroller; your phone contains a dozen <em>besides</em> the main application processor (touch controller, power management, radio coprocessors…). The typical embedded CPU is not a 4&nbsp;GHz monster — it is a 3.3&nbsp;V chip running at 16–200&nbsp;MHz, costing between €0.30 and €5, with everything on one die.</p>
+
+<h3 id="landscape">1.1 µC, µP, SoC or FPGA? The decision landscape</h3>
+
+<ul>
+  <li>A <strong>microprocessor</strong> (µP, <span class="de">Mikroprozessor</span>) is <em>only</em> a CPU. Memory, storage and I/O live in external chips. High performance, high system cost, needs an operating system. (PCs, servers.)</li>
+  <li>A <strong>microcontroller</strong> (µC, <span class="de">Mikrocontroller</span>) integrates CPU + Flash + SRAM + peripherals (timers, ADC, UART, GPIO…) on <em>one</em> chip. Runs directly from power-on, often with no OS at all. This module's protagonist.</li>
+  <li>A <strong>system-on-chip</strong> (SoC) is the big sibling: one or more powerful CPU cores plus GPU, radios and memory controllers — a smartphone or Raspberry Pi chip. Runs Linux/Android; boot takes seconds, and timing is no longer deterministic.</li>
+  <li>An <strong>FPGA</strong> (Module 10/11) is not a processor at all but configurable hardware: thousands of logic blocks you wire up with a hardware description language. Choose it when you need massive parallelism or nanosecond-exact timing that no CPU can guarantee.</li>
+</ul>
+
+<div class="table-wrap">
+<table class="data">
+<thead><tr><th></th><th>Microcontroller</th><th>SoC (embedded Linux)</th><th>FPGA</th></tr></thead>
+<tbody>
+<tr><td>Typical clock</td><td>16–200 MHz</td><td>0.8–2.5 GHz</td><td>“fabric” 50–500 MHz, massively parallel</td></tr>
+<tr><td>Boot time</td><td>&lt; 1 ms</td><td>seconds</td><td>ms (config load)</td></tr>
+<tr><td>Power</td><td>µW–mW (sleeps!)</td><td>0.5–5 W</td><td>0.1–10 W</td></tr>
+<tr><td>Timing determinism</td><td>cycle-exact possible</td><td>poor (caches, OS)</td><td>clock-exact by construction</td></tr>
+<tr><td>Unit cost</td><td>€0.30–€10</td><td>€5–€50</td><td>€5–€1000+</td></tr>
+<tr><td>Pick when…</td><td>control, sensing, low power</td><td>GUI, networking stacks, video</td><td>ns timing, parallel DSP, custom buses</td></tr>
+</tbody>
+</table>
+</div>
+
+<div class="box key">
+  <div class="box-title"><span class="ic">🔑</span>Key idea: the microcontroller is a single-chip <em>system</em></div>
+  <p>Everything you learned in Module 10 — combinational logic, flip-flops, state machines — is physically present inside a µC: the CPU is a large synchronous state machine, the timers are counters, the UART is a shift register with control logic. A µC is Module 10, mass-produced and programmable in C.</p>
+</div>
+
+<div class="box german">
+  <div class="box-title"><span class="ic">🇩🇪</span>Vokabeln</div>
+  <p>embedded system = <span class="de">eingebettetes System</span> · memory = <span class="de">Speicher</span> · instruction = <span class="de">Befehl</span> · program counter = <span class="de">Befehlszähler</span> · interrupt = <span class="de">Unterbrechung(sanforderung)</span> · interrupt service routine = <span class="de">Unterbrechungsroutine</span> · polling = <span class="de">zyklische Abfrage</span> · timer = <span class="de">Zeitgeber</span> · prescaler = <span class="de">Vorteiler</span> · duty cycle = <span class="de">Tastgrad</span> · bouncing/debouncing = <span class="de">Prellen/Entprellen</span> · frame = <span class="de">Rahmen</span> · arbitration = <span class="de">Arbitrierung</span> · real-time = <span class="de">Echtzeit</span> · deadline = <span class="de">Zeitschranke</span> · sleep mode = <span class="de">Schlafmodus</span> · fixed-point = <span class="de">Festkomma</span></p>
+</div>
+
+<h2 id="cpu">2. Inside the CPU — fetch, decode, execute</h2>
+
+<p>Strip away marketing and every CPU is a synchronous digital circuit with four essential parts:</p>
+<ul>
+  <li><strong>Registers</strong> (<span class="de">Register</span>): a handful of ultra-fast storage cells inside the core. A Cortex-M has 16 × 32-bit registers R0–R15; R13 is the stack pointer (SP), R15 the <strong>program counter</strong> (PC, <span class="de">Befehlszähler</span>) — the address of the next instruction.</li>
+  <li>The <strong>ALU</strong> (arithmetic logic unit, <span class="de">Rechenwerk</span>): combinational logic that adds, subtracts, ANDs, shifts — in one clock cycle.</li>
+  <li>The <strong>control unit</strong> (<span class="de">Steuerwerk</span>): a state machine that reads the current instruction and steers the datapath.</li>
+  <li><strong>Buses</strong> to memory: address lines out, data lines in/out.</li>
+</ul>
+
+<p>Execution is a loop that has not changed conceptually since 1945 — the <strong>fetch–decode–execute cycle</strong> (<span class="de">Befehlszyklus</span>):</p>
+\[ \text{fetch: } \mathrm{IR} \leftarrow \mathrm{Mem}[\mathrm{PC}],\quad \mathrm{PC} \leftarrow \mathrm{PC}+4 \;\;\rightarrow\;\; \text{decode} \;\;\rightarrow\;\; \text{execute} \;\;\rightarrow\;\; \text{repeat} \]
+
+<h3 id="threeinstr">2.1 A three-instruction program, cycle by cycle</h3>
+
+<p>Here is what the C statement <code>a = a + 5;</code> becomes on a load/store machine (a global <code>a</code> living at SRAM address <code>0x2000&#8202;0004</code>):</p>
+
+<pre><code>LDR  R1, [R0]      ; load:  R1 &larr; Mem[0x20000004]   (R0 holds the address)
+ADD  R1, R1, #5    ; ALU:   R1 &larr; R1 + 5
+STR  R1, [R0]      ; store: Mem[0x20000004] &larr; R1</code></pre>
+
+<p>Walk it through concretely, assuming the program sits at <code>0x0800&#8202;0100</code> and <code>a = 7</code>:</p>
+<ol>
+  <li><b>Fetch 1:</b> PC = 0x08000100. The control unit puts the PC on the address bus, memory returns the bit pattern of <code>LDR</code>; it lands in the instruction register. PC advances.</li>
+  <li><b>Decode/execute 1:</b> the decoder recognizes “load”: put R0’s content (0x20000004) on the address bus, read, write the result 7 into R1. Loads take an extra cycle — memory is slower than registers.</li>
+  <li><b>Fetch/execute 2:</b> <code>ADD</code> feeds R1 = 7 and the constant 5 into the ALU; the sum 12 is written back to R1. One cycle.</li>
+  <li><b>Fetch/execute 3:</b> <code>STR</code> drives address 0x20000004 and data 12 onto the buses; SRAM stores it. <code>a</code> is now 12.</li>
+</ol>
+<p>That is <em>all</em> a CPU ever does — billions of times per second. Every C construct compiles down to sequences like this, which is why a C programmer on a µC can (and sometimes must) reason about individual cycles.</p>
+
+<h3 id="pipeline">2.2 Pipelining — and its hazards</h3>
+
+<p>Fetch, decode and execute use different hardware, so why let two of the three idle? A <strong>pipeline</strong> (<span class="de">Fließbandverarbeitung</span>) overlaps them: while instruction \(n\) executes, \(n{+}1\) is being decoded and \(n{+}2\) fetched. A Cortex-M3/M4 uses exactly this 3-stage pipeline; big application processors use 10–20 stages. Throughput approaches one instruction per clock even though each instruction still takes three cycles from start to finish.</p>
+
+<p>The catch: <strong>hazards</strong> (<span class="de">Pipelinekonflikte</span>). If instruction \(n\) is a taken branch, the two instructions already fetched behind it are the <em>wrong</em> ones and must be flushed — a taken branch on Cortex-M costs 2–3 extra cycles. Data hazards (an instruction needing a result the previous one hasn’t written yet) are resolved by forwarding or stalls. This is why “count the instructions” only approximates “count the cycles”, and why hard-real-time engineers read the cycle tables in the core manual.</p>
+
+<h3 id="harvard">2.3 Harvard vs. von Neumann, RISC vs. CISC</h3>
+
+<p>A <strong>von Neumann</strong> machine has <em>one</em> memory and one bus for both instructions and data — simple, but fetch and data access compete (the “von Neumann bottleneck”). A <strong>Harvard</strong> machine has separate instruction and data buses and can do both in the same cycle. Modern µCs are pragmatically hybrid: the Cortex-M is a “modified Harvard” — separate on-chip buses to Flash (instructions) and SRAM (data), but a single unified address space, so you get the speed without the awkwardness.</p>
+
+<p><strong>RISC vs. CISC</strong> in one paragraph: CISC (x86) offers hundreds of complex, variable-length instructions — dense code, complicated decoder. RISC (<em>reduced instruction set computer</em>) bets on few, simple, fixed-format instructions executed fast, with all arithmetic register-to-register and memory touched only by load/store. RISC won the embedded world completely: essentially every 32-bit µC today is an <strong>ARM Cortex-M</strong> (M0+ for cost/power, M4/M7 with DSP and floating point) — ARM licenses the core design to ST, NXP, Nordic, Microchip and everyone else — while the license-free, open-standard <strong>RISC-V</strong> ISA is the fast-growing challenger, especially in China and in deeply-embedded controller cores inside larger chips (Nvidia GPUs contain dozens). The 8-bit survivors (AVR — the classic Arduino chip — and PIC, 8051) still ship in volume where 50 cents matter more than performance.</p>
+
+<h2 id="memory">3. Memory — Flash, SRAM, and the map</h2>
+
+<h3 id="memtypes">3.1 Three memories, three jobs</h3>
+
+<div class="table-wrap">
+<table class="data">
+<thead><tr><th>Memory</th><th>Keeps data without power?</th><th>Speed</th><th>Write endurance</th><th>Role</th></tr></thead>
+<tbody>
+<tr><td><b>Flash</b></td><td>yes</td><td>fast read, very slow write (ms, page-wise erase)</td><td>~10⁴–10⁵ cycles</td><td>your <em>program</em> + constants; written only when flashing firmware</td></tr>
+<tr><td><b>SRAM</b></td><td>no (volatile, <span class="de">flüchtig</span>)</td><td>1 cycle</td><td>unlimited</td><td>variables, stack, heap — the working memory</td></tr>
+<tr><td><b>EEPROM</b></td><td>yes</td><td>slow write (ms), byte-wise</td><td>~10⁵–10⁶ cycles</td><td>calibration values, settings, odometer counts</td></tr>
+</tbody>
+</table>
+</div>
+
+<p>Typical sizes make the point that embedded is a different world: an STM32 mid-range part has 512&nbsp;kB Flash and 128&nbsp;kB SRAM. Not gigabytes — <em>kilobytes</em>. (Physics of these cells: Module 11.) A classic beginner accident: logging sensor data to EEPROM every 10&nbsp;ms wears out its 10⁵-cycle endurance in under 20 minutes.</p>
+
+<h3 id="memmap">3.2 The memory map — everything is an address</h3>
+
+<p>A 32-bit CPU can address \(2^{32} = 4\,\mathrm{GiB}\). The chip designer carves this space into regions — the <strong>memory map</strong> (<span class="de">Speicherabbild</span>). Crucially, <em>peripherals live in it too</em>: the UART’s data register, a timer’s counter, the GPIO output latch each have an address, and reading/writing that address <em>is</em> how you talk to hardware. This is <strong>memory-mapped I/O</strong> (<span class="de">speicherbezogene Ein-/Ausgabe</span>) — no special I/O instructions, just loads and stores.</p>
+
+<figure>
+  <div class="fig-frame">
+  <svg class="diagram" viewBox="0 0 640 370" role="img" aria-label="Typical Cortex-M memory map with vector table zoom">
+    <!-- address column -->
+    <text x="160" y="28" text-anchor="middle" font-size="13" font-weight="700" fill="var(--text-soft)">4 GiB address space (not to scale)</text>
+    <!-- segments, addresses increase upward -->
+    <rect x="95" y="45"  width="130" height="48" fill="var(--accent-2)" opacity="0.12" stroke="var(--text-soft)" stroke-width="1.6"/>
+    <text x="160" y="65" text-anchor="middle" font-size="12">System / private bus</text>
+    <text x="160" y="82" text-anchor="middle" font-size="11" fill="var(--text-soft)">NVIC · SysTick · debug</text>
+    <rect x="95" y="93"  width="130" height="42" fill="none" stroke="var(--text-faint)" stroke-width="1.2" stroke-dasharray="4 4"/>
+    <text x="160" y="118" text-anchor="middle" font-size="11" fill="var(--text-faint)">external memory …</text>
+    <rect x="95" y="135" width="130" height="62" fill="var(--accent)" opacity="0.12" stroke="var(--text-soft)" stroke-width="1.6"/>
+    <text x="160" y="160" text-anchor="middle" font-size="12">Peripherals</text>
+    <text x="160" y="178" text-anchor="middle" font-size="11" fill="var(--text-soft)">GPIO · UART · timers · ADC</text>
+    <rect x="95" y="197" width="130" height="52" fill="var(--accent)" opacity="0.22" stroke="var(--text-soft)" stroke-width="1.6"/>
+    <text x="160" y="219" text-anchor="middle" font-size="12">SRAM</text>
+    <text x="160" y="237" text-anchor="middle" font-size="11" fill="var(--text-soft)">data · stack ↓ · heap ↑</text>
+    <rect x="95" y="249" width="130" height="76" fill="var(--accent)" opacity="0.06" stroke="var(--text-soft)" stroke-width="1.6"/>
+    <text x="160" y="278" text-anchor="middle" font-size="12">Code (Flash)</text>
+    <text x="160" y="296" text-anchor="middle" font-size="11" fill="var(--text-soft)">vector table + program</text>
+    <!-- address labels -->
+    <text x="88" y="50"  text-anchor="end" font-size="11" fill="var(--text-soft)">0xE000 0000</text>
+    <text x="88" y="140" text-anchor="end" font-size="11" fill="var(--text-soft)">0x4000 0000</text>
+    <text x="88" y="202" text-anchor="end" font-size="11" fill="var(--text-soft)">0x2000 0000</text>
+    <text x="88" y="254" text-anchor="end" font-size="11" fill="var(--text-soft)">0x0800 0000</text>
+    <text x="88" y="328" text-anchor="end" font-size="11" fill="var(--text-soft)">0x0000 0000</text>
+    <text x="160" y="350" text-anchor="middle" font-size="11" fill="var(--text-faint)">addresses increase upward ↑</text>
+    <!-- zoom lines to vector table -->
+    <line x1="225" y1="249" x2="370" y2="70"  stroke="var(--text-faint)" stroke-width="1.2" stroke-dasharray="5 4"/>
+    <line x1="225" y1="325" x2="370" y2="320" stroke="var(--text-faint)" stroke-width="1.2" stroke-dasharray="5 4"/>
+    <!-- vector table zoom -->
+    <text x="475" y="52" text-anchor="middle" font-size="13" font-weight="700" fill="var(--text-soft)">vector table (start of Flash)</text>
+    <rect x="370" y="62" width="210" height="258" fill="none" stroke="var(--text-soft)" stroke-width="1.6"/>
+    <line x1="370" y1="99"  x2="580" y2="99"  class="wire"/>
+    <line x1="370" y1="136" x2="580" y2="136" class="wire"/>
+    <line x1="370" y1="173" x2="580" y2="173" class="wire"/>
+    <line x1="370" y1="210" x2="580" y2="210" class="wire"/>
+    <line x1="370" y1="247" x2="580" y2="247" class="wire"/>
+    <line x1="370" y1="284" x2="580" y2="284" class="wire"/>
+    <text x="380" y="85"  font-size="12">0x00: initial stack pointer</text>
+    <text x="380" y="122" font-size="12" fill="var(--accent)">0x04: Reset_Handler</text>
+    <text x="380" y="159" font-size="12">0x08: NMI_Handler</text>
+    <text x="380" y="196" font-size="12">0x0C: HardFault_Handler</text>
+    <text x="380" y="233" font-size="12">…</text>
+    <text x="380" y="270" font-size="12">0x40: TIM2_IRQHandler</text>
+    <text x="380" y="307" font-size="12">0x44: USART1_IRQHandler …</text>
+  </svg>
+  </div>
+  <figcaption><b>Fig. 3.1</b> — Typical Cortex-M memory map. Flash, SRAM and all peripherals share one address space; the first words of Flash form the <em>vector table</em>: entry 0 loads the stack pointer, entry 1 points to the reset handler, later entries to interrupt handlers.</figcaption>
+</figure>
+
+<h3 id="stackheap">3.3 Stack, heap, and what happens at reset</h3>
+
+<p>Within SRAM, two dynamic regions grow toward each other. The <strong>stack</strong> (<span class="de">Stapelspeicher</span>) grows <em>downward</em> from the top: every function call pushes its return address and local variables, every return pops them — automatic, fast, and bounded only by how deep your calls nest. The <strong>heap</strong> (<code>malloc</code>) grows upward. Embedded style guides (MISRA-C, aerospace rules) often <em>ban</em> the heap outright: with 20&nbsp;kB of RAM, fragmentation or a leak doesn’t slow the system down, it kills it — possibly weeks after deployment. Static allocation is the default culture.</p>
+
+<p><strong>Boot</strong> (<span class="de">Startvorgang</span>) is beautifully simple compared to a PC. At release of reset, the Cortex-M hardware reads Flash address 0x00: that word becomes the initial SP. It reads 0x04: that word becomes the PC — the <strong>reset handler</strong>. The reset handler (a dozen assembly lines generated by your toolchain) copies initialized variables from Flash to SRAM, zeroes the rest (<code>.bss</code>), configures the clock tree, and calls <code>main()</code>. Total time: microseconds to a millisecond. No BIOS, no bootloader, no OS — unless you add one.</p>
+
+<div class="box pitfall">
+  <div class="box-title"><span class="ic">🚫</span>Classic pitfall: stack overflow into silence</div>
+  <p>There is no memory protection by default. If the stack grows past its allotment it silently overwrites your variables (or the heap), and the symptom appears far from the cause — the classic “it crashes every few hours” bug. Defenses: size the stack generously, fill it with a known pattern and check the “high-water mark”, avoid recursion and large local arrays, and enable the MPU or stack-limit registers on cores that have them.</p>
+</div>
+
+<h2 id="gpio">4. GPIO — the pins, deeply</h2>
+
+<h3 id="portregs">4.1 Port registers and memory-mapped I/O in C</h3>
+
+<p><strong>GPIO</strong> (general-purpose input/output) pins are organized in <em>ports</em> (GPIOA, GPIOB, …) of 8–16 pins, controlled by a small register set — typically a <em>direction/mode register</em> (is pin 5 an input or an output?), an <em>output data register</em> (ODR: the latch driving the pin), and an <em>input data register</em> (IDR: the live pin state through a Schmitt-trigger input stage). Because of memory-mapped I/O, driving a pin in C is a pointer dereference:</p>
+
+<pre><code>#include &lt;stdint.h&gt;
+
+#define GPIOA_ODR (*(volatile uint32_t *)0x48000014u)  /* output latch  */
+#define GPIOA_IDR (*(volatile uint32_t *)0x48000010u)  /* input pins    */
+
+GPIOA_ODR |=  (1u &lt;&lt; 5);          /* set PA5 high  -&gt; LED on   */
+GPIOA_ODR &amp;= ~(1u &lt;&lt; 5);          /* clear PA5     -&gt; LED off  */
+GPIOA_ODR ^=  (1u &lt;&lt; 5);          /* toggle PA5                */
+
+while (GPIOA_IDR &amp; (1u &lt;&lt; 13)) {  /* wait while button (PA13,  */
+    /* spin */                     /* active-low) is released   */
+}</code></pre>
+
+<p>That <code>volatile</code> qualifier is <em>load-bearing</em>. It tells the compiler: “every read and write of this object is an observable event — never cache it, reorder it away, or merge accesses.” Without it, the optimizer applies ordinary logic: “this loop reads the same variable it never writes, so read it once and decide forever”:</p>
+
+<pre><code>uint32_t *idr = (uint32_t *)0x48000010u;   /* WRONG: volatile missing  */
+while (*idr &amp; (1u &lt;&lt; 13)) { }              /* at -O2 the compiler reads
+                                              once and, if the bit was
+                                              set, loops FOREVER        */</code></pre>
+
+<p>The compiler is not wrong — <em>you</em> lied to it. Hardware registers change behind the program’s back, and <code>volatile</code> is how C expresses that. The same applies to variables shared with interrupt handlers (Section 5). Code that “works at -O0 but breaks at -O2” is the classic symptom of a missing <code>volatile</code>.</p>
+
+<div class="box warn">
+  <div class="box-title"><span class="ic">⚠️</span>Read–modify–write is not atomic</div>
+  <p><code>GPIOA_ODR |= (1u &lt;&lt; 5);</code> compiles to load–OR–store: three instructions. If an interrupt fires in between and modifies another bit of the same register, its change is overwritten by your stale store. That is why vendors provide <em>atomic</em> set/reset registers (e.g. STM32 <code>BSRR</code>: writing a 1 sets or clears exactly one pin in a single store) — prefer them in interrupt-rich code.</p>
+</div>
+
+<h3 id="pushpull">4.2 Push-pull vs. open-drain, and pull-ups</h3>
+
+<p>An output pin’s driver stage (a CMOS inverter pair, Module 10) can be configured two ways:</p>
+<ul>
+  <li><strong>Push-pull</strong> (<span class="de">Gegentakt</span>): the pin actively drives high (PMOS to \(V_{DD}\)) <em>and</em> low (NMOS to ground). Strong, fast, the default. But two push-pull outputs connected together can fight — one driving high, one low — creating a short circuit.</li>
+  <li><strong>Open-drain</strong> (<span class="de">offener Drain</span>): only the pull-down NMOS exists. The pin can pull low or <em>release</em> (high-impedance); an external <strong>pull-up resistor</strong> (<span class="de">Pull-up-Widerstand</span>) restores the high level. Now many devices may share one wire: the line is high only if <em>everyone</em> releases it — a wired-AND. Any device can assert “low” without ever fighting another driver. This is exactly why I²C (Section 7.3) mandates open-drain, and why open-drain suits shared interrupt/fault lines and level-shifting to a different voltage rail.</li>
+</ul>
+<p>Inputs need a defined level too: an unconnected CMOS input floats, picks up 50&nbsp;Hz hum and switches randomly (and burns crowbar current). Every µC therefore offers internal pull-ups/pull-downs (~20–50&nbsp;kΩ) you enable per pin — a button to ground plus internal pull-up is the standard two-component input circuit.</p>
+
+<h3 id="debounce">4.3 Switch debouncing — <span class="de">Entprellen</span></h3>
+
+<p>Mechanical contacts do not close cleanly: the springy metal <em>bounces</em> (<span class="de">prellt</span>) for 0.1–5&nbsp;ms, producing a burst of edges. A CPU polling at MHz rates sees every single one — your “one” button press increments the counter by 7.</p>
+
+<figure>
+  <div class="fig-frame">
+  <svg class="diagram" viewBox="0 0 660 250" role="img" aria-label="Switch bounce oscilloscope trace and RC debounce circuit">
+    <!-- left: bounce trace -->
+    <text x="180" y="30" text-anchor="middle" font-size="13" font-weight="700" fill="var(--text-soft)">what the pin actually sees</text>
+    <text x="52" y="74" text-anchor="end" font-size="11" fill="var(--text-soft)">3.3 V</text>
+    <text x="52" y="174" text-anchor="end" font-size="11" fill="var(--text-soft)">0 V</text>
+    <path d="M60 70 H120 V170 H128 V70 H136 V170 H146 V70 H158 V170 H330" fill="none" stroke="var(--accent)" stroke-width="2.2"/>
+    <line x1="120" y1="190" x2="158" y2="190" stroke="var(--text-soft)" stroke-width="1.4"/>
+    <line x1="120" y1="185" x2="120" y2="195" stroke="var(--text-soft)" stroke-width="1.4"/>
+    <line x1="158" y1="185" x2="158" y2="195" stroke="var(--text-soft)" stroke-width="1.4"/>
+    <text x="139" y="210" text-anchor="middle" font-size="11" fill="var(--text-soft)">bounce ~1–5 ms</text>
+    <text x="120" y="58" text-anchor="middle" font-size="11" fill="var(--text-faint)">press ↓</text>
+    <text x="250" y="160" text-anchor="middle" font-size="11" fill="var(--text-faint)">settled low (pressed)</text>
+    <!-- right: RC debounce circuit -->
+    <text x="520" y="30" text-anchor="middle" font-size="13" font-weight="700" fill="var(--text-soft)">RC + Schmitt trigger</text>
+    <text x="430" y="52" text-anchor="middle" font-size="12">V<tspan baseline-shift="sub" font-size="9">CC</tspan></text>
+    <path class="wire" d="M430 58 V70"/>
+    <rect x="418" y="70" width="24" height="44" fill="none" stroke="var(--text-soft)" stroke-width="2"/>
+    <text x="408" y="96" text-anchor="end" font-size="12">R₁</text>
+    <path class="wire" d="M430 114 V138"/>
+    <circle cx="430" cy="138" r="3.5" class="node" fill="var(--text-soft)"/>
+    <!-- switch to ground -->
+    <path class="wire" d="M430 138 V160"/>
+    <line x1="430" y1="160" x2="414" y2="188" stroke="var(--text-soft)" stroke-width="2"/>
+    <path class="wire" d="M430 192 V210 M418 210 H442 M423 216 H437 M428 222 H432"/>
+    <text x="404" y="176" text-anchor="end" font-size="12">S</text>
+    <!-- series R2 to C and gate -->
+    <path class="wire" d="M430 138 H460"/>
+    <rect x="460" y="126" width="44" height="24" fill="none" stroke="var(--text-soft)" stroke-width="2"/>
+    <text x="482" y="118" text-anchor="middle" font-size="12">R₂</text>
+    <path class="wire" d="M504 138 H545"/>
+    <circle cx="530" cy="138" r="3.5" class="node" fill="var(--text-soft)"/>
+    <!-- capacitor -->
+    <path class="wire" d="M530 138 V162 M518 162 H542 M518 172 H542 M530 172 V196 M518 196 H542 M523 202 H537 M528 208 H532"/>
+    <text x="552" y="172" font-size="12">C</text>
+    <!-- schmitt gate -->
+    <path d="M545 120 L545 156 L585 138 Z" fill="none" stroke="var(--text-soft)" stroke-width="2"/>
+    <path d="M552 142 h8 v-8 M556 134 h8" stroke="var(--text-soft)" stroke-width="1.4" fill="none"/>
+    <path class="wire" d="M585 138 H615"/>
+    <text x="622" y="142" font-size="11" fill="var(--text-soft)">GPIO</text>
+  </svg>
+  </div>
+  <figcaption><b>Fig. 4.1</b> — Left: oscilloscope view of a button press with contact bounce. Right: hardware debounce — R₂ and C low-pass the mess; the Schmitt-trigger input (hysteresis symbol) turns the slow ramp back into one clean edge.</figcaption>
+</figure>
+
+<p>Two standard cures:</p>
+<ul>
+  <li><strong>RC filter</strong>: the capacitor integrates the bounce burst away; the input’s Schmitt trigger (hysteresis, Module 9/10) converts the slow ramp into one clean edge. Dimensioning below.</li>
+  <li><strong>Software</strong>: sample the pin on a timer tick (e.g. every 5 ms) and accept a new state only after \(N\) consistent samples — zero extra parts, which is why production firmware almost always debounces in software.</li>
+</ul>
+
+<div class="example">
+  <div class="ex-head"><span class="ex-tag">Worked example</span> Dimensioning an RC debounce</div>
+  <div class="ex-body">
+    <p>A button (bounce spec ≤ 5 ms) pulls the node low; \(V_{CC} = 3.3\) V; the Schmitt input switches high at \(V_{T+} = 1.7\) V. Choose R and C so the input crosses \(V_{T+}\) only ≈ 10 ms after release — twice the worst-case bounce.</p>
+    <div class="step"><span class="step-label">Step 1 — charging law (Module 6):</span> after release, C charges through \(R_1 + R_2\): \(v(t) = V_{CC}\,(1 - e^{-t/\tau})\). Solve for the crossing time: \[ t = -\tau \ln\!\left(1 - \frac{V_{T+}}{V_{CC}}\right) = -\tau \ln(1 - 0.515) = 0.724\,\tau . \]</div>
+    <div class="step"><span class="step-label">Step 2 — required τ:</span> \( \tau = t / 0.724 = 10\,\mathrm{ms}/0.724 \approx 13.8\,\mathrm{ms} \).</div>
+    <div class="step"><span class="step-label">Step 3 — pick parts:</span> with \(R_1 + R_2 = 47\,\mathrm{k\Omega} + 10\,\mathrm{k\Omega} = 57\,\mathrm{k\Omega}\): \(C = 13.8\,\mathrm{ms}/57\,\mathrm{k\Omega} \approx 242\,\mathrm{nF}\) → choose 220 nF (E-series), giving \(t \approx 9.1\) ms. R₂ (10 kΩ) also limits the capacitor’s discharge current into the switch on press.</div>
+    <div class="result-line">R₁ = 47 kΩ, R₂ = 10 kΩ, C = 220 nF → clean edge ≈ 9 ms after the last bounce. Sanity check: 9 ms ≫ 5 ms bounce, yet far below the ~50 ms a human can perceive as lag. ✓</div>
+  </div>
+</div>
+
+<h2 id="interrupts">5. Interrupts — hardware that taps the CPU on the shoulder</h2>
+
+<h3 id="polling">5.1 Polling vs. interrupts</h3>
+
+<p>How does the CPU learn that a byte arrived on the UART or a button was pressed? Option one: <strong>polling</strong> (<span class="de">zyklische Abfrage</span>) — keep asking in a loop. Simple and perfectly deterministic, but the CPU burns cycles asking, and the worst-case reaction time equals your whole loop period. Option two: the <strong>interrupt</strong> (<span class="de">Unterbrechung</span>) — the peripheral raises a hardware signal, and the CPU <em>suspends</em> whatever it is doing, runs a dedicated function, and resumes as if nothing happened. Reaction time: sub-microsecond, independent of what the main program is doing.</p>
+
+<div class="widget">
+  <div class="w-head"><span class="ic">🧪</span>Interactive — polling vs. interrupt latency <span class="w-tag">animation</span></div>
+  <div class="w-body">
+    <p class="small mt0">Events (⬇) arrive asynchronously. The top timeline polls every \(T_{poll}\): the event waits (red span) until the next check. The bottom timeline services each event immediately via interrupt. Stretch the polling period and watch the worst-case latency grow with it — then imagine \(T_{poll}\) is your 20 ms display-refresh loop.</p>
+    <div id="w-irq"></div>
+  </div>
+</div>
+
+<h3 id="isr-mech">5.2 What actually happens: vectors, context, latency</h3>
+
+<p>When an interrupt request (IRQ) arrives and is enabled, the hardware — on a Cortex-M, the <strong>NVIC</strong> (nested vectored interrupt controller) — performs a precisely choreographed sequence:</p>
+<ol>
+  <li><b>Finish</b> the current instruction (you cannot stop mid-instruction).</li>
+  <li><b>Save context</b> (<span class="de">Kontextsicherung</span>): push the working registers (R0–R3, R12, LR, PC, status) onto the stack automatically — 8 words.</li>
+  <li><b>Vector</b>: fetch the address of the matching <strong>interrupt service routine</strong> (ISR, <span class="de">Unterbrechungsroutine</span>) from the vector table (Fig. 3.1) and jump.</li>
+  <li>Run the ISR; on return, pop the context and resume the interrupted code exactly where it stopped.</li>
+</ol>
+<p>Steps 1–3 take a fixed <strong>12 clock cycles</strong> on a Cortex-M3/M4 — at 80 MHz, that is 150 ns of hardware <strong>interrupt latency</strong> (<span class="de">Interruptlatenz</span>). <strong>Priorities</strong>: every IRQ gets a priority level; a higher-priority request <em>preempts</em> a running lower-priority ISR (<strong>nesting</strong>, <span class="de">geschachtelte Unterbrechungen</span>), while equal/lower ones wait. So the worst-case latency of the <em>highest</em>-priority interrupt stays tiny, and lower ones inherit the sum of everything above them.</p>
+
+<div class="example">
+  <div class="ex-head"><span class="ex-tag">Worked example</span> A worst-case latency budget</div>
+  <div class="ex-body">
+    <p>An 80 MHz Cortex-M4 motor controller must react to an overcurrent comparator within 2 µs. The firmware also has: a UART ISR (measured worst case 4.0 µs), a 1 kHz SysTick ISR (2.5 µs), and short critical sections where all interrupts are masked (longest: 1.2 µs). Overcurrent gets the highest priority. Worst-case reaction?</p>
+    <div class="step"><span class="step-label">Step 1 — what can delay the highest priority?</span> Only non-interruptible states: the longest interrupt-masked critical section (1.2 µs) <em>or</em> the tail of one instruction (~ns, negligible) — NOT the other ISRs, because overcurrent preempts them.</div>
+    <div class="step"><span class="step-label">Step 2 — add hardware entry:</span> 12 cycles / 80 MHz = 0.15 µs.</div>
+    <div class="step"><span class="step-label">Step 3 — total:</span> \( t_{max} = 1.2 + 0.15 \approx 1.35\,\mathrm{µs} + \) first ISR instructions. Budget met with ~30 % margin.</div>
+    <div class="result-line">Worst case ≈ 1.4 µs &lt; 2 µs ✓ — and the calculation shows the real lever: keep critical sections short, they gate even your fastest interrupt.</div>
+  </div>
+</div>
+
+<h3 id="isr-rules">5.3 The golden rules of ISR writing</h3>
+
+<div class="box key">
+  <div class="box-title"><span class="ic">🔑</span>Key idea: ISRs — short, non-blocking, honest about sharing</div>
+  <p><b>1. Keep it short.</b> Every µs inside an ISR is added latency for every equal/lower-priority interrupt. Do the minimum (grab the byte, set a flag, timestamp the edge) and let <code>main()</code> do the thinking.<br>
+  <b>2. Never block.</b> No delays, no waiting on other hardware, no <code>printf</code> (it may wait on the UART — possibly on an interrupt that cannot run because <em>you</em> are running: deadlock).<br>
+  <b>3. Declare shared data <code>volatile</code></b> and mind atomicity: a 64-bit counter or multi-field struct read in <code>main()</code> can be torn mid-read by the ISR updating it. Protect multi-word shared state by briefly disabling that interrupt, or design it away (single-writer flags, ring buffers).</p>
+</div>
+
+<pre><code>volatile uint32_t ms_ticks = 0;      /* written by ISR, read by main */
+
+void SysTick_Handler(void)           /* runs every 1 ms              */
+{
+    ms_ticks++;                      /* short: one increment, return */
+}
+
+int main(void)
+{
+    init_hw();
+    uint32_t t0 = ms_ticks;
+    while ((ms_ticks - t0) &lt; 500) {  /* unsigned wrap-safe 500 ms    */
+        /* volatile forces a fresh read each pass                    */
+    }
+    /* ... */
+}</code></pre>
+
+<p>A <strong>race condition</strong> (<span class="de">Wettlaufsituation</span>) in one line: <code>main()</code> executes <code>count++</code> (load 41, add, store 42) and the ISR fires between load and store, also incrementing (41→42). The ISR’s increment is lost; the final value is 42, not 43. It will pass every test on your desk and fail once a week in the field. Exercise E5 dissects it.</p>
+
+<h2 id="timers">6. Timers, counters and PWM</h2>
+
+<h3 id="prescaler">6.1 The counter + prescaler arithmetic</h3>
+
+<p>A hardware <strong>timer</strong> (<span class="de">Zeitgeber</span>) is just a counter register incremented by a clock, with helpers: a <strong>prescaler</strong> (<span class="de">Vorteiler</span>) divides the input clock first; an <strong>auto-reload register</strong> (ARR, the “period” register) resets the count and can fire an interrupt on overflow. Because both dividers count <em>from zero</em>, each divides by (setting + 1):</p>
+\[ \boxed{\; f_{event} = \frac{f_{clk}}{(\mathrm{PSC}+1)\,(\mathrm{ARR}+1)} \;} \]
+
+<div class="example">
+  <div class="ex-head"><span class="ex-tag">Worked example</span> An exact 1 kHz tick from a 16 MHz clock</div>
+  <div class="ex-body">
+    <p>Configure a 16-bit timer (max count 65535) on a 16 MHz µC to interrupt at exactly 1.000 kHz.</p>
+    <div class="step"><span class="step-label">Step 1 — total division needed:</span> \( N = f_{clk}/f_{event} = 16\,000\,000 / 1000 = 16\,000 \). Since 16 000 &lt; 65 536, a prescaler of 1 (PSC = 0) would already work with ARR = 15 999.</div>
+    <div class="step"><span class="step-label">Step 2 — a nicer factorization:</span> spend the prescaler to get a round tick: PSC = 15 → timer ticks at \(16\,\mathrm{MHz}/16 = 1\,\mathrm{MHz}\), i.e. 1 µs per count. Then ARR = 999 gives 1000 µs per overflow.</div>
+    <div class="step"><span class="step-label">Step 3 — verify with the +1 rule:</span> \( f = \frac{16\cdot 10^6}{(15+1)(999+1)} = \frac{16\cdot 10^6}{16\,000} = 1000.0\,\mathrm{Hz} \) ✓ — exact, because 16 MHz is an integer multiple of 1 kHz. Setting PSC = 16 by forgetting the +1 gives 941.2 Hz: a 5.9 % error that would make a software clock lose 85 minutes per day.</div>
+    <div class="result-line">PSC = 15, ARR = 999 → exactly 1 kHz, with a convenient 1 µs timer resolution as a bonus.</div>
+  </div>
+</div>
+
+<h3 id="pwm">6.2 PWM — pulse width modulation</h3>
+
+<p>Add one <em>compare register</em> (CCR) to the counter and you get <strong>PWM</strong> (<span class="de">Pulsweitenmodulation</span>): the output pin is high while count &lt; CCR, low for the rest of the period. The <strong>duty cycle</strong> (<span class="de">Tastgrad</span>) \(D = \mathrm{CCR}/(\mathrm{ARR}{+}1)\) sets the fraction of time spent high, and therefore the <em>average</em>:</p>
+\[ \boxed{\; \bar{U} = D \cdot U_{high} \;} \qquad 0 \le D \le 1 \]
+<p>Any load that averages — thermally, mechanically, optically or through an LC/RC filter — sees a smoothly adjustable analog value, produced by a purely digital pin at essentially zero loss (the switch is always fully on or fully off; that thermodynamic trick powers all of Module 18). The two canonical uses:</p>
+<ul>
+  <li><strong>LED dimming</strong>: at a few hundred Hz and above, your eye integrates the flicker away; perceived brightness follows the duty cycle. Every phone backlight works this way.</li>
+  <li><strong>Hobby servo control</strong>: a servo expects a pulse every 20 ms (50 Hz) whose <em>width</em> encodes the position — 1.0 ms = full left, 1.5 ms = center, 2.0 ms = full right. Note the information is in the pulse width (5–10 % duty), not the average.</li>
+</ul>
+
+<div class="widget">
+  <div class="w-head"><span class="ic">🧪</span>Interactive — PWM explorer <span class="w-tag">simulation</span></div>
+  <div class="w-body">
+    <p class="small mt0">Drag the duty cycle and watch the waveform, its RC-filtered value settling on \(D\cdot 3.3\,\mathrm{V}\), and the LED patch brightening. Switch to servo mode: now the slider sets pulse width 1–2 ms inside a fixed 20 ms frame, and the horn follows. Lower the LED-mode frequency toward 100 Hz and note the ripple growing — same average, worse smoothing.</p>
+    <div id="w-pwm"></div>
+  </div>
+</div>
+
+<h3 id="capture">6.3 Input capture — measuring instead of generating</h3>
+
+<p>Timers run in reverse, too: in <strong>input capture</strong> mode (<span class="de">Messwerterfassung/Capture</span>), an edge on a pin copies the free-running counter value into a capture register and raises an interrupt. Two consecutive rising-edge captures \(c_1, c_2\) give the period without any CPU involvement in the timing itself:</p>
+\[ f_{signal} = \frac{f_{timer}}{c_2 - c_1} \]
+<p>With the 1 µs timer from the worked example, a fan tachometer reading \(c_2 - c_1 = 8333\) means \(f = 120\) Hz — 60 Hz rotation for a 2-pulse/rev sensor, i.e. 3600 rpm, resolved to ~0.01 %. The same principle measures ultrasonic echo times, RC-receiver pulses and duty cycles (capture both edges).</p>
+
+<h2 id="comm">7. Communication interfaces — teaching chips to talk</h2>
+
+<p>A µC rarely lives alone: sensors, memories, displays, radios and other controllers must exchange bytes. Serial buses dominate — fewer pins beat raw speed at these scales. You must know four, and you must know them at the <em>waveform</em> level, because that is what you will stare at on a scope when it doesn’t work.</p>
+
+<h3 id="uart">7.1 UART — the veteran (asynchronous, 2 wires)</h3>
+
+<p>The <strong>UART</strong> (universal asynchronous receiver/transmitter, <span class="de">serielle Schnittstelle</span>) sends each byte as a self-contained <strong>frame</strong> (<span class="de">Rahmen</span>) with no clock wire at all: TX to RX, one wire per direction. The line idles high (a legacy of current-loop teletypes). A frame is:</p>
+<ul>
+  <li><b>Start bit</b> (low): its falling edge tells the receiver “a frame begins <em>now</em>” — the only synchronization there is.</li>
+  <li><b>8 data bits, LSB first</b> (7/9 possible).</li>
+  <li>Optional <b>parity bit</b> (<span class="de">Paritätsbit</span>): makes the number of 1s even (or odd) — detects any single flipped bit, cheaply.</li>
+  <li><b>Stop bit</b> (high): guarantees an idle-high gap so the next start edge is detectable.</li>
+</ul>
+<p>Both ends must agree on the <strong>baud rate</strong> (bits per second: 9600 and 115 200 are the classics) <em>and</em> the frame format, because nothing on the wire announces them. The receiver samples each bit in its middle, timed from the start edge by its own local clock; after 10 bits the accumulated clock error must stay below ~half a bit, so the two clocks may differ by at most ≈ 5 % — comfortably met by on-chip oscillators, but the reason exotic baud rates from mismatched crystal frequencies cause garbage. At 115 200 baud 8N1, each byte costs 10 bit times: a hard ceiling of 11 520 bytes/s.</p>
+
+<div class="widget">
+  <div class="w-head"><span class="ic">🧪</span>Interactive — UART frame anatomy <span class="w-tag">simulation</span></div>
+  <div class="w-body">
+    <p class="small mt0">Compose a frame: pick the byte, baud rate and parity, and read the wire like a logic analyzer. Note the LSB goes first — the bit order on the wire is the <em>reverse</em> of how you write the number in binary. Watch the bit time shrink 100× from 9600 baud to 1 Mbaud.</p>
+    <div id="w-uart"></div>
+  </div>
+</div>
+
+<div class="example">
+  <div class="ex-head"><span class="ex-tag">Worked example</span> Decoding a scope capture</div>
+  <div class="ex-body">
+    <p>A logic analyzer shows an idle-high line that falls, then measures, in units of one bit time (104.2 µs each): <code>0 · 1 0 1 0 0 1 1 0 · 1</code>. Configuration is 8N1. What was sent, and at what baud rate?</p>
+    <div class="step"><span class="step-label">Step 1 — baud rate from bit time:</span> \( 1/104.2\,\mathrm{µs} \approx 9600 \) baud ✓ (the standard rate nearest the measurement).</div>
+    <div class="step"><span class="step-label">Step 2 — parse the frame:</span> first 0 = start bit. Next 8 are data, <b>LSB first</b>: D0…D7 = 1,0,1,0,0,1,1,0. Final 1 = stop bit ✓ (a stop-bit violation would flag a framing error).</div>
+    <div class="step"><span class="step-label">Step 3 — reassemble MSB…LSB:</span> D7…D0 = 0110 0101 = 0x65 = decimal 101 = ASCII <code>'e'</code>.</div>
+    <div class="result-line">The byte 0x65 ('e') at 9600 baud. Classic trap: reading the data bits left-to-right as written gives 0xA6 — wrong, because UART is LSB-first.</div>
+  </div>
+</div>
+
+<h3 id="spi">7.2 SPI — the sprinter (synchronous, 4 wires)</h3>
+
+<p><strong>SPI</strong> (serial peripheral interface) adds what UART lacks: an explicit clock. A <strong>master</strong> (controller) drives <b>SCK</b> (clock) and <b>MOSI</b> (master-out-slave-in); the <strong>slave</strong> (peripheral) answers on <b>MISO</b>; a dedicated <b>CS̄</b> (chip select, active low) line per slave frames the transaction. Data is exchanged <em>simultaneously</em> in both directions — two shift registers forming a ring. No addresses, no acknowledgment, no protocol overhead at all: just raw clocked bits, which is why SPI runs at 10–100 MHz where I²C manages 0.4–3.4 MHz. Cost: it needs \(3 + n\) pins for \(n\) slaves.</p>
+
+<p>Two configuration bits trip everyone once: <b>CPOL</b> (does SCK idle low or high?) and <b>CPHA</b> (is data sampled on the first or second edge?). The four combinations are “modes 0–3”; both ends must use the peripheral’s documented mode. Mode 0 (idle low, sample on rising edge) is the most common:</p>
+
+<figure>
+  <div class="fig-frame">
+  <svg class="diagram" viewBox="0 0 680 305" role="img" aria-label="SPI mode 0 timing diagram, one byte transfer">
+    <!-- sampling lines -->
+    <g stroke="var(--accent-2)" stroke-width="1.1" stroke-dasharray="3 4" opacity="0.85">
+      <line x1="178" y1="80" x2="178" y2="250"/><line x1="234" y1="80" x2="234" y2="250"/>
+      <line x1="290" y1="80" x2="290" y2="250"/><line x1="346" y1="80" x2="346" y2="250"/>
+      <line x1="402" y1="80" x2="402" y2="250"/><line x1="458" y1="80" x2="458" y2="250"/>
+      <line x1="514" y1="80" x2="514" y2="250"/><line x1="570" y1="80" x2="570" y2="250"/>
+    </g>
+    <text x="178" y="70" text-anchor="middle" font-size="10.5" fill="var(--accent-2)">sample ↓</text>
+    <!-- CS -->
+    <text x="60" y="50" text-anchor="end" font-size="12" font-weight="600">CS̄</text>
+    <path d="M70 40 H120 V58 H620 V40 H660" fill="none" stroke="var(--text-soft)" stroke-width="2"/>
+    <!-- SCK -->
+    <text x="60" y="112" text-anchor="end" font-size="12" font-weight="600">SCK</text>
+    <path d="M70 120 H178 V95 H206 V120 H234 V95 H262 V120 H290 V95 H318 V120 H346 V95 H374 V120 H402 V95 H430 V120 H458 V95 H486 V120 H514 V95 H542 V120 H570 V95 H598 V120 H660" fill="none" stroke="var(--accent)" stroke-width="2"/>
+    <!-- MOSI: 0xA5 = 1010 0101 MSB first -->
+    <text x="60" y="175" text-anchor="end" font-size="12" font-weight="600">MOSI</text>
+    <path d="M70 182 H135 V160 H206 V182 H262 V160 H318 V182 H430 V160 H486 V182 H542 V160 H610 V182 H660" fill="none" stroke="var(--text-soft)" stroke-width="2"/>
+    <text x="178" y="152" text-anchor="middle" font-size="11">1</text><text x="234" y="152" text-anchor="middle" font-size="11">0</text>
+    <text x="290" y="152" text-anchor="middle" font-size="11">1</text><text x="346" y="152" text-anchor="middle" font-size="11">0</text>
+    <text x="402" y="152" text-anchor="middle" font-size="11">0</text><text x="458" y="152" text-anchor="middle" font-size="11">1</text>
+    <text x="514" y="152" text-anchor="middle" font-size="11">0</text><text x="570" y="152" text-anchor="middle" font-size="11">1</text>
+    <!-- MISO: 0x3C -->
+    <text x="60" y="240" text-anchor="end" font-size="12" font-weight="600">MISO</text>
+    <path d="M70 247 H262 V225 H486 V247 H660" fill="none" stroke="var(--text-soft)" stroke-width="2"/>
+    <text x="178" y="270" text-anchor="middle" font-size="11">0</text><text x="234" y="270" text-anchor="middle" font-size="11">0</text>
+    <text x="290" y="270" text-anchor="middle" font-size="11">1</text><text x="346" y="270" text-anchor="middle" font-size="11">1</text>
+    <text x="402" y="270" text-anchor="middle" font-size="11">1</text><text x="458" y="270" text-anchor="middle" font-size="11">1</text>
+    <text x="514" y="270" text-anchor="middle" font-size="11">0</text><text x="570" y="270" text-anchor="middle" font-size="11">0</text>
+    <text x="365" y="295" text-anchor="middle" font-size="11" fill="var(--text-soft)">master sends 0xA5, slave answers 0x3C — in the same 8 clocks (MSB first)</text>
+  </svg>
+  </div>
+  <figcaption><b>Fig. 7.1</b> — One SPI byte in mode 0 (CPOL = 0, CPHA = 0): CS̄ frames the transfer, data changes on falling SCK edges and is sampled on rising edges (dashed). Full-duplex: both directions move simultaneously.</figcaption>
+</figure>
+
+<h3 id="i2c">7.3 I²C — the diplomat (2 wires, many devices)</h3>
+
+<p><strong>I²C</strong> (inter-integrated circuit, <span class="de">I²C-Bus</span>, Philips 1982) connects up to ~100 devices with just <b>two</b> wires: SDA (data) and SCL (clock), both <strong>open-drain with pull-up resistors</strong> (Section 4.2) — so any device can pull a line low, none can fight. The protocol earns its pins back with rules:</p>
+<ul>
+  <li><b>START condition</b>: SDA falls while SCL is high (data normally changes only while SCL is low — the violation is the signal).</li>
+  <li><b>Addressing</b> (<span class="de">Adressierung</span>): the master sends a 7-bit device address plus a read/write bit. Every chip on the bus compares; only the match responds. (Addresses are baked into the chip, with a few pin-selectable bits — hence the classic conflict of two identical sensors on one bus.)</li>
+  <li><b>ACK</b>: after every 9th bit slot the <em>receiver</em> pulls SDA low. A missing ACK (NACK) tells the master immediately that nobody is home — priceless for diagnostics.</li>
+  <li><b>Clock stretching</b> (<span class="de">Taktdehnung</span>): a slow slave may hold SCL low to pause the master — flow control for free, courtesy of open-drain.</li>
+  <li><b>STOP condition</b>: SDA rises while SCL is high.</li>
+</ul>
+
+<figure>
+  <div class="fig-frame">
+  <svg class="diagram" viewBox="0 0 700 265" role="img" aria-label="I2C address byte with ACK, START and STOP conditions">
+    <!-- SCL -->
+    <text x="58" y="85" text-anchor="end" font-size="12" font-weight="600">SCL</text>
+    <path d="M70 60 H135 V100 H166 V60 H192 V100 H218 V60 H244 V100 H270 V60 H296 V100 H322 V60 H348 V100 H374 V60 H400 V100 H426 V60 H452 V100 H478 V60 H504 V100 H530 V60 H556 V100 H582 V60 H608 V100 H630 V60 H690" fill="none" stroke="var(--accent)" stroke-width="2"/>
+    <!-- SDA -->
+    <text x="58" y="175" text-anchor="end" font-size="12" font-weight="600">SDA</text>
+    <path d="M70 150 H115 V190 H152 V150 H204 V190 H308 V150 H360 V190 H650 V150 H690" fill="none" stroke="var(--text-soft)" stroke-width="2"/>
+    <!-- ACK segment highlight -->
+    <line x1="568" y1="190" x2="616" y2="190" stroke="var(--accent-2)" stroke-width="3.5"/>
+    <text x="592" y="240" text-anchor="middle" font-size="11" fill="var(--accent-2)">ACK (slave pulls low)</text>
+    <!-- start / stop markers -->
+    <circle cx="115" cy="150" r="4" fill="var(--accent-2)"/>
+    <text x="112" y="135" text-anchor="middle" font-size="11" font-weight="600" fill="var(--accent-2)">START</text>
+    <circle cx="650" cy="150" r="4" fill="var(--accent-2)"/>
+    <text x="655" y="135" text-anchor="middle" font-size="11" font-weight="600" fill="var(--accent-2)">STOP</text>
+    <!-- bit labels -->
+    <text x="179" y="218" text-anchor="middle" font-size="11">1</text>
+    <text x="231" y="218" text-anchor="middle" font-size="11">0</text>
+    <text x="283" y="218" text-anchor="middle" font-size="11">0</text>
+    <text x="335" y="218" text-anchor="middle" font-size="11">1</text>
+    <text x="387" y="218" text-anchor="middle" font-size="11">0</text>
+    <text x="439" y="218" text-anchor="middle" font-size="11">0</text>
+    <text x="491" y="218" text-anchor="middle" font-size="11">0</text>
+    <text x="543" y="218" text-anchor="middle" font-size="11">W</text>
+    <!-- brace label -->
+    <line x1="160" y1="230" x2="512" y2="230" stroke="var(--text-faint)" stroke-width="1.2"/>
+    <text x="336" y="248" text-anchor="middle" font-size="11" fill="var(--text-soft)">7-bit address 0x48, MSB first</text>
+  </svg>
+  </div>
+  <figcaption><b>Fig. 7.2</b> — Start of an I²C write to device 0x48 (a typical temperature sensor): START condition, address bits (SDA stable while SCL high), R/W̄ = 0, then the addressed slave acknowledges by pulling SDA low. Data bytes follow the same 8-bits + ACK pattern until STOP.</figcaption>
+</figure>
+
+<h3 id="can">7.4 CAN — the diplomat under fire (differential, automotive)</h3>
+
+<p>The <strong>CAN bus</strong> (controller area network, Bosch 1986) is what happens when engineers design a bus for an environment that actively hates electronics: a car. Two measures make it robust. First, the physical layer is <strong>differential</strong> (CAN_H/CAN_L twisted pair): interference hits both wires equally and cancels in the receiver’s difference (common-mode rejection, Module 9/21). Second — the brilliant part — <strong>non-destructive arbitration by ID</strong> (<span class="de">Arbitrierung</span>).</p>
+
+<p>Any node may start transmitting when the bus is idle. Collisions are resolved by physics: a transmitted 0 is <strong>dominant</strong> (drives the bus), a 1 is <strong>recessive</strong> (releases it — the same wired-AND idea as open-drain). Every transmitter compares the bus with what it just sent, bit by bit, during the message’s <strong>identifier</strong> field. The moment a node sends recessive 1 but reads back dominant 0, it knows a higher-priority message is on the bus — it stops instantly and retries later. The winner never notices; <em>zero bandwidth is destroyed</em>. Consequence: the numerically <em>lowest</em> ID always wins, so the ID doubles as the message priority — airbag frames get low IDs, seat-heater status gets high ones, and the worst-case latency of the top-priority message is provable. That determinism is why CAN still rules automotive and industrial control 40 years on (typ. 500 kbit/s classic, 2–8 Mbit/s CAN&nbsp;FD).</p>
+
+<figure>
+  <div class="fig-frame">
+  <svg class="diagram" viewBox="0 0 640 285" role="img" aria-label="CAN arbitration: two nodes, lower ID wins">
+    <!-- losing-bit highlight -->
+    <rect x="380" y="45" width="60" height="180" fill="var(--accent)" opacity="0.10"/>
+    <!-- Node A -->
+    <text x="72" y="58" text-anchor="end" font-size="12" font-weight="600">Node A</text>
+    <text x="72" y="74" text-anchor="end" font-size="10.5" fill="var(--text-soft)">ID 0x29F</text>
+    <path d="M80 80 H140 V60 H200 V80 H260 V60 H320 V80 H440 V60 H500" fill="none" stroke="var(--text-soft)" stroke-width="2"/>
+    <!-- Node B -->
+    <text x="72" y="123" text-anchor="end" font-size="12" font-weight="600">Node B</text>
+    <text x="72" y="139" text-anchor="end" font-size="10.5" fill="var(--text-soft)">ID 0x2B1</text>
+    <path d="M80 145 H140 V125 H200 V145 H260 V125 H320 V145 H380 V125 H440" fill="none" stroke="var(--accent-2)" stroke-width="2"/>
+    <path d="M440 125 H500" fill="none" stroke="var(--accent-2)" stroke-width="2" stroke-dasharray="5 4"/>
+    <!-- Bus -->
+    <text x="72" y="192" text-anchor="end" font-size="12" font-weight="600">Bus level</text>
+    <path d="M80 210 H140 V190 H200 V210 H260 V190 H320 V210 H440 V190 H500" fill="none" stroke="var(--accent)" stroke-width="2"/>
+    <!-- bit values under bus -->
+    <text x="110" y="238" text-anchor="middle" font-size="11">0</text>
+    <text x="170" y="238" text-anchor="middle" font-size="11">1</text>
+    <text x="230" y="238" text-anchor="middle" font-size="11">0</text>
+    <text x="290" y="238" text-anchor="middle" font-size="11">1</text>
+    <text x="350" y="238" text-anchor="middle" font-size="11">0</text>
+    <text x="410" y="238" text-anchor="middle" font-size="11">0</text>
+    <text x="470" y="238" text-anchor="middle" font-size="11">1</text>
+    <text x="290" y="262" text-anchor="middle" font-size="11" fill="var(--text-soft)">identifier bits, MSB first — dominant 0 beats recessive 1</text>
+    <!-- annotation -->
+    <text x="410" y="36" text-anchor="middle" font-size="11" font-weight="600" fill="var(--accent-2)">B sends 1, reads 0 → backs off</text>
+  </svg>
+  </div>
+  <figcaption><b>Fig. 7.3</b> — CAN arbitration. Both nodes start together; at the 6th identifier bit Node B transmits recessive (1) but reads the bus dominant (0, forced by A). B silently becomes a receiver and retries after A finishes; A’s frame is untouched. Lower ID = higher priority.</figcaption>
+</figure>
+
+<h3 id="buscompare">7.5 When to use which</h3>
+
+<div class="table-wrap">
+<table class="data">
+<thead><tr><th></th><th>UART</th><th>SPI</th><th>I²C</th><th>CAN</th></tr></thead>
+<tbody>
+<tr><td>Wires (n slaves)</td><td>2 (point-to-point)</td><td>3 + n</td><td>2 (shared)</td><td>2 (differential, shared)</td></tr>
+<tr><td>Clock</td><td>none — agreed baud</td><td>master drives SCK</td><td>master drives SCL</td><td>none — bit-synced, agreed rate</td></tr>
+<tr><td>Typical speed</td><td>9.6 k–3 Mbaud</td><td>10–100 MHz</td><td>100/400 kHz, 1/3.4 MHz</td><td>125 k–1 Mbit/s (FD: 8 M)</td></tr>
+<tr><td>Addressing</td><td>none</td><td>CS̄ pin per slave</td><td>7-bit in-band + ACK</td><td>message ID = priority</td></tr>
+<tr><td>Robustness</td><td>parity (optional)</td><td>none built in</td><td>ACK per byte</td><td>CRC, ACK, error counters, differential</td></tr>
+<tr><td>Sweet spot</td><td>debug console, GPS, modems</td><td>flash chips, displays, fast ADCs</td><td>sensor swarms, config chips</td><td>vehicles, machines, robots</td></tr>
+</tbody>
+</table>
+</div>
+
+<h2 id="adc">8. ADC and DAC in a real system</h2>
+
+<p>Modules 13 and 15 cover converters in depth; here is the embedded-integration view. The on-chip <strong>ADC</strong> (typically a 12-bit SAR type, 0.1–5 Msample/s) measures pin voltage against a <strong>reference</strong> \(V_{ref}\); one code step (LSB) is</p>
+\[ 1\,\mathrm{LSB} = \frac{V_{ref}}{2^N} \quad \xrightarrow{\;N=12,\ V_{ref}=3.3\,\mathrm{V}\;} \quad 0.81\,\mathrm{mV} \]
+<p>Three things bite in practice. (1) Your measurement is only as good as \(V_{ref}\): if it is just the 3.3 V rail, every ripple on the rail appears in your data — precise designs use a dedicated reference IC. (2) The sample-and-hold needs source impedance low enough to charge its capacitor within the sampling window (datasheets specify e.g. ≤ 10 kΩ); a high-impedance sensor divider needs a buffer op-amp (Module 9) or longer sampling time. (3) <em>When</em> you sample matters as much as how well (Module 12’s sampling theorem): trigger the ADC from a <em>timer</em>, not from software, or your “10 kHz sampling” will jitter with every interrupt — hardware triggering plus DMA (a peripheral that copies results to RAM without the CPU) gives jitter-free acquisition while the CPU sleeps. True DACs are rarer on µCs; PWM + RC filter (Section 6.2) is the poor man’s DAC for slow signals.</p>
+
+<h2 id="realtime">9. Real-time — deadlines, not speed</h2>
+
+<h3 id="rt-def">9.1 What “real-time” actually means</h3>
+
+<p><strong>Real-time</strong> (<span class="de">Echtzeit</span>) does <em>not</em> mean fast. It means: the correctness of the system depends on the <em>time</em> of the result, not only its value — every response must meet its <strong>deadline</strong> (<span class="de">Zeitschranke</span>). A system that computes the airbag decision perfectly but 50 ms late has failed absolutely (<strong>hard real-time</strong>); a video decoder that occasionally drops a frame merely degrades (<strong>soft real-time</strong>). A 16 MHz µC toggling a fuel injector with guaranteed 10 µs precision is a better real-time system than a 3 GHz PC, whose caches, dynamic frequency scaling and OS scheduler make its worst case unknowable. Real-time engineering is the discipline of the <em>worst case</em>, never the average.</p>
+
+<h3 id="architectures">9.2 Three software architectures</h3>
+
+<p><b>1. The superloop</b> (<span class="de">Endlosschleife</span>) — the default for small systems:</p>
+
+<pre><code>int main(void)
+{
+    init_hw();
+    for (;;) {                /* the "superloop"                  */
+        read_sensors();       /* each step must return quickly!   */
+        update_control();
+        refresh_display();
+        kick_watchdog();      /* prove we are still alive (9.3)   */
+    }
+}</code></pre>
+
+<p>Simple, inspectable, no OS. Its weakness: worst-case reaction to anything = duration of one whole lap, and one slow step delays everyone.</p>
+
+<p><b>2. Superloop + interrupts</b> — the workhorse. Time-critical events run in ISRs (Section 5); the loop does the slow thinking on flags and buffers the ISRs fill. This covers the vast majority of shipped products.</p>
+
+<p><b>3. An RTOS</b> (real-time operating system: FreeRTOS, Zephyr, embOS — kernels of 6–20 kB). It provides <strong>tasks</strong> (<span class="de">Tasks/Prozesse</span>), each an independent superloop with its own stack, and a <strong>scheduler</strong> (<span class="de">Ablaufplaner</span>) that always runs the highest-priority <em>ready</em> task, <strong>preempting</strong> (<span class="de">verdrängend</span>) lower ones the instant a higher one becomes ready — plus queues, semaphores and timers for safe communication. You buy composability (the motor task cannot be delayed by the display task) at the price of new failure modes: race conditions between tasks, deadlocks, and <strong>priority inversion</strong> — a high-priority task blocked on a mutex held by a low-priority task, which in turn is starved by medium-priority tasks. The standard cure is priority inheritance (the lock holder temporarily inherits the waiter’s priority).</p>
+
+<div class="box history">
+  <div class="box-title"><span class="ic">📜</span>Priority inversion on Mars</div>
+  <p>The 1997 Mars Pathfinder lander famously kept resetting on the surface: a low-priority meteorological task held a shared bus mutex, medium-priority tasks starved it, and the high-priority bus-management task missed its deadline — the watchdog then rebooted the spacecraft. JPL diagnosed it from 200 million km away and fixed it by enabling priority inheritance — a flag in the (VxWorks) RTOS. Every RTOS course tells this story; now you know why.</p>
+</div>
+
+<h3 id="watchdog">9.3 The watchdog timer</h3>
+
+<p>A <strong>watchdog</strong> (<span class="de">Watchdog-Zähler</span>) is a free-running hardware down-counter that <em>resets the entire chip</em> when it reaches zero. Correct firmware must “kick” (reload) it periodically — typically every 100 ms–1 s. If the software hangs (infinite loop, corrupted state, latch-up after an ESD hit, a cosmic-ray bit flip), the kicks stop and the watchdog reboots the system into a known-good state within a bounded time. Every serious unattended product ships with the watchdog enabled — it converts “weird firmware death in the field” from a truck roll into a 300 ms hiccup. Two rules: kick it from the <em>main flow</em> only (kicking from a timer ISR is a classic anti-pattern — the ISR happily keeps running while <code>main()</code> is dead), and log the reset cause register so field failures leave evidence.</p>
+
+<h2 id="lowpower">10. Low power — engineering the sleep schedule</h2>
+
+<p>Battery-powered devices live or die by their <strong>sleep modes</strong> (<span class="de">Schlafmodi</span>). CMOS power is mostly dynamic, \(P \propto C V^2 f\) (Module 10/11), so the recipe is: do the work fast, then stop the clocks and cut the power domains. A typical Cortex-M ladder:</p>
+
+<div class="table-wrap">
+<table class="data">
+<thead><tr><th>Mode</th><th>What still runs</th><th>Typical current</th><th>Wake-up time</th></tr></thead>
+<tbody>
+<tr><td>Run @ 80 MHz</td><td>everything</td><td>10–30 mA</td><td>—</td></tr>
+<tr><td>Sleep</td><td>clocks on, CPU halted; any interrupt wakes</td><td>2–8 mA</td><td>~1 µs</td></tr>
+<tr><td>Stop</td><td>SRAM + registers retained; RTC, some peripherals</td><td>1–10 µA</td><td>5–50 µs</td></tr>
+<tr><td>Standby</td><td>almost nothing — RTC + backup registers</td><td>0.03–2 µA</td><td>ms (reboot)</td></tr>
+</tbody>
+</table>
+</div>
+
+<p><strong>Wake sources</strong> (<span class="de">Aufweckquellen</span>) are whatever hardware still breathes in that mode: a GPIO edge (button, sensor alert pin), the real-time clock’s alarm, a UART start edge, a watchdog. The art is <strong>duty cycling</strong>: sleep at microamps, wake briefly, measure, transmit, sleep again. The battery then sees the time-weighted <em>average</em> current:</p>
+\[ \boxed{\; \bar{I} = \frac{I_{act}\,t_{act} + I_{sleep}\,(T - t_{act})}{T} \;}
+   \qquad L \approx \frac{C_{bat}}{\bar{I}} \]
+
+<div class="example">
+  <div class="ex-head"><span class="ex-tag">Worked example</span> Battery life of a wireless sensor</div>
+  <div class="ex-body">
+    <p>A sensor node on a CR2032 coin cell (220 mAh nominal; plan with 200 mAh usable — capacity derates with pulse load and temperature) sleeps at 2 µA and wakes every 60 s for 50 ms, drawing 8 mA while measuring and transmitting. Battery life?</p>
+    <div class="step"><span class="step-label">Step 1 — charge per cycle:</span> active: \(8\,\mathrm{mA} \times 0.05\,\mathrm{s} = 0.40\,\mathrm{mA\,s}\); sleeping: \(0.002\,\mathrm{mA} \times 59.95\,\mathrm{s} = 0.12\,\mathrm{mA\,s}\).</div>
+    <div class="step"><span class="step-label">Step 2 — average current:</span> \( \bar{I} = (0.40 + 0.12)/60 = 8.7\,\mathrm{µA} \). Note the split: the 50 ms bursts cost <em>3×</em> more than 59.95 s of sleeping — the burst dominates the budget.</div>
+    <div class="step"><span class="step-label">Step 3 — life:</span> \( L = 200\,\mathrm{mAh} / 8.7\,\mathrm{µA} \approx 23\,000\,\mathrm{h} \approx 2.6\,\mathrm{years} \).</div>
+    <div class="result-line">≈ 2.6 years — and the worked levers, in order of impact: shorten the radio burst, lengthen the interval, and only then chase sleep current. Halving the 50 ms burst buys more than halving the 2 µA sleep.</div>
+  </div>
+</div>
+
+<div class="widget">
+  <div class="w-head"><span class="ic">🧪</span>Interactive — battery-life calculator <span class="w-tag">design tool</span></div>
+  <div class="w-body">
+    <p class="small mt0">Battery life vs. wake interval (log axis). The curve climbs toward the sleep-current ceiling — the life you’d get never waking at all. Find your design point, then test the levers: does cutting active time beat cutting sleep current for <em>your</em> interval? Notice how beyond a certain interval the curve flattens: sleep current has taken over and waking less often buys nothing.</p>
+    <div id="w-batt"></div>
+  </div>
+</div>
+
+<h2 id="workflow">11. The development workflow</h2>
+
+<p>Embedded development is <em>cross</em>-development: you write and compile on a PC (the <em>host</em>) for a different CPU (the <em>target</em>). The pieces:</p>
+<ul>
+  <li><strong>Cross-compiler</strong> (<span class="de">Cross-Compiler</span>), e.g. <code>arm-none-eabi-gcc</code>: produces ARM machine code on your x86 machine. The linker places code/data at the right addresses of Fig. 3.1 using a <em>linker script</em>; output is an <code>.elf</code>/<code>.hex</code> image.</li>
+  <li><strong>Flashing</strong> (<span class="de">Flashen</span>): a debug probe (ST-LINK, J-Link) writes the image into Flash via the chip’s <strong>SWD</strong> pins (serial wire debug, the 2-wire successor of 4-wire <strong>JTAG</strong>).</li>
+  <li><strong>On-chip debugging</strong>: the same SWD link gives the debugger direct hardware access to the running CPU: halt, single-step, read registers and memory, set <em>hardware breakpoints</em> (comparators watching the PC — they work even in Flash) and <em>watchpoints</em> (“halt when anyone writes this address” — the stack-corruption killer).</li>
+</ul>
+<p><b>printf vs. debugger</b>: <code>printf</code> over UART is universal and shows history at a glance, but it is slow (a 50-char line at 115 200 baud blocks ~4.3 ms!), perturbs timing — famously making race conditions vanish while you look (“Heisenbug”) — and is useless in ISRs. The debugger is timing-neutral for inspection but halts the world (bad for a spinning motor). Real projects use both, plus a middle path: log binary events into a RAM ring buffer and read it out over SWD without stopping (ITM/RTT tracing).</p>
+<p><b>HAL vs. bare registers</b>: vendor <strong>HALs</strong> (hardware abstraction layers, e.g. STM32 HAL) wrap register access in portable C functions — faster to start, portable across the vendor’s families, but bulky and occasionally wrong in edge cases. Register-level code (as in Section 4) is transparent, minimal and exactly as fast as the hardware — but chip-specific. A sane default: HAL for cold paths (init, config), registers for the hot paths (ISRs, bit-banged timing), and <em>always</em> the reference manual open, because the HAL is somebody’s interpretation of it.</p>
+
+<h2 id="embc">12. Embedded C — the dialect</h2>
+
+<h3 id="fixedwidth">12.1 Fixed-width types and bit manipulation</h3>
+
+<p>Plain <code>int</code> is 16 bits on an AVR and 32 on ARM — porting code that assumed one or the other is a rite of passage you can skip: embedded C uses the exact-width types of <code>&lt;stdint.h&gt;</code> (<code>uint8_t</code>, <code>int16_t</code>, <code>uint32_t</code>…) whenever size matters, i.e. for registers, protocols and arrays. Hardware speaks in bits, so the four mask idioms below are the vocabulary you will type daily. With <code>x = 0110 1010₂</code> and \(n = 2\):</p>
+
+<div class="table-wrap">
+<table class="data">
+<thead><tr><th>Goal</th><th>Idiom</th><th>Result on x = 0110 1010</th><th>Why it works</th></tr></thead>
+<tbody>
+<tr><td>set bit n</td><td><code>x |= (1u &lt;&lt; n);</code></td><td>0110 1110</td><td>OR with 1 forces 1, OR with 0 keeps</td></tr>
+<tr><td>clear bit n</td><td><code>x &amp;= ~(1u &lt;&lt; n);</code></td><td>0110 1010 (bit 2 was 0)</td><td>AND with 0 forces 0, AND with 1 keeps</td></tr>
+<tr><td>toggle bit n</td><td><code>x ^= (1u &lt;&lt; n);</code></td><td>0110 1110</td><td>XOR with 1 flips, XOR with 0 keeps</td></tr>
+<tr><td>test bit n</td><td><code>if (x &amp; (1u &lt;&lt; n))</code></td><td>false (bit 2 = 0)</td><td>isolates one bit; nonzero = set</td></tr>
+<tr><td>write a field</td><td><code>x = (x &amp; ~(0x7u &lt;&lt; 4)) | (5u &lt;&lt; 4);</code></td><td>0101 1010</td><td>clear the 3-bit field, then OR the value in</td></tr>
+<tr><td>read a field</td><td><code>(x &gt;&gt; 4) &amp; 0x7u</code></td><td>6</td><td>shift down, mask off neighbors</td></tr>
+</tbody>
+</table>
+</div>
+
+<div class="box warn">
+  <div class="box-title"><span class="ic">⚠️</span>The <code>1u</code> is not pedantry</div>
+  <p><code>1 &lt;&lt; 31</code> shifts a <em>signed</em> int into its sign bit — undefined behavior in C. <code>1u &lt;&lt; 31</code> is well-defined. On 16-bit-int machines, <code>1u &lt;&lt; 20</code> is still wrong (<code>1ul</code> needed). Compilers may exploit undefined behavior to “optimize” your code into surprises; MISRA-C exists for reasons like this.</p>
+</div>
+
+<h3 id="fixedpoint">12.2 Fixed-point arithmetic — <span class="de">Festkommaarithmetik</span></h3>
+
+<p>Many small cores have no floating-point hardware; a software <code>float</code> multiply costs ~100 cycles. The embedded alternative: <strong>fixed-point</strong> — store \(x \cdot 2^{15}\) as an integer (“Q15” format: 1 sign bit, 15 fraction bits, range −1…+0.99997, resolution \(2^{-15} \approx 3\cdot10^{-5}\)). Then addition is plain integer addition, and multiplication needs one shift to renormalize:</p>
+<pre><code>typedef int16_t q15_t;                    /* value = raw / 32768      */
+
+static inline q15_t q15_mul(q15_t a, q15_t b)
+{
+    return (q15_t)(((int32_t)a * b) &gt;&gt; 15);   /* 32-bit product, then
+                                                  drop 15 fraction bits */
+}
+/* 0.5 * 0.25: a = 16384, b = 8192 -&gt; (134217728 &gt;&gt; 15) = 4096 = 0.125 */</code></pre>
+<p>One integer multiply plus a shift: single-digit cycles. Your DSP filters (Module 13) and motor-control loops (Module 14/17) run in Q15/Q31 on small cores exactly this way; the price is that <em>you</em> manage the scaling and watch for overflow at every step.</p>
+
+<h2 id="summary">13. Formula summary — <span class="de">Formelsammlung</span></h2>
+
+<div class="table-wrap">
+<table class="data">
+<thead><tr><th>Concept</th><th>Formula</th><th>Remember as</th></tr></thead>
+<tbody>
+<tr><td>Timer event rate</td><td>\( f = \dfrac{f_{clk}}{(\mathrm{PSC}+1)(\mathrm{ARR}+1)} \)</td><td>both registers count from 0 → +1 each</td></tr>
+<tr><td>PWM average</td><td>\( \bar{U} = D \cdot U_{high},\quad D = \frac{\mathrm{CCR}}{\mathrm{ARR}+1} \)</td><td>duty cycle = fraction of time high</td></tr>
+<tr><td>Servo pulse</td><td>1–2 ms width @ 20 ms period (50 Hz)</td><td>position is in the <em>width</em>, not the duty</td></tr>
+<tr><td>UART frame time</td><td>\( t = \dfrac{1 + 8 + P + S}{f_{baud}} \)</td><td>8N1 → 10 bits per byte</td></tr>
+<tr><td>Baud tolerance</td><td>clock mismatch ≲ 5 % over 10 bits</td><td>error accumulates from the start edge</td></tr>
+<tr><td>Input capture</td><td>\( f_{sig} = \dfrac{f_{timer}}{c_2 - c_1} \)</td><td>period = capture difference</td></tr>
+<tr><td>RC threshold crossing</td><td>\( t = -\tau \ln\!\bigl(1 - V_T/V_{CC}\bigr) \)</td><td>debounce, resets, soft-start (Module 6)</td></tr>
+<tr><td>ADC resolution</td><td>\( 1\,\mathrm{LSB} = V_{ref}/2^N \)</td><td>12 bit @ 3.3 V → 0.81 mV</td></tr>
+<tr><td>Duty-cycled current</td><td>\( \bar{I} = \dfrac{I_{act}t_{act} + I_{sleep}(T - t_{act})}{T} \)</td><td>time-weighted average</td></tr>
+<tr><td>Battery life</td><td>\( L \approx C_{bat}/\bar{I} \)</td><td>derate \(C_{bat}\) for pulses &amp; temperature</td></tr>
+<tr><td>Interrupt latency (M3/M4)</td><td>12 cycles + longest masked section</td><td>critical sections gate everything</td></tr>
+<tr><td>Q15 multiply</td><td>\( c = (a \cdot b) \gg 15 \)</td><td>32-bit product, drop 15 fraction bits</td></tr>
+</tbody>
+</table>
+</div>
+
+<h2 id="exercises">14. Exercises</h2>
+<p>Reach for a datasheet mindset: exact registers, exact bits, exact microseconds.</p>
+
+<div class="exercise">
+  <p class="ex-q"><span class="ex-num">E1</span>A control register holds <code>x = 0xB4</code>. In C: (a) set bit 0, (b) clear bit 7, (c) toggle bit 2, (d) test whether bit 5 is set. Give each idiom and the resulting value of x after applying (a)–(c) in sequence. <span class="diff easy">easy</span></p>
+  <details><summary>Show solution</summary>
+    <div class="solution">
+      0xB4 = 1011 0100.
+      (a) <code>x |= (1u &lt;&lt; 0);</code> → 1011 0101 = 0xB5.
+      (b) <code>x &amp;= ~(1u &lt;&lt; 7);</code> → 0011 0101 = 0x35.
+      (c) <code>x ^= (1u &lt;&lt; 2);</code> → 0011 0001 = 0x31.
+      (d) <code>if (x &amp; (1u &lt;&lt; 5)) …</code> — on 0x31 = 0011 0001 bit 5 is 1 → true.
+      Sanity check: each operation touched exactly one bit; the other seven never changed. That single-bit discipline is the entire point of the mask idioms.
+    </div>
+  </details>
+</div>
+
+<div class="exercise">
+  <p class="ex-q"><span class="ex-num">E2</span>An LED on a 3.3 V pin is PWM-dimmed at 1 kHz with CCR = 300, ARR = 999. Find the duty cycle, the average pin voltage, and the average LED current if the LED+resistor draws 12 mA when the pin is high. Why does 1 kHz look flicker-free? <span class="diff easy">easy</span></p>
+  <details><summary>Show solution</summary>
+    <div class="solution">
+      \( D = 300/1000 = 30\,\% \); \( \bar U = 0.3 \cdot 3.3 = 0.99\,\mathrm{V} \); \( \bar I = 0.3 \cdot 12 = 3.6\,\mathrm{mA} \).
+      The eye's flicker-fusion threshold is ≈ 60–90 Hz (higher in peripheral vision); at 1 kHz each period is 1 ms and the retina integrates perfectly — you perceive only the 30 % average. Camera rolling shutters are less forgiving, which is why cheap PWM lighting shows banding in videos.
+    </div>
+  </details>
+</div>
+
+<div class="exercise">
+  <p class="ex-q"><span class="ex-num">E3</span>Configure a 16-bit timer on a 16 MHz clock to drive a hobby servo: 50 Hz PWM with 1 µs pulse-width resolution. Give PSC and ARR, and the CCR values for full left (1.0 ms), center (1.5 ms) and full right (2.0 ms). Would PSC = 0 also work? <span class="diff med">medium</span></p>
+  <details><summary>Show solution</summary>
+    <div class="solution">
+      1 µs per count needs the counter clocked at 1 MHz: \( \mathrm{PSC} + 1 = 16 \Rightarrow \mathrm{PSC} = 15 \).
+      Period 20 ms = 20 000 counts → \( \mathrm{ARR} = 19\,999 \). Check: \( f = 16\,\mathrm{MHz}/(16 \cdot 20\,000) = 50\,\mathrm{Hz} \) ✓.
+      CCR = 1000 (left), 1500 (center), 2000 (right) — pulse width in µs directly, a pleasant side effect of the round prescaler.
+      PSC = 0 would need ARR = 319 999 &gt; 65 535: does not fit in 16 bits. The prescaler exists precisely to trade resolution for range.
+    </div>
+  </details>
+</div>
+
+<div class="exercise">
+  <p class="ex-q"><span class="ex-num">E4</span>A logger streams 20-byte records over UART at 115 200 baud, 8E1 (8 data, even parity, 1 stop). How long does one record take, what is the maximum record rate, and what fraction of the raw bit rate is payload? <span class="diff med">medium</span></p>
+  <details><summary>Show solution</summary>
+    <div class="solution">
+      8E1 frame = 1 start + 8 data + 1 parity + 1 stop = 11 bits → \( t_{byte} = 11/115\,200 = 95.5\,\mathrm{µs} \).
+      Record: \( 20 \cdot 95.5\,\mathrm{µs} = 1.91\,\mathrm{ms} \) → max ≈ 523 records/s.
+      Payload efficiency: 8 of 11 bits = 72.7 %. So the "115 200 baud" link moves at most \(115\,200 \cdot 8/11 \approx 83.8\,\mathrm{kbit/s}\) of data.
+      Real-world remark: if the firmware writes records with a blocking <code>printf</code>, the CPU is trapped for those 1.9 ms per record — at 500 records/s that is ~100 % CPU. This is why logging uses interrupt- or DMA-driven TX buffers.
+    </div>
+  </details>
+</div>
+
+<div class="exercise">
+  <p class="ex-q"><span class="ex-num">E5</span>Main code runs <code>events++;</code> on a <code>volatile uint32_t</code> while a UART ISR also runs <code>events++;</code>. The compiler translates each increment into load–add–store. Construct the exact interleaving that loses an update, state how many increments can be lost per collision, and give two independent fixes. <span class="diff med">medium</span></p>
+  <details><summary>Show solution</summary>
+    <div class="solution">
+      Interleaving with events = 41: main loads 41 → <em>ISR fires</em>: loads 41, adds, stores 42, returns → main adds (41+1) and stores 42. Two physical increments, counter advanced by one: exactly one update lost per such collision (each collision window loses at most the ISR's one increment).
+      Note <code>volatile</code> did <em>not</em> help — it forces real loads/stores but cannot glue three instructions into one atomic operation; that is the classic misconception.
+      Fixes: (1) make the read-modify-write atomic — briefly disable the UART interrupt around <code>events++</code> in main (or use a hardware atomic like LDREX/STREX or <code>&lt;stdatomic.h&gt;</code>); (2) redesign to single-writer: only the ISR increments; main keeps its own private count of processed events and compares — no shared read-modify-write exists anymore. Single-writer designs are the embedded gold standard.
+    </div>
+  </details>
+</div>
+
+<div class="exercise">
+  <p class="ex-q"><span class="ex-num">E6</span>A tracker on a 200 mAh (usable) cell sleeps at 1.5 µA; each wake-up burst costs 10 mA for 20 ms. Marketing demands 5 years of life. Find the maximum allowed average current, the largest share available for bursts, and the minimum wake interval. What interval would <em>double</em> the remaining margin actually require? <span class="diff hard">challenge</span></p>
+  <details><summary>Show solution</summary>
+    <div class="solution">
+      5 years = \(5 \cdot 8766 \approx 43\,830\,\mathrm{h}\) → \( \bar I_{max} = 200\,\mathrm{mAh}/43\,830\,\mathrm{h} = 4.56\,\mathrm{µA} \).
+      Sleep already uses 1.5 µA → burst budget \( \bar I_b = 3.06\,\mathrm{µA} \).
+      One burst costs \( Q = 10\,\mathrm{mA} \cdot 0.02\,\mathrm{s} = 0.2\,\mathrm{mA\,s} = 200\,\mathrm{µA\,s} \); average from bursts every \(T\): \( \bar I_b = Q/T \).
+      \( T_{min} = 200\,\mathrm{µA\,s}/3.06\,\mathrm{µA} \approx 65\,\mathrm{s} \) → wake at most every ~65 s (e.g. once a minute is just barely too often: 200/60 = 3.33 µA &gt; 3.06 µA — the calculation catches it!).
+      Doubling margin means halving \( \bar I_b \) to 1.53 µA → \( T = 131\,\mathrm{s} \). Sanity check: the sleep floor alone (1.5 µA) already consumes \(1.5/4.56 = 33\,\%\) of the total budget — at 5-year scale, sleep current is no longer negligible.
+    </div>
+  </details>
+</div>
+
+<div class="exercise">
+  <p class="ex-q"><span class="ex-num">E7</span>Three CAN nodes start transmitting simultaneously with 11-bit identifiers 0x2A7, 0x29F and 0x2B1. Write out the arbitration bit by bit: who wins, at which bit does each loser drop out, and in what order do all three messages ultimately cross the bus? <span class="diff hard">challenge</span></p>
+  <details><summary>Show solution</summary>
+    <div class="solution">
+      MSB-first, 11 bits: 0x29F = <code>010 1001 1111</code>, 0x2A7 = <code>010 1010 0111</code>, 0x2B1 = <code>010 1011 0001</code>.
+      Bits 10…6 (<code>01010</code>) are identical — all three continue, bus = each bit (dominant where any sends 0).
+      Bit 5: 0x29F sends 0 (dominant), 0x2A7 and 0x2B1 send 1 (recessive) but read the bus low → <b>both drop out at bit 5</b>. 0x29F completes: <b>lowest ID wins</b>, as it must.
+      Retry round: 0x2A7 vs 0x2B1 agree on <code>010101</code> (bits 10–5); bit 4: 0x2A7 sends 0, 0x2B1 sends 1 → 0x2B1 drops out at bit 4. Order on the bus: 0x29F, then 0x2A7, then 0x2B1 — exactly ascending IDs.
+      Remark: no bit was ever corrupted and no backoff-and-retry randomness was needed (compare Ethernet's collision handling) — arbitration cost zero bus time. That is why the ID <em>is</em> the priority and why safety messages get low IDs at design time.
+    </div>
+  </details>
+</div>
+
+<h2 id="quiz">15. Self-assessment</h2>
+
+<div class="quiz" data-quiz-title="Module 16 — Self-test">
+<script type="application/json">
+[
+ {"q":"A 16 MHz-clocked timer has PSC = 15 and ARR = 999. Its overflow frequency is…",
+  "opts":["1000 Hz","976 Hz","1067 Hz","16 kHz"],"a":0,
+  "explain":"\\(f = \\frac{16\\cdot 10^6}{(15+1)(999+1)} = \\frac{16\\cdot 10^6}{16\\,000} = 1000\\,\\mathrm{Hz}\\). Both prescaler and reload register count from zero, so each divides by setting + 1 — forgetting a +1 is the classic off-by-one."},
+ {"q":"Why must a memory-mapped hardware register be accessed through a volatile pointer?",
+  "opts":["volatile makes the access atomic","it stops the compiler from caching or deleting reads/writes whose value can change outside the program","volatile places the variable in Flash instead of SRAM","it makes the access faster"],"a":1,
+  "explain":"volatile declares every access an observable event: hardware changes the value behind the program's back, so the optimizer must not read once and reuse, reorder, or remove accesses. It does NOT provide atomicity — that misconception causes race conditions (see E5)."},
+ {"q":"I²C mandates open-drain outputs with pull-up resistors because…",
+  "opts":["open-drain switches faster than push-pull","many devices can share the line without ever driving against each other — a wired-AND","pull-ups reduce power consumption","it allows higher voltages on the bus"],"a":1,
+  "explain":"Any device may pull the line low, none can force it high — so two simultaneous talkers never short-circuit, and tricks like ACK, clock stretching and multi-master arbitration become possible. The price: rise times set by the RC of pull-up and bus capacitance, limiting speed."},
+ {"q":"At 115 200 baud, 8N1, one byte on a UART line takes…",
+  "opts":["69.4 µs","86.8 µs","104.2 µs","8.68 µs"],"a":1,
+  "explain":"8N1 = 1 start + 8 data + 1 stop = 10 bits: \\(t = 10/115\\,200 \\approx 86.8\\,\\mathrm{µs}\\). The framing overhead means the payload rate is only 8/10 of the baud rate."},
+ {"q":"Which action is acceptable inside an interrupt service routine?",
+  "opts":["calling printf to log the event","waiting in a loop until the UART finishes sending","copying the received byte to a buffer and setting a volatile flag","delaying 2 ms to debounce the input"],"a":2,
+  "explain":"ISRs must be short and non-blocking: grab the data, set a flag, return. Every microsecond in an ISR adds latency to all equal- and lower-priority interrupts; blocking calls can even deadlock if they wait on interrupts that cannot run."},
+ {"q":"The difference between Harvard and von Neumann architecture is…",
+  "opts":["Harvard machines use RISC instructions, von Neumann machines use CISC","Harvard has separate buses/memories for instructions and data; von Neumann shares one","Harvard machines cannot run C programs","von Neumann machines have no stack"],"a":1,
+  "explain":"With separate instruction and data paths, a Harvard core fetches an instruction and accesses data in the same cycle — no bottleneck. ISA style (RISC/CISC) is an independent design axis. Cortex-M is a modified Harvard: separate buses, one address space."},
+ {"q":"“Real-time system” means a system that…",
+  "opts":["uses the fastest available processor","always responds within guaranteed deadlines, even in the worst case","runs its software directly from Flash","processes data faster than a PC"],"a":1,
+  "explain":"Real-time = provable worst-case timing, not speed. A 16 MHz µC with cycle-deterministic interrupts can be hard real-time; a 3 GHz PC with caches and a desktop OS cannot guarantee much of anything. Correctness includes the deadline."},
+ {"q":"A node draws 10 mA for 100 ms each wake-up, sleeping at 5 µA, waking every 10 s. Its average current is…",
+  "opts":["≈ 105 µA","≈ 10.5 µA","≈ 1.05 mA","≈ 55 µA"],"a":0,
+  "explain":"\\(\\bar I = \\frac{10\\,\\mathrm{mA}\\cdot 0.1\\,\\mathrm{s} + 5\\,\\mathrm{µA}\\cdot 9.9\\,\\mathrm{s}}{10\\,\\mathrm{s}} = \\frac{1.0 + 0.0495\\,\\mathrm{mA\\,s}}{10\\,\\mathrm{s}} \\approx 105\\,\\mathrm{µA}\\). The burst dominates 20:1 — cut burst time before chasing sleep current."},
+ {"q":"During CAN arbitration, the message that wins the bus is the one with…",
+  "opts":["the highest identifier","the longest data field","the numerically lowest identifier","the node that started transmitting a microsecond earlier"],"a":2,
+  "explain":"A transmitted 0 is dominant and overwrites a recessive 1 on the wired-AND bus. Nodes compare the bus with what they sent and drop out on mismatch, so the lowest ID survives — non-destructively, with zero wasted bus time. The ID therefore doubles as the message priority."},
+ {"q":"The purpose of a watchdog timer is to…",
+  "opts":["measure execution time of functions precisely","wake the CPU periodically from sleep mode","generate the PWM base frequency","reset the chip automatically if the software stops kicking it, recovering from hangs"],"a":3,
+  "explain":"The watchdog is a hardware down-counter that reboots the system when it expires; healthy firmware reloads it periodically. If code hangs — corrupted state, deadlock, cosmic-ray bit flip — the kicks stop and the device self-recovers in bounded time. Kick it from the main flow, never from a timer ISR that may survive the crash."}
+]
+</script>
+</div>
+
+<script>
+document.addEventListener("ee-ready", () => {
+
+  /* ---------- W1: PWM explorer ---------- */
+  EE.custom({
+    mount: "#w-pwm", height: 330,
+    params: [
+      { key: "mode", label: "Mode", type: "select", value: "led",
+        options: [{ label: "LED dimming", value: "led" }, { label: "Servo (50 Hz)", value: "servo" }] },
+      { key: "duty", label: "Duty cycle / servo position", min: 0, max: 100, step: 1, value: 30, unit: "%", fmt: v => v.toFixed(0) },
+      { key: "freq", label: "PWM frequency (LED mode)", min: 100, max: 2000, step: 50, value: 500, unit: "Hz", fmt: v => v.toFixed(0) }
+    ],
+    readouts: [
+      { label: "Pulse width", fn: p => {
+          const servo = p.mode === "servo";
+          const T = servo ? 0.02 : 1 / p.freq;
+          const pw = servo ? (1e-3 + p.duty / 100 * 1e-3) : (p.duty / 100) * T;
+          return EE.si(pw, "s") + " of " + EE.si(T, "s");
+        } },
+      { label: "Average voltage", fn: p => {
+          const servo = p.mode === "servo";
+          const D = servo ? (1 + p.duty / 100) / 20 : p.duty / 100;
+          return (D * 3.3).toFixed(2) + " V (D = " + (D * 100).toFixed(1) + " %)";
+        } },
+      { label: "Result", fn: p => p.mode === "servo"
+          ? "servo angle ≈ " + ((p.duty / 100 * 2 - 1) * 90).toFixed(0) + "°"
+          : "perceived brightness ≈ " + p.duty.toFixed(0) + " %" }
+    ],
+    draw: (ctx, w, h, p, H) => {
+      const k = H.ink, Vcc = 3.3;
+      const servo = p.mode === "servo";
+      const f = servo ? 50 : p.freq;
+      const T = 1 / f;
+      const pw = servo ? (1e-3 + p.duty / 100 * 1e-3) : (p.duty / 100) * T;
+      const D = pw / T;
+      const win = 2.5 * T;
+      const x0 = 56, x1 = w - 175, yTop = 34, yBot = h - 46;
+      const X = t => x0 + (t / win) * (x1 - x0);
+      const Y = v => yBot - (v / Vcc) * (yBot - yTop);
+      /* frame + labels */
+      ctx.strokeStyle = k.grid; ctx.lineWidth = 1;
+      ctx.strokeRect(x0, yTop, x1 - x0, yBot - yTop);
+      ctx.fillStyle = k.muted; ctx.font = "11.5px system-ui, sans-serif";
+      ctx.textAlign = "right"; ctx.textBaseline = "middle";
+      ctx.fillText("3.3 V", x0 - 8, Y(Vcc));
+      ctx.fillText("0 V", x0 - 8, Y(0));
+      ctx.textAlign = "center"; ctx.textBaseline = "top";
+      ctx.fillText("t — window: " + EE.si(win, "s"), (x0 + x1) / 2, yBot + 10);
+      /* PWM square wave */
+      ctx.strokeStyle = H.color(0); ctx.lineWidth = 2.2;
+      ctx.beginPath();
+      let first = true;
+      for (let kk = 0; kk * T < win; kk++) {
+        const tA = kk * T, tB = Math.min(kk * T + pw, win), tC = Math.min((kk + 1) * T, win);
+        if (first) { ctx.moveTo(X(tA), Y(Vcc)); first = false; } else ctx.lineTo(X(tA), Y(Vcc));
+        if (pw > 0) { ctx.lineTo(X(tB), Y(Vcc)); }
+        ctx.lineTo(X(tB), Y(0)); ctx.lineTo(X(tC), Y(0));
+        if (tC < win) ctx.lineTo(X(tC), Y(Vcc));
+      }
+      ctx.stroke();
+      /* RC-filtered curve (tau = 2T) */
+      const tau = 2 * T, N = 500, dt = win / N;
+      let v = D * Vcc;
+      ctx.strokeStyle = H.color(2); ctx.lineWidth = 2;
+      ctx.beginPath(); ctx.moveTo(X(0), Y(v));
+      for (let i = 1; i <= N; i++) {
+        const t = i * dt, u = (t % T) < pw ? Vcc : 0;
+        v += (u - v) * dt / tau;
+        ctx.lineTo(X(t), Y(v));
+      }
+      ctx.stroke();
+      /* average line */
+      ctx.strokeStyle = H.color(1); ctx.setLineDash([6, 4]); ctx.lineWidth = 1.6;
+      ctx.beginPath(); ctx.moveTo(x0, Y(D * Vcc)); ctx.lineTo(x1, Y(D * Vcc)); ctx.stroke();
+      ctx.setLineDash([]);
+      ctx.textAlign = "left"; ctx.textBaseline = "bottom";
+      ctx.font = "600 11.5px system-ui, sans-serif";
+      ctx.lineWidth = 4; ctx.strokeStyle = k.surface; ctx.lineJoin = "round";
+      const lblA = "average = D·3.3 V = " + (D * Vcc).toFixed(2) + " V";
+      ctx.strokeText(lblA, x0 + 8, Y(D * Vcc) - 5);
+      ctx.fillStyle = H.color(1);
+      ctx.fillText(lblA, x0 + 8, Y(D * Vcc) - 5);
+      ctx.strokeText("RC-filtered", x0 + 8, Y(D * Vcc) + 34);
+      ctx.fillStyle = H.color(2);
+      ctx.fillText("RC-filtered", x0 + 8, Y(D * Vcc) + 34);
+      /* right panel */
+      const cx = w - 88, cy = (yTop + yBot) / 2;
+      ctx.textAlign = "center";
+      if (!servo) {
+        ctx.globalAlpha = 0.10 + 0.9 * D;
+        ctx.fillStyle = H.color(2);
+        ctx.beginPath(); ctx.arc(cx, cy - 12, 34, 0, 7); ctx.fill();
+        ctx.globalAlpha = 1;
+        ctx.strokeStyle = k.muted; ctx.lineWidth = 1.5;
+        ctx.beginPath(); ctx.arc(cx, cy - 12, 34, 0, 7); ctx.stroke();
+        ctx.fillStyle = k.primary; ctx.font = "600 13px system-ui, sans-serif";
+        ctx.textBaseline = "top";
+        ctx.fillText("LED", cx, cy + 32);
+        ctx.fillStyle = k.muted; ctx.font = "11.5px system-ui, sans-serif";
+        ctx.fillText(p.duty.toFixed(0) + " %", cx, cy + 50);
+      } else {
+        const ang = (p.duty / 100 * 2 - 1) * Math.PI / 2; /* -90..+90 from vertical */
+        ctx.strokeStyle = k.grid; ctx.lineWidth = 1.5;
+        ctx.beginPath(); ctx.arc(cx, cy + 10, 44, Math.PI, 2 * Math.PI); ctx.stroke();
+        ctx.strokeStyle = H.color(4); ctx.lineWidth = 4; ctx.lineCap = "round";
+        ctx.beginPath(); ctx.moveTo(cx, cy + 10);
+        ctx.lineTo(cx + 42 * Math.sin(ang), cy + 10 - 42 * Math.cos(ang)); ctx.stroke();
+        ctx.lineCap = "butt";
+        ctx.fillStyle = k.muted; ctx.font = "11px system-ui, sans-serif"; ctx.textBaseline = "top";
+        ctx.fillText("1 ms", cx - 52, cy + 16);
+        ctx.fillText("2 ms", cx + 52, cy + 16);
+        ctx.fillStyle = k.primary; ctx.font = "600 12px system-ui, sans-serif";
+        ctx.fillText("servo horn", cx, cy + 34);
+      }
+    }
+  });
+
+  /* ---------- W2: UART frame visualizer ---------- */
+  EE.custom({
+    mount: "#w-uart", height: 250,
+    params: [
+      { key: "byte", label: "Data byte", min: 0, max: 255, step: 1, value: 83, unit: "",
+        fmt: v => "0x" + v.toString(16).toUpperCase().padStart(2, "0") },
+      { key: "baud", label: "Baud rate", type: "select", value: 9600,
+        options: [{ label: "9600", value: 9600 }, { label: "115200", value: 115200 }, { label: "1 M", value: 1000000 }] },
+      { key: "par", label: "Parity", type: "select", value: "none",
+        options: [{ label: "none (8N1)", value: "none" }, { label: "even", value: "even" }, { label: "odd", value: "odd" }] }
+    ],
+    readouts: [
+      { label: "Character", fn: p => {
+          const b = Math.round(p.byte);
+          return (b >= 32 && b <= 126) ? "'" + String.fromCharCode(b) + "'" : "(non-printable)";
+        } },
+      { label: "Bit time", fn: p => EE.si(1 / p.baud, "s") },
+      { label: "Frame time", fn: p => {
+          const n = 10 + (p.par === "none" ? 0 : 1);
+          return n + " bits = " + EE.si(n / p.baud, "s");
+        } },
+      { label: "Max throughput", fn: p => {
+          const n = 10 + (p.par === "none" ? 0 : 1);
+          return EE.si(p.baud / n, "byte/s");
+        } }
+    ],
+    draw: (ctx, w, h, p, H) => {
+      const k = H.ink;
+      const b = Math.round(p.byte);
+      const bits = [];
+      bits.push({ v: 1, name: "idle", c: null, wgt: 0.8 });
+      bits.push({ v: 0, name: "START", c: 5, wgt: 1 });
+      let ones = 0;
+      for (let i = 0; i < 8; i++) {
+        const bit = (b >> i) & 1; ones += bit;
+        bits.push({ v: bit, name: "D" + i, c: 0, wgt: 1 });
+      }
+      if (p.par !== "none") {
+        const pb = p.par === "even" ? (ones % 2) : 1 - (ones % 2);
+        bits.push({ v: pb, name: "PAR", c: 4, wgt: 1 });
+      }
+      bits.push({ v: 1, name: "STOP", c: 3, wgt: 1 });
+      bits.push({ v: 1, name: "idle", c: null, wgt: 0.8 });
+      const total = bits.reduce((s, q) => s + q.wgt, 0);
+      const x0 = 40, x1 = w - 20, yHi = 58, yLo = 128;
+      const slot = (x1 - x0) / total;
+      /* level guides */
+      ctx.strokeStyle = k.grid; ctx.lineWidth = 1; ctx.setLineDash([3, 5]);
+      ctx.beginPath(); ctx.moveTo(x0, yHi); ctx.lineTo(x1, yHi);
+      ctx.moveTo(x0, yLo); ctx.lineTo(x1, yLo); ctx.stroke(); ctx.setLineDash([]);
+      ctx.fillStyle = k.muted; ctx.font = "11px system-ui, sans-serif";
+      ctx.textAlign = "right"; ctx.textBaseline = "middle";
+      ctx.fillText("1 (high)", x0 - 6, yHi);
+      ctx.fillText("0 (low)", x0 - 6, yLo);
+      /* waveform + labels */
+      let x = x0, prevY = null;
+      bits.forEach(q => {
+        const y = q.v ? yHi : yLo;
+        const xe = x + q.wgt * slot;
+        const col = q.c == null ? k.muted : H.color(q.c);
+        if (prevY !== null && prevY !== y) {
+          ctx.strokeStyle = k.axis; ctx.lineWidth = 1.6;
+          ctx.beginPath(); ctx.moveTo(x, prevY); ctx.lineTo(x, y); ctx.stroke();
+        }
+        ctx.strokeStyle = col; ctx.lineWidth = 2.4;
+        ctx.beginPath(); ctx.moveTo(x, y); ctx.lineTo(xe, y); ctx.stroke();
+        if (q.name !== "idle") {
+          /* boundary tick */
+          ctx.strokeStyle = k.grid; ctx.lineWidth = 1; ctx.setLineDash([2, 4]);
+          ctx.beginPath(); ctx.moveTo(x, yHi - 14); ctx.lineTo(x, yLo + 14); ctx.stroke();
+          ctx.setLineDash([]);
+          ctx.fillStyle = col; ctx.textAlign = "center";
+          ctx.font = "600 10.5px system-ui, sans-serif"; ctx.textBaseline = "top";
+          ctx.fillText(q.name, x + q.wgt * slot / 2, yLo + 22);
+          ctx.font = "11.5px system-ui, sans-serif";
+          ctx.fillStyle = k.primary;
+          ctx.fillText(String(q.v), x + q.wgt * slot / 2, yLo + 40);
+        } else {
+          ctx.fillStyle = k.muted; ctx.textAlign = "center";
+          ctx.font = "10.5px system-ui, sans-serif"; ctx.textBaseline = "top";
+          ctx.fillText("idle", x + q.wgt * slot / 2, yLo + 22);
+        }
+        x = xe; prevY = y;
+      });
+      /* bit-time bracket under first data bit */
+      const bx = x0 + 1.8 * slot, bx2 = x0 + 2.8 * slot, by = yLo + 62;
+      ctx.strokeStyle = k.axis; ctx.lineWidth = 1.2;
+      ctx.beginPath(); ctx.moveTo(bx, by); ctx.lineTo(bx2, by);
+      ctx.moveTo(bx, by - 4); ctx.lineTo(bx, by + 4);
+      ctx.moveTo(bx2, by - 4); ctx.lineTo(bx2, by + 4); ctx.stroke();
+      ctx.fillStyle = k.muted; ctx.textAlign = "left"; ctx.textBaseline = "middle";
+      ctx.font = "11px system-ui, sans-serif";
+      ctx.fillText("1 bit = " + EE.si(1 / p.baud, "s") + "   (LSB first!)", bx2 + 8, by);
+    }
+  });
+
+  /* ---------- W3: polling vs interrupt ---------- */
+  EE.custom({
+    mount: "#w-irq", height: 300, animate: true,
+    params: [
+      { key: "P", label: "Polling period", min: 2, max: 25, step: 1, value: 12, unit: "ms", fmt: v => v.toFixed(0) },
+      { key: "isr", label: "Service time", min: 0.5, max: 5, step: 0.5, value: 1.5, unit: "ms", fmt: v => v.toFixed(1) }
+    ],
+    readouts: [
+      { label: "Worst-case polling latency", fn: p => p.P.toFixed(0) + " ms (one full period)" },
+      { label: "Interrupt latency", fn: () => "12 cycles ≈ 0.15 µs @ 80 MHz" }
+    ],
+    draw: (ctx, w, h, p, H) => {
+      const k = H.ink;
+      const win = 130;                     /* ms shown */
+      const tNow = H.t * 22;               /* scrolling time, ms */
+      const t0 = tNow - win;
+      const x0 = 16, x1 = w - 16;
+      const X = t => x0 + (t - t0) / win * (x1 - x0);
+      const rows = [
+        { y: 92, name: "Polling loop — event waits for the next check" },
+        { y: 212, name: "Interrupt — event preempts immediately" }
+      ];
+      ctx.font = "600 12px system-ui, sans-serif";
+      ctx.textAlign = "left"; ctx.textBaseline = "bottom";
+      rows.forEach(r => {
+        ctx.fillStyle = k.primary;
+        ctx.fillText(r.name, x0, r.y - 34);
+        /* main-loop baseline */
+        ctx.fillStyle = H.color(3); ctx.globalAlpha = 0.22;
+        ctx.fillRect(x0, r.y - 9, x1 - x0, 18);
+        ctx.globalAlpha = 1;
+      });
+      ctx.fillStyle = k.muted; ctx.font = "11px system-ui, sans-serif";
+      ctx.fillText("main loop (background work)", x0 + 4, rows[0].y + 30);
+      /* poll ticks */
+      ctx.strokeStyle = k.axis; ctx.lineWidth = 1.4;
+      const kp0 = Math.floor(t0 / p.P);
+      for (let i = kp0; i * p.P <= t0 + win; i++) {
+        const x = X(i * p.P);
+        if (x < x0 || x > x1) continue;
+        ctx.beginPath(); ctx.moveTo(x, rows[0].y - 16); ctx.lineTo(x, rows[0].y + 16); ctx.stroke();
+      }
+      ctx.fillStyle = k.muted;
+      ctx.fillText("| = poll check, every " + p.P.toFixed(0) + " ms", x0 + 4, rows[0].y + 44);
+      /* events */
+      const period = 31;
+      const ke0 = Math.floor((t0 - 60) / period);
+      for (let i = ke0; i * period + (i % 3) * 6 <= t0 + win + 30; i++) {
+        const te = i * period + (((i % 3) + 3) % 3) * 6;
+        /* polling row: serviced at next poll */
+        const ts = Math.ceil(te / p.P) * p.P;
+        drawEvent(rows[0].y, te, ts, true);
+        /* interrupt row: immediate */
+        drawEvent(rows[1].y, te, te + 0.05, false);
+      }
+      function drawEvent(y, te, ts, showLat) {
+        const xe = X(te);
+        if (xe > x0 - 40 && xe < x1 + 40) {
+          /* arrival arrow */
+          ctx.strokeStyle = H.color(5); ctx.fillStyle = H.color(5); ctx.lineWidth = 2;
+          ctx.beginPath(); ctx.moveTo(xe, y - 32); ctx.lineTo(xe, y - 16); ctx.stroke();
+          ctx.beginPath(); ctx.moveTo(xe, y - 12); ctx.lineTo(xe - 4.5, y - 20); ctx.lineTo(xe + 4.5, y - 20); ctx.closePath(); ctx.fill();
+        }
+        /* latency shading */
+        if (showLat && ts > te) {
+          const a = Math.max(X(te), x0), bx = Math.min(X(ts), x1);
+          if (bx > a) {
+            ctx.fillStyle = H.color(5); ctx.globalAlpha = 0.25;
+            ctx.fillRect(a, y - 9, bx - a, 18);
+            ctx.globalAlpha = 1;
+          }
+        }
+        /* service block */
+        const sa = Math.max(X(ts), x0), sb = Math.min(X(ts + p.isr), x1);
+        if (sb > sa) {
+          ctx.fillStyle = H.color(0);
+          ctx.fillRect(sa, y - 9, sb - sa, 18);
+        }
+      }
+      /* legend */
+      ctx.font = "11px system-ui, sans-serif"; ctx.textBaseline = "middle";
+      const ly = h - 14;
+      ctx.fillStyle = H.color(5); ctx.fillText("⬇ event arrives", x0, ly);
+      ctx.fillStyle = H.color(5); ctx.globalAlpha = 0.4; ctx.fillRect(x0 + 105, ly - 6, 22, 12); ctx.globalAlpha = 1;
+      ctx.fillStyle = k.muted; ctx.fillText("waiting (latency)", x0 + 132, ly);
+      ctx.fillStyle = H.color(0); ctx.fillRect(x0 + 250, ly - 6, 22, 12);
+      ctx.fillStyle = k.muted; ctx.fillText("event being serviced", x0 + 277, ly);
+    }
+  });
+
+  /* ---------- W4: battery-life calculator ---------- */
+  function battLife(T, p) {
+    const tact = p.tact / 1000;                    /* s   */
+    if (T <= tact) return p.cap / p.iact / 24;     /* always active */
+    const iavg = (p.iact * tact + (p.isleep / 1000) * (T - tact)) / T;  /* mA */
+    return p.cap / iavg / 24;                      /* days */
+  }
+  EE.functionPlot({
+    mount: "#w-batt", height: 300,
+    x: { min: 1, max: 3600, log: true, label: "wake interval T in s (log)" },
+    y: p => ({ min: 0, max: p.cap / (p.isleep / 1000) / 24 * 1.1, label: "battery life in days" }),
+    params: [
+      { key: "iact", label: "Active current", min: 1, max: 50, step: 0.5, value: 8, unit: "mA", fmt: v => v.toFixed(1) },
+      { key: "tact", label: "Active time per wake", min: 5, max: 1000, step: 5, value: 50, unit: "ms", fmt: v => v.toFixed(0) },
+      { key: "isleep", label: "Sleep current", min: 0.5, max: 100, step: 0.5, value: 2, unit: "µA", fmt: v => v.toFixed(1) },
+      { key: "twake", label: "Your wake interval", min: 1, max: 3600, step: 1, value: 60, unit: "s", fmt: v => v.toFixed(0) },
+      { key: "cap", label: "Battery", type: "select", value: 220,
+        options: [{ label: "CR2032 · 220 mAh", value: 220 }, { label: "2×AA · 2500 mAh", value: 2500 }, { label: "18650 · 3000 mAh", value: 3000 }] }
+    ],
+    curves: [
+      { label: "life in days", color: 0, fn: (T, p) => battLife(T, p) }
+    ],
+    annotations: p => [
+      { type: "hline", y: p.cap / (p.isleep / 1000) / 24, label: "sleep-current ceiling" },
+      { type: "point", x: p.twake, y: battLife(p.twake, p), label: "your design point" }
+    ],
+    readouts: [
+      { label: "Average current at T", fn: p => {
+          const tact = p.tact / 1000;
+          const iavg = (p.iact * tact + (p.isleep / 1000) * Math.max(0, p.twake - tact)) / p.twake;
+          return EE.si(iavg / 1000, "A");
+        } },
+      { label: "Battery life at T", fn: p => {
+          const d = battLife(p.twake, p);
+          return d.toFixed(0) + " days ≈ " + (d / 365.25).toFixed(2) + " years";
+        } },
+      { label: "Share used by bursts", fn: p => {
+          const tact = p.tact / 1000;
+          const qb = p.iact * tact, qs = (p.isleep / 1000) * Math.max(0, p.twake - tact);
+          return (100 * qb / (qb + qs)).toFixed(0) + " %";
+        } }
+    ]
+  });
+});
+</script>
+
+</article>
+</main>
+</div>
+</body>
+</html>

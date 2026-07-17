@@ -1,0 +1,949 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>M15 · Measurement &amp; Instrumentation — EE Knowledge Base</title>
+<link rel="stylesheet" href="../../assets/vendor/katex/katex.min.css">
+<link rel="stylesheet" href="../../assets/css/style.css">
+<script src="../../assets/vendor/katex/katex.min.js" defer></script>
+<script src="../../assets/vendor/katex/auto-render.min.js" defer></script>
+<script src="../curriculum.js" defer></script>
+<script src="../../assets/js/app.js" defer></script>
+<script src="../../assets/js/widgets.js" defer></script>
+</head>
+<body data-module="m15">
+<div class="layout">
+<main class="content">
+<article class="article">
+
+<span class="eyebrow">🎛️ Signals, Control &amp; Computing · Module 15</span>
+<h1>Measurement &amp; Instrumentation <span class="muted" style="font-weight:400;font-size:1.4rem">· <span class="de">Messtechnik</span></span></h1>
+<p class="lead">You can only engineer what you can measure. Every datasheet number, every control loop, every "it works" claim rests on a measurement — and every measurement is wrong by some amount. This module teaches you how wrong, why, and what to do about it: from the quantum effects that now <em>define</em> the volt and the ohm, down to why the ground clip of your oscilloscope can vaporize a PCB trace.</p>
+
+<div class="page-meta">
+  <span><b>Corresponds to:</b> Elektrische Messtechnik (3rd–4th semester)</span>
+  <span><b>Prerequisites:</b> Modules 05, 09</span>
+  <span><b>Study time:</b> ≈ 5–7 h</span>
+</div>
+
+<h2 id="si-units">1. Measuring means comparing — the SI and the 2019 revolution</h2>
+
+<p>To measure (<span class="de">messen</span>) is to compare an unknown quantity with an agreed unit: the statement \(U = 4.73\,\mathrm{V}\) means "this voltage is 4.73 times the unit volt". The whole enterprise therefore stands or falls with the units — and units used to be embarrassingly physical objects. Until May 2019 the kilogram <em>was</em> a platinum-iridium cylinder in a vault near Paris (the <em>International Prototype Kilogram</em>, "Le Grand K"). Its official copies drifted apart from it by up to \(50\,\mathrm{\mu g}\) over a century. Whether the prototype was losing mass or the copies gaining, nobody could say — by definition, the prototype was <em>exactly</em> 1 kg, even while it changed.</p>
+
+<p>The 2019 redefinition ended this: all seven SI base units are now defined by fixing the numerical values of seven constants of nature — among them the speed of light \(c\), the Planck constant \(h\), the elementary charge \(e\) and the Boltzmann constant \(k_B\). The kilogram is now realized by a <em>Kibble balance</em> that weighs mass against an electromagnetically generated force traceable to \(h\). No artifact, no vault, no drift: any sufficiently equipped lab on Earth (or Mars) can realize the units from scratch.</p>
+
+<h3 id="quantum-standards">1.1 The volt and the ohm are quantum effects now</h3>
+
+<p>For electrical engineers the redefinition is particularly beautiful, because our two central units are realized by macroscopic quantum effects with <em>no</em> device-dependent parameters:</p>
+
+<ul>
+  <li><b>Josephson effect</b> (volt): a superconducting tunnel junction irradiated with microwaves at frequency \(f\) develops a DC voltage locked to exact integer steps
+  \[ U = n\,\frac{f}{K_J}, \qquad K_J = \frac{2e}{h} = 483\,597.848\ldots\,\frac{\mathrm{GHz}}{\mathrm{V}} \ \text{(exact since 2019)}. \]
+  Frequency is the quantity we can measure best of all (atomic clocks, \(10^{-15}\) relative uncertainty), so voltage inherits that precision. National institutes chain ~250 000 junctions in series and drive them at ~70 GHz to synthesize 10 V references with parts-in-\(10^{9}\) reproducibility.</li>
+  <li><b>Quantum Hall effect</b> (ohm): a 2-D electron gas at low temperature and high magnetic field shows Hall-resistance plateaus at
+  \[ R = \frac{R_K}{i}, \qquad R_K = \frac{h}{e^2} = 25\,812.807\ldots\,\Omega \ \text{(exact)}, \quad i = 1, 2, 3,\ldots \]
+  discovered by Klaus von Klitzing in 1980 (Nobel Prize 1985). The plateau value does not depend on the sample's material, geometry or imperfections — nature hands us a perfect resistor.</li>
+</ul>
+
+<div class="box history">
+  <div class="box-title"><span class="ic">📜</span>From artifacts to constants</div>
+  <p>The ampere was once defined by the force between two infinite parallel wires (unbuildable), the ohm by a mercury column of specified dimensions (fragile, temperature-sensitive). Metrologists spent the 20th century hunting for definitions that are <em>indestructible and universal</em>. The Josephson and von Klitzing effects, discovered decades before 2019, were so much more reproducible than the official units that laboratories used them unofficially from 1990 on ("conventional" values \(K_{J\text{-}90}\), \(R_{K\text{-}90}\)). The 2019 SI merely made official what the labs had long practiced. Germany's national metrology institute is the <b>PTB</b> (Physikalisch-Technische Bundesanstalt) in Braunschweig — the top of the calibration pyramid you will meet in Section 2.</p>
+</div>
+
+<h2 id="deviation">2. How measurements go wrong — the taxonomy of deviation</h2>
+
+<p>Every measured value \(x\) differs from the (unknowable) true value \(x_w\) by the <strong>measurement deviation</strong> (<span class="de">Messabweichung</span>) \(e = x - x_w\). Two fundamentally different species exist:</p>
+
+<ul>
+  <li><b>Systematic deviations</b> (<span class="de">systematische Abweichung</span>): same value and sign every time you repeat the measurement — a miscalibrated scale factor, voltmeter loading, thermocouple cold-junction offset. They <em>bias</em> the result. Known systematics must be <b>corrected</b>, not averaged: repeating the measurement a thousand times does not reduce them by one microvolt.</li>
+  <li><b>Random deviations</b> (<span class="de">zufällige Abweichung</span>): scatter from noise, quantization, ambient fluctuations. Different every repetition, zero on average. These <em>can</em> be beaten down by averaging (Section 3).</li>
+</ul>
+
+<h3 id="accuracy-precision">2.1 Accuracy, precision, resolution — three different words for a reason</h3>
+
+<ul>
+  <li><b>Accuracy</b> (<span class="de">Richtigkeit/Genauigkeit</span>): closeness of the <em>average</em> to the true value — small systematic error.</li>
+  <li><b>Precision</b> (<span class="de">Präzision</span>): closeness of repeated readings to <em>each other</em> — small random scatter.</li>
+  <li><b>Resolution</b> (<span class="de">Auflösung</span>): the smallest <em>displayable</em> increment — the last digit, one LSB.</li>
+</ul>
+
+<figure>
+  <div class="fig-frame">
+  <svg class="diagram" viewBox="0 0 660 200" role="img" aria-label="Four dartboards illustrating accuracy versus precision">
+    <!-- board template: concentric rings -->
+    <g stroke="var(--text-soft)" fill="none" stroke-width="1.5">
+      <circle cx="90" cy="78" r="48"/><circle cx="90" cy="78" r="30"/><circle cx="90" cy="78" r="13"/>
+      <circle cx="250" cy="78" r="48"/><circle cx="250" cy="78" r="30"/><circle cx="250" cy="78" r="13"/>
+      <circle cx="410" cy="78" r="48"/><circle cx="410" cy="78" r="30"/><circle cx="410" cy="78" r="13"/>
+      <circle cx="570" cy="78" r="48"/><circle cx="570" cy="78" r="30"/><circle cx="570" cy="78" r="13"/>
+    </g>
+    <!-- 1: accurate + precise (tight, centered) -->
+    <g fill="var(--accent)">
+      <circle cx="87" cy="75" r="4"/><circle cx="94" cy="80" r="4"/><circle cx="90" cy="84" r="4"/><circle cx="85" cy="81" r="4"/><circle cx="93" cy="73" r="4"/>
+    </g>
+    <!-- 2: precise, not accurate (tight, offset) -->
+    <g fill="var(--accent)">
+      <circle cx="272" cy="56" r="4"/><circle cx="279" cy="61" r="4"/><circle cx="274" cy="65" r="4"/><circle cx="268" cy="62" r="4"/><circle cx="276" cy="52" r="4"/>
+    </g>
+    <!-- 3: accurate, not precise (scattered around center) -->
+    <g fill="var(--accent)">
+      <circle cx="384" cy="60" r="4"/><circle cx="438" cy="70" r="4"/><circle cx="398" cy="102" r="4"/><circle cx="428" cy="98" r="4"/><circle cx="404" cy="56" r="4"/>
+    </g>
+    <!-- 4: neither -->
+    <g fill="var(--accent)">
+      <circle cx="548" cy="46" r="4"/><circle cx="598" cy="60" r="4"/><circle cx="556" cy="92" r="4"/><circle cx="596" cy="98" r="4"/><circle cx="585" cy="42" r="4"/>
+    </g>
+    <g font-size="12.5" text-anchor="middle" fill="var(--text-soft)">
+      <text x="90" y="152">precise &amp; accurate</text><text x="90" y="168">(the goal)</text>
+      <text x="250" y="152">precise, not accurate</text><text x="250" y="168">→ systematic error</text>
+      <text x="410" y="152">accurate, not precise</text><text x="410" y="168">→ random error</text>
+      <text x="570" y="152">neither</text><text x="570" y="168">(recalibrate + average)</text>
+    </g>
+  </svg>
+  </div>
+  <figcaption><b>Fig. 2.1</b> — The dartboard picture. A systematic error <em>shifts</em> the cluster; a random error <em>spreads</em> it. Averaging helps only against the spread — a shifted tight cluster stays shifted no matter how many darts you throw.</figcaption>
+</figure>
+
+<div class="box warn">
+  <div class="box-title"><span class="ic">⚠️</span>Resolution is not accuracy</div>
+  <p>A 6000-count multimeter displaying <b>1.234 V</b> resolves 1 mV — but its accuracy spec might be ±(0.5 % + 3 digits) = ±9 mV. The last digit is then <em>display decoration</em>, not information. Marketing loves digits; engineers read the accuracy table. Same trap with analog instruments: a class 1.5 meter (<span class="de">Genauigkeitsklasse</span>) guarantees ±1.5 % <em>of full scale</em> — at one-third deflection that is ±4.5 % of the reading, which is why you always choose the range that uses the upper part of the scale.</p>
+</div>
+
+<h3 id="calibration">2.2 Calibration and traceability</h3>
+
+<p><b>Calibration</b> (<span class="de">Kalibrierung</span>) means <em>comparing</em> your instrument against a better one and documenting the deviation — the instrument is not touched. <b>Adjustment</b> (<span class="de">Justierung</span>) means physically or digitally <em>trimming</em> it to read correctly. (German exams love this distinction.) The "better one" must itself be calibrated against a still better one, forming an unbroken chain — <b>traceability</b> (<span class="de">Rückführbarkeit</span>) — that ends at a national institute realizing the SI definitions:</p>
+
+<p style="text-align:center"><b>PTB</b> (Josephson array, quantum Hall) → accredited calibration lab (DAkkS) → your company's reference meter → the DMM on your bench. </p>
+
+<p>Each step down the pyramid adds uncertainty; each certificate states it. An uncalibrated instrument gives you a <em>number</em>, not a <em>measurement</em>.</p>
+
+<div class="box german">
+  <div class="box-title"><span class="ic">🇩🇪</span>Vokabeln</div>
+  <p>measurement = <span class="de">Messung</span> · measurand = <span class="de">Messgröße</span> · deviation/error = <span class="de">Messabweichung</span> · uncertainty = <span class="de">Messunsicherheit</span> · accuracy = <span class="de">Genauigkeit</span> · precision = <span class="de">Präzision</span> · resolution = <span class="de">Auflösung</span> · calibration = <span class="de">Kalibrierung</span> · adjustment = <span class="de">Justierung</span> · traceability = <span class="de">Rückführbarkeit</span> · RMS value = <span class="de">Effektivwert</span> · rectified mean = <span class="de">Gleichrichtwert</span> · crest factor = <span class="de">Scheitelfaktor</span> · bridge circuit = <span class="de">Brückenschaltung</span> · strain gauge = <span class="de">Dehnungsmessstreifen (DMS)</span> · sampling = <span class="de">Abtastung</span> · burden voltage = <span class="de">Bürdenspannung</span></p>
+</div>
+
+<h2 id="statistics">3. Taming randomness — statistics of repeated measurement</h2>
+
+<p>Repeat a measurement \(n\) times under identical conditions: readings \(x_1 \ldots x_n\). The best estimate of the value is the <b>arithmetic mean</b> (<span class="de">Mittelwert</span>), and the scatter of individual readings is quantified by the <b>empirical standard deviation</b> (<span class="de">Standardabweichung</span>):</p>
+\[ \bar{x} = \frac{1}{n}\sum_{i=1}^{n} x_i, \qquad s = \sqrt{\frac{1}{n-1}\sum_{i=1}^{n}(x_i - \bar{x})^2 }. \]
+<p>Why divide by \(n-1\) and not \(n\)? Because \(\bar{x}\) was computed <em>from the same data</em> and sits slightly closer to the samples than the true value does; one "degree of freedom" is spent, and \(n-1\) corrects the resulting underestimate (Bessel correction).</p>
+
+<p>Now the key insight: \(s\) describes the scatter of a <em>single</em> reading and does <b>not</b> shrink with more measurements — it is a property of your setup. What shrinks is the uncertainty of the <em>mean</em>:</p>
+\[ \boxed{\; s_{\bar{x}} = \frac{s}{\sqrt{n}} \;} \]
+<p>Averaging 100 readings buys you a factor of 10 — note the brutal square root: another factor of 10 costs 10 000 readings. Averaging is powerful but expensive, and it does <em>nothing</em> against systematic errors.</p>
+
+<p><b>Confidence</b>, qualitatively: if the scatter is Gaussian (it usually is, by the central limit theorem — many small independent disturbances add up), then the true value lies within \(\bar{x} \pm s_{\bar{x}}\) with ≈ 68 % probability and within \(\bar{x} \pm 2 s_{\bar{x}}\) with ≈ 95 %. For small \(n\) (say, below ~10) these intervals must be widened with the Student-\(t\) factor, because \(s\) itself is then a shaky estimate. Calibration certificates typically state <em>expanded</em> uncertainty with coverage factor \(k = 2\) (≈ 95 %).</p>
+
+<h2 id="propagation">4. Propagating uncertainty — and writing results honestly</h2>
+
+<p>Usually the quantity you want is <em>computed</em> from several measured ones: \(y = f(x_1, x_2, \ldots)\). Each input uncertainty \(u_i\) pulls on the result through the local slope \(\partial f/\partial x_i\). For independent inputs, the individual contributions add <em>in quadrature</em> (they are uncorrelated — sometimes they partially cancel), giving the <b>Gaussian propagation of uncertainty</b> (<span class="de">Gauß'sche Fehlerfortpflanzung</span>):</p>
+\[ \boxed{\; u_y = \sqrt{ \left(\frac{\partial f}{\partial x_1}\right)^{\!2} u_1^2 + \left(\frac{\partial f}{\partial x_2}\right)^{\!2} u_2^2 + \cdots } \;} \]
+<p>Two special cases cover 90 % of practice:</p>
+<ul>
+  <li><b>Sums/differences</b> \(y = x_1 \pm x_2\): <em>absolute</em> uncertainties add in quadrature: \(u_y = \sqrt{u_1^2 + u_2^2}\).</li>
+  <li><b>Products/quotients/powers</b> \(y = x_1^{a} x_2^{b}\): <em>relative</em> uncertainties add in quadrature, weighted by the exponents: \(\dfrac{u_y}{|y|} = \sqrt{ a^2\left(\dfrac{u_1}{x_1}\right)^2 + b^2\left(\dfrac{u_2}{x_2}\right)^2 }\).</li>
+</ul>
+
+<div class="example">
+  <div class="ex-head"><span class="ex-tag">Worked example</span> Uncertainty budget for \(P = U \cdot I\)</div>
+  <div class="ex-body">
+    <p>You measure \(U = 12.00\,\mathrm{V}\) with \(u_U = 0.06\,\mathrm{V}\) and \(I = 2.000\,\mathrm{A}\) with \(u_I = 0.030\,\mathrm{A}\). State the power with its uncertainty.</p>
+    <div class="step"><span class="step-label">Step 1 — value:</span> \(P = U I = 12.00 \cdot 2.000 = 24.00\,\mathrm{W}\).</div>
+    <div class="step"><span class="step-label">Step 2 — general formula:</span> with \(\partial P/\partial U = I\) and \(\partial P/\partial I = U\):
+      \[ u_P = \sqrt{ I^2 u_U^2 + U^2 u_I^2 } = \sqrt{ (2.000 \cdot 0.06)^2 + (12.00 \cdot 0.030)^2 } = \sqrt{0.0144 + 0.1296} \approx 0.38\,\mathrm{W}. \]</div>
+    <div class="step"><span class="step-label">Step 3 — relative shortcut (product!):</span>
+      \( u_U/U = 0.5\,\% \), \( u_I/I = 1.5\,\% \) →
+      \( u_P/P = \sqrt{0.5^2 + 1.5^2}\,\% = 1.58\,\% \) → \(u_P = 0.38\,\mathrm{W}\). Same answer, no calculus.</div>
+    <div class="step"><span class="step-label">Step 4 — interpret the budget:</span> the current contributes \(0.1296/0.144 = 90\,\%\) of the variance. If you want a better result, upgrade the <em>ammeter</em> — a better voltmeter is wasted money. This is the whole point of writing a budget.</div>
+    <div class="result-line">\( P = (24.0 \pm 0.4)\,\mathrm{W} \) — uncertainty rounded to one significant figure, value rounded to the same decimal place.</div>
+  </div>
+</div>
+
+<div class="box pitfall">
+  <div class="box-title"><span class="ic">🚫</span>Classic pitfall: significant-figure fraud</div>
+  <p>Writing \(P = 24.0000\,\mathrm{W}\) when the uncertainty is 0.4 W claims knowledge you do not have; writing \(P = 24 \pm 0.3821\,\mathrm{W}\) pretends the <em>uncertainty</em> is known to four digits (it never is). Discipline: round the uncertainty to <b>1–2 significant figures</b>, then round the value to the <b>same last decimal place</b>. Keep full precision in intermediate steps — round only at the end. And a result without any uncertainty statement is, strictly speaking, not a measurement result at all.</p>
+</div>
+
+<div class="box key">
+  <div class="box-title"><span class="ic">🔑</span>Key idea: the two-step recipe</div>
+  <p>Every serious measurement task reduces to: (1) hunt down and <b>correct</b> systematic deviations (calibrate, subtract offsets, correct for loading — Sections 5–6 are essentially a catalog of these); (2) quantify what remains as an <b>uncertainty</b> and propagate it to the final result. Correct what you can, honestly bound what you can't.</p>
+</div>
+
+<h2 id="u-i-measure">5. Measuring voltage and current</h2>
+
+<h3 id="loading">5.1 Every instrument disturbs the circuit — loading</h3>
+
+<p>An ideal voltmeter has infinite input resistance (draws no current); an ideal ammeter has zero (drops no voltage). Real ones: a digital multimeter typically has \(R_V = 10\,\mathrm{M\Omega}\), an oscilloscope input \(1\,\mathrm{M\Omega}\), a classic analog multimeter perhaps \(20\,\mathrm{k\Omega/V}\) of range. An ammeter inserts a shunt resistance \(R_A\) whose drop (<span class="de">Bürdenspannung</span>, often 0.1–0.7 V at full scale on a DMM's mA range!) is subtracted from the circuit.</p>
+
+<p>How bad is voltmeter loading? Replace whatever you are probing by its Thévenin equivalent (Module 04): open-circuit voltage \(U_0\) behind source resistance \(R_i\). The voltmeter forms a voltage divider with it:</p>
+\[ U_{\text{ind}} = U_0 \, \frac{R_V}{R_i + R_V}, \qquad \frac{\Delta U}{U_0} = -\frac{R_i}{R_i + R_V} \approx -\frac{R_i}{R_V} \ \ (R_V \gg R_i). \]
+<p>Rule of thumb: for \(< 1\,\%\) error you need \(R_V > 100 \, R_i\). Probing a 10 MΩ-input DMM into a 100 kΩ sensor divider costs you 1 %; probing a 1 MΩ scope input into the same node costs 9 % — a purely <em>systematic</em> error that no amount of averaging will reveal.</p>
+
+<div class="widget">
+  <div class="w-head"><span class="ic">🧪</span>Interactive — loading-error explorer <span class="w-tag">simulation</span></div>
+  <div class="w-body">
+    <p class="small mt0">The indicated voltage as a fraction of the true (Thévenin) voltage versus the ratio \(R_V/R_i\) (log axis). Slide your source and meter resistances: the dot shows where <em>your</em> measurement sits. Notice you need two decades of ratio for the error to drop below 1 % — and that a high-impedance source (large \(R_i\)) can make even a good DMM lie.</p>
+    <div id="w-loading"></div>
+  </div>
+</div>
+
+<h3 id="two-circuits">5.2 Measuring U and I simultaneously — two circuits, two errors</h3>
+
+<p>To determine a resistance (or a power) you need voltage <em>and</em> current at once — and the two instruments get in each other's way. There are exactly two ways to wire them, each with a characteristic, <em>correctable</em> systematic error:</p>
+
+<figure>
+  <div class="fig-frame">
+  <svg class="diagram" viewBox="0 0 720 250" role="img" aria-label="Voltage-error and current-error measurement circuits">
+    <!-- ============ left: Spannungsfehlerschaltung ============ -->
+    <circle cx="55" cy="125" r="22" fill="none" stroke="var(--text-soft)" stroke-width="2"/>
+    <line x1="55" y1="103" x2="55" y2="147" class="wire"/>
+    <text x="55" y="170" text-anchor="middle" font-size="13">U₀</text>
+    <path class="wire" d="M55 103 V50 H110"/>
+    <!-- node before A -->
+    <circle cx="110" cy="50" r="4" class="node"/>
+    <!-- Ammeter -->
+    <path class="wire" d="M110 50 H150"/>
+    <circle cx="168" cy="50" r="17" fill="none" stroke="var(--text-soft)" stroke-width="2"/>
+    <text x="168" y="55" text-anchor="middle" font-size="13" font-weight="700">A</text>
+    <path class="wire" d="M185 50 H265"/>
+    <!-- R vertical -->
+    <rect x="253" y="90" width="24" height="60" fill="none" stroke="var(--text-soft)" stroke-width="2"/>
+    <path class="wire" d="M265 50 V90 M265 150 V200 H55 M55 147 V200"/>
+    <text x="290" y="124" font-size="13">R</text>
+    <!-- Voltmeter across A + R -->
+    <path class="wire" d="M110 50 V90"/>
+    <circle cx="110" cy="107" r="17" fill="none" stroke="var(--accent)" stroke-width="2"/>
+    <text x="110" y="112" text-anchor="middle" font-size="13" font-weight="700" fill="var(--accent)">V</text>
+    <path class="wire" d="M110 124 V200"/>
+    <circle cx="110" cy="200" r="4" class="node"/>
+    <text x="168" y="235" text-anchor="middle" font-size="12.5" fill="var(--text-soft)">V reads U_A + U_R (too high)</text>
+    <text x="168" y="22" text-anchor="middle" font-size="13" font-weight="700">Spannungsfehlerschaltung</text>
+    <!-- ============ right: Stromfehlerschaltung ============ -->
+    <circle cx="425" cy="125" r="22" fill="none" stroke="var(--text-soft)" stroke-width="2"/>
+    <line x1="425" y1="103" x2="425" y2="147" class="wire"/>
+    <text x="425" y="170" text-anchor="middle" font-size="13">U₀</text>
+    <path class="wire" d="M425 103 V50 H500"/>
+    <circle cx="518" cy="50" r="17" fill="none" stroke="var(--text-soft)" stroke-width="2"/>
+    <text x="518" y="55" text-anchor="middle" font-size="13" font-weight="700">A</text>
+    <path class="wire" d="M535 50 H570"/>
+    <circle cx="570" cy="50" r="4" class="node"/>
+    <path class="wire" d="M570 50 H650 V90"/>
+    <!-- R vertical right -->
+    <rect x="638" y="90" width="24" height="60" fill="none" stroke="var(--text-soft)" stroke-width="2"/>
+    <path class="wire" d="M650 150 V200 H425 M425 147 V200"/>
+    <text x="675" y="124" font-size="13">R</text>
+    <!-- Voltmeter directly across R -->
+    <path class="wire" d="M570 50 V90"/>
+    <circle cx="570" cy="107" r="17" fill="none" stroke="var(--accent)" stroke-width="2"/>
+    <text x="570" y="112" text-anchor="middle" font-size="13" font-weight="700" fill="var(--accent)">V</text>
+    <path class="wire" d="M570 124 V200"/>
+    <circle cx="570" cy="200" r="4" class="node"/>
+    <text x="538" y="235" text-anchor="middle" font-size="12.5" fill="var(--text-soft)">A reads I_R + I_V (too high)</text>
+    <text x="538" y="22" text-anchor="middle" font-size="13" font-weight="700">Stromfehlerschaltung</text>
+  </svg>
+  </div>
+  <figcaption><b>Fig. 5.1</b> — Left: the ammeter measures the true \(I_R\), but the voltmeter also sees the ammeter's drop — the <em>voltage</em> is falsified (<span class="de">Spannungsfehlerschaltung</span>). Right: the voltmeter measures the true \(U_R\), but the ammeter also carries the voltmeter's current — the <em>current</em> is falsified (<span class="de">Stromfehlerschaltung</span>).</figcaption>
+</figure>
+
+<p>Computing \(R_{\text{meas}} = U_{\text{ind}}/I_{\text{ind}}\) naively gives:</p>
+\[ \text{voltage-error circuit: } R_{\text{meas}} = R + R_A, \qquad \text{current-error circuit: } R_{\text{meas}} = R \,\|\, R_V = \frac{R\,R_V}{R + R_V}. \]
+<p>So: <b>large resistances → voltage-error circuit</b> (the extra \(R_A\) is negligible), <b>small resistances → current-error circuit</b> (the stolen \(I_V\) is negligible). The break-even point, where both relative errors are equal (\(R_A/R = R/R_V\)), is \(R_{\text{limit}} = \sqrt{R_A R_V}\) — typically a few kΩ. Better still: since \(R_A\) and \(R_V\) are known, <em>correct</em> the systematic error instead of just choosing the lesser evil.</p>
+
+<div class="example">
+  <div class="ex-head"><span class="ex-tag">Worked example</span> Which circuit for 1 kΩ — and how wrong?</div>
+  <div class="ex-body">
+    <p>You measure \(R \approx 1\,\mathrm{k\Omega}\) with an ammeter (\(R_A = 0.5\,\Omega\)) and a voltmeter (\(R_V = 10\,\mathrm{M\Omega}\)). Evaluate both circuits, then repeat mentally for \(R \approx 1\,\mathrm{M\Omega}\).</p>
+    <div class="step"><span class="step-label">Step 1 — break-even:</span> \( R_{\text{limit}} = \sqrt{0.5 \cdot 10^7} \approx 2.24\,\mathrm{k\Omega} \). Our 1 kΩ is below it → current-error circuit should win.</div>
+    <div class="step"><span class="step-label">Step 2 — voltage-error circuit:</span> \( R_{\text{meas}} = 1000 + 0.5 = 1000.5\,\Omega \) → deviation \(+0.05\,\%\).</div>
+    <div class="step"><span class="step-label">Step 3 — current-error circuit:</span> \( R_{\text{meas}} = \frac{1000 \cdot 10^7}{1000 + 10^7} = 999.90\,\Omega \) → deviation \(-0.01\,\%\). Indeed smaller, as predicted.</div>
+    <div class="step"><span class="step-label">Step 4 — the 1 MΩ case:</span> voltage-error: \(+0.5\,\Omega\) on 1 MΩ = \(+0.00005\,\%\) (utterly negligible); current-error: \(1\,\mathrm{M} \| 10\,\mathrm{M} = 0.909\,\mathrm{M\Omega}\) = \(-9.1\,\%\) — catastrophic. Above the break-even, the roles flip hard.</div>
+    <div class="result-line">1 kΩ → current-error circuit (−0.01 %); 1 MΩ → voltage-error circuit. Or correct either error exactly, since \(R_A, R_V\) are known.</div>
+  </div>
+</div>
+
+<h3 id="range-extension">5.3 Extending ranges: shunts, dividers, clamps</h3>
+
+<p>A measurement mechanism (or ADC front-end) handles only a small full-scale signal; ranges are built around it:</p>
+<ul>
+  <li><b>Current — shunt</b> (<span class="de">Nebenwiderstand</span>): a small resistor in parallel diverts most of the current. For a movement with full-scale current \(I_M\) and resistance \(R_M\): \( R_S = \dfrac{R_M \, I_M}{I - I_M} \). At high currents the shunt becomes a four-terminal component (separate force/sense terminals — Kelvin connection) so contact resistance doesn't corrupt the reading.</li>
+  <li><b>Voltage — series resistor / divider</b> (<span class="de">Vorwiderstand / Spannungsteiler</span>): drops the excess voltage; the divider chain of a DMM input is exactly the Module 04 voltage divider, built from precision resistors.</li>
+  <li><b>Current clamps</b> (<span class="de">Stromzange</span>): measure without breaking the circuit. Transformer-based clamps work only for AC (they are just a current transformer); Hall-effect clamps sense the magnetic field directly and handle DC too — this is how you measure 200 A in a battery cable without inserting anything.</li>
+</ul>
+
+<h2 id="bridge">6. The Wheatstone bridge — measuring by balancing</h2>
+
+<p>Small resistance <em>changes</em> — a strain gauge changing by 0.1 %, a PT100 by 0.4 %/K — drown in a direct measurement: you would need a meter accurate to parts in \(10^5\) whose supply never drifts. The 1843 solution by Charles Wheatstone is still everywhere: compare instead of measure. Two voltage dividers side by side, fed from the same source; the meter sits <em>between</em> the taps and sees only the <em>difference</em>:</p>
+
+<figure>
+  <div class="fig-frame">
+  <svg class="diagram" viewBox="0 0 500 320" role="img" aria-label="Wheatstone bridge circuit">
+    <!-- supply rail on the left -->
+    <path class="wire" d="M250 45 H60 V130"/>
+    <circle cx="60" cy="152" r="22" fill="none" stroke="var(--text-soft)" stroke-width="2"/>
+    <line x1="60" y1="130" x2="60" y2="174" class="wire"/>
+    <text x="32" y="147" font-size="14" text-anchor="end">U₀</text>
+    <path class="wire" d="M60 174 V285 H250"/>
+    <!-- diamond wires -->
+    <path class="wire" d="M250 45 L130 165 L250 285 L370 165 Z"/>
+    <!-- nodes -->
+    <circle cx="250" cy="45" r="5" class="node"/><text x="250" y="30" text-anchor="middle" font-size="13" font-weight="700">A</text>
+    <circle cx="250" cy="285" r="5" class="node"/><text x="250" y="308" text-anchor="middle" font-size="13" font-weight="700">B</text>
+    <circle cx="130" cy="165" r="5" class="node"/><text x="108" y="150" text-anchor="middle" font-size="13" font-weight="700">C</text>
+    <circle cx="370" cy="165" r="5" class="node"/><text x="392" y="150" text-anchor="middle" font-size="13" font-weight="700">D</text>
+    <!-- resistor boxes on the four arms (rotated rects) -->
+    <g transform="translate(190,105) rotate(-45)"><rect x="-30" y="-11" width="60" height="22" fill="var(--bg-panel)" stroke="var(--text-soft)" stroke-width="2"/></g>
+    <text x="152" y="92" font-size="14">R₁</text>
+    <g transform="translate(310,105) rotate(45)"><rect x="-30" y="-11" width="60" height="22" fill="var(--bg-panel)" stroke="var(--text-soft)" stroke-width="2"/></g>
+    <text x="332" y="92" font-size="14">R₂</text>
+    <g transform="translate(190,225) rotate(45)"><rect x="-30" y="-11" width="60" height="22" fill="var(--bg-panel)" stroke="var(--text-soft)" stroke-width="2"/></g>
+    <text x="146" y="248" font-size="14">R₃</text>
+    <g transform="translate(310,225) rotate(-45)"><rect x="-30" y="-11" width="60" height="22" fill="var(--bg-panel)" stroke="var(--text-soft)" stroke-width="2"/></g>
+    <text x="330" y="248" font-size="14">R₄</text>
+    <!-- bridge meter -->
+    <path class="wire" d="M135 165 H228 M272 165 H365"/>
+    <circle cx="250" cy="165" r="20" fill="none" stroke="var(--accent)" stroke-width="2"/>
+    <text x="250" y="170" text-anchor="middle" font-size="13" font-weight="700" fill="var(--accent)">V</text>
+    <!-- Ud arrow -->
+    <line x1="200" y1="200" x2="300" y2="200" stroke="var(--accent)" stroke-width="2" marker-end="url(#arrBr)"/>
+    <text x="250" y="218" text-anchor="middle" font-size="13" fill="var(--accent)">U_d</text>
+    <defs><marker id="arrBr" markerWidth="9" markerHeight="9" refX="7" refY="4.5" orient="auto">
+      <path d="M0 0 L8 4.5 L0 9 z" fill="var(--accent)"/></marker></defs>
+  </svg>
+  </div>
+  <figcaption><b>Fig. 6.1</b> — Wheatstone bridge (<span class="de">Wheatstone-Brücke</span>): divider R₁–R₃ and divider R₂–R₄ across the same supply; the detector measures the tap difference \(U_d = \varphi_C - \varphi_D\).</figcaption>
+</figure>
+
+<p>Each half is a plain voltage divider (node B as reference):</p>
+\[ \varphi_C = U_0 \frac{R_3}{R_1 + R_3}, \qquad \varphi_D = U_0 \frac{R_4}{R_2 + R_4}, \qquad
+   U_d = U_0 \left( \frac{R_3}{R_1 + R_3} - \frac{R_4}{R_2 + R_4} \right). \]
+<p>Setting \(U_d = 0\) and cross-multiplying gives the <b>balance condition</b> (<span class="de">Abgleichbedingung</span>):</p>
+\[ \boxed{\; R_1 \, R_4 = R_2 \, R_3 \;} \quad \Longleftrightarrow \quad \frac{R_1}{R_3} = \frac{R_2}{R_4}. \]
+
+<div class="box intuition">
+  <div class="box-title"><span class="ic">💡</span>Intuition: why null methods win</div>
+  <p>A balanced bridge is a beam balance (<span class="de">Balkenwaage</span>): you don't ask the needle "how much?", only "which side?". At balance, \(U_0\) cancels out of the condition entirely — a drifting supply changes <em>nothing</em>. The detector needs no calibration either, only sensitivity to detect "not yet zero". You have traded two hard problems (stable source, accurate meter) for one easy one (a good reference resistor). This is why bridge and compensation methods dominated precision measurement for 150 years, and why their offspring (lock-in detection, ratiometric ADCs) still do.</p>
+</div>
+
+<h3 id="unbalanced">6.1 The unbalanced bridge — sensors' best friend</h3>
+
+<p>Modern sensor electronics rarely re-balances the bridge; it amplifies the small <em>off-balance</em> voltage. Start from a balanced bridge of four equal resistors \(R\) and let one arm change to \(R(1 + \delta)\) with \(\delta = \Delta R/R \ll 1\) (a <b>quarter bridge</b>, <span class="de">Viertelbrücke</span>):</p>
+\[ U_d = U_0\left( \frac{R(1+\delta)}{R + R(1+\delta)} - \frac12 \right) = \frac{U_0}{4}\,\frac{\delta}{1 + \delta/2} \;\approx\; \frac{U_0}{4}\,\frac{\Delta R}{R}. \]
+<p>With <em>two</em> active arms changing oppositely (half bridge, <span class="de">Halbbrücke</span>) the sensitivity doubles and the \((1+\delta/2)\) nonlinearity cancels; with four active arms (full bridge, <span class="de">Vollbrücke</span>) it quadruples:</p>
+\[ U_d \approx \frac{U_0}{4}\frac{\Delta R}{R} \ \text{(quarter)}, \qquad U_d = \frac{U_0}{2}\frac{\Delta R}{R} \ \text{(half)}, \qquad U_d = U_0\,\frac{\Delta R}{R} \ \text{(full)}. \]
+<p>The classic application is the <b>strain gauge</b> (<span class="de">Dehnungsmessstreifen</span>, DMS): a meander of foil glued to a structure. Stretch it by strain \(\varepsilon = \Delta l/l\) and its resistance changes by \(\Delta R/R = k\,\varepsilon\) with gauge factor \(k \approx 2\) for metal foil. Full bridges of four gauges (two stretched, two compressed) are how every electronic scale, load cell and torque sensor works — and the arrangement simultaneously cancels temperature drift, since all four arms warm together.</p>
+
+<div class="example">
+  <div class="ex-head"><span class="ex-tag">Worked example</span> Strain gauge in a quarter bridge</div>
+  <div class="ex-body">
+    <p>A 350 Ω strain gauge (\(k = 2.0\)) on a steel beam reads strain \(\varepsilon = 500\,\mathrm{\mu m/m}\). Bridge supply \(U_0 = 5\,\mathrm{V}\), other arms 350 Ω. Find \(U_d\) and the mechanical stress.</p>
+    <div class="step"><span class="step-label">Step 1 — resistance change:</span> \( \Delta R/R = k \varepsilon = 2.0 \cdot 500 \cdot 10^{-6} = 1.0 \cdot 10^{-3} \) → \( \Delta R = 0.35\,\Omega \). (Measuring 0.35 Ω on top of 350 Ω directly would need a 5-digit ohmmeter with perfect stability.)</div>
+    <div class="step"><span class="step-label">Step 2 — bridge output:</span> \( U_d \approx \frac{U_0}{4}\frac{\Delta R}{R} = \frac{5}{4} \cdot 10^{-3} = 1.25\,\mathrm{mV} \). Tiny — hence the instrumentation amplifier (gain 10³…10⁴, Module 09/10 op-amp material) that always follows a bridge.</div>
+    <div class="step"><span class="step-label">Step 3 — stress:</span> \( \sigma = E \varepsilon = 210\,\mathrm{GPa} \cdot 500 \cdot 10^{-6} = 105\,\mathrm{MPa} \) — about 40 % of construction steel's yield strength. Real numbers from real bridges (the concrete kind).</div>
+    <div class="result-line">\(U_d \approx 1.25\,\mathrm{mV}\) per 500 µε at 5 V supply — bridges turn hopeless resistance measurements into routine millivolt measurements.</div>
+  </div>
+</div>
+
+<div class="widget">
+  <div class="w-head"><span class="ic">🧪</span>Interactive — Wheatstone bridge <span class="w-tag">simulation</span></div>
+  <div class="w-body">
+    <p class="small mt0">All four arms adjustable; the gauge arm is \(R_3 = 350\,\Omega + \Delta R\), like a strain gauge. Balance the bridge (indicator turns green when \(|U_d| &lt; 0.5\) mV), then nudge \(\Delta R\) and watch millivolts appear — and compare the exact \(U_d\) with the linear quarter-bridge formula. Check that changing \(U_0\) scales \(U_d\) but never disturbs the balance point itself.</p>
+    <div id="w-bridge"></div>
+  </div>
+</div>
+
+<h2 id="ac-measure">7. AC quantities — RMS or lies</h2>
+
+<h3 id="rms-rect">7.1 True RMS vs. rectified mean</h3>
+
+<p>For AC, "the" value of a waveform is its <b>RMS value</b> (<span class="de">Effektivwert</span>) — the DC value with equal heating power (Module 05): \(U_{\mathrm{rms}} = \sqrt{\overline{u^2(t)}}\). But computing a true mean-square used to be expensive, so classic meters cheat: they rectify the signal, average it — obtaining the <b>rectified mean</b> (<span class="de">Gleichrichtwert</span>) \( \overline{|u|} \) — and multiply by a fixed constant chosen so the display is correct <em>for a sine wave</em>:</p>
+\[ \text{form factor } F = \frac{U_{\mathrm{rms}}}{\overline{|u|}}, \qquad F_{\text{sine}} = \frac{\pi}{2\sqrt2} \approx 1.111, \qquad \text{crest factor } C = \frac{\hat{u}}{U_{\mathrm{rms}}}, \ C_{\text{sine}} = \sqrt2. \]
+<p>An "average-responding, RMS-calibrated" meter displays \(1.111 \cdot \overline{|u|}\). Feed it anything non-sinusoidal and it lies by exactly the ratio of form factors:</p>
+
+<div class="table-wrap">
+<table class="data">
+<thead><tr><th>Waveform (amplitude \(\hat u\))</th><th>True RMS</th><th>Rectified mean</th><th>Form factor</th><th>Average-responding meter shows</th></tr></thead>
+<tbody>
+<tr><td>Sine</td><td>\(0.707\,\hat u\)</td><td>\(0.637\,\hat u\)</td><td>1.111</td><td>correct (by construction)</td></tr>
+<tr><td>Square (±\(\hat u\))</td><td>\(1.000\,\hat u\)</td><td>\(1.000\,\hat u\)</td><td>1.000</td><td>\(1.111\,\hat u\) → <b>+11 %</b></td></tr>
+<tr><td>Triangle</td><td>\(0.577\,\hat u\)</td><td>\(0.500\,\hat u\)</td><td>1.155</td><td>\(0.555\,\hat u\) → <b>−3.8 %</b></td></tr>
+<tr><td>Narrow pulses (10 % duty, zero mean)</td><td>\(0.333\,\hat u\)</td><td>\(0.200\,\hat u\)</td><td>1.667</td><td>\(0.222\,\hat u\) → <b>−33 %</b></td></tr>
+</tbody>
+</table>
+</div>
+
+<p>Worked through for the square wave: true RMS of \(\pm 5\,\mathrm{V}\) is exactly 5 V (the square of the signal is constantly 25 V²); the rectified mean is also 5 V; the meter displays \(1.111 \cdot 5 = 5.55\,\mathrm{V}\) — 11 % high, with no warning on the display. Since phase-cut dimmers, switch-mode supplies and inverter drives fill the world with non-sinusoids, a <b>true-RMS</b> meter (which really computes \(\sqrt{\overline{u^2}}\), today with an analog RMS chip or DSP) is not a luxury. Even true-RMS meters have a spec limit: the <b>crest factor</b> they can digest (typically \(C \le 3\)) — narrow spikes beyond that clip internally and read low.</p>
+
+<div class="widget">
+  <div class="w-head"><span class="ic">🧪</span>Interactive — what your multimeter really shows <span class="w-tag">simulation</span></div>
+  <div class="w-body">
+    <p class="small mt0">Pick a waveform. The dashed lines mark the true RMS value and the reading of an average-responding meter (rectified mean × 1.111). For the sine they coincide — for everything else, mind the gap. The pulse waveform shows why measuring dimmer or PWM waveforms with a cheap meter is guesswork.</p>
+    <div id="w-rms"></div>
+  </div>
+</div>
+
+<h3 id="power-measure">7.2 Measuring power</h3>
+
+<p>Power needs the <em>product</em> of voltage and current including their phase relationship: \(P = \overline{u(t)\,i(t)}\). A <b>wattmeter</b> (<span class="de">Leistungsmesser</span>) therefore has four terminals: a current path and a voltage path. The classic electrodynamic instrument multiplies mechanically (torque ∝ \(i_1 i_2\)); modern meters sample \(u\) and \(i\) and multiply digitally — your smart plug contains exactly this, a shunt, a divider, and a dedicated metering ADC. The connection question of Section 5.2 returns identically: the voltage path can be connected before or after the current path, giving a small systematic error that quality meters correct.</p>
+
+<p>For three-phase systems without neutral, the <b>two-wattmeter (Aron) circuit</b> measures total power with only two instruments: \(P = P_1 + P_2\), valid for <em>any</em> load balance — a classic exam favourite (details in the power engineering module, M19).</p>
+
+<h2 id="scope">8. The oscilloscope — the engineer's eyes</h2>
+
+<h3 id="scope-arch">8.1 Architecture</h3>
+
+<p>The oscilloscope (<span class="de">Oszilloskop</span>) plots voltage against time. The <em>analog</em> scope steered an electron beam directly with the amplified signal — wonderfully immediate, but it could neither store a single-shot event nor show what happened <em>before</em> the trigger. The <b>digital storage oscilloscope</b> (DSO) replaced it almost completely:</p>
+<p style="text-align:center">input attenuator/divider → amplifier → <b>ADC</b> (8–12 bit, up to several GS/s) → capture memory → trigger &amp; processing → display.</p>
+<p>Because samples stream continuously into memory, a DSO shows <em>pre-trigger</em> history — priceless when debugging "what made it crash". Key specs: analog bandwidth, sample rate, memory depth (how long you can record at full rate: \(t = \text{depth}/f_s\)), and waveform update rate (how quickly rare glitches are caught).</p>
+
+<h3 id="sampling">8.2 Sampling and the aliasing trap</h3>
+
+<p>An ADC takes snapshots: the sampling theorem (Module 12) demands \(f_s > 2 f_{\max}\) or frequencies fold back as <b>aliases</b> (<span class="de">Alias-Effekt</span>): a signal at \(f\) sampled at \(f_s\) reappears at \(|f - k f_s|\). On a scope, aliasing produces a beautiful, stable, completely <em>wrong</em> waveform — e.g. a 999 kHz sine sampled at 1 MS/s displays as a majestic 1 kHz sine. Defenses: check that the displayed frequency stays put when you change the timebase (aliases jump around); keep sample rate ≫ signal frequency; remember that deep zoom-out can silently drop the effective sample rate.</p>
+
+<h3 id="bandwidth">8.3 Bandwidth and rise time</h3>
+
+<p>The analog front-end is roughly a first-order low-pass with −3 dB bandwidth \(B\). A first-order system's 10–90 % step-response rise time obeys (Module 07/10 material):</p>
+\[ \boxed{\; t_r \cdot B \approx 0.35 \;} \]
+<p>and measured rise times of independent stages combine like uncertainties — in quadrature: \( t_{r,\text{meas}} = \sqrt{ t_{r,\text{signal}}^2 + t_{r,\text{scope}}^2 } \).</p>
+
+<div class="example">
+  <div class="ex-head"><span class="ex-tag">Worked example</span> Is a 100 MHz scope enough?</div>
+  <div class="ex-body">
+    <p>A logic edge has a true rise time of 5 ns. You view it on a 100 MHz scope. What do you see, and what bandwidth would keep the error below 2 %?</p>
+    <div class="step"><span class="step-label">Step 1 — scope's own rise time:</span> \( t_{r,\text{scope}} = 0.35/B = 0.35/(100\cdot 10^{6}) = 3.5\,\mathrm{ns} \).</div>
+    <div class="step"><span class="step-label">Step 2 — displayed rise time:</span> \( t_{r,\text{meas}} = \sqrt{5^2 + 3.5^2} = \sqrt{37.25} \approx 6.1\,\mathrm{ns} \) — a 22 % overestimate. The scope is measuring itself as much as the signal.</div>
+    <div class="step"><span class="step-label">Step 3 — requirement for ≤ 2 %:</span> \( \sqrt{1 + x^2} \le 1.02 \Rightarrow x \le 0.2 \), i.e. \( t_{r,\text{scope}} \le 1\,\mathrm{ns} \Rightarrow B \ge 350\,\mathrm{MHz} \).</div>
+    <div class="result-line">Displayed: ≈ 6.1 ns instead of 5 ns. Rule of thumb: scope (and probe!) bandwidth ≥ 3–5× the highest frequency of interest.</div>
+  </div>
+</div>
+
+<h3 id="probes">8.4 The 10:1 probe — why you don't just use a wire</h3>
+
+<p>A plain coax lead to the scope's 1 MΩ input drags along ~100 pF of cable capacitance — at 10 MHz that is \( |Z_C| \approx 160\,\Omega \) of loading, enough to detune or crash many circuits. The <b>10:1 passive probe</b> (<span class="de">Tastkopf</span>) fixes this with a 9 MΩ resistor in the tip, shunted by a small trimmer capacitor:</p>
+
+<figure>
+  <div class="fig-frame">
+  <svg class="diagram" viewBox="0 0 720 240" role="img" aria-label="Compensated 10:1 oscilloscope probe circuit">
+    <!-- tip -->
+    <circle cx="50" cy="70" r="4" class="node"/>
+    <text x="50" y="50" text-anchor="middle" font-size="13">probe tip</text>
+    <path class="wire" d="M50 70 H90"/>
+    <!-- R9M box -->
+    <rect x="90" y="58" width="64" height="24" fill="none" stroke="var(--text-soft)" stroke-width="2"/>
+    <text x="122" y="46" text-anchor="middle" font-size="13">9 MΩ</text>
+    <path class="wire" d="M154 70 H240"/>
+    <!-- C_comp parallel (below R) -->
+    <path class="wire" d="M70 70 V120 H112 M132 120 H200 V70"/>
+    <line x1="112" y1="106" x2="112" y2="134" class="wire"/>
+    <line x1="132" y1="106" x2="132" y2="134" class="wire"/>
+    <text x="122" y="158" text-anchor="middle" font-size="13">C_comp (trim)</text>
+    <!-- node M -->
+    <circle cx="240" cy="70" r="4" class="node"/>
+    <!-- cable -->
+    <path class="wire" d="M240 70 H420"/>
+    <text x="330" y="56" text-anchor="middle" font-size="12.5" fill="var(--text-soft)">coax cable</text>
+    <!-- C_cable to ground -->
+    <path class="wire" d="M330 70 V104"/>
+    <line x1="316" y1="104" x2="344" y2="104" class="wire"/>
+    <line x1="316" y1="116" x2="344" y2="116" class="wire"/>
+    <path class="wire" d="M330 116 V200"/>
+    <text x="374" y="114" font-size="12.5">C_cable</text>
+    <!-- scope input: node -->
+    <circle cx="420" cy="70" r="4" class="node"/>
+    <text x="466" y="42" text-anchor="middle" font-size="13">scope input</text>
+    <!-- Rin 1M vertical -->
+    <path class="wire" d="M420 70 H460 V96"/>
+    <rect x="448" y="96" width="24" height="56" fill="none" stroke="var(--text-soft)" stroke-width="2"/>
+    <text x="492" y="128" font-size="12.5">1 MΩ</text>
+    <path class="wire" d="M460 152 V200"/>
+    <!-- Cin vertical -->
+    <path class="wire" d="M420 70 H560 V110"/>
+    <line x1="546" y1="110" x2="574" y2="110" class="wire"/>
+    <line x1="546" y1="122" x2="574" y2="122" class="wire"/>
+    <path class="wire" d="M560 122 V200"/>
+    <text x="600" y="120" font-size="12.5">C_in ≈ 15 pF</text>
+    <!-- ground rail -->
+    <path class="wire" d="M50 200 H660"/>
+    <circle cx="50" cy="200" r="4" class="node"/>
+    <text x="50" y="188" text-anchor="middle" font-size="12.5">ground clip</text>
+    <path class="wire" d="M360 200 V210"/>
+    <line x1="340" y1="210" x2="380" y2="210" class="wire"/>
+    <line x1="348" y1="218" x2="372" y2="218" class="wire"/>
+    <line x1="355" y1="226" x2="365" y2="226" class="wire"/>
+  </svg>
+  </div>
+  <figcaption><b>Fig. 8.1</b> — Compensated 10:1 probe: resistive divider 9 MΩ : 1 MΩ, capacitive divider \(C_{\text{comp}}\) : \((C_{\text{cable}}{+}C_{\text{in}})\). When \(9\,\mathrm{M\Omega} \cdot C_{\text{comp}} = 1\,\mathrm{M\Omega} \cdot (C_{\text{cable}}+C_{\text{in}})\), the division is 10:1 at <em>every</em> frequency.</figcaption>
+</figure>
+
+<p>The result: 10 MΩ input resistance, an effective tip capacitance of only ~10–15 pF (the series combination), and full scope bandwidth — at the cost of a 10× smaller signal. The two dividers (resistive for DC, capacitive for HF) must divide by the same ratio; the trimmer is adjusted using the scope's built-in square-wave output. Overcompensated → overshoot on the square wave; undercompensated → rounded, drooping edges; correct → clean flat tops. If you have ever wondered what that 1 kHz square-wave terminal on every scope is for: this.</p>
+
+<div class="box pitfall">
+  <div class="box-title"><span class="ic">🚫</span>Classic pitfall: the ground clip is connected to protective earth</div>
+  <p>On a mains-powered scope, every input's shield — hence every probe ground clip — is tied to <b>protective earth</b> (PE). Clip it to any node that is not at earth potential and you have built a short circuit through your probe: sparks, dead boards, dead scope inputs. This kills more student circuits than any other mistake. Corollaries: (1) you cannot measure "across" a component floating above ground with one probe — measure both nodes against ground and subtract (CH1−CH2), or use a differential probe; (2) never "float" the scope by defeating its PE connection — the whole chassis, including the BNC shells you touch, then rides at the measured potential; (3) all channels' grounds are internally connected — two ground clips on different potentials short them through the scope. At high frequencies a subtler issue appears: the long ground lead adds ~100 nH of inductance which rings with the tip capacitance; the wiggle at ~100 MHz you see on fast edges is often your <em>probe grounding</em>, not the circuit. Use the short ground spring.</p>
+</div>
+
+<h3 id="trigger">8.5 Triggering</h3>
+
+<p>A stable display needs each sweep to start at the same waveform feature. The <b>edge trigger</b> (<span class="de">Flankentriggerung</span>) fires when the signal crosses a chosen level with a chosen slope. <em>Auto</em> mode sweeps anyway if no trigger comes (good for orientation); <em>Normal</em> mode waits indefinitely (good for rare events); <em>Single</em> arms once and freezes. <b>Holdoff</b> inhibits re-triggering for an adjustable time after each event — essential for burst-like signals where several valid edges per repetition would otherwise make the display dance. Modern scopes add trigger types that fire on pulse width, runts, serial-bus patterns — all elaborations of the same idea: define "time zero" precisely.</p>
+
+<h2 id="adc">9. From analog to digital — ADC and DAC</h2>
+
+<h3 id="quantization">9.1 Quantization and resolution</h3>
+
+<p>An <b>analog-to-digital converter</b> (<span class="de">Analog-Digital-Umsetzer</span>) maps a voltage onto one of \(2^N\) codes. The step size is the <b>LSB</b> (least significant bit):</p>
+\[ U_{\mathrm{LSB}} = \frac{U_{\mathrm{FSR}}}{2^N} \qquad \text{e.g. } \frac{3.3\,\mathrm{V}}{2^{12}} = 806\,\mathrm{\mu V}. \]
+<p>Rounding to the nearest code leaves a <b>quantization error</b> of at most \(\pm U_{\mathrm{LSB}}/2\); treated as noise it yields the famous ideal signal-to-noise ratio \( \mathrm{SNR} = 6.02\,N + 1.76\,\mathrm{dB} \) for a full-scale sine (derivation and consequences in Module 13 — here we take it as the yardstick). A <b>sample-and-hold</b> (<span class="de">Abtast-Halte-Glied</span>) circuit freezes the input during conversion; its timing jitter \(t_j\) blurs fast signals and caps the achievable SNR at \(-20 \log_{10}(2\pi f\, t_j)\) — at high input frequencies, femtoseconds of clock jitter matter.</p>
+
+<div class="widget">
+  <div class="w-head"><span class="ic">🧪</span>Interactive — ADC transfer characteristic <span class="w-tag">simulation</span></div>
+  <div class="w-body">
+    <p class="small mt0">The staircase: reconstructed output vs. input for an \(N\)-bit converter with 8 V full scale (dashed line = ideal). Slide the input and read code, LSB and quantization error; then increase \(N\) and watch the staircase hug the line — every added bit halves the step. At \(V_{in} = 5.3\) V and \(N = 4\) you can follow the SAR walk-through below step by step.</p>
+    <div id="w-adc"></div>
+  </div>
+</div>
+
+<h3 id="sar">9.2 The SAR converter — binary search in silicon</h3>
+
+<p>The workhorse of data acquisition (µC internal ADCs, most 12–18 bit converters) is <b>successive approximation</b> (SAR, <span class="de">sukzessive Approximation</span>): a comparator, an internal DAC, and logic playing the number-guessing game — one bit per clock, MSB first. Guess the half, keep or discard, halve the interval, repeat. For \(V_{in} = 5.3\,\mathrm{V}\), \(V_{\mathrm{FSR}} = 8\,\mathrm{V}\), 4 bits (LSB = 0.5 V):</p>
+
+<div class="table-wrap">
+<table class="data">
+<thead><tr><th>Clock</th><th>Bit under test</th><th>DAC trial value</th><th>Comparator: \(V_{in} \ge\) trial?</th><th>Bit decision</th><th>Code so far</th></tr></thead>
+<tbody>
+<tr><td>1</td><td>b₃ (4 V)</td><td>4.0 V</td><td>5.3 ≥ 4.0 → yes</td><td>1</td><td>1···</td></tr>
+<tr><td>2</td><td>b₂ (2 V)</td><td>4.0 + 2.0 = 6.0 V</td><td>5.3 ≥ 6.0 → no</td><td>0</td><td>10··</td></tr>
+<tr><td>3</td><td>b₁ (1 V)</td><td>4.0 + 1.0 = 5.0 V</td><td>5.3 ≥ 5.0 → yes</td><td>1</td><td>101·</td></tr>
+<tr><td>4</td><td>b₀ (0.5 V)</td><td>5.0 + 0.5 = 5.5 V</td><td>5.3 ≥ 5.5 → no</td><td>0</td><td><b>1010</b></td></tr>
+</tbody>
+</table>
+</div>
+
+<p>Result: code 1010 = 10 → \(10 \cdot 0.5\,\mathrm{V} = 5.0\,\mathrm{V}\), residual error 0.3 V &lt; 1 LSB ✓. An \(N\)-bit conversion takes exactly \(N\) comparisons — logarithmic search, the same reason binary search beats linear scan. Note the input must stay frozen (sample-and-hold!) during all \(N\) steps.</p>
+
+<h3 id="adc-zoo">9.3 The converter zoo — pick two of speed, resolution, cost</h3>
+
+<ul>
+  <li><b>Flash</b> (<span class="de">Parallelumsetzer</span>): \(2^N - 1\) comparators against a resistor-ladder of references, all deciding at once. One clock cycle, GHz-fast — but comparator count doubles per bit, so ≤ 8 bits. Found inside scope front-ends and as the coarse stage of pipeline ADCs.</li>
+  <li><b>SAR</b>: the all-rounder. 12–18 bits, up to a few MS/s, low power.</li>
+  <li><b>Dual-slope</b> (<span class="de">Zweirampenverfahren</span>): integrate the input for a <em>fixed</em> time \(t_1\), then de-integrate with the reference and measure the time \(t_2\) to reach zero: \(V_{in} = V_{\mathrm{ref}}\, t_2/t_1\). The integrator's R and C cancel out — only the reference and a crystal-timed counter matter. And here is the elegant part: choose \(t_1 = 20\,\mathrm{ms}\) (one full 50 Hz period) and any mains hum riding on the input integrates to exactly zero. That built-in <b>mains rejection</b> is why every bench multimeter uses an integrating converter — and why DMMs convert "slowly" (a few readings per second) on their most accurate ranges.</li>
+  <li><b>Delta-sigma</b> (ΔΣ, <span class="de">Delta-Sigma-Umsetzer</span>), in one paragraph: sample <em>far</em> above Nyquist with a crude quantizer (often 1 bit), enclosed in a feedback loop with an integrator. The loop cannot reduce quantization noise, but it <em>shapes</em> it — shoving it to high frequencies where a digital low-pass filter then removes it along with the excess bandwidth (decimation). Trading speed for resolution this way yields 24-bit converters from sloppy analog parts: the principle behind audio ADCs, weigh-scale chips and precision DMM front-ends. Full treatment in Module 13.</li>
+</ul>
+
+<h3 id="adc-specs">9.4 Reading an ADC datasheet</h3>
+
+<p>Real converters fall short of ideal in specified ways: <b>DNL</b> (differential nonlinearity) — deviation of each step width from 1 LSB (DNL &lt; −1 LSB means a <em>missing code</em>); <b>INL</b> (integral nonlinearity) — accumulated deviation of the transfer curve from the best-fit line; and the honest bottom line, <b>ENOB</b> (effective number of bits), computed from the measured signal-to-noise-and-distortion: \( \mathrm{ENOB} = (\mathrm{SINAD} - 1.76)/6.02 \). A "16-bit" ADC with ENOB 12.5 is a 12.5-bit ADC in a 16-bit costume — datasheet marketing versus measured reality, the very theme of this module. The <b>DAC</b> runs the other way (code → voltage), classically as an R-2R ladder — a resistor network needing only two values, which binary-weights the bit currents; its specs mirror the ADC's (INL/DNL, settling time, glitch energy).</p>
+
+<h2 id="sensors">10. Sensors and signal conditioning</h2>
+
+<p>A sensor (<span class="de">Sensor/Messfühler</span>) converts a physical quantity into an electrical one; <b>signal conditioning</b> (<span class="de">Signalaufbereitung</span>) — bridges, amplifiers, filters, linearization — turns that raw effect into a clean voltage an ADC can digest. The recurring pattern: small raw signal → bridge or reference comparison → instrumentation amplifier → filter → ADC.</p>
+
+<h3 id="temperature">10.1 Temperature</h3>
+
+<ul>
+  <li><b>PT100</b> (<span class="de">Platin-Widerstandsthermometer</span>): platinum resistor, \(R_0 = 100\,\Omega\) at 0 °C, nearly linear per IEC 60751:
+  \[ R(T) = R_0 (1 + A T + B T^2), \quad A = 3.9083 \cdot 10^{-3}\,\mathrm{^\circ C^{-1}}, \ B = -5.775 \cdot 10^{-7}\,\mathrm{^\circ C^{-2}}, \]
+  about +0.385 Ω/K. Stable, interchangeable, the industrial standard. Long cable runs use 3- or 4-wire connections so lead resistance (which looks like +2.5 K per ohm!) cancels.</li>
+  <li><b>NTC thermistor</b> (<span class="de">Heißleiter</span>): \( R(T) = R_{25} \exp\!\big( B (\tfrac1T - \tfrac1{298\,\mathrm{K}}) \big) \), \(B \approx 3000\ldots4000\,\mathrm{K}\). Roughly −4 %/K — ten times more sensitive than platinum, but wildly nonlinear (linearized digitally or with a parallel resistor). Cheap: every battery pack and CPU board carries several.</li>
+  <li><b>Thermocouple</b> (<span class="de">Thermoelement</span>): two dissimilar metals; the Seebeck effect makes the loop voltage depend on the <em>difference</em> between measuring junction and the reference ("cold") junction — type K gives ≈ 41 µV/K. Works to &gt; 1000 °C, needs no excitation, but you must know the cold-junction temperature: modern boards measure it with a local IC sensor and add the correction digitally (<b>cold-junction compensation</b>, <span class="de">Vergleichsstellenkompensation</span>). Forgetting it yields errors of exactly room temperature — a classic.</li>
+</ul>
+
+<div class="example">
+  <div class="ex-head"><span class="ex-tag">Worked example</span> PT100 in a bridge — including the self-heating trap</div>
+  <div class="ex-body">
+    <p>A PT100 forms the fourth arm of a bridge with three 100 Ω arms, \(U_0 = 2.5\,\mathrm{V}\). (a) Bridge output at 50 °C? (b) Estimate the self-heating error in still air (\(\approx 0.4\,\mathrm{K/mW}\)).</p>
+    <div class="step"><span class="step-label">Step 1 — sensor resistance:</span>
+      \( R(50) = 100\,(1 + 3.9083\cdot10^{-3}\cdot 50 - 5.775\cdot10^{-7}\cdot 2500) = 100 \cdot 1.19397 = 119.40\,\Omega \).</div>
+    <div class="step"><span class="step-label">Step 2 — bridge output (exact divider form, ΔR is not small):</span>
+      \( U_d = U_0\left( \frac{119.40}{100 + 119.40} - \frac{100}{200} \right) = 2.5\,(0.5442 - 0.5) = 110.5\,\mathrm{mV} \). Comfortable to amplify — but note the quarter-bridge nonlinearity: the linear formula \( \frac{U_0}{4}\frac{\Delta R}{R_0} = 121\,\mathrm{mV} \) would already be 9 % off at this large ΔR.</div>
+    <div class="step"><span class="step-label">Step 3 — self-heating:</span> sensor current \( I = \frac{2.5}{100 + 119.40} = 11.4\,\mathrm{mA} \) → dissipation \( P = I^2 R = (11.4\,\mathrm{mA})^2 \cdot 119.4 \approx 15.5\,\mathrm{mW} \) → temperature error \( \approx 0.4 \cdot 15.5 \approx 6\,\mathrm{K} \). The measurement destroys itself!</div>
+    <div class="step"><span class="step-label">Step 4 — fix:</span> excite with ~1 mA (current source, or \(U_0 \approx 0.25\,\mathrm{V}\), or pulsed excitation): \(P \approx 0.12\,\mathrm{mW}\) → error ≈ 0.05 K. Industrial transmitters use ≤ 1 mA for exactly this reason.</div>
+    <div class="result-line">\(U_d \approx 110\,\mathrm{mV}\) at 50 °C — but at 11 mA excitation the reading is ~6 K high. The instrument must not change the measurand: loading (Section 5) in thermal costume.</div>
+  </div>
+</div>
+
+<h3 id="strain-hall">10.2 Force, current, position</h3>
+
+<ul>
+  <li><b>Strain gauge</b> → Section 6: \( \Delta R/R = k\varepsilon \), full bridge, instrumentation amplifier. Load cells, torque shafts, pressure sensors (a gauge on a diaphragm).</li>
+  <li><b>Current sensing</b>: shunt + amplifier (precise, dissipates, no isolation) — or magnetic: <b>Hall sensor</b> (<span class="de">Hall-Sensor</span>) in the gap of a core around the conductor measures DC and AC without contact; closed-loop ("compensation") Hall sensors null the core flux with a counter-winding — a magnetic bridge balance, the null idea again. Current transformers for AC only.</li>
+  <li><b>Encoders</b> (<span class="de">Drehgeber</span>), briefly: incremental encoders output two square waves A/B in quadrature (90° apart) — edge count gives angle, the lead/lag of A vs B gives direction. Absolute encoders read a coded disc, using <b>Gray code</b> so only one bit changes per step and misreads at boundaries cost 1 LSB, not half a revolution (Module 13).</li>
+</ul>
+
+<div class="box history">
+  <div class="box-title"><span class="ic">📜</span>Where you'll meet all this again</div>
+  <p>The instrumentation amplifier that every bridge feeds is a three-op-amp structure (Module 09/10). Sampling and aliasing return with full mathematical machinery in Module 12, quantization noise and Gray code in Module 13. Control loops (Module 16) are only as good as their sensors — "you can only control what you can measure" is the control-engineering corollary of this module's motto. And EMC (Module 18) will explain <em>why</em> that scope ground lead rings.</p>
+</div>
+
+<h2 id="summary">11. Formula summary — <span class="de">Formelsammlung</span></h2>
+
+<div class="table-wrap">
+<table class="data">
+<thead><tr><th>Concept</th><th>Formula</th><th>Remember as</th></tr></thead>
+<tbody>
+<tr><td>Mean / std. deviation</td><td>\( \bar{x} = \frac1n \sum x_i, \quad s = \sqrt{\frac{1}{n-1}\sum (x_i - \bar x)^2} \)</td><td>\(s\): scatter of one reading</td></tr>
+<tr><td>Std. dev. of the mean</td><td>\( s_{\bar x} = s/\sqrt{n} \)</td><td>averaging pays with √n only</td></tr>
+<tr><td>Gaussian propagation</td><td>\( u_y = \sqrt{\sum_i (\partial f/\partial x_i)^2 u_i^2} \)</td><td>slopes × uncertainties, in quadrature</td></tr>
+<tr><td>Products/quotients</td><td>\( \frac{u_y}{y} = \sqrt{\sum a_i^2 (u_i/x_i)^2} \)</td><td>relative uncertainties add in quadrature</td></tr>
+<tr><td>Voltmeter loading</td><td>\( U_{\text{ind}} = U_0 \frac{R_V}{R_i + R_V} \)</td><td>error ≈ −R_i/R_V; want R_V ≫ R_i</td></tr>
+<tr><td>U-I circuits</td><td>\( R + R_A \) vs. \( R \| R_V \); \( R_{\text{limit}} = \sqrt{R_A R_V} \)</td><td>big R → voltage-error, small R → current-error</td></tr>
+<tr><td>Bridge balance</td><td>\( R_1 R_4 = R_2 R_3 \)</td><td>supply-independent null</td></tr>
+<tr><td>Quarter bridge</td><td>\( U_d \approx \frac{U_0}{4}\frac{\Delta R}{R} \)</td><td>×2 half bridge, ×4 full bridge</td></tr>
+<tr><td>Strain gauge</td><td>\( \Delta R/R = k\,\varepsilon, \ k \approx 2 \)</td><td>500 µε → 0.1 %</td></tr>
+<tr><td>Form / crest factor</td><td>\( F = U_{\mathrm{rms}}/\overline{|u|}, \quad C = \hat u/U_{\mathrm{rms}} \)</td><td>sine: 1.111 / √2; meters assume it</td></tr>
+<tr><td>Rise time</td><td>\( t_r B \approx 0.35, \quad t_{r,\text{meas}}^2 = \sum t_{r,i}^2 \)</td><td>scope B ≥ 3–5× signal</td></tr>
+<tr><td>ADC resolution</td><td>\( U_{\mathrm{LSB}} = U_{\mathrm{FSR}}/2^N \); SNR = 6.02 N + 1.76 dB</td><td>each bit: ÷2 step, +6 dB</td></tr>
+<tr><td>Dual slope</td><td>\( V_{in} = V_{\mathrm{ref}}\, t_2/t_1 \)</td><td>t₁ = 20 ms kills 50 Hz hum</td></tr>
+<tr><td>PT100</td><td>\( R(T) = R_0(1 + AT + BT^2) \)</td><td>+0.385 Ω/K; mind self-heating</td></tr>
+</tbody>
+</table>
+</div>
+
+<h2 id="exercises">12. Exercises</h2>
+<p>Work these on paper before opening the solutions — reading a solution is not the same skill as producing one.</p>
+
+<div class="exercise">
+  <p class="ex-q"><span class="ex-num">E1</span>Your DMM reads 12.34 V on its 60 V range (resolution 0.01 V). The spec says ±(0.5 % of reading + 3 digits). State the result with uncertainty. <span class="diff easy">easy</span></p>
+  <details><summary>Show solution</summary>
+    <div class="solution">
+      "3 digits" means 3 counts of the last displayed digit: \(3 \cdot 0.01 = 0.03\,\mathrm{V}\).
+      Reading term: \(0.005 \cdot 12.34 = 0.062\,\mathrm{V}\). Spec limits add arithmetically (they are worst-case bounds, not standard deviations): \(0.062 + 0.03 = 0.092\,\mathrm{V}\).
+      Result: \( U = (12.34 \pm 0.09)\,\mathrm{V} \). Note the display resolution (10 mV) flatters the actual accuracy (~90 mV) by an order of magnitude — Section 2's warning in the wild.
+    </div>
+  </details>
+</div>
+
+<div class="exercise">
+  <p class="ex-q"><span class="ex-num">E2</span>A meter movement has full-scale current 100 µA and internal resistance 1 kΩ. Design a shunt for a 10 A range and state its power dissipation at full scale. <span class="diff easy">easy</span></p>
+  <details><summary>Show solution</summary>
+    <div class="solution">
+      Full-scale drop across the movement: \(U_M = 100\,\mathrm{\mu A} \cdot 1\,\mathrm{k\Omega} = 100\,\mathrm{mV}\). The shunt carries \(10\,\mathrm{A} - 100\,\mathrm{\mu A} \approx 10\,\mathrm{A}\) at that same voltage:
+      \( R_S = 0.1 / 10 \approx 10\,\mathrm{m\Omega} \) (exactly \(100\,\mathrm{mV}/9.9999\,\mathrm{A} = 10.0001\,\mathrm{m\Omega}\)).
+      Dissipation: \(P = U I = 0.1 \cdot 10 = 1\,\mathrm{W}\) — the shunt must be a power part, and its temperature coefficient now sits directly in your measurement chain. Real 10 A shunts are four-terminal (Kelvin) for exactly this reason.
+    </div>
+  </details>
+</div>
+
+<div class="exercise">
+  <p class="ex-q"><span class="ex-num">E3</span>Five repeated resistance readings: 99.8, 100.2, 100.1, 99.9, 100.0 Ω. Compute mean, standard deviation, standard deviation of the mean, and state the result. <span class="diff med">medium</span></p>
+  <details><summary>Show solution</summary>
+    <div class="solution">
+      \( \bar R = 100.00\,\Omega \). Deviations: −0.2, +0.2, +0.1, −0.1, 0.0 → \(\sum d_i^2 = 0.10\,\Omega^2\).
+      \( s = \sqrt{0.10/4} = 0.158\,\Omega \) (scatter of a single reading).
+      \( s_{\bar R} = 0.158/\sqrt5 = 0.071\,\Omega \).
+      Result: \( R = (100.00 \pm 0.07)\,\Omega \) (standard uncertainty, ≈ 68 % for Gaussian scatter; for n = 5 a Student-t factor of ~1.14 would widen it slightly). Sanity check: the uncertainty of the mean is smaller than the single-reading scatter, but only by √5 ≈ 2.2 — not by 5.
+    </div>
+  </details>
+</div>
+
+<div class="exercise">
+  <p class="ex-q"><span class="ex-num">E4</span>A sensor node has Thévenin resistance \(R_i = 100\,\mathrm{k\Omega}\). You probe it (a) directly with a scope input (1 MΩ), (b) with a 10:1 probe (10 MΩ). Relative error in each case? What loading dominates at 10 MHz? <span class="diff med">medium</span></p>
+  <details><summary>Show solution</summary>
+    <div class="solution">
+      (a) \( \Delta U/U_0 = -\frac{R_i}{R_i + R_V} = -\frac{0.1}{1.1} = -9.1\,\% \).
+      (b) \( -\frac{0.1}{10.1} = -0.99\,\% \) — the probe buys a factor ~10, as its name promises.
+      At 10 MHz, resistances are irrelevant: the ~12 pF probe tip capacitance has \( |Z_C| = \frac{1}{2\pi \cdot 10^7 \cdot 12\cdot 10^{-12}} \approx 1.3\,\mathrm{k\Omega} \) — it, not the 10 MΩ, loads the 100 kΩ source (error &gt; 98 %!). High-impedance + high-frequency nodes need active (FET) probes with sub-pF tips.
+    </div>
+  </details>
+</div>
+
+<div class="exercise">
+  <p class="ex-q"><span class="ex-num">E5</span>A 1.25 MHz sine is sampled at 1 MS/s (scope in a slow timebase). What frequency appears on screen? How do you unmask such an alias in practice? <span class="diff med">medium</span></p>
+  <details><summary>Show solution</summary>
+    <div class="solution">
+      Aliases appear at \(|f - k f_s|\): with \(k = 1\), \(|1.25 - 1.00| = 0.25\,\mathrm{MHz}\). The screen shows a clean, stable 250 kHz sine — plausible and wrong.
+      Unmasking: change the timebase (hence \(f_s\)) — a real signal keeps its frequency, an alias jumps (at 2 MS/s the signal would display correctly at 1.25 MHz; at 1.2 MS/s the alias moves to 50 kHz). Alternatively check with the scope's frequency counter (which uses the trigger hardware, not the samples) or switch on peak-detect/high-res acquisition. Nyquist (Module 12): you needed \(f_s > 2.5\) MS/s from the start.
+    </div>
+  </details>
+</div>
+
+<div class="exercise">
+  <p class="ex-q"><span class="ex-num">E6</span>Derive the break-even resistance \(R_{\text{limit}} = \sqrt{R_A R_V}\) between the two U-I measuring circuits by equating their relative errors. Evaluate for \(R_A = 0.5\,\Omega\), \(R_V = 10\,\mathrm{M\Omega}\). <span class="diff hard">challenge</span></p>
+  <details><summary>Show solution</summary>
+    <div class="solution">
+      Voltage-error circuit: \( R_{\text{meas}} = R + R_A \) → relative error \( e_U = +R_A/R \) (decreases with R).<br>
+      Current-error circuit: \( R_{\text{meas}} = \frac{R R_V}{R + R_V} = R\frac{1}{1 + R/R_V} \approx R(1 - R/R_V) \) → \( e_I \approx -R/R_V \) (magnitude grows with R).<br>
+      Equal magnitudes: \( \frac{R_A}{R} = \frac{R}{R_V} \Rightarrow R^2 = R_A R_V \Rightarrow \boxed{R_{\text{limit}} = \sqrt{R_A R_V}} \).
+      Numbers: \( \sqrt{0.5 \cdot 10^7} = \sqrt{5 \cdot 10^6} \approx 2.24\,\mathrm{k\Omega} \).
+      Sanity check: it is the <em>geometric</em> mean — dimensionally the only combination of two resistances yielding a resistance, and symmetric in the two error mechanisms. Below it, the voltmeter's stolen current is the lesser evil; above it, the ammeter's drop is.
+    </div>
+  </details>
+</div>
+
+<div class="exercise">
+  <p class="ex-q"><span class="ex-num">E7</span>Show that the quarter-bridge output is exactly \( U_d = \frac{U_0}{4}\,\frac{\delta}{1 + \delta/2} \) with \(\delta = \Delta R/R\), and quantify the linearity error of the approximation \(U_d \approx \frac{U_0}{4}\delta\) at \(\delta = 1\,\%\) and at the PT100 example's \(\delta = 19.4\,\%\). Why does a half bridge with two opposite-sign arms not have this problem? <span class="diff hard">challenge</span></p>
+  <details><summary>Show solution</summary>
+    <div class="solution">
+      \( U_d = U_0\!\left( \frac{R(1+\delta)}{R + R(1+\delta)} - \frac12 \right) = U_0\,\frac{2(1+\delta) - (2+\delta)}{2(2+\delta)} = U_0\,\frac{\delta}{2(2+\delta)} = \frac{U_0}{4}\cdot\frac{\delta}{1 + \delta/2}. \)<br>
+      Relative linearity error of the linear formula: \( \frac{1}{1+\delta/2} - 1 \approx -\delta/2 \). At \(\delta = 1\,\%\): −0.5 % of the reading — already visible in a 12-bit system. At \(\delta = 0.194\) (PT100 at 50 °C): \( -\frac{0.097}{1.097} \approx -8.8\,\% \) — matching the 9 % discrepancy found in the worked example.<br>
+      Half bridge with \(R(1+\delta)\) and \(R(1-\delta)\) in one divider: \( \varphi = U_0 \frac{R(1+\delta)}{R(1+\delta) + R(1-\delta)} = U_0\frac{1+\delta}{2} \) — the \(\delta\) in the denominator cancels, so \(U_d = \frac{U_0}{2}\delta\) is <em>exact</em>. That is why load cells always use gauges in tension <em>and</em> compression: double sensitivity and perfect linearity for free.
+    </div>
+  </details>
+</div>
+
+<h2 id="quiz">13. Self-assessment</h2>
+
+<div class="quiz" data-quiz-title="Module 15 — Self-test">
+<script type="application/json">
+[
+ {"q":"Since the 2019 SI redefinition, the volt is realized in national labs via…",
+  "opts":["a bank of aged chemical standard cells","the Josephson effect: junctions locked to a microwave frequency through \\(K_J = 2e/h\\)","the force between two parallel current-carrying wires","comparison with the platinum-iridium kilogram"],"a":1,
+  "explain":"Josephson junctions produce voltage steps \\(U = n f / K_J\\) with \\(K_J = 2e/h\\) exact since 2019. Voltage measurement becomes frequency measurement — the quantity we measure best. The ohm analogously comes from the quantum Hall effect (\\(R_K = h/e^2\\))."},
+ {"q":"A series of repeated readings is tightly clustered but far from the true value. The measurement is…",
+  "opts":["precise but not accurate — a systematic error dominates","accurate but not precise — a random error dominates","both accurate and precise","high-resolution and therefore accurate"],"a":0,
+  "explain":"Tight cluster = high precision (small random scatter); offset from truth = poor accuracy (systematic error). Averaging will not help — the bias must be found and corrected (calibration). Resolution says nothing about either."},
+ {"q":"A 12-bit ADC spans 0–3.3 V. One LSB is about…",
+  "opts":["0.81 mV","1.6 mV","3.3 mV","0.4 mV"],"a":0,
+  "explain":"\\(U_{LSB} = 3.3/2^{12} = 3.3/4096 \\approx 0.81\\,\\mathrm{mV}\\). Each additional bit halves the step and adds ≈ 6 dB of ideal SNR."},
+ {"q":"You measure a resistance of roughly 1 MΩ with a voltmeter (10 MΩ) and ammeter (0.5 Ω). Which circuit?",
+  "opts":["Stromfehlerschaltung — voltmeter directly across R","Spannungsfehlerschaltung — ammeter directly in series with R","either; the errors are identical","neither; 1 MΩ cannot be measured this way"],"a":1,
+  "explain":"Break-even is \\(\\sqrt{R_A R_V} \\approx 2.2\\,\\mathrm{k\\Omega}\\). Far above it, the ammeter's 0.5 Ω is negligible (+0.00005 %) while the voltmeter would steal 9 % of the current — so use the voltage-error circuit, where the voltmeter sees R plus only the tiny ammeter drop."},
+ {"q":"P = U·I with relative uncertainties 1 % (U) and 2 % (I). The relative uncertainty of P is…",
+  "opts":["3 %","2.2 %","1.5 %","2 %"],"a":1,
+  "explain":"For products, relative uncertainties add in quadrature: \\(\\sqrt{1^2 + 2^2} = \\sqrt5 \\approx 2.24\\,\\%\\). Quadrature (not plain addition) because independent errors partially cancel; note the larger contribution dominates strongly."},
+ {"q":"A Wheatstone bridge (arms R₁, R₂ on top, R₃ under R₁, R₄ under R₂) is balanced when…",
+  "opts":["R₁R₄ = R₂R₃","R₁R₂ = R₃R₄","R₁ + R₃ = R₂ + R₄","all four resistors are equal"],"a":0,
+  "explain":"Balance means both dividers tap the same fraction: \\(R_3/(R_1+R_3) = R_4/(R_2+R_4)\\), i.e. \\(R_1 R_4 = R_2 R_3\\). Equal resistors satisfy it but are not necessary. The supply voltage does not appear — the great virtue of null methods."},
+ {"q":"An average-responding 'RMS-calibrated' multimeter measures a ±5 V square wave. It displays…",
+  "opts":["5.00 V (correct)","5.55 V — 11 % high","4.50 V — 10 % low","3.54 V"],"a":1,
+  "explain":"It shows 1.111 × rectified mean = 1.111 × 5 = 5.55 V, but the true RMS of a square wave equals its amplitude, 5 V. The 1.111 factor is the sine form factor baked into the meter — wrong for every other waveform. Only true-RMS meters compute \\(\\sqrt{\\overline{u^2}}\\)."},
+ {"q":"Bench multimeters use dual-slope (integrating) ADCs mainly because…",
+  "opts":["they are the fastest converter type","integrating over one mains period (20 ms at 50 Hz) makes hum average to zero","they need no voltage reference","they have the most bits of any architecture"],"a":1,
+  "explain":"With fixed integration time t₁ = one (or several) mains periods, any 50 Hz interference integrates to exactly zero — normal-mode rejection for free. R and C of the integrator cancel in \\(V_{in} = V_{ref} t_2/t_1\\); the price is slowness (a few readings/s)."},
+ {"q":"The rise time a 100 MHz scope shows for an ideal (infinitely fast) step is about…",
+  "opts":["3.5 ns","0.35 ns","10 ns","35 ns"],"a":0,
+  "explain":"\\(t_r \\approx 0.35/B = 0.35/10^8 = 3.5\\,\\mathrm{ns}\\) — the scope's own response. Measured rise times combine in quadrature, so for accurate edge measurements the scope+probe must be several times faster than the signal."},
+ {"q":"On a mains-powered scope you clip the probe's ground lead to a node sitting 30 V above earth. What happens?",
+  "opts":["nothing — the scope input is high-impedance","the node is shorted to protective earth through the ground lead — sparks and possible damage","the reading is simply offset by 30 V","the scope automatically becomes a differential meter"],"a":1,
+  "explain":"The ground clip is hard-wired to the chassis and protective earth, not to a measuring input. Clipping it to a live node creates a low-impedance short through the probe. For floating measurements: measure two channels against ground and subtract, or use a differential probe — and never defeat the scope's earth connection."}
+]
+</script>
+</div>
+
+<script>
+document.addEventListener("ee-ready", () => {
+
+  /* --- Widget 1: voltmeter loading error --- */
+  EE.functionPlot({
+    mount: "#w-loading", height: 300,
+    x: { min: 1, max: 1000, log: true, label: "R_V / R_i (log)" },
+    y: { min: 0, max: 110, label: "percent" },
+    params: [
+      { key: "Ri", label: "Source resistance R_i", min: 1, max: 1000, step: 1, value: 100, unit: "kΩ", fmt: v => v.toFixed(0) },
+      { key: "Rv", label: "Voltmeter input R_V", min: 0.1, max: 20, step: 0.1, value: 10, unit: "MΩ", fmt: v => v.toFixed(1) },
+      { key: "U0", label: "True (Thévenin) voltage U₀", min: 1, max: 10, step: 0.5, value: 5, unit: "V", fmt: v => v.toFixed(1) }
+    ],
+    curves: [
+      { label: "indicated, % of true", color: 0, fn: r => 100 * r / (1 + r) },
+      { label: "relative error, %", color: 5, dash: [6, 4], fn: r => 100 / (1 + r) }
+    ],
+    annotations: p => {
+      const r = (p.Rv * 1e6) / (p.Ri * 1e3);
+      if (r < 1 || r > 1000) return [];
+      return [
+        { type: "vline", x: r },
+        { type: "point", x: r, y: 100 * r / (1 + r), label: "your meter" }
+      ];
+    },
+    readouts: [
+      { label: "Ratio R_V/R_i", fn: p => EE.fmt((p.Rv * 1e6) / (p.Ri * 1e3)) },
+      { label: "Indicated voltage", fn: p => { const r = (p.Rv * 1e6) / (p.Ri * 1e3); return EE.si(p.U0 * r / (1 + r), "V"); } },
+      { label: "Relative error", fn: p => { const r = (p.Rv * 1e6) / (p.Ri * 1e3); return "−" + (100 / (1 + r)).toFixed(2) + " %"; } }
+    ]
+  });
+
+  /* --- Widget 2: Wheatstone bridge (custom drawing) --- */
+  EE.custom({
+    mount: "#w-bridge", height: 330,
+    params: [
+      { key: "R1", label: "R₁ (top left)", min: 100, max: 600, step: 1, value: 350, unit: "Ω", fmt: v => v.toFixed(0) },
+      { key: "R2", label: "R₂ (top right)", min: 100, max: 600, step: 1, value: 350, unit: "Ω", fmt: v => v.toFixed(0) },
+      { key: "R4", label: "R₄ (bottom right)", min: 100, max: 600, step: 1, value: 350, unit: "Ω", fmt: v => v.toFixed(0) },
+      { key: "dR", label: "ΔR of gauge arm R₃ = 350 Ω + ΔR", min: -5, max: 5, step: 0.05, value: 0.35, unit: "Ω", fmt: v => v.toFixed(2) },
+      { key: "U0", label: "Supply U₀", min: 1, max: 10, step: 0.5, value: 5, unit: "V", fmt: v => v.toFixed(1) }
+    ],
+    readouts: [
+      { label: "R₃", fn: p => (350 + p.dR).toFixed(2) + " Ω" },
+      { label: "Bridge voltage U_d", fn: p => {
+          const R3 = 350 + p.dR;
+          return EE.si(p.U0 * (R3 / (p.R1 + R3) - p.R4 / (p.R2 + p.R4)), "V");
+        } },
+      { label: "Quarter-bridge approx (U₀/4)(ΔR/R)", fn: p => EE.si(p.U0 / 4 * p.dR / 350, "V") },
+      { label: "Balance condition R₁R₄ − R₂R₃", fn: p => EE.si(p.R1 * p.R4 - p.R2 * (350 + p.dR), "Ω²") }
+    ],
+    draw: (ctx, w, h, p, hp) => {
+      const k = hp.ink;
+      const R3 = 350 + p.dR;
+      const Ud = p.U0 * (R3 / (p.R1 + R3) - p.R4 / (p.R2 + p.R4));
+      const cx = Math.max(250, w / 2), top = 30, bot = h - 44, cy = (top + bot) / 2;
+      const A = [cx, top], B = [cx, bot], C = [cx - 140, cy], D = [cx + 140, cy];
+      const railX = cx - 220;
+
+      ctx.lineWidth = 1.8; ctx.strokeStyle = k.muted; ctx.font = "12.5px system-ui, sans-serif";
+
+      /* supply rail + source */
+      ctx.beginPath();
+      ctx.moveTo(A[0], A[1]); ctx.lineTo(railX, A[1]); ctx.lineTo(railX, cy - 20);
+      ctx.moveTo(railX, cy + 20); ctx.lineTo(railX, B[1]); ctx.lineTo(B[0], B[1]);
+      ctx.stroke();
+      ctx.beginPath(); ctx.arc(railX, cy, 20, 0, 7); ctx.stroke();
+      ctx.beginPath(); ctx.moveTo(railX, cy - 20); ctx.lineTo(railX, cy + 20); ctx.stroke();
+      ctx.fillStyle = k.primary; ctx.textAlign = "center"; ctx.textBaseline = "top";
+      ctx.fillText("U₀ = " + p.U0.toFixed(1) + " V", railX, cy + 26);
+
+      /* one bridge arm: wire + rotated box + label */
+      function arm(P1, P2, name, val, active) {
+        const mx = (P1[0] + P2[0]) / 2, my = (P1[1] + P2[1]) / 2;
+        const ang = Math.atan2(P2[1] - P1[1], P2[0] - P1[0]);
+        ctx.strokeStyle = k.muted;
+        ctx.beginPath(); ctx.moveTo(P1[0], P1[1]); ctx.lineTo(P2[0], P2[1]); ctx.stroke();
+        ctx.save();
+        ctx.translate(mx, my); ctx.rotate(ang);
+        ctx.fillStyle = k.surface;
+        ctx.fillRect(-27, -10, 54, 20);
+        ctx.strokeStyle = active ? hp.color(2) : k.muted;
+        ctx.strokeRect(-27, -10, 54, 20);
+        ctx.restore();
+        /* label offset perpendicular to the arm, pointing away from center */
+        let nx = -(P2[1] - P1[1]), ny = P2[0] - P1[0];
+        const nl = Math.hypot(nx, ny) || 1;
+        nx /= nl; ny /= nl;
+        if (nx * (mx - cx) + ny * (my - cy) < 0) { nx = -nx; ny = -ny; }
+        const lx = mx + nx * 34, ly = my + ny * 34;
+        ctx.fillStyle = k.primary; ctx.textAlign = "center"; ctx.textBaseline = "middle";
+        ctx.fillText(name, lx, ly - 8);
+        ctx.fillStyle = k.muted;
+        ctx.fillText(val, lx, ly + 8);
+      }
+      arm(A, C, "R₁", p.R1.toFixed(0) + " Ω", false);
+      arm(A, D, "R₂", p.R2.toFixed(0) + " Ω", false);
+      arm(C, B, "R₃", R3.toFixed(2) + " Ω", true);
+      arm(D, B, "R₄", p.R4.toFixed(0) + " Ω", false);
+
+      /* nodes */
+      ctx.fillStyle = k.primary;
+      for (const N of [A, B, C, D]) { ctx.beginPath(); ctx.arc(N[0], N[1], 3.5, 0, 7); ctx.fill(); }
+
+      /* bridge meter between C and D */
+      ctx.strokeStyle = k.muted;
+      ctx.beginPath(); ctx.moveTo(C[0], C[1]); ctx.lineTo(cx - 22, cy); ctx.moveTo(cx + 22, cy); ctx.lineTo(D[0], D[1]); ctx.stroke();
+      const balanced = Math.abs(Ud) < 0.5e-3;
+      const mcol = balanced ? hp.color(3) : hp.color(0);
+      ctx.strokeStyle = mcol; ctx.lineWidth = 2;
+      ctx.beginPath(); ctx.arc(cx, cy, 22, 0, 7); ctx.stroke();
+      /* needle: deflection proportional to Ud, clamped */
+      const defl = Math.max(-1, Math.min(1, Ud / 0.05));
+      const na = -Math.PI / 2 + defl * 1.0;
+      ctx.beginPath(); ctx.moveTo(cx, cy + 6); ctx.lineTo(cx + 17 * Math.cos(na), cy + 6 + 17 * Math.sin(na)); ctx.stroke();
+      ctx.fillStyle = mcol; ctx.textAlign = "center"; ctx.textBaseline = "top";
+      ctx.font = "600 13px system-ui, sans-serif";
+      ctx.fillText("U_d = " + hp.si(Ud, "V"), cx, cy + 30);
+
+      /* balance pill */
+      ctx.font = "700 12px system-ui, sans-serif";
+      const label = balanced ? "BALANCED" : "UNBALANCED";
+      const pw = ctx.measureText(label).width + 20;
+      const px = w - pw - 12, py = 12;
+      ctx.fillStyle = balanced ? hp.color(3) : hp.color(2);
+      ctx.globalAlpha = 0.15; ctx.beginPath(); ctx.roundRect(px, py, pw, 22, 11); ctx.fill(); ctx.globalAlpha = 1;
+      ctx.textAlign = "center"; ctx.textBaseline = "middle";
+      ctx.fillText(label, px + pw / 2, py + 11);
+
+      /* node names */
+      ctx.fillStyle = k.muted; ctx.font = "12px system-ui, sans-serif";
+      ctx.textAlign = "center";
+      ctx.fillText("A", A[0] + 14, A[1] - 6);
+      ctx.fillText("B", B[0] + 14, B[1] + 12);
+      ctx.fillText("C", C[0] - 12, C[1] - 12);
+      ctx.fillText("D", D[0] + 12, D[1] - 12);
+    }
+  });
+
+  /* --- Widget 3: rectified mean vs true RMS --- */
+  const WAVE = {
+    sine:     { fn: (ph, A) => A * Math.sin(2 * Math.PI * ph), rms: A => A * Math.SQRT1_2, rect: A => A * 2 / Math.PI },
+    square:   { fn: (ph, A) => (ph % 1) < 0.5 ? A : -A, rms: A => A, rect: A => A },
+    triangle: { fn: (ph, A) => A * (1 - 4 * Math.abs((ph % 1) - 0.5)), rms: A => A / Math.sqrt(3), rect: A => A / 2 },
+    pulse:    { fn: (ph, A) => (ph % 1) < 0.1 ? A : -A / 9, rms: A => A / 3, rect: A => 0.2 * A }
+  };
+  EE.functionPlot({
+    mount: "#w-rms", height: 300,
+    x: { min: 0, max: 40, label: "t in ms (period 20 ms)" },
+    y: p => ({ min: -1.25 * p.A, max: 1.25 * p.A, label: "u in V" }),
+    params: [
+      { key: "wave", label: "Waveform", type: "select", value: "sine",
+        options: [ { label: "Sine", value: "sine" }, { label: "Square", value: "square" },
+                   { label: "Triangle", value: "triangle" }, { label: "Pulse 10 %", value: "pulse" } ] },
+      { key: "A", label: "Amplitude û", min: 1, max: 10, step: 0.5, value: 5, unit: "V", fmt: v => v.toFixed(1) }
+    ],
+    curves: [
+      { label: "u(t)", color: 0, fn: (t, p) => WAVE[p.wave].fn(t / 20, p.A) }
+    ],
+    annotations: p => {
+      const rms = WAVE[p.wave].rms(p.A), meter = 1.1107 * WAVE[p.wave].rect(p.A);
+      if (Math.abs(rms - meter) < 0.005 * p.A)  /* sine: lines coincide */
+        return [
+          { type: "hline", y: rms },
+          { type: "point", x: 12, y: rms, label: "true RMS = meter reading = " + rms.toFixed(2) + " V" }
+        ];
+      return [
+        { type: "hline", y: rms },
+        { type: "point", x: 12, y: rms, label: "true RMS = " + rms.toFixed(2) + " V" },
+        { type: "hline", y: meter },
+        { type: "point", x: 30.5, y: meter, label: "avg meter = " + meter.toFixed(2) + " V" }
+      ];
+    },
+    readouts: [
+      { label: "True RMS", fn: p => WAVE[p.wave].rms(p.A).toFixed(3) + " V" },
+      { label: "Rectified mean", fn: p => WAVE[p.wave].rect(p.A).toFixed(3) + " V" },
+      { label: "Cheap meter shows", fn: p => (1.1107 * WAVE[p.wave].rect(p.A)).toFixed(3) + " V" },
+      { label: "Meter error", fn: p => {
+          const e = 100 * (1.1107 * WAVE[p.wave].rect(p.A) / WAVE[p.wave].rms(p.A) - 1);
+          return (e >= 0 ? "+" : "") + e.toFixed(1) + " %";
+        } }
+    ]
+  });
+
+  /* --- Widget 4: ADC staircase --- */
+  EE.functionPlot({
+    mount: "#w-adc", height: 300,
+    x: { min: 0, max: 8, label: "input voltage V_in in V" },
+    y: { min: 0, max: 8.4, label: "reconstructed output in V" },
+    params: [
+      { key: "N", label: "Resolution N", min: 2, max: 8, step: 1, value: 4, unit: "bit", fmt: v => v.toFixed(0) },
+      { key: "Vin", label: "Input V_in", min: 0, max: 8, step: 0.01, value: 5.3, unit: "V", fmt: v => v.toFixed(2) }
+    ],
+    curves: [
+      { label: "ideal (∞ bits)", color: 2, dash: [5, 5], fn: x => x },
+      { label: "quantized", color: 0, fn: (x, p) => {
+          const lsb = 8 / Math.pow(2, p.N);
+          return Math.min(Math.pow(2, p.N) - 1, Math.floor(x / lsb)) * lsb;
+        } }
+    ],
+    annotations: p => {
+      const lsb = 8 / Math.pow(2, p.N);
+      const code = Math.min(Math.pow(2, p.N) - 1, Math.floor(p.Vin / lsb));
+      return [ { type: "point", x: p.Vin, y: code * lsb, label: "code " + code } ];
+    },
+    readouts: [
+      { label: "LSB = 8 V / 2^N", fn: p => EE.si(8 / Math.pow(2, p.N), "V") },
+      { label: "Output code", fn: p => {
+          const lsb = 8 / Math.pow(2, p.N);
+          const code = Math.min(Math.pow(2, p.N) - 1, Math.floor(p.Vin / lsb));
+          return code + "  (0b" + code.toString(2).padStart(p.N, "0") + ")";
+        } },
+      { label: "Quantization error", fn: p => {
+          const lsb = 8 / Math.pow(2, p.N);
+          const code = Math.min(Math.pow(2, p.N) - 1, Math.floor(p.Vin / lsb));
+          return EE.si(p.Vin - code * lsb, "V");
+        } },
+      { label: "Ideal SNR (full-scale sine)", fn: p => (6.02 * p.N + 1.76).toFixed(1) + " dB" }
+    ]
+  });
+});
+</script>
+
+</article>
+</main>
+</div>
+</body>
+</html>

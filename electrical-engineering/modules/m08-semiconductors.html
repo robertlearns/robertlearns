@@ -1,0 +1,982 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>M08 · Semiconductor Devices — EE Knowledge Base</title>
+<link rel="stylesheet" href="../../assets/vendor/katex/katex.min.css">
+<link rel="stylesheet" href="../../assets/css/style.css">
+<script src="../../assets/vendor/katex/katex.min.js" defer></script>
+<script src="../../assets/vendor/katex/auto-render.min.js" defer></script>
+<script src="../curriculum.js" defer></script>
+<script src="../../assets/js/app.js" defer></script>
+<script src="../../assets/js/widgets.js" defer></script>
+</head>
+<body data-module="m08">
+<div class="layout">
+<main class="content">
+<article class="article">
+
+<span class="eyebrow">🔬 Electronics · Module 08</span>
+<h1>Semiconductor Devices <span class="muted" style="font-weight:400;font-size:1.4rem">· <span class="de">Halbleiterbauelemente</span></span></h1>
+<p class="lead">Every resistor obeys \(U = RI\); a diode does not — and that disobedience built the modern world. This module explains how a pinch of phosphorus turns near-insulating silicon into a material we command at will, how two such regions in contact create a one-way valve for current, and how three of them create the transistor: the most manufactured object in human history, at roughly 10<sup>22</sup> units and counting.</p>
+
+<div class="page-meta">
+  <span><b>Corresponds to:</b> Werkstoffe der Elektrotechnik / Halbleiterbauelemente (3rd–4th semester)</span>
+  <span><b>Prerequisites:</b> Modules 04, 07</span>
+  <span><b>Study time:</b> ≈ 6–8 h</span>
+</div>
+
+<h2 id="bands">1. Energy bands — why copper conducts and glass does not</h2>
+
+<p>Module 04 treated resistance as a given material property. Now we ask the deeper question: <em>what decides</em> whether a material conducts at all? The answer is quantum mechanics, but the working picture is simple enough to draw.</p>
+
+<p>In an isolated atom, electrons occupy discrete energy levels. Bring \(N \sim 10^{23}\) atoms together into a crystal and the Pauli exclusion principle forbids them all from sharing identical states: each atomic level splits into \(N\) closely spaced levels — an effectively continuous <strong>energy band</strong> (<span class="de">Energieband</span>). Between bands lie forbidden ranges of energy: <strong>band gaps</strong> (<span class="de">Bandlücken</span>). Two bands matter for conduction:</p>
+<ul>
+  <li>The <strong>valence band</strong> (<span class="de">Valenzband</span>): the highest band that is (nearly) full at low temperature — these electrons form the chemical bonds.</li>
+  <li>The <strong>conduction band</strong> (<span class="de">Leitungsband</span>): the next band up — electrons here are detached from any particular bond and can move freely through the crystal.</li>
+</ul>
+
+<div class="box key">
+  <div class="box-title"><span class="ic">🔑</span>Key idea: a full band carries no current</div>
+  <p>Conduction requires electrons that can <em>change state</em> — accelerate, i.e. move to a neighboring energy level. In a completely full band there are no empty states to move into, so a full valence band contributes exactly zero current, no matter how many electrons it contains. Conduction needs either a <em>partially filled</em> band, or electrons lifted into the (empty) conduction band.</p>
+</div>
+
+<div class="box intuition">
+  <div class="box-title"><span class="ic">💡</span>Intuition: the parking garage</div>
+  <p>A completely full parking deck allows no car to move — bumper to bumper, zero traffic, even though it holds hundreds of cars. A completely empty deck also has zero traffic — no cars. Traffic needs cars <em>and</em> free spaces. Lift one car to the empty upper deck (conduction band): it drives freely. And on the full lower deck, the gap it left behind can now be filled by a neighbor, whose spot is filled by the next neighbor… the <em>empty space</em> migrates like a positive particle. Hold that thought — it becomes the "hole" in Section 2.</p>
+</div>
+
+<p>The three classes of solids now follow from one number, the gap width \(E_g\), compared with the available thermal energy \(kT \approx 25.9\,\mathrm{meV}\) at 300 K:</p>
+<ul>
+  <li><strong>Metal</strong> (<span class="de">Leiter</span>): valence and conduction bands overlap (or the top band is half-full). Free electrons in abundance (\(\sim 10^{23}\,\mathrm{cm^{-3}}\)) at any temperature.</li>
+  <li><strong>Insulator</strong> (<span class="de">Isolator</span>): huge gap — quartz glass (SiO₂) has \(E_g \approx 9\,\mathrm{eV}\), some 350 times \(kT\). Thermal excitation across it is hopeless; essentially zero carriers.</li>
+  <li><strong>Semiconductor</strong> (<span class="de">Halbleiter</span>): a <em>small</em> gap — silicon has \(E_g = 1.12\,\mathrm{eV}\). Still ≫ \(kT\), so very few electrons make the jump… but not <em>none</em>, and the number responds violently to temperature, light, and — decisively — to impurities.</li>
+</ul>
+
+<figure>
+  <div class="fig-frame">
+  <svg class="diagram" viewBox="0 0 660 270" role="img" aria-label="Band diagrams of metal, semiconductor and insulator">
+    <!-- energy axis -->
+    <line x1="34" y1="235" x2="34" y2="30" stroke="var(--text-soft)" stroke-width="1.6" marker-end="url(#arrBand)"/>
+    <text x="22" y="24" font-size="13" fill="var(--text-soft)">E</text>
+    <!-- METAL -->
+    <rect x="80" y="120" width="130" height="90" fill="var(--accent)" opacity="0.28"/>
+    <rect x="80" y="120" width="130" height="90" fill="none" stroke="var(--text-soft)" stroke-width="1.6"/>
+    <rect x="80" y="70" width="130" height="80" fill="none" stroke="var(--text-soft)" stroke-width="1.6" stroke-dasharray="5 4"/>
+    <text x="145" y="245" text-anchor="middle" font-size="14" font-weight="700">metal</text>
+    <text x="145" y="62" text-anchor="middle" font-size="12" fill="var(--text-soft)">bands overlap</text>
+    <!-- SEMICONDUCTOR -->
+    <rect x="270" y="160" width="130" height="55" fill="var(--accent)" opacity="0.28"/>
+    <rect x="270" y="160" width="130" height="55" fill="none" stroke="var(--text-soft)" stroke-width="1.6"/>
+    <text x="335" y="152" text-anchor="end" font-size="0"></text>
+    <rect x="270" y="75" width="130" height="45" fill="none" stroke="var(--text-soft)" stroke-width="1.6"/>
+    <circle cx="300" cy="100" r="4" fill="var(--accent-2)"/>
+    <circle cx="345" cy="106" r="4" fill="var(--accent-2)"/>
+    <circle cx="316" cy="176" r="4.5" fill="none" stroke="var(--accent-2)" stroke-width="1.8"/>
+    <line x1="416" y1="120" x2="416" y2="160" stroke="var(--accent)" stroke-width="1.8" marker-start="url(#arrBand2a)" marker-end="url(#arrBand2b)"/>
+    <text x="424" y="144" font-size="12" fill="var(--accent)">E𝗀 ≈ 1.1 eV</text>
+    <text x="335" y="245" text-anchor="middle" font-size="14" font-weight="700">semiconductor (Si)</text>
+    <text x="335" y="68" text-anchor="middle" font-size="12" fill="var(--text-soft)">a few electrons up</text>
+    <!-- INSULATOR -->
+    <rect x="520" y="185" width="120" height="35" fill="var(--accent)" opacity="0.28"/>
+    <rect x="520" y="185" width="120" height="35" fill="none" stroke="var(--text-soft)" stroke-width="1.6"/>
+    <rect x="520" y="35" width="120" height="35" fill="none" stroke="var(--text-soft)" stroke-width="1.6"/>
+    <line x1="580" y1="80" x2="580" y2="178" stroke="var(--accent)" stroke-width="1.8" stroke-dasharray="4 4"/>
+    <text x="590" y="132" font-size="12" fill="var(--accent)">E𝗀 ≈ 9 eV</text>
+    <text x="580" y="245" text-anchor="middle" font-size="14" font-weight="700">insulator (SiO₂)</text>
+    <!-- shared labels -->
+    <text x="256" y="188" text-anchor="end" font-size="12" fill="var(--text-soft)">valence band</text>
+    <text x="256" y="100" text-anchor="end" font-size="12" fill="var(--text-soft)">conduction band</text>
+    <defs>
+      <marker id="arrBand" markerWidth="9" markerHeight="9" refX="4.5" refY="7" orient="auto"><path d="M0 8 L4.5 0 L9 8 z" fill="var(--text-soft)"/></marker>
+      <marker id="arrBand2a" markerWidth="8" markerHeight="8" refX="4" refY="1" orient="auto"><path d="M0 7 L4 0 L8 7 z" fill="var(--accent)"/></marker>
+      <marker id="arrBand2b" markerWidth="8" markerHeight="8" refX="4" refY="7" orient="auto"><path d="M0 0 L4 7 L8 0 z" fill="var(--accent)"/></marker>
+    </defs>
+  </svg>
+  </div>
+  <figcaption><b>Fig. 1.1</b> — Band picture of the three material classes. Shaded = filled with electrons. In the semiconductor, thermal energy lifts a few electrons across the modest gap, leaving mobile holes (open circle) behind. In SiO₂ the gap is unbridgeable — which is precisely why it will serve as the perfect gate insulator in Section 10.</figcaption>
+</figure>
+
+<div class="table-wrap">
+<table class="data">
+<thead><tr><th>Material</th><th>\(E_g\) at 300 K</th><th>Type</th><th>Used for</th></tr></thead>
+<tbody>
+<tr><td>Germanium (Ge)</td><td>0.67 eV</td><td>indirect</td><td>the first transistors (1947); today: photodiodes, SiGe HF</td></tr>
+<tr><td>Silicon (Si)</td><td>1.12 eV</td><td>indirect</td><td>~95 % of all electronics</td></tr>
+<tr><td>Gallium arsenide (GaAs)</td><td>1.42 eV</td><td>direct</td><td>IR LEDs, lasers, microwave circuits</td></tr>
+<tr><td>Silicon carbide (SiC)</td><td>3.26 eV</td><td>indirect</td><td>high-voltage power devices (Module 18)</td></tr>
+<tr><td>Gallium nitride (GaN)</td><td>3.39 eV</td><td>direct</td><td>blue/white LEDs, fast chargers</td></tr>
+<tr><td>Diamond (C)</td><td>5.47 eV</td><td>indirect</td><td>research; "ultimate" power semiconductor</td></tr>
+</tbody>
+</table>
+</div>
+
+<h2 id="silicon">2. Silicon and intrinsic conduction</h2>
+
+<h3 id="crystal">2.1 The crystal</h3>
+<p>Silicon sits in group IV of the periodic table: four valence electrons. In the crystal (diamond lattice), each atom bonds <strong>covalently</strong> (<span class="de">kovalente Bindung</span>) to four neighbors, sharing one electron pair per bond. Every valence electron is spoken for: the valence band is exactly full, the conduction band exactly empty at \(T = 0\). Perfect cold silicon is an insulator. The atomic density is worth memorizing as a reference point:</p>
+\[ n_{\mathrm{Si}} \approx 5 \cdot 10^{22}\ \mathrm{atoms/cm^3}. \]
+
+<h3 id="intrinsic">2.2 Electron–hole pairs</h3>
+<p>At room temperature, lattice vibrations occasionally concentrate enough energy (\(\ge E_g\)) on one bond to break it. The freed electron enters the conduction band; the broken bond it leaves behind is a <strong>hole</strong> (<span class="de">Loch, Defektelektron</span>) — an empty state in the valence band. A neighboring bound electron can hop into the hole, moving the hole one site over: the hole migrates through the crystal like a <em>positive</em> mobile charge (\(+e\)), exactly like the empty parking spot. Both carrier types conduct; this is <strong>intrinsic conduction</strong> (<span class="de">Eigenleitung</span>), and generation is balanced by <strong>recombination</strong> (<span class="de">Rekombination</span>) — an electron falling back into a hole, annihilating both.</p>
+
+<p>The equilibrium <strong>intrinsic carrier density</strong> (<span class="de">Eigenleitungsdichte</span>) follows a Boltzmann-type law:</p>
+\[ n_i(T) \;\propto\; T^{3/2}\, e^{-E_g / 2kT}, \qquad n_i(300\,\mathrm{K}) \approx 10^{10}\ \mathrm{cm^{-3}} \ \text{for Si}. \]
+<p>Put that in perspective: one carrier pair per \(5 \cdot 10^{12}\) atoms. Intrinsic silicon has a resistivity of about \(2.3 \cdot 10^{5}\,\Omega\,\mathrm{cm}\) — closer to glass than to copper. And because of the exponential, \(n_i\) roughly <strong>doubles every 9 K</strong> near room temperature. That thermal sensitivity haunts every semiconductor device: leakage currents double per ~10 K, and it is why power transistors carry heatsinks.</p>
+
+<h2 id="doping">3. Doping — the trick that built an industry</h2>
+
+<p>Here is the pivotal idea of the entire module. Replace one silicon atom in ten million with a <strong>group-V atom</strong> — phosphorus or arsenic, five valence electrons. Four electrons slot into the four covalent bonds; the fifth has no bond to join. It stays only weakly bound to its atom (~45 meV, easily freed by \(kT\)), so at room temperature essentially every such atom has <strong>donated</strong> one electron to the conduction band. Group-V dopants are therefore <strong>donors</strong> (<span class="de">Donatoren</span>), and the result is <strong>n-type</strong> silicon (n for the negative carriers).</p>
+
+<p>Symmetrically, a <strong>group-III atom</strong> (boron: three valence electrons) leaves one bond unsaturated — a ready-made hole that detaches at room temperature. Group-III dopants <strong>accept</strong> an electron from the valence band: <strong>acceptors</strong> (<span class="de">Akzeptoren</span>), producing <strong>p-type</strong> silicon.</p>
+
+<p>With donor density \(N_D \gg n_i\) (typical: \(10^{14}\)…\(10^{20}\,\mathrm{cm^{-3}}\)), the electron density is simply \(n \approx N_D\) — set by the <em>chemist</em>, not by temperature. The carriers supplied by doping are the <strong>majority carriers</strong> (<span class="de">Majoritätsträger</span>). The opposite kind still exists in tiny numbers — the <strong>minority carriers</strong> (<span class="de">Minoritätsträger</span>) — governed in equilibrium by the elegant <strong>mass-action law</strong> (<span class="de">Massenwirkungsgesetz</span>):</p>
+\[ \boxed{\; n \cdot p = n_i^2 \;} \]
+<p>Doping one way up pushes the other kind down, like an acid-base equilibrium.</p>
+
+<div class="example">
+  <div class="ex-head"><span class="ex-tag">Worked example</span> Carrier census in n-type silicon</div>
+  <div class="ex-body">
+    <p>A wafer is doped with phosphorus at \(N_D = 10^{16}\,\mathrm{cm^{-3}}\). Find the carrier densities and the doping dilution, at 300 K.</p>
+    <div class="step"><span class="step-label">Step 1 — majority carriers:</span> all donors ionized, and \(N_D \gg n_i\):
+      \( n \approx N_D = 10^{16}\,\mathrm{cm^{-3}} \) — a million times more than intrinsic.</div>
+    <div class="step"><span class="step-label">Step 2 — minority carriers (mass action):</span>
+      \( p = n_i^2 / n = (10^{10})^2 / 10^{16} = 10^{4}\,\mathrm{cm^{-3}} \).
+      Twelve orders of magnitude fewer holes than electrons!</div>
+    <div class="step"><span class="step-label">Step 3 — dilution:</span>
+      \( N_D / n_{\mathrm{Si}} = 10^{16} / (5\cdot 10^{22}) = 1 : 5\,000\,000 \). One foreign atom per five million silicon atoms rules the material's electrical personality.</div>
+    <div class="result-line">\(n \approx 10^{16}\), \(p \approx 10^{4}\,\mathrm{cm^{-3}}\). Sanity check: \(n\,p = 10^{20} = n_i^2\) ✓ — and conductivity rose by a factor ~10⁶ from a 0.2 ppm impurity.</div>
+  </div>
+</div>
+
+<div class="box key">
+  <div class="box-title"><span class="ic">🔑</span>Key idea: purity + precision = the industry</div>
+  <p>Doping only works because everything <em>else</em> is absent. If random impurities floated around at 1 ppm, a deliberate 0.2 ppm phosphorus dose would drown in noise. So the industry first purifies silicon to <b>99.999 999 999 %</b> ("eleven nines" — electronic grade, the purest material mass-produced by humankind: one foreign atom per ~10<sup>11</sup>), pulls it into a single flawless crystal (Czochralski process, <span class="de">Kristallziehen</span>), and only <em>then</em> re-contaminates it — on purpose, atom-species by atom-species, in patterned regions a few nanometers deep. A chip is precisely choreographed dirt in ultra-clean crystal. That, not any single device, is the semiconductor industry's core trick.</p>
+</div>
+
+<div class="box german">
+  <div class="box-title"><span class="ic">🇩🇪</span>Vokabeln</div>
+  <p>semiconductor = <span class="de">Halbleiter</span> · band gap = <span class="de">Bandlücke</span> · valence/conduction band = <span class="de">Valenz-/Leitungsband</span> · hole = <span class="de">Loch/Defektelektron</span> · intrinsic conduction = <span class="de">Eigenleitung</span> · doping = <span class="de">Dotierung</span> · donor/acceptor = <span class="de">Donator/Akzeptor</span> · majority/minority carriers = <span class="de">Majoritäts-/Minoritätsträger</span> · depletion region = <span class="de">Raumladungszone (RLZ)</span> · built-in voltage = <span class="de">Diffusionsspannung</span> · forward/reverse = <span class="de">Durchlass-/Sperrrichtung</span> · characteristic curve = <span class="de">Kennlinie</span> · operating point = <span class="de">Arbeitspunkt</span> · breakdown = <span class="de">Durchbruch</span> · threshold voltage = <span class="de">Schwellenspannung</span> · datasheet = <span class="de">Datenblatt</span></p>
+</div>
+
+<h2 id="transport">4. Two ways charge moves: drift and diffusion</h2>
+
+<p>Semiconductors support two distinct transport mechanisms, and the pn junction (next section) is a tug-of-war between them.</p>
+
+<h3 id="drift">4.1 Drift — pushed by a field</h3>
+<p><strong>Drift</strong> (<span class="de">Driftstrom</span>) is the familiar mechanism behind Ohm's law: an electric field \(E\) accelerates carriers between collisions, producing an average drift velocity \(v = \mu E\), with <strong>mobility</strong> \(\mu\) (<span class="de">Beweglichkeit</span>; Si: \(\mu_n \approx 1350\), \(\mu_p \approx 480\ \mathrm{cm^2/(V\,s)}\) — electrons are ~3× nimbler than holes, one reason n-channel devices dominate). The conductivity with both carrier types:</p>
+\[ \sigma = e\,(n\,\mu_n + p\,\mu_p). \]
+
+<h3 id="diffusion">4.2 Diffusion — pushed by crowding</h3>
+<p><strong>Diffusion</strong> (<span class="de">Diffusionsstrom</span>) needs no field at all: wherever carrier concentration is uneven, random thermal motion produces a net flow from crowded to empty regions — the same physics as perfume spreading through a room. The current density is proportional to the concentration <em>gradient</em>:</p>
+\[ J_{n,\text{diff}} = e\,D_n \frac{\mathrm{d}n}{\mathrm{d}x}, \qquad D = \mu \, U_T \ \ \text{(Einstein relation)}. \]
+<p>The Einstein relation smuggles in the single most important scale of this module, the <strong>thermal voltage</strong> (<span class="de">Temperaturspannung</span>):</p>
+\[ \boxed{\;U_T = \frac{kT}{e} \approx 25.9\,\mathrm{mV} \ \text{at } 300\,\mathrm{K}\;} \]
+<p>Memorize "about 25 mV at room temperature". It will reappear in every exponential from here to Module 09.</p>
+
+<h2 id="pn">5. The pn junction — what happens at contact</h2>
+
+<p>Now the decisive experiment: dope the left half of one crystal p-type, the right half n-type. At the metallurgical junction, an enormous concentration cliff appears — \(10^{16}\) electrons/cm³ on the right, \(10^{4}\) on the left. Diffusion does what diffusion does:</p>
+<ol>
+  <li>Electrons pour from n to p, holes from p to n, annihilating each other near the junction.</li>
+  <li>But every departing carrier leaves its ionized dopant atom behind — and those are <b>locked in the lattice</b>. A zone empty of mobile carriers but full of fixed charge forms: the <strong>depletion region</strong> or space-charge region (<span class="de">Raumladungszone</span>), negative acceptor ions on the p side, positive donor ions on the n side.</li>
+  <li>This charge double-layer creates an electric field pointing from n to p — which drives a <em>drift</em> current exactly opposite to the diffusion. The field grows until drift cancels diffusion: <strong>dynamic equilibrium</strong>, zero net current.</li>
+</ol>
+
+<figure>
+  <div class="fig-frame">
+  <svg class="diagram" viewBox="0 0 660 320" role="img" aria-label="pn junction with depletion region, field and potential">
+    <!-- main bar -->
+    <rect x="60" y="70" width="240" height="110" fill="var(--accent-2)" opacity="0.10"/>
+    <rect x="420" y="70" width="180" height="110" fill="var(--accent)" opacity="0.10"/>
+    <rect x="300" y="70" width="120" height="110" fill="var(--text-faint)" opacity="0.15"/>
+    <rect x="60" y="70" width="540" height="110" fill="none" stroke="var(--text-soft)" stroke-width="2"/>
+    <line x1="300" y1="70" x2="300" y2="180" stroke="var(--text-soft)" stroke-width="1" stroke-dasharray="4 4"/>
+    <line x1="420" y1="70" x2="420" y2="180" stroke="var(--text-soft)" stroke-width="1" stroke-dasharray="4 4"/>
+    <text x="180" y="58" text-anchor="middle" font-size="15" font-weight="700">p region</text>
+    <text x="510" y="58" text-anchor="middle" font-size="15" font-weight="700">n region</text>
+    <text x="360" y="58" text-anchor="middle" font-size="12" fill="var(--text-soft)">depletion region</text>
+    <!-- mobile carriers -->
+    <g font-size="13" fill="var(--accent-2)">
+      <text x="90" y="105">＋</text><text x="130" y="140">＋</text><text x="175" y="98">＋</text>
+      <text x="215" y="150">＋</text><text x="110" y="165">＋</text><text x="250" y="112">＋</text>
+    </g>
+    <g font-size="13" fill="var(--accent)">
+      <text x="445" y="105">−</text><text x="480" y="145">−</text><text x="520" y="98">−</text>
+      <text x="555" y="150">−</text><text x="500" y="120">−</text><text x="575" y="112">−</text>
+    </g>
+    <!-- fixed ions in RLZ -->
+    <g font-size="12">
+      <circle cx="322" cy="100" r="8" fill="none" stroke="var(--accent-2)" stroke-width="1.6"/><text x="322" y="104" text-anchor="middle" fill="var(--accent-2)">−</text>
+      <circle cx="345" cy="140" r="8" fill="none" stroke="var(--accent-2)" stroke-width="1.6"/><text x="345" y="144" text-anchor="middle" fill="var(--accent-2)">−</text>
+      <circle cx="322" cy="162" r="8" fill="none" stroke="var(--accent-2)" stroke-width="1.6"/><text x="322" y="166" text-anchor="middle" fill="var(--accent-2)">−</text>
+      <circle cx="395" cy="100" r="8" fill="none" stroke="var(--accent)" stroke-width="1.6"/><text x="395" y="104" text-anchor="middle" fill="var(--accent)">+</text>
+      <circle cx="376" cy="140" r="8" fill="none" stroke="var(--accent)" stroke-width="1.6"/><text x="376" y="144" text-anchor="middle" fill="var(--accent)">+</text>
+      <circle cx="398" cy="162" r="8" fill="none" stroke="var(--accent)" stroke-width="1.6"/><text x="398" y="166" text-anchor="middle" fill="var(--accent)">+</text>
+    </g>
+    <!-- E field arrow -->
+    <line x1="405" y1="200" x2="320" y2="200" stroke="var(--accent)" stroke-width="2.2" marker-end="url(#arrPn)"/>
+    <text x="362" y="218" text-anchor="middle" font-size="13" fill="var(--accent)">E field</text>
+    <!-- diffusion / drift arrows above -->
+    <line x1="240" y1="30" x2="330" y2="30" stroke="var(--accent-2)" stroke-width="2" marker-end="url(#arrPn2)"/>
+    <text x="230" y="34" text-anchor="end" font-size="12" fill="var(--accent-2)">holes diffuse →</text>
+    <line x1="470" y1="30" x2="386" y2="30" stroke="var(--accent)" stroke-width="2" marker-end="url(#arrPn3)"/>
+    <text x="480" y="34" font-size="12" fill="var(--accent)">← electrons diffuse</text>
+    <!-- potential plot -->
+    <line x1="60" y1="295" x2="600" y2="295" stroke="var(--text-faint)" stroke-width="1"/>
+    <path d="M60 290 H300 C 340 290, 380 245, 420 245 H600" fill="none" stroke="var(--accent)" stroke-width="2.4"/>
+    <text x="66" y="250" font-size="12" fill="var(--text-soft)">potential φ(x)</text>
+    <line x1="612" y1="245" x2="612" y2="290" stroke="var(--text-soft)" stroke-width="1.4" marker-start="url(#arrPn4a)" marker-end="url(#arrPn4b)"/>
+    <text x="620" y="272" font-size="12" fill="var(--text-soft)">U_D</text>
+    <defs>
+      <marker id="arrPn" markerWidth="9" markerHeight="9" refX="7" refY="4.5" orient="auto"><path d="M0 0 L8 4.5 L0 9 z" fill="var(--accent)"/></marker>
+      <marker id="arrPn2" markerWidth="9" markerHeight="9" refX="7" refY="4.5" orient="auto"><path d="M0 0 L8 4.5 L0 9 z" fill="var(--accent-2)"/></marker>
+      <marker id="arrPn3" markerWidth="9" markerHeight="9" refX="7" refY="4.5" orient="auto"><path d="M0 0 L8 4.5 L0 9 z" fill="var(--accent)"/></marker>
+      <marker id="arrPn4a" markerWidth="8" markerHeight="8" refX="4" refY="1" orient="auto"><path d="M0 7 L4 0 L8 7 z" fill="var(--text-soft)"/></marker>
+      <marker id="arrPn4b" markerWidth="8" markerHeight="8" refX="4" refY="7" orient="auto"><path d="M0 0 L4 7 L8 0 z" fill="var(--text-soft)"/></marker>
+    </defs>
+  </svg>
+  </div>
+  <figcaption><b>Fig. 5.1</b> — pn junction in equilibrium. Majority carriers (＋ holes, − electrons) diffuse across, exposing fixed ionized dopants (circled charges) in the depletion region. The resulting field drives a drift current that exactly cancels diffusion. Bottom: the electrostatic potential steps up by the built-in voltage \(U_D\) across the junction.</figcaption>
+</figure>
+
+<p>The equilibrium potential step, the <strong>built-in voltage</strong> (<span class="de">Diffusionsspannung</span>), follows from balancing the two currents — and lands, satisfyingly, on our thermal voltage:</p>
+\[ \boxed{\; U_D = U_T \ln \frac{N_A N_D}{n_i^2} \;} \]
+
+<div class="example">
+  <div class="ex-head"><span class="ex-tag">Worked example</span> Built-in voltage and depletion width</div>
+  <div class="ex-body">
+    <p>Both sides doped at \(N_A = N_D = 10^{16}\,\mathrm{cm^{-3}}\), 300 K. Find \(U_D\) and the depletion width \(w = \sqrt{\tfrac{2\varepsilon_{\mathrm{Si}} U_D}{e}\left(\tfrac{1}{N_A}+\tfrac{1}{N_D}\right)}\), with \(\varepsilon_{\mathrm{Si}} = 11.7\,\varepsilon_0 \approx 1.04\cdot10^{-10}\,\mathrm{F/m}\).</p>
+    <div class="step"><span class="step-label">Step 1 — built-in voltage:</span>
+      \( U_D = 0.0259 \cdot \ln\frac{10^{16}\cdot 10^{16}}{10^{20}} = 0.0259 \cdot \ln(10^{12}) = 0.0259 \cdot 27.6 \approx 0.72\,\mathrm{V}. \)</div>
+    <div class="step"><span class="step-label">Step 2 — depletion width (SI units, \(N = 10^{22}\,\mathrm{m^{-3}}\)):</span>
+      \( w = \sqrt{\frac{2 \cdot 1.04\cdot 10^{-10} \cdot 0.72}{1.6\cdot 10^{-19}} \cdot 2\cdot10^{-22}} \approx 0.43\,\mathrm{µm}. \)</div>
+    <div class="result-line">\(U_D \approx 0.72\,\mathrm{V}\), \(w \approx 0.43\,\mathrm{µm}\) — there is the famous "0.7 volts", hiding in a logarithm of doping densities. Note how weakly \(U_D\) depends on doping: 100× more dopant adds only \(U_T \ln 10^4 \approx 0.24\,\mathrm{V}\).</div>
+  </div>
+</div>
+
+<div class="box pitfall">
+  <div class="box-title"><span class="ic">🚫</span>Classic pitfall: "so a diode is a 0.7 V battery?"</div>
+  <p>No. You cannot measure \(U_D\) with a voltmeter across an unbiased diode, and it can never drive a current through an external load — the contact potentials where the probes touch the p and n material cancel it exactly. Otherwise a diode in a loop of wire would be a perpetual-motion machine. \(U_D\) is an <em>internal</em> barrier; energy conservation survives.</p>
+</div>
+
+<h2 id="diode">6. Bias and the diode equation</h2>
+
+<h3 id="bias">6.1 Tilting the barrier</h3>
+<p>Everything about the diode follows from one sentence: <em>an external voltage adds to or subtracts from the barrier.</em></p>
+<ul>
+  <li><strong>Forward bias</strong> (<span class="de">Durchlassrichtung</span>, + on p): the external voltage \(U\) <em>lowers</em> the barrier to \(U_D - U\). Since the number of majority carriers able to climb a barrier follows a Boltzmann factor \(e^{-\Delta W/kT}\), the diffusion flood grows as \(e^{U/U_T}\) — <b>exponentially</b>. The depletion region narrows.</li>
+  <li><strong>Reverse bias</strong> (<span class="de">Sperrrichtung</span>, − on p): the barrier rises to \(U_D + |U|\), choking diffusion entirely. The depletion region widens. All that remains is the drift of thermally generated <em>minority</em> carriers that wander into the field and get swept across — a tiny, voltage-independent leakage: the <strong>saturation current</strong> \(I_S\) (<span class="de">Sättigungssperrstrom</span>), picoamps to nanoamps for small silicon diodes.</li>
+</ul>
+
+<p>Working out the minority-carrier diffusion quantitatively (Shockley, 1949) gives the celebrated <strong>diode equation</strong>:</p>
+\[ \boxed{\; I = I_S \left( e^{\,U / (n\,U_T)} - 1 \right) \;} \]
+<p>with the <strong>ideality factor</strong> \(n \approx 1\dots 2\) (<span class="de">Emissionskoeffizient</span>) absorbing recombination effects in real devices. For \(U \gg U_T\) the −1 vanishes (pure exponential); for \(U \ll -U_T\), \(I \to -I_S\) (flat leakage floor).</p>
+
+<div class="box key">
+  <div class="box-title"><span class="ic">🔑</span>Key idea: 60 mV per decade</div>
+  <p>Take the equation's logarithm: every increase of \(U\) by \(n\,U_T \ln 10 \approx 60\,\mathrm{mV}\) (for \(n=1\)) multiplies the current by <b>ten</b>. From 0.5 V to 0.7 V — a mere 0.2 V — the current of a small diode grows by over three orders of magnitude, from microamps to milliamps. This violent steepness is why the diode acts as a switch, and why the "on-voltage" looks so constant: currents from 1 mA to 1 A all crowd into a ~120 mV window around 0.7 V.</p>
+</div>
+
+<h3 id="knee">6.2 The "0.7 V knee" — a convention, not physics</h3>
+<p>Datasheet and textbook culture speaks of a silicon diode "turning on at 0.7 V" (<span class="de">Schleusenspannung</span>, knee/threshold voltage). Be clear about what that is: the exponential has <b>no</b> threshold — at 0.4 V a silicon diode conducts happily, just in microamps. "0.7 V" merely marks where the current reaches <em>typical circuit magnitudes</em> (mA…A) for <em>typical silicon</em> junction sizes. Germanium diodes "turn on" near 0.3 V, Schottky diodes near 0.3 V, LEDs between 1.8 and 3.3 V — same equation, different \(I_S\). The knee is a <em>modeling convention</em> we adopt in Section 9 because it makes hand analysis linear.</p>
+
+<h3 id="tempco">6.3 Temperature: the −2 mV/K rule</h3>
+<p>Two competing effects set the temperature behavior at constant current. \(U_T\) grows with \(T\) (would push \(U_F\) up), but \(I_S \propto n_i^2 \propto e^{-E_g/kT}\) grows <em>much</em> faster (pushes \(U_F\) down). The net result for silicon:</p>
+\[ \left.\frac{\mathrm{d}U_F}{\mathrm{d}T}\right|_{I=\text{const}} \approx -2\,\mathrm{mV/K}. \]
+<p>Heat a diode from 25 °C to 125 °C and its forward voltage drops ~0.2 V. Consequences: a forward-biased junction is a cheap, linear thermometer (used inside every CPU's thermal sensor, Module 15); and paralleling diodes is dangerous — the hottest one steals ever more current (thermal runaway, <span class="de">thermisches Weglaufen</span>).</p>
+
+<div class="widget">
+  <div class="w-head"><span class="ic">🧪</span>Interactive — the diode characteristic \(I(U)\) <span class="w-tag">simulation</span></div>
+  <div class="w-body">
+    <p class="small mt0">The Shockley equation live. On the <b>linear</b> scale you see the apparent "knee"; switch to the <b>log</b> scale and the exponential becomes a perfect straight line at \(n\,U_T \ln 10\) mV per decade — proof there is no threshold. Then raise the temperature and watch the curve slide <em>left</em> (≈ −2 mV/K at fixed current): hotter diodes conduct at lower voltage because \(I_S\) explodes with \(T\).</p>
+    <div id="w-diode"></div>
+  </div>
+</div>
+
+<h2 id="breakdown">7. Reverse breakdown and the Zener diode</h2>
+
+<p>Raise the reverse voltage far enough and the diode abruptly conducts again: <strong>breakdown</strong> (<span class="de">Durchbruch</span>). Two distinct mechanisms, worth keeping apart:</p>
+<ul>
+  <li><strong>Avalanche breakdown</strong> (<span class="de">Lawinendurchbruch</span>): in lightly doped, <em>wide</em> depletion regions, a stray minority carrier gains enough kinetic energy from the field to knock a new electron–hole pair out of the lattice (impact ionization); the pair accelerates and ionizes further — a carrier avalanche. Dominant above ≈ 6 V. Breakdown voltage <em>rises</em> with temperature (hotter lattice → more collisions → carriers gain energy less easily).</li>
+  <li><strong>Zener effect</strong> (<span class="de">Zener-Effekt</span>): in <em>heavily</em> doped junctions the depletion region is so thin (&lt; 10 nm) that valence electrons quantum-tunnel directly across the gap. Dominant below ≈ 5 V. Breakdown voltage <em>falls</em> with temperature.</li>
+</ul>
+<p>Around 5.6–6.2 V both mechanisms mix and the temperature coefficients nearly cancel — which is why precision reference "Zeners" cluster at those voltages. Colloquially all breakdown diodes are called <strong>Zener diodes</strong> (<span class="de">Z-Diode</span>) regardless of mechanism.</p>
+
+<p>Breakdown is <b>not destructive by itself</b> — the diode is destroyed only if \(P = U_Z I_Z\) overheats the junction. Z-diodes are <em>built</em> to live there: their reverse characteristic is nearly vertical at \(U_Z\), i.e. the voltage barely changes over a wide current range. That makes an almost-ideal voltage clamp: the classic <strong>shunt regulator</strong> (<span class="de">Parallelstabilisierung</span>) — series resistor \(R_V\) from the raw supply, Z-diode to ground, load in parallel with the diode. The resistor absorbs input swings; the diode absorbs load swings.</p>
+
+<div class="example">
+  <div class="ex-head"><span class="ex-tag">Worked example</span> Designing a Zener shunt regulator</div>
+  <div class="ex-body">
+    <p>A 5.6 V rail must be derived from a raw supply of 12 V ± 2 V. The load draws 5…20 mA. The Z-diode (\(U_Z = 5.6\,\mathrm{V}\), dynamic resistance \(r_Z = 10\,\Omega\)) needs \(I_Z \ge 5\,\mathrm{mA}\) to regulate. Size \(R_V\), check worst-case dissipation, and estimate line regulation.</p>
+    <div class="step"><span class="step-label">Step 1 — worst case for starving the diode:</span> minimum input (10 V) and maximum load (20 mA). \(R_V\) must still supply 20 + 5 = 25 mA:
+      \( R_V \le \frac{10 - 5.6}{25\,\mathrm{mA}} = 176\,\Omega \;\Rightarrow\; \) choose the standard value \(R_V = 150\,\Omega\).</div>
+    <div class="step"><span class="step-label">Step 2 — worst case for heat:</span> maximum input (14 V) and minimum load (5 mA):
+      \( I_{R} = \frac{14-5.6}{150} = 56\,\mathrm{mA} \Rightarrow I_Z = 51\,\mathrm{mA} \), so \(P_Z = 5.6 \cdot 0.051 \approx 0.29\,\mathrm{W}\) → use a 0.5 W Zener. Resistor: \(P_R = 0.056^2 \cdot 150 \approx 0.47\,\mathrm{W}\) → 1 W part.</div>
+    <div class="step"><span class="step-label">Step 3 — line regulation:</span> for input ripple, the circuit is a voltage divider \(r_Z\) against \(R_V\):
+      \( \Delta U_{out} = \Delta U_{in}\,\frac{r_Z}{R_V + r_Z} = 4\,\mathrm{V} \cdot \frac{10}{160} = 0.25\,\mathrm{V} \) — a 16:1 improvement.</div>
+    <div class="result-line">\(R_V = 150\,\Omega\) (1 W), Zener ≥ 0.5 W, output 5.6 V ± ~0.13 V. Sanity check: efficiency at nominal is poor (~30 %) — Zener shunts are for low-power references; real supplies use them to feed a regulator, or use switching converters (Module 18).</div>
+  </div>
+</div>
+
+<h2 id="zoo">8. The diode zoo — one junction, many personalities</h2>
+
+<figure>
+  <div class="fig-frame">
+  <svg class="diagram" viewBox="0 0 680 190" role="img" aria-label="Circuit symbols of rectifier, Zener, Schottky, LED and photodiode">
+    <!-- template: anode left, triangle pointing right, cathode bar, wires -->
+    <g stroke="var(--text-soft)" stroke-width="2" fill="none">
+      <!-- rectifier -->
+      <line x1="20" y1="70" x2="60" y2="70"/><path d="M60 50 L60 90 L95 70 z" fill="var(--text-soft)"/><line x1="95" y1="50" x2="95" y2="90"/><line x1="95" y1="70" x2="135" y2="70"/>
+      <!-- zener -->
+      <line x1="160" y1="70" x2="200" y2="70"/><path d="M200 50 L200 90 L235 70 z" fill="var(--text-soft)"/><path d="M235 50 V90 M235 50 L227 42 M235 90 L243 98"/><line x1="235" y1="70" x2="275" y2="70"/>
+      <!-- schottky -->
+      <line x1="300" y1="70" x2="340" y2="70"/><path d="M340 50 L340 90 L375 70 z" fill="var(--text-soft)"/><path d="M375 50 V90 M375 50 H367 V44 M375 90 H383 V96"/><line x1="375" y1="70" x2="415" y2="70"/>
+      <!-- LED -->
+      <line x1="440" y1="70" x2="480" y2="70"/><path d="M480 50 L480 90 L515 70 z" fill="var(--text-soft)"/><line x1="515" y1="50" x2="515" y2="90"/><line x1="515" y1="70" x2="555" y2="70"/>
+      <line x1="500" y1="42" x2="516" y2="26" stroke="var(--accent-2)" marker-end="url(#arrZoo)"/>
+      <line x1="512" y1="50" x2="528" y2="34" stroke="var(--accent-2)" marker-end="url(#arrZoo)"/>
+      <!-- photodiode -->
+      <line x1="580" y1="70" x2="620" y2="70"/><path d="M620 50 L620 90 L655 70 z" fill="var(--text-soft)"/><line x1="655" y1="50" x2="655" y2="90"/><line x1="655" y1="70" x2="678" y2="70"/>
+      <line x1="622" y1="20" x2="636" y2="36" stroke="var(--accent)" marker-end="url(#arrZoo2)"/>
+      <line x1="637" y1="13" x2="651" y2="29" stroke="var(--accent)" marker-end="url(#arrZoo2)"/>
+    </g>
+    <g font-size="13" text-anchor="middle" fill="var(--text-soft)">
+      <text x="77" y="125" font-weight="700">rectifier</text><text x="77" y="145">U_F ≈ 0.7–1 V</text>
+      <text x="217" y="125" font-weight="700">Zener</text><text x="217" y="145">clamps at U_Z</text>
+      <text x="357" y="125" font-weight="700">Schottky</text><text x="357" y="145">U_F ≈ 0.3 V, fast</text>
+      <text x="497" y="125" font-weight="700">LED</text><text x="497" y="145">U_F ≈ 1.8–3.3 V</text>
+      <text x="637" y="125" font-weight="700">photodiode</text><text x="637" y="145">light → current</text>
+    </g>
+    <defs>
+      <marker id="arrZoo" markerWidth="8" markerHeight="8" refX="6" refY="4" orient="auto"><path d="M0 0 L7 4 L0 8 z" fill="var(--accent-2)"/></marker>
+      <marker id="arrZoo2" markerWidth="8" markerHeight="8" refX="6" refY="4" orient="auto"><path d="M0 0 L7 4 L0 8 z" fill="var(--accent)"/></marker>
+    </defs>
+  </svg>
+  </div>
+  <figcaption><b>Fig. 8.1</b> — The diode family. Triangle = anode side, bar = cathode; current flows in the triangle's direction. Arrows out = light emitted (LED), arrows in = light absorbed (photodiode). The Zener's bent bar hints at its vertical breakdown characteristic.</figcaption>
+</figure>
+
+<h3 id="rectifier">8.1 Rectifier and signal diodes</h3>
+<p>The bread-and-butter <strong>rectifier</strong> (<span class="de">Gleichrichter</span>) turns AC into DC (the circuits come in Module 18). Workhorse example 1N4007: 1000 V reverse, 1 A forward — but slow: stored minority charge takes microseconds to clear when switching off (<em>reverse recovery</em>, <span class="de">Sperrverzögerung</span>), fine at 50 Hz, fatal at 100 kHz. Signal diodes like the 1N4148 trade current capability (200 mA) for 4 ns speed.</p>
+
+<h3 id="schottky">8.2 Schottky — drop the p, gain speed</h3>
+<p>Replace the p region with a metal contact and you get the <strong>Schottky diode</strong> (<span class="de">Schottky-Diode</span>): still a rectifying barrier, but conduction is by <em>majority</em> carriers only. Two gifts follow: a low knee (~0.2–0.4 V, less conduction loss) and <b>no stored minority charge</b> — essentially zero reverse recovery, hence its home in every switch-mode power supply. The price: larger leakage \(I_S\) (that is <em>why</em> the knee is low — same Shockley equation, bigger \(I_S\)) and modest reverse-voltage ratings.</p>
+
+<h3 id="led">8.3 The LED — bandgap becomes color</h3>
+<p>When an electron recombines with a hole, energy \(\approx E_g\) is released. In silicon (an <em>indirect</em>-gap material) it is wasted as lattice vibration — there will never be a silicon LED. In <em>direct</em>-gap materials (GaAs, GaN…) it leaves as a <b>photon</b>. The emitted wavelength is set by the bandgap — chemistry chooses the color:</p>
+\[ \lambda = \frac{h c}{E_g} \approx \frac{1240\,\mathrm{nm}}{E_g / \mathrm{eV}}. \]
+<p>GaAs (1.42 eV) → 870 nm infrared; AlInGaP (~2.0 eV) → red; InGaN (~2.7 eV) → blue. The forward voltage tracks the bandgap — an LED's color tells you its \(U_F\). White LEDs are blue InGaN chips coated with a yellow phosphor. With luminous efficacies beyond 200 lm/W versus ~15 lm/W for incandescent bulbs, the LED quietly became one of history's great efficiency revolutions.</p>
+
+<div class="box history">
+  <div class="box-title"><span class="ic">📜</span>The thirty-year hunt for blue</div>
+  <p>Red LEDs existed from 1962 (Holonyak), green soon after — but white light needs blue, and growing p-type GaN defeated the industry for three decades. Isamu Akasaki, Hiroshi Amano and Shuji Nakamura cracked it in the early 1990s (buffer layers, magnesium activation, InGaN wells) and received the 2014 Nobel Prize in Physics. The committee's citation was unusually blunt about impact: "incandescent bulbs lit the 20th century; the 21st will be lit by LED lamps."</p>
+</div>
+
+<h3 id="photo">8.4 Photodiode and solar cell — the junction run backwards</h3>
+<p>The LED's inverse: a photon with \(h\nu \ge E_g\) absorbed in or near the depletion region creates an electron–hole pair, and the built-in field <em>sweeps it apart</em> before it can recombine — light in, current out. The <strong>photocurrent</strong> \(I_{ph}\) is proportional to illumination and simply shifts the whole diode characteristic downward:</p>
+\[ I = I_S\left(e^{U/(nU_T)} - 1\right) - I_{ph}. \]
+<p>Operated reverse-biased, it is a fast, linear light sensor: the <strong>photodiode</strong> (<span class="de">Fotodiode</span>) in every optical receiver. Operated in the fourth quadrant (\(U &gt; 0\), \(I &lt; 0\): the device <em>delivers</em> power) it is a <strong>solar cell</strong> (<span class="de">Solarzelle</span>). Its open-circuit voltage follows directly by setting \(I = 0\): \(U_{oc} = U_T \ln(I_{ph}/I_S + 1) \approx 0.55\dots0.7\,\mathrm{V}\) for silicon — which is why panels chain dozens of cells in series. Same junction as the LED, same equation, opposite energy flow: a small physics poem.</p>
+
+<div class="widget">
+  <div class="w-head"><span class="ic">🧪</span>Interactive — LED color from bandgap <span class="w-tag">explorer</span></div>
+  <div class="w-body">
+    <p class="small mt0">Slide the bandgap and watch \(\lambda = hc/E_g\) walk across the spectrum. Note the visible window is narrow: below ≈ 1.7 eV you get invisible infrared (remote controls), above ≈ 3.3 eV ultraviolet. The readout also shows the resulting forward voltage — the electrical price of each photon.</p>
+    <div id="w-led"></div>
+  </div>
+</div>
+
+<h2 id="loadline">9. Analyzing circuits with a nonlinear element</h2>
+
+<p>Now a problem Module 04 never faced. Put a diode in series with a resistor \(R\) across a source \(U_q\). KVL still holds:</p>
+\[ U_q = R\,I + U_D(I), \qquad I = I_S\left(e^{U_D/(nU_T)}-1\right) \]
+<p>— one equation, but <b>transcendental</b>: no closed-form solution. Three practical attacks, in increasing order of laziness (a virtue in engineering):</p>
+
+<h3 id="graphical">9.1 The load line — solve by drawing</h3>
+<p>Rearrange KVL as \(I = (U_q - U_D)/R\): a straight line in the \(I\)–\(U\) plane — the <strong>load line</strong> (<span class="de">Arbeitsgerade</span>) — from \((U_q, 0)\) to \((0, U_q/R)\). The circuit must satisfy this <em>and</em> the diode's curve; the intersection is the <strong>operating point</strong> (<span class="de">Arbeitspunkt</span>). This graphical method predates calculators, but the picture it builds — component curve vs. circuit constraint — is how engineers still <em>think</em> about transistor biasing (Module 09).</p>
+
+<div class="widget">
+  <div class="w-head"><span class="ic">🧪</span>Interactive — load line &amp; operating point <span class="w-tag">simulation</span></div>
+  <div class="w-body">
+    <p class="small mt0">Diode curve (blue) meets load line (amber); the dot is the operating point, computed numerically by bisection. Slide \(U_q\): the line shifts parallel. Slide \(R\): it pivots around \(U_q\) on the x-axis. Notice how weakly \(U_{OP}\) moves — the exponential pins it near 0.7 V, which is exactly why the constant-drop model (below) works so well. The readouts compare against the ideal "0.7 V model".</p>
+    <div id="w-loadline"></div>
+  </div>
+</div>
+
+<h3 id="iterate">9.2 Iteration — solve by ping-pong</h3>
+<p>Guess \(U_D^{(0)} = 0.7\,\mathrm{V}\). Compute the current from the <em>linear</em> part: \(I^{(1)} = (U_q - U_D^{(0)})/R\). Update the diode voltage from the <em>exponential</em> part: \(U_D^{(1)} = n U_T \ln(I^{(1)}/I_S)\). Repeat. Because the logarithm is so flat, this converges to 4 digits in 2–3 rounds — SPICE does a Newton-flavored version of exactly this at every time step.</p>
+
+<h3 id="pwl">9.3 Piecewise-linear models — solve by simplifying</h3>
+<div class="table-wrap">
+<table class="data">
+<thead><tr><th>Model</th><th>Forward behavior</th><th>Use when</th></tr></thead>
+<tbody>
+<tr><td>Ideal switch</td><td>\(U_D = 0\), any \(I \ge 0\)</td><td>supply ≫ 0.7 V; topology questions</td></tr>
+<tr><td>Constant drop</td><td>\(U_D = 0.7\,\mathrm{V}\) (LED: 2.0 V etc.)</td><td>standard hand analysis — the default</td></tr>
+<tr><td>Drop + slope</td><td>\(U_D = U_{F0} + r_D I\), &nbsp;\(r_D = \dfrac{n\,U_T}{I_{OP}}\)</td><td>ripple/small-signal around a known operating point (→ Module 09)</td></tr>
+</tbody>
+</table>
+</div>
+<p>The small-signal resistance \(r_D = nU_T/I\) is a gem: at 1 mA a diode looks like ~26 Ω <em>for small wiggles</em>, at 10 mA like 2.6 Ω — derived by differentiating Shockley. This "linearize around the operating point" move is the master key to all of analog electronics.</p>
+
+<div class="example">
+  <div class="ex-head"><span class="ex-tag">Worked example</span> The M04 LED resistor, revisited honestly</div>
+  <div class="ex-body">
+    <p>In Module 04 (E1) we sized \(R = 150\,\Omega\) for an LED on 5 V, <em>assuming</em> a constant 2.0 V drop at 20 mA. Reality: a red LED obeying Shockley with \(n\,U_T = 50\,\mathrm{mV}\) and exactly 2.000 V at 20 mA. What current actually flows if the supply sags to 4.5 V — ideal model vs. real diode?</p>
+    <div class="step"><span class="step-label">Step 1 — constant-drop prediction:</span>
+      \( I = (4.5 - 2.0)/150 = 16.7\,\mathrm{mA} \).</div>
+    <div class="step"><span class="step-label">Step 2 — iterate the real diode:</span> at 16.7 mA the LED voltage is
+      \( U^{(1)} = 2.0 + 0.05 \cdot \ln\frac{16.7}{20} = 2.0 - 0.009 = 1.991\,\mathrm{V} \).
+      Recompute: \( I^{(2)} = (4.5 - 1.991)/150 = 16.73\,\mathrm{mA} \). Next update changes \(U\) by &lt; 0.1 mV — converged after one round trip.</div>
+    <div class="step"><span class="step-label">Step 3 — compare:</span> ideal 16.67 mA vs. real 16.73 mA — a 0.4 % difference.</div>
+    <div class="result-line">\(I \approx 16.7\,\mathrm{mA}\) either way. Moral: the constant-drop model is excellent <em>because</em> the exponential is steep — the diode voltage self-regulates. The resistor, not the diode model, dominates the answer. (This is also why you must <b>never</b> connect an LED straight to a stiff voltage source: with no \(R\), a ±5 % voltage error becomes a ±3× current error.)</div>
+  </div>
+</div>
+
+<h2 id="mosfet">10. The MOSFET — a capacitor that switches an ocean</h2>
+
+<p>Diodes conduct or block, but they cannot <em>amplify</em> — no third terminal. Enter the <strong>MOSFET</strong> (metal-oxide-semiconductor field-effect transistor, <span class="de">Feldeffekttransistor</span>), today manufactured in greater numbers than any other object ever made. We describe the n-channel enhancement type (NMOS), the industry default.</p>
+
+<h3 id="mosstruct">10.1 Structure: gate oxide as a capacitor plate</h3>
+<p>Take a p-type substrate (<span class="de">Substrat, Bulk</span>). Diffuse two heavily doped n⁺ islands: <strong>source</strong> and <strong>drain</strong>. Between them, on the surface, grow an ultrathin insulating SiO₂ layer (the 9 eV insulator of Fig. 1.1 — in modern CPUs barely 1–2 nm, a dozen atomic layers), and cap it with a conductive <strong>gate</strong> (<span class="de">Steuerelektrode</span>). Gate + oxide + substrate form a plain <b>plate capacitor</b> (Module 07). With no gate voltage, source→drain sees two back-to-back pn junctions: no current path.</p>
+
+<figure>
+  <div class="fig-frame">
+  <svg class="diagram" viewBox="0 0 640 300" role="img" aria-label="NMOS transistor cross-section">
+    <!-- substrate -->
+    <rect x="60" y="110" width="520" height="150" fill="var(--accent-2)" opacity="0.08"/>
+    <rect x="60" y="110" width="520" height="150" fill="none" stroke="var(--text-soft)" stroke-width="2"/>
+    <text x="320" y="240" text-anchor="middle" font-size="14" fill="var(--text-soft)">p substrate (body)</text>
+    <!-- n+ wells -->
+    <path d="M110 110 h110 v34 q0 16 -16 16 h-78 q-16 0 -16 -16 z" fill="var(--accent)" opacity="0.20" stroke="var(--text-soft)" stroke-width="1.6"/>
+    <path d="M420 110 h110 v34 q0 16 -16 16 h-78 q-16 0 -16 -16 z" fill="var(--accent)" opacity="0.20" stroke="var(--text-soft)" stroke-width="1.6"/>
+    <text x="165" y="140" text-anchor="middle" font-size="14" font-weight="700">n⁺</text>
+    <text x="475" y="140" text-anchor="middle" font-size="14" font-weight="700">n⁺</text>
+    <!-- oxide -->
+    <rect x="220" y="98" width="200" height="12" fill="var(--text-faint)" opacity="0.5"/>
+    <line x1="424" y1="104" x2="492" y2="97" stroke="var(--text-faint)" stroke-width="1"/>
+    <text x="634" y="94" text-anchor="end" font-size="12" fill="var(--text-soft)">gate oxide SiO₂ (~nm)</text>
+    <!-- gate electrode -->
+    <rect x="220" y="74" width="200" height="24" fill="var(--accent)" opacity="0.30" stroke="var(--text-soft)" stroke-width="1.6"/>
+    <!-- channel -->
+    <line x1="222" y1="116" x2="418" y2="116" stroke="var(--accent-2)" stroke-width="3.5" stroke-dasharray="7 5"/>
+    <text x="320" y="136" text-anchor="middle" font-size="12.5" fill="var(--accent-2)">inversion channel (electrons), U_GS &gt; V_th</text>
+    <!-- terminals -->
+    <line x1="165" y1="110" x2="165" y2="40" class="wire"/>
+    <line x1="320" y1="74" x2="320" y2="40" class="wire"/>
+    <line x1="475" y1="110" x2="475" y2="40" class="wire"/>
+    <line x1="320" y1="260" x2="320" y2="285" class="wire"/>
+    <circle cx="165" cy="40" r="4" class="node"/><circle cx="320" cy="40" r="4" class="node"/><circle cx="475" cy="40" r="4" class="node"/>
+    <text x="165" y="28" text-anchor="middle" font-size="14" font-weight="700">S (source)</text>
+    <text x="320" y="28" text-anchor="middle" font-size="14" font-weight="700">G (gate)</text>
+    <text x="475" y="28" text-anchor="middle" font-size="14" font-weight="700">D (drain)</text>
+    <text x="338" y="282" font-size="13" fill="var(--text-soft)">B (body, tied to S in discrete parts)</text>
+    <!-- electron flow arrow -->
+    <line x1="250" y1="168" x2="392" y2="168" stroke="var(--accent)" stroke-width="2" marker-end="url(#arrMos)"/>
+    <text x="320" y="188" text-anchor="middle" font-size="12" fill="var(--accent)">electrons S → D  (current I_D: D → S)</text>
+    <defs><marker id="arrMos" markerWidth="9" markerHeight="9" refX="7" refY="4.5" orient="auto"><path d="M0 0 L8 4.5 L0 9 z" fill="var(--accent)"/></marker></defs>
+  </svg>
+  </div>
+  <figcaption><b>Fig. 10.1</b> — NMOS cross-section. A positive gate voltage across the oxide capacitor attracts electrons to the surface, "inverting" the p material into a temporary n channel that connects the two n⁺ islands. No oxide current flows — the control input is purely capacitive.</figcaption>
+</figure>
+
+<h3 id="inversion">10.2 Inversion and the threshold voltage</h3>
+<p>Apply a positive gate–source voltage \(U_{GS}\). The capacitor charges: positive charge on the gate, and mirror-image negative charge in the silicon underneath — first by pushing holes away, then, beyond a critical voltage, by pulling a dense sheet of <em>electrons</em> to the surface. The p-type surface layer has been <strong>inverted</strong> to n-type: a conducting <strong>channel</strong> (<span class="de">Kanal</span>) now bridges source and drain. The critical voltage is the <strong>threshold voltage</strong> \(V_{th}\) (<span class="de">Schwellenspannung</span>): ~0.3–0.7 V in CPU logic, 2–4 V in power MOSFETs. The excess \(U_{GS} - V_{th}\) is the <em>overdrive</em> — it sets how much charge the channel holds.</p>
+
+<h3 id="regions">10.3 The two operating regions</h3>
+<p>With the channel formed, apply drain–source voltage \(U_{DS}\) and current flows. Two regimes, with \(k = \mu_n C_{ox} \tfrac{W}{L}\) (the transconductance parameter — carrier mobility × oxide capacitance × geometry) :</p>
+<ul>
+  <li><strong>Triode / ohmic region</strong> (<span class="de">Widerstandsbereich</span>), \(U_{DS} &lt; U_{GS} - V_{th}\):
+  \[ I_D = k\left[(U_{GS}-V_{th})\,U_{DS} - \tfrac{1}{2}U_{DS}^2\right] \]
+  For small \(U_{DS}\) this is a resistor whose value the gate controls: \(R_{DS(on)} \approx \dfrac{1}{k\,(U_{GS}-V_{th})}\).</li>
+  <li><strong>Saturation region</strong> (<span class="de">Sättigungs-/Abschnürbereich</span>), \(U_{DS} \ge U_{GS} - V_{th}\): the channel <em>pinches off</em> at the drain end (the local gate-to-channel voltage there drops below \(V_{th}\)); the current stops growing with \(U_{DS}\) and depends only on the gate:
+  \[ \boxed{\; I_D = \frac{k}{2}\,(U_{GS} - V_{th})^2 \;} \]
+  A gate-voltage-controlled current source — the amplifying regime (Module 09).</li>
+</ul>
+<p>The boundary between the regions is the parabola \(I_D = \tfrac{k}{2}U_{DS}^2\). Plotting \(I_D\) vs. \(U_{DS}\) for several \(U_{GS}\) values gives the <strong>output characteristics</strong> (<span class="de">Ausgangskennlinienfeld</span>); \(I_D\) vs. \(U_{GS}\) at fixed \(U_{DS}\) is the (quadratic) <strong>transfer characteristic</strong> (<span class="de">Übertragungskennlinie</span>).</p>
+
+<div class="widget">
+  <div class="w-head"><span class="ic">🧪</span>Interactive — MOSFET output characteristics <span class="w-tag">simulation</span></div>
+  <div class="w-body">
+    <p class="small mt0">The classic curve family \(I_D(U_{DS})\) for several gate voltages (blue), with your own \(U_{GS}\) highlighted in red. The dashed parabola is the triode/saturation boundary \(U_{DS} = U_{GS}-V_{th}\): left of it the MOSFET behaves as a gate-tunable resistor, right of it as a current source. Note the quadratic spacing of the curves — doubling the overdrive quadruples the current. Raise \(V_{th}\) and watch curves vanish as their gate drive falls below threshold.</p>
+    <div id="w-mosfet"></div>
+  </div>
+</div>
+
+<h3 id="switch">10.4 Why it is the perfect switch</h3>
+<p>The gate is insulated by 9-eV-bandgap oxide: the DC gate current is femtoamps — <b>the MOSFET is voltage-controlled</b>, costing essentially zero drive power to <em>hold</em> on or off. (Charging/discharging the gate capacitance at every transition does cost energy — \(f\,C U^2\) switching loss, the battle of Module 11.) In the on-state a power MOSFET is just \(R_{DS(on)}\) — modern parts reach single-digit <b>milliohms</b>. Two practical details of discrete power MOSFETs: the body is internally tied to the source, which creates a parasitic <strong>body diode</strong> (<span class="de">Body-Diode</span>) from source to drain — it means the switch blocks in only one direction, and power circuits exploit it as a free freewheeling diode (Module 18). And \(R_{DS(on)}\) roughly <em>doubles</em> from 25 °C to 125 °C — a rare mercy: paralleled MOSFETs share current stably (the hot one takes <em>less</em>), the exact opposite of diodes and BJTs.</p>
+
+<div class="box warn">
+  <div class="box-title"><span class="ic">⚠️</span>Handle the gate with respect</div>
+  <p>The gift of the insulated gate is also its weakness. The oxide withstands only ±20 V or so (\(U_{GS,max}\) in the datasheet) and, being a near-perfect insulator, cannot bleed off static charge: a walk across a carpet delivers kilovolts of ESD — instant, invisible oxide puncture. Handle MOSFETs with ESD precautions, and never leave a gate <em>floating</em> in a circuit: an unconnected gate picks up stray charge capacitively and the transistor drifts half-on, overheats, and dies. Always give the gate a defined potential (a pull-down resistor costs one cent).</p>
+</div>
+
+<div class="example">
+  <div class="ex-head"><span class="ex-tag">Worked example</span> Switch shoot-out: MOSFET vs. BJT conduction loss</div>
+  <div class="ex-body">
+    <p>A 5 A load must be switched on the low side. Candidate A: MOSFET with \(R_{DS(on)} = 20\,\mathrm{m\Omega}\), driven from a logic pin (no DC gate current). Candidate B: BJT with \(U_{CE,sat} = 0.25\,\mathrm{V}\), needing \(I_B = I_C/10 = 0.5\,\mathrm{A}\) of base current from a 5 V pin through a resistor. Compare the losses.</p>
+    <div class="step"><span class="step-label">Step 1 — MOSFET conduction loss:</span>
+      \( P = I^2 R_{DS(on)} = 25 \cdot 0.02 = 0.5\,\mathrm{W} \). Gate drive: ~0 W static.</div>
+    <div class="step"><span class="step-label">Step 2 — BJT conduction loss:</span>
+      \( P = U_{CE,sat}\, I_C = 0.25 \cdot 5 = 1.25\,\mathrm{W} \) in the transistor.</div>
+    <div class="step"><span class="step-label">Step 3 — BJT drive loss:</span> the base path burns
+      \( \approx 5\,\mathrm{V} \cdot 0.5\,\mathrm{A} = 2.5\,\mathrm{W} \) (base resistor + junction) — <em>five times</em> the MOSFET's total loss, spent merely on keeping the switch closed.</div>
+    <div class="result-line">MOSFET: 0.5 W total. BJT: ≈ 3.75 W total. And the MOSFET's loss scales as \(I^2 R\) — halve the current or halve \(R_{DS(on)}\) (parallel two devices!) and it drops fast, while \(U_{CE,sat}\,I\) only falls linearly. This is why power switching is MOSFET country.</div>
+  </div>
+</div>
+
+<h2 id="bjt">11. The BJT — the original transistor</h2>
+
+<p>The <strong>bipolar junction transistor</strong> (<span class="de">Bipolartransistor</span>) came first (1947) and still owns niches the MOSFET cannot touch. Structure: three layers, npn (or pnp), i.e. <b>two pn junctions back-to-back</b> sharing an extremely thin middle layer — <strong>emitter</strong> (n⁺, heavily doped), <strong>base</strong> (p, ~0.1 µm thin!), <strong>collector</strong> (n).</p>
+
+<p>Two diodes soldered back-to-back conduct nothing either way — the magic is entirely in the <em>shared, thin</em> base. Bias the base–emitter junction forward (\(U_{BE} \approx 0.7\,\mathrm{V}\)) and the base–collector junction in reverse. The emitter injects a torrent of electrons into the base, Shockley-style. Now the crucial geometry: the base is so thin that almost none of them find a hole to recombine with before they stumble into the reverse-biased collector junction — whose field gleefully sweeps them into the collector. This is <strong>transistor action</strong>: ~99+ % of the emitter current exits at the collector; only the ~1 % that recombines must be resupplied as base current.</p>
+
+<figure>
+  <div class="fig-frame">
+  <svg class="diagram" viewBox="0 0 640 260" role="img" aria-label="npn transistor structure and current flow">
+    <!-- layers -->
+    <rect x="80" y="70" width="170" height="110" fill="var(--accent)" opacity="0.20" stroke="var(--text-soft)" stroke-width="2"/>
+    <rect x="250" y="70" width="46" height="110" fill="var(--accent-2)" opacity="0.20" stroke="var(--text-soft)" stroke-width="2"/>
+    <rect x="296" y="70" width="190" height="110" fill="var(--accent)" opacity="0.12" stroke="var(--text-soft)" stroke-width="2"/>
+    <text x="165" y="130" text-anchor="middle" font-size="15" font-weight="700">emitter n⁺</text>
+    <text x="273" y="60" text-anchor="middle" font-size="14" font-weight="700">base p</text>
+    <text x="391" y="130" text-anchor="middle" font-size="15" font-weight="700">collector n</text>
+    <text x="290" y="204" font-size="12" fill="var(--text-soft)">~0.1 µm thin!</text>
+    <!-- electron stream -->
+    <line x1="110" y1="105" x2="450" y2="105" stroke="var(--accent)" stroke-width="4" marker-end="url(#arrBjt)" opacity="0.85"/>
+    <text x="280" y="93" text-anchor="middle" font-size="12" fill="var(--accent)">electron stream: ~99 % reach the collector</text>
+    <!-- recombination arrow -->
+    <line x1="273" y1="112" x2="273" y2="155" stroke="var(--accent-2)" stroke-width="2" marker-end="url(#arrBjt2)"/>
+    <text x="266" y="146" text-anchor="end" font-size="12" fill="var(--accent-2)">~1 % recombine → I_B</text>
+    <!-- terminals -->
+    <line x1="80" y1="125" x2="46" y2="125" class="wire"/><circle cx="46" cy="125" r="4" class="node"/>
+    <text x="34" y="130" text-anchor="end" font-size="14" font-weight="700">E</text>
+    <line x1="486" y1="125" x2="520" y2="125" class="wire"/><circle cx="520" cy="125" r="4" class="node"/>
+    <text x="534" y="130" font-size="14" font-weight="700">C</text>
+    <line x1="273" y1="180" x2="273" y2="225" class="wire"/><circle cx="273" cy="225" r="4" class="node"/>
+    <text x="273" y="248" text-anchor="middle" font-size="14" font-weight="700">B</text>
+    <defs>
+      <marker id="arrBjt" markerWidth="10" markerHeight="10" refX="8" refY="5" orient="auto"><path d="M0 0 L9 5 L0 10 z" fill="var(--accent)"/></marker>
+      <marker id="arrBjt2" markerWidth="8" markerHeight="8" refX="6" refY="4" orient="auto"><path d="M0 0 L7 4 L0 8 z" fill="var(--accent-2)"/></marker>
+    </defs>
+  </svg>
+  </div>
+  <figcaption><b>Fig. 11.1</b> — Transistor action in an npn BJT (electron flow shown; conventional current runs opposite). The forward-biased BE junction injects electrons; the base is too thin for them to recombine, so the reverse-biased BC junction collects them. A small base current thus governs a large collector current.</figcaption>
+</figure>
+
+<p>Quantitatively, with the fraction \(\alpha \approx 0.99\dots0.998\) reaching the collector:</p>
+\[ I_C = \alpha\, I_E, \qquad I_C = \beta\, I_B \quad\text{with}\quad \beta = \frac{\alpha}{1-\alpha} \approx 100\dots300, \]
+<p>(\(\beta\), datasheet symbol \(h_{FE}\), <span class="de">Stromverstärkung</span>) and the collector current still obeys the exponential of its controlling junction:</p>
+\[ I_C = I_S\, e^{\,U_{BE}/U_T}. \]
+<p>Operating regions: <strong>cutoff</strong> (<span class="de">Sperrbereich</span>: BE off — no current), <strong>active</strong> (<span class="de">aktiver Bereich</span>: BE on, BC reverse — current source, amplifiers live here), <strong>saturation</strong> (<span class="de">Sättigung</span>: both junctions forward, \(U_{CE}\) collapses to \(U_{CE,sat} \approx 0.1\dots0.3\,\mathrm{V}\) — switch closed). Note the vocabulary trap: BJT "saturation" is the switched-ON region, whereas MOSFET "saturation" is the current-source region — a historical accident that costs exam points every year.</p>
+
+<div class="box pitfall">
+  <div class="box-title"><span class="ic">🚫</span>Classic pitfall: designing around β</div>
+  <p>β is <em>not</em> a design parameter: it varies 3:1 between specimens of the same type, and further with current and temperature. \(I_C = \beta I_B\) tells you a <em>guaranteed minimum</em> drive for switching (use \(I_B \ge I_C/10\) to saturate hard), but analog bias points must never depend on β. Proper amplifier design (Module 09) uses feedback so that β only needs to be "large" — the exponential \(I_C(U_{BE})\) relation and the circuit's resistors set the operating point.</p>
+</div>
+
+<h3 id="bjtvsmos">11.1 BJT vs. MOSFET — when to pick which</h3>
+<div class="table-wrap">
+<table class="data">
+<thead><tr><th></th><th>BJT</th><th>MOSFET</th></tr></thead>
+<tbody>
+<tr><td>Controlled by</td><td>current (\(I_B\)), \(U_{BE}\approx0.7\,\mathrm{V}\)</td><td>voltage (\(U_{GS}\)), ~zero static drive power</td></tr>
+<tr><td>Transconductance per current</td><td>highest possible: \(g_m = I_C/U_T\)</td><td>lower (quadratic law)</td></tr>
+<tr><td>On-state as a switch</td><td>\(U_{CE,sat}\) ≈ 0.1–0.3 V (loss ∝ \(I\))</td><td>\(R_{DS(on)}\) down to mΩ (loss ∝ \(I^2\))</td></tr>
+<tr><td>Device matching / noise</td><td>excellent — precision analog, references</td><td>poorer matching, but scales to nm</td></tr>
+<tr><td>Paralleling</td><td>unstable (−2 mV/K → current hogging)</td><td>stable (\(R_{DS(on)}\) rises with T)</td></tr>
+<tr><td>Typical home turf</td><td>precision analog, RF, bandgap references</td><td>all digital logic, power switching</td></tr>
+</tbody>
+</table>
+</div>
+
+<div class="box history">
+  <div class="box-title"><span class="ic">📜</span>1947, Bell Labs — and where this module leads</div>
+  <p>Bardeen, Brattain and Shockley demonstrated the first (point-contact) transistor in December 1947 — Nobel Prize 1956; Shockley's junction theory gave us the equations in this module. The field-effect idea is actually <em>older</em> (Lilienfeld patented it in 1925) but had to wait until 1960 for clean Si/SiO₂ interfaces. Everything ahead builds on today's devices: amplifier circuits around the operating point (Module 09), logic gates from complementary MOSFETs (Module 10), billions of them per chip (Module 11), and kilovolt-class switches (Module 18).</p>
+</div>
+
+<h2 id="datasheet">12. Datasheet literacy — reading the fine print</h2>
+
+<p>Real design starts at the <strong>datasheet</strong> (<span class="de">Datenblatt</span>). The skills transfer across all devices:</p>
+<ul>
+  <li><strong>Absolute maximum ratings</strong> (<span class="de">Grenzwerte</span>) are <em>destruction limits</em>, not operating targets — exceed any one, even briefly, and the warranty (and often the die) is gone. Design to comfortable fractions: e.g. a 1N4007 rated \(U_{RRM} = 1000\,\mathrm{V}\) is used on 325 V peak mains with a 3× margin.</li>
+  <li><strong>Derating</strong> (<span class="de">Leistungsminderung</span>): ratings hold at 25 °C case temperature and shrink linearly above. The governing physics is a thermal Ohm's law: \(T_j = T_{amb} + P \cdot R_{th,ja}\) with junction limit \(T_{j,max}=150\dots175\,{}^\circ\mathrm{C}\). A "2 W" transistor in free air with \(R_{th,ja}=60\,\mathrm{K/W}\) may really handle only \((150-40)/60 \approx 1.8\,\mathrm{W}\) — and needs a heatsink for more.</li>
+  <li><strong>Typical vs. guaranteed:</strong> "typ." columns are marketing; design against min/max. β of a BC547B: min 200, typ 290, max 450 — a 2.25:1 spread in the <em>same grade</em>.</li>
+</ul>
+
+<h2 id="summary">13. Formula summary — <span class="de">Formelsammlung</span></h2>
+
+<div class="table-wrap">
+<table class="data">
+<thead><tr><th>Concept</th><th>Formula</th><th>Remember as</th></tr></thead>
+<tbody>
+<tr><td>Thermal voltage</td><td>\( U_T = kT/e \approx 25.9\,\mathrm{mV} \) @ 300 K</td><td>the scale of every junction exponential</td></tr>
+<tr><td>Mass-action law</td><td>\( n\,p = n_i^2 \), &nbsp; \(n_i \approx 10^{10}\,\mathrm{cm^{-3}}\) (Si)</td><td>dope one up ⇒ other goes down</td></tr>
+<tr><td>Conductivity</td><td>\( \sigma = e(n\mu_n + p\mu_p) \)</td><td>drift; Einstein: \(D = \mu U_T\)</td></tr>
+<tr><td>Built-in voltage</td><td>\( U_D = U_T \ln(N_A N_D / n_i^2) \)</td><td>≈ 0.6–0.8 V, not measurable at terminals</td></tr>
+<tr><td>Shockley equation</td><td>\( I = I_S(e^{U/(nU_T)} - 1) \)</td><td>≈ ×10 per 60 mV (n = 1)</td></tr>
+<tr><td>Diode temp. coefficient</td><td>\( \mathrm{d}U_F/\mathrm{d}T \approx -2\,\mathrm{mV/K} \)</td><td>diode = thermometer; runaway when paralleled</td></tr>
+<tr><td>Small-signal resistance</td><td>\( r_D = n U_T / I \)</td><td>26 Ω at 1 mA</td></tr>
+<tr><td>LED wavelength</td><td>\( \lambda \approx 1240\,\mathrm{nm} / (E_g/\mathrm{eV}) \)</td><td>bandgap = color = forward voltage</td></tr>
+<tr><td>Solar cell open circuit</td><td>\( U_{oc} = U_T \ln(I_{ph}/I_S + 1) \)</td><td>~0.6 V per Si cell ⇒ series strings</td></tr>
+<tr><td>MOSFET triode</td><td>\( I_D = k[(U_{GS}{-}V_{th})U_{DS} - U_{DS}^2/2] \)</td><td>gate-controlled resistor</td></tr>
+<tr><td>MOSFET saturation</td><td>\( I_D = \tfrac{k}{2}(U_{GS}-V_{th})^2 \) for \(U_{DS} \ge U_{GS}-V_{th}\)</td><td>voltage-controlled current source</td></tr>
+<tr><td>BJT currents</td><td>\( I_C = \beta I_B = \alpha I_E = I_S e^{U_{BE}/U_T} \)</td><td>β ≈ 100–300, never a design constant</td></tr>
+<tr><td>Junction temperature</td><td>\( T_j = T_{amb} + P\,R_{th} \)</td><td>thermal Ohm's law — derate!</td></tr>
+</tbody>
+</table>
+</div>
+
+<h2 id="exercises">14. Exercises</h2>
+<p>Work these on paper before opening the solutions — the struggle is the learning.</p>
+
+<div class="exercise">
+  <p class="ex-q"><span class="ex-num">E1</span>Compute the thermal voltage \(U_T\) at −40 °C and at 125 °C (automotive limits). By how much does a silicon diode's forward voltage change between 25 °C and 100 °C at constant current? <span class="diff easy">easy</span></p>
+  <details><summary>Show solution</summary>
+    <div class="solution">
+      \( U_T = kT/e \) with \(T\) in kelvin: at 233 K → \( U_T = 20.1\,\mathrm{mV} \); at 398 K → \( 34.3\,\mathrm{mV} \).
+      Forward voltage: \( \Delta U_F \approx -2\,\mathrm{mV/K} \cdot 75\,\mathrm{K} = -150\,\mathrm{mV} \) — a "0.7 V" diode reads about 0.55 V when hot. Sanity check: this is why datasheet \(U_F\) values always state the test temperature, and why engine-bay electronics must be verified across the full range.
+    </div>
+  </details>
+</div>
+
+<div class="exercise">
+  <p class="ex-q"><span class="ex-num">E2</span>A silicon wafer is doped with boron at \(N_A = 10^{17}\,\mathrm{cm^{-3}}\). (a) What type is the material and what are the majority/minority densities? (b) What fraction of silicon atoms is a dopant? (c) What purity did the raw crystal need for undesired impurities to stay below 1 % of the doping? <span class="diff easy">easy</span></p>
+  <details><summary>Show solution</summary>
+    <div class="solution">
+      (a) Boron is a group-III acceptor → p-type. Majority: \( p \approx 10^{17}\,\mathrm{cm^{-3}} \); minority: \( n = n_i^2/p = 10^{20}/10^{17} = 10^{3}\,\mathrm{cm^{-3}} \).<br>
+      (b) \( 10^{17} / (5\cdot10^{22}) = 1 : 500\,000 = 2\,\mathrm{ppm} \).<br>
+      (c) Unwanted impurities &lt; \(10^{15}\,\mathrm{cm^{-3}}\), i.e. &lt; 1 atom in \(5\cdot10^{7}\) → purity better than 99.999 998 % — and for lightly doped power devices (\(N_D \sim 10^{14}\)) it must be ~1000× better still. That is the "eleven nines" business.
+    </div>
+  </details>
+</div>
+
+<div class="exercise">
+  <p class="ex-q"><span class="ex-num">E3</span>A diode (\(I_S = 10\,\mathrm{fA}\), \(n = 1\), 300 K) in series with \(R = 100\,\Omega\) hangs on \(U_q = 2\,\mathrm{V}\). Find the operating point by iteration, starting from \(U_D = 0.7\,\mathrm{V}\). <span class="diff med">medium</span></p>
+  <details><summary>Show solution</summary>
+    <div class="solution">
+      Round 1: \( I = (2 - 0.7)/100 = 13\,\mathrm{mA} \); update \( U_D = U_T \ln(I/I_S) = 0.0259 \cdot \ln(1.3\cdot10^{12}) = 0.0259 \cdot 27.9 = 0.722\,\mathrm{V} \).<br>
+      Round 2: \( I = (2 - 0.722)/100 = 12.78\,\mathrm{mA} \); update \( U_D = 0.0259\,\ln(1.278\cdot10^{12}) = 0.7216\,\mathrm{V} \).<br>
+      Round 3 changes \(U_D\) by &lt; 0.1 mV — converged: \( \boxed{I \approx 12.8\,\mathrm{mA},\; U_D \approx 0.72\,\mathrm{V}} \).
+      Sanity check: the 0.7 V shortcut gives 13 mA — 1.7 % high. Iteration converges this fast because a 2 % current error shifts \(\ln I\) by only ~0.5 mV.
+    </div>
+  </details>
+</div>
+
+<div class="exercise">
+  <p class="ex-q"><span class="ex-num">E4</span>A 5.1 V Zener (min. regulating current 5 mA, max. power 1 W) must hold a rail from a 9 V ± 10 % source feeding a constant 30 mA load. Choose \(R_V\) and verify the Zener's power in the worst case. <span class="diff med">medium</span></p>
+  <details><summary>Show solution</summary>
+    <div class="solution">
+      Starving case (8.1 V in): \( R_V \le \frac{8.1 - 5.1}{35\,\mathrm{mA}} = 85.7\,\Omega \) → choose \(R_V = 82\,\Omega\).<br>
+      Heating case (9.9 V in): \( I_R = (9.9-5.1)/82 = 58.5\,\mathrm{mA} \); if the load ever disconnects, all of it enters the Zener: \( P_Z = 5.1 \cdot 0.0585 = 0.30\,\mathrm{W} \) &lt; 1 W ✓ (with load attached: \(28.5\,\mathrm{mA} \cdot 5.1\,\mathrm{V} = 0.15\,\mathrm{W}\)).
+      Remark: always check the load-disconnected case — shunt regulators dump the <em>full</em> series current into the diode when the load leaves.
+    </div>
+  </details>
+</div>
+
+<div class="exercise">
+  <p class="ex-q"><span class="ex-num">E5</span>A MOSFET has \(V_{th} = 2\,\mathrm{V}\), \(k = 0.5\,\mathrm{A/V^2}\), \(U_{GS} = 4\,\mathrm{V}\). Compute \(I_D\) for (a) \(U_{DS} = 1\,\mathrm{V}\) and (b) \(U_{DS} = 5\,\mathrm{V}\), identifying the region each time. (c) What is \(R_{DS(on)}\) for very small \(U_{DS}\)? <span class="diff med">medium</span></p>
+  <details><summary>Show solution</summary>
+    <div class="solution">
+      Overdrive: \( U_{GS} - V_{th} = 2\,\mathrm{V} \).<br>
+      (a) \( U_{DS} = 1 &lt; 2 \) → triode: \( I_D = 0.5\,(2 \cdot 1 - 0.5) = 0.75\,\mathrm{A} \).<br>
+      (b) \( U_{DS} = 5 \ge 2 \) → saturation: \( I_D = \tfrac{0.5}{2} \cdot 2^2 = 1.0\,\mathrm{A} \), independent of \(U_{DS}\) (to first order).<br>
+      (c) \( R_{DS(on)} \approx \frac{1}{k (U_{GS}-V_{th})} = \frac{1}{0.5 \cdot 2} = 1\,\Omega \). Sanity check: at \(U_{DS}=0.1\) V the triode formula gives 97.5 mA ≈ 0.1 V / 1 Ω ✓. Driving the gate to 10 V would cut \(R_{DS(on)}\) to 0.25 Ω — gate drive voltage is loss money.
+    </div>
+  </details>
+</div>
+
+<div class="exercise">
+  <p class="ex-q"><span class="ex-num">E6</span>A silicon solar cell delivers photocurrent \(I_{ph} = 3\,\mathrm{A}\) under full sun; its junction has \(I_S = 1\,\mathrm{nA},\; n = 1\) at 300 K. (a) Open-circuit voltage? (b) At 10 % sun? (c) Why do "12 V" panels contain ~36 cells in series? <span class="diff hard">challenge</span></p>
+  <details><summary>Show solution</summary>
+    <div class="solution">
+      (a) \( U_{oc} = U_T \ln(I_{ph}/I_S + 1) = 0.0259 \cdot \ln(3\cdot10^{9}) = 0.0259 \cdot 21.8 \approx 0.565\,\mathrm{V} \).<br>
+      (b) \( I_{ph} = 0.3\,\mathrm{A} \): \( U_{oc} = 0.0259 \cdot \ln(3\cdot10^{8}) = 0.505\,\mathrm{V} \) — 10× less light costs only ~60 mV (one decade × 60 mV/decade!). Voltage is robust; <em>current</em> carries the illumination information.<br>
+      (c) The maximum-power voltage is ~0.45–0.5 V/cell; 36 cells give ~16–18 V, enough headroom to charge a 12 V lead-acid battery even warm (cells lose ~2 mV/K each — the diode law again). Series strings are mandatory because one junction can never exceed ~0.7 V.
+    </div>
+  </details>
+</div>
+
+<div class="exercise">
+  <p class="ex-q"><span class="ex-num">E7</span>Derive the "60 mV per decade" rule from the Shockley equation, then use it to explain quantitatively why the constant-0.7 V model works from 1 mA to 1 A for a diode with \(I_S = 10\,\mathrm{fA},\; n=1\). <span class="diff hard">challenge</span></p>
+  <details><summary>Show solution</summary>
+    <div class="solution">
+      For \(U \gg U_T\): \( U = n U_T \ln(I/I_S) \). Two currents a factor 10 apart differ by
+      \( \Delta U = n U_T \ln 10 = 1 \cdot 25.9\,\mathrm{mV} \cdot 2.303 \approx 59.6\,\mathrm{mV} \) — the rule.<br>
+      Endpoints: \( U(1\,\mathrm{mA}) = 0.0259\,\ln(10^{11}) = 0.656\,\mathrm{V} \); \( U(1\,\mathrm{A}) = 0.0259\,\ln(10^{14}) = 0.835\,\mathrm{V} \) (in practice higher still due to series resistance). Three decades of current fit inside 0.18 V, i.e. within ±13 % of 0.75 V. A model error of ±0.1 V in \(U_D\) changes a typical loop current \((U_q - U_D)/R\) by only a few percent when \(U_q \ge 5\) V — which is why the shortcut survives. Sanity check: this is the log-flatness that also made E3's iteration converge in two steps.
+    </div>
+  </details>
+</div>
+
+<h2 id="quiz">15. Self-assessment</h2>
+
+<div class="quiz" data-quiz-title="Module 08 — Self-test">
+<script type="application/json">
+[
+ {"q":"What fundamentally distinguishes a semiconductor from an insulator?",
+  "opts":["Semiconductors contain free electrons at absolute zero","The band gap is small enough (~1 eV) for thermal/dopant excitation, versus ~9 eV for insulators","Semiconductors have no valence band","Insulators have more electrons per atom"],"a":1,
+  "explain":"Both have a full valence band and empty conduction band at 0 K. The difference is only the gap size: Si's 1.12 eV can be bridged thermally and manipulated by doping; SiO₂'s ≈ 9 eV cannot. Same band picture, different number."},
+ {"q":"Phosphorus (group V) is added to silicon. The result is…",
+  "opts":["p-type material: phosphorus accepts electrons","n-type material: the fifth valence electron is donated to the conduction band","intrinsic material with a larger band gap","an insulator, because the lattice is disturbed"],"a":1,
+  "explain":"Four of phosphorus's five valence electrons enter bonds; the fifth is bound by only ~45 meV and is free at room temperature. Phosphorus is a donor (\\(Donator\\)) → n-type, electrons as majority carriers."},
+ {"q":"Silicon is doped with \\(N_A = 10^{16}\\,\\mathrm{cm^{-3}}\\) acceptors (\\(n_i = 10^{10}\\,\\mathrm{cm^{-3}}\\)). The minority electron density is…",
+  "opts":["\\(10^{16}\\,\\mathrm{cm^{-3}}\\)","\\(10^{10}\\,\\mathrm{cm^{-3}}\\)","\\(10^{4}\\,\\mathrm{cm^{-3}}\\)","zero"],"a":2,
+  "explain":"Mass-action law: \\(n = n_i^2/p = 10^{20}/10^{16} = 10^{4}\\,\\mathrm{cm^{-3}}\\). Doping holes up pushes electrons down — but never to zero; those few minority carriers become the diode's leakage current."},
+ {"q":"Why does a reverse-biased pn junction carry almost no current?",
+  "opts":["The depletion region widens and the barrier grows, blocking majority-carrier diffusion; only tiny minority drift remains","All carriers recombine instantly under reverse bias","The crystal becomes an insulator because the doping is neutralized","The contacts detach electrically"],"a":0,
+  "explain":"Reverse bias adds to the built-in barrier: diffusion of majorities is exponentially suppressed. What remains is the drift of thermally generated minority carriers — the saturation current \\(I_S\\), pA–nA in small Si diodes (and doubling every ~10 K)."},
+ {"q":"A silicon diode (n = 1, 300 K) carries 1 mA at some voltage. Increasing the voltage by about 60 mV gives…",
+  "opts":["≈ 1.1 mA","≈ 2 mA","≈ 10 mA","≈ 100 mA"],"a":2,
+  "explain":"The Shockley exponential rises one decade per \\(nU_T\\ln 10 \\approx 60\\,\\mathrm{mV}\\). This steepness is why the diode looks like it has a sharp threshold although the equation has none."},
+ {"q":"A diode drops 0.68 V at 1 mA and 25 °C. At 75 °C and the same current it drops about…",
+  "opts":["0.78 V","0.68 V (unchanged)","0.58 V","0.34 V"],"a":2,
+  "explain":"\\(\\mathrm{d}U_F/\\mathrm{d}T \\approx -2\\,\\mathrm{mV/K}\\): a 50 K rise lowers \\(U_F\\) by ≈ 0.1 V → 0.58 V. The dominant cause is the explosive growth of \\(I_S \\propto n_i^2\\) with temperature."},
+ {"q":"Which statement about reverse breakdown is correct?",
+  "opts":["Any breakdown immediately destroys the diode","Zener tunneling dominates below ≈ 5 V, avalanche multiplication above ≈ 6 V","Avalanche breakdown only occurs in forward bias","Breakdown voltage is always exactly 0.7 V"],"a":1,
+  "explain":"Heavily doped, thin junctions break down by quantum tunneling (Zener, TC < 0); lightly doped, wide ones by impact-ionization avalanche (TC > 0). Around 5.6–6.2 V the coefficients cancel — the best references. Destruction comes only from overheating, \\(P = U_Z I_Z\\)."},
+ {"q":"An LED made from a material with \\(E_g = 2.0\\,\\mathrm{eV}\\) emits at approximately…",
+  "opts":["620 nm (red)","1240 nm (infrared)","310 nm (ultraviolet)","500 nm (green)"],"a":0,
+  "explain":"\\(\\lambda \\approx 1240\\,\\mathrm{nm}/(E_g/\\mathrm{eV}) = 620\\,\\mathrm{nm}\\) — red. Bigger gap → shorter wavelength → higher forward voltage; blue LEDs (~2.7 eV) need ≈ 3 V."},
+ {"q":"An NMOS transistor with \\(V_{th} = 1\\,\\mathrm{V}\\) has \\(U_{GS} = 3\\,\\mathrm{V}\\). It operates in saturation (current-source region) when…",
+  "opts":["\\(U_{DS} \\ge 2\\,\\mathrm{V}\\)","\\(U_{DS} \\le 1\\,\\mathrm{V}\\)","\\(U_{DS} \\ge 3\\,\\mathrm{V}\\)","never — saturation needs \\(U_{GS} < V_{th}\\)"],"a":0,
+  "explain":"Saturation requires \\(U_{DS} \\ge U_{GS} - V_{th} = 2\\,\\mathrm{V}\\) (channel pinch-off at the drain). Below that it is in the triode region, acting as a gate-controlled resistor. Careful: MOSFET 'saturation' ≠ BJT 'saturation'!"},
+ {"q":"\"A silicon diode does not conduct at all below 0.7 V.\" This statement is…",
+  "opts":["correct — 0.7 V is the physical threshold of silicon","wrong — the exponential has no threshold; 0.7 V just marks where current reaches typical mA levels","correct — below 0.7 V the depletion region is infinitely wide","wrong — the true threshold is the built-in voltage, exactly 1.12 V"],"a":1,
+  "explain":"At 0.4 V a small Si diode conducts µA, at 0.55 V ~0.1 mA — the Shockley curve is smooth everywhere. '0.7 V' is a modeling convention chosen because 60 mV/decade squeezes all everyday currents into a narrow voltage band. (And \\(E_g = 1.12\\,\\mathrm{eV}\\) is an energy, not the knee.)"}
+]
+</script>
+</div>
+
+<script>
+document.addEventListener("ee-ready", () => {
+
+  /* ---------- shared physics helpers ---------- */
+  const kB = 1.380649e-23, qe = 1.602176634e-19;
+  const UT = tc => kB * (tc + 273.15) / qe;              // thermal voltage from °C
+  const IS_T = (is25, tc) => {                           // scale I_S with temperature (Eg = 1.12 eV)
+    const T = tc + 273.15, T0 = 298.15, Eg = 1.12;
+    return is25 * Math.pow(T / T0, 3) * Math.exp(Eg / UT(25) - Eg / UT(tc));
+  };
+  const Idio = (u, is, n, tc) => is * (Math.expm1(Math.min(u / (n * UT(tc)), 80)));
+
+  /* --- W1: diode I-V characteristic, linear/log --- */
+  EE.functionPlot({
+    mount: "#w-diode", height: 300,
+    x: p => (p.scale === "log" ? { min: 0, max: 1, label: "U in V" } : { min: -0.3, max: 1, label: "U in V" }),
+    y: p => (p.scale === "log" ? { min: -14, max: 1, label: "log₁₀(I / 1 A)" } : { min: -4, max: 60, label: "I in mA" }),
+    params: [
+      { key: "isexp", label: "Saturation current I_S", min: -15, max: -9, step: 0.5, value: -14, fmt: v => EE.si(Math.pow(10, v), "A") },
+      { key: "n", label: "Ideality factor n", min: 1, max: 2, step: 0.05, value: 1, fmt: v => v.toFixed(2) },
+      { key: "T", label: "Temperature", min: -40, max: 150, step: 5, value: 25, unit: "°C", fmt: v => v.toFixed(0) },
+      { key: "scale", label: "Scale", type: "select", value: "lin", options: [{ label: "linear", value: "lin" }, { label: "log", value: "log" }] }
+    ],
+    curves: [
+      { label: "I(U)", color: 0, fn: (u, p) => {
+          const I = Idio(u, IS_T(Math.pow(10, p.isexp), p.T), p.n, p.T);
+          return p.scale === "log" ? (I > 1e-16 ? Math.log10(I) : NaN) : 1000 * I;
+        } }
+    ],
+    annotations: p => {
+      const is = IS_T(Math.pow(10, p.isexp), p.T);
+      const u10 = p.n * UT(p.T) * Math.log(0.01 / is + 1);
+      return p.scale === "log"
+        ? [{ type: "hline", y: -3, label: "1 mA" }, { type: "vline", x: p.n * UT(p.T) * Math.log(0.001 / is + 1), label: "U(1 mA)" }]
+        : [{ type: "point", x: u10, y: 10, label: "10 mA → “knee”" }];
+    },
+    readouts: [
+      { label: "U_T = kT/e", fn: p => (UT(p.T) * 1000).toFixed(1) + " mV" },
+      { label: "slope n·U_T·ln10", fn: p => (p.n * UT(p.T) * Math.LN10 * 1000).toFixed(0) + " mV/decade" },
+      { label: "U_F at 10 mA", fn: p => (p.n * UT(p.T) * Math.log(0.01 / IS_T(Math.pow(10, p.isexp), p.T) + 1)).toFixed(3) + " V" },
+      { label: "I at 0.55 V", fn: p => EE.si(Idio(0.55, IS_T(Math.pow(10, p.isexp), p.T), p.n, p.T), "A") }
+    ]
+  });
+
+  /* --- W2: load line & operating point (bisection) --- */
+  const LL = { is: 1e-14, n: 1, T: 25 };
+  const opPoint = p => {
+    let lo = 0, hi = Math.min(p.Uq, 1.2);
+    const f = u => Idio(u, LL.is, LL.n, LL.T) - (p.Uq - u) / p.R;
+    for (let i = 0; i < 60; i++) { const m = (lo + hi) / 2; (f(m) > 0 ? hi = m : lo = m); }
+    const u = (lo + hi) / 2;
+    return { u, i: (p.Uq - u) / p.R };
+  };
+  EE.functionPlot({
+    mount: "#w-loadline", height: 300,
+    x: p => ({ min: 0, max: Math.max(1.2, p.Uq * 1.02), label: "U across diode in V" }),
+    y: p => ({ min: 0, max: 1150 * p.Uq / p.R, label: "I in mA" }),
+    params: [
+      { key: "Uq", label: "Source voltage U_q", min: 0.8, max: 5, step: 0.1, value: 3, unit: "V", fmt: v => v.toFixed(1) },
+      { key: "R", label: "Series resistor R", min: 50, max: 1000, step: 10, value: 150, unit: "Ω", fmt: v => v.toFixed(0) }
+    ],
+    curves: [
+      { label: "diode I(U)", color: 0, fn: (u, p) => 1000 * Idio(u, LL.is, LL.n, LL.T) },
+      { label: "load line (U_q−U)/R", color: 2, fn: (u, p) => 1000 * (p.Uq - u) / p.R }
+    ],
+    annotations: p => {
+      const op = opPoint(p);
+      return [
+        { type: "point", x: op.u, y: 1000 * op.i, label: "operating point" },
+        { type: "vline", x: op.u, label: "U_OP" }
+      ];
+    },
+    readouts: [
+      { label: "U_OP", fn: p => opPoint(p).u.toFixed(3) + " V" },
+      { label: "I_OP", fn: p => EE.si(opPoint(p).i, "A") },
+      { label: "P in diode", fn: p => { const o = opPoint(p); return EE.si(o.u * o.i, "W"); } },
+      { label: "0.7 V model error", fn: p => {
+          const o = opPoint(p);
+          const iId = Math.max(0, (p.Uq - 0.7) / p.R);
+          return o.i > 1e-9 ? (100 * (iId - o.i) / o.i).toFixed(1) + " %" : "—";
+        } }
+    ]
+  });
+
+  /* --- W3: MOSFET output characteristic family --- */
+  const idMos = (uds, ugs, p) => {
+    const uov = ugs - p.Vth;
+    if (uov <= 0 || uds <= 0) return 0;
+    return uds < uov ? p.K * (uov * uds - uds * uds / 2) : p.K / 2 * uov * uov;
+  };
+  EE.functionPlot({
+    mount: "#w-mosfet", height: 320,
+    x: { min: 0, max: 8, label: "U_DS in V" },
+    y: p => {
+      const uovmax = Math.max(p.UGS, 5.5) - p.Vth;
+      return { min: 0, max: Math.max(0.2, p.K / 2 * uovmax * uovmax * 1.18), label: "I_D in A" };
+    },
+    params: [
+      { key: "UGS", label: "Your gate voltage U_GS", min: 0, max: 6, step: 0.1, value: 4, unit: "V", fmt: v => v.toFixed(1) },
+      { key: "Vth", label: "Threshold V_th", min: 0.5, max: 3, step: 0.1, value: 2, unit: "V", fmt: v => v.toFixed(1) },
+      { key: "K", label: "k = µ·C_ox·W/L", min: 0.1, max: 1.5, step: 0.05, value: 0.5, unit: "A/V²", fmt: v => v.toFixed(2) }
+    ],
+    curves: [
+      { label: "2.5 V", color: 0, width: 1.4, fn: (u, p) => idMos(u, 2.5, p) },
+      { label: "3.5 V", color: 0, width: 1.4, fn: (u, p) => idMos(u, 3.5, p) },
+      { label: "4.5 V", color: 0, width: 1.4, fn: (u, p) => idMos(u, 4.5, p) },
+      { label: "5.5 V", color: 0, width: 1.4, fn: (u, p) => idMos(u, 5.5, p) },
+      { label: "U_GS (slider)", color: 5, width: 3, fn: (u, p) => idMos(u, p.UGS, p) },
+      { label: "boundary k/2·U_DS²", color: 4, dash: [6, 4], width: 1.8, fn: (u, p) => p.K / 2 * u * u }
+    ],
+    annotations: p => {
+      const uov = p.UGS - p.Vth;
+      if (uov <= 0) return [];
+      return [
+        { type: "vline", x: uov, label: "U_DS,sat = U_GS − V_th" },
+        { type: "point", x: uov, y: p.K / 2 * uov * uov, label: "pinch-off" }
+      ];
+    },
+    readouts: [
+      { label: "Overdrive U_GS − V_th", fn: p => Math.max(0, p.UGS - p.Vth).toFixed(2) + " V" },
+      { label: "I_D in saturation", fn: p => { const u = p.UGS - p.Vth; return u > 0 ? EE.si(p.K / 2 * u * u, "A") : "0 A (cutoff)"; } },
+      { label: "R_DS(on) (small U_DS)", fn: p => { const u = p.UGS - p.Vth; return u > 0 ? EE.si(1 / (p.K * u), "Ω") : "∞"; } }
+    ]
+  });
+
+  /* --- W4: LED color from bandgap (custom canvas) --- */
+  const wl2rgb = w => {
+    let r = 0, g = 0, b = 0;
+    if (w >= 380 && w < 440) { r = -(w - 440) / 60; b = 1; }
+    else if (w < 490) { g = (w - 440) / 50; b = 1; }
+    else if (w < 510) { g = 1; b = -(w - 510) / 20; }
+    else if (w < 580) { r = (w - 510) / 70; g = 1; }
+    else if (w < 645) { r = 1; g = -(w - 645) / 65; }
+    else if (w <= 750) { r = 1; }
+    let f = 1;
+    if (w >= 380 && w < 420) f = 0.35 + 0.65 * (w - 380) / 40;
+    else if (w > 700 && w <= 750) f = 0.35 + 0.65 * (750 - w) / 50;
+    const c = x => Math.round(255 * Math.pow(Math.max(0, Math.min(1, x * f)), 0.85));
+    return [c(r), c(g), c(b)];
+  };
+  const colorName = wl =>
+    wl > 750 ? "infrared (invisible)" :
+    wl >= 625 ? "red" : wl >= 590 ? "orange" : wl >= 565 ? "yellow" :
+    wl >= 500 ? "green" : wl >= 485 ? "cyan" : wl >= 450 ? "blue" :
+    wl >= 380 ? "violet" : "ultraviolet (invisible)";
+  const material = eg =>
+    eg < 1.55 ? "GaAs / InGaAsP (IR: remotes, fiber optics)" :
+    eg < 2.1 ? "AlInGaP (red / orange)" :
+    eg < 2.35 ? "AlInGaP / GaP (yellow-green)" :
+    eg < 2.95 ? "InGaN (green / blue)" : "AlGaN (UV: sterilization)";
+  EE.custom({
+    mount: "#w-led", height: 230,
+    params: [
+      { key: "Eg", label: "Bandgap E_g", min: 1.2, max: 3.5, step: 0.01, value: 1.9, unit: "eV", fmt: v => v.toFixed(2) }
+    ],
+    draw: (ctx, w, h, p, hp) => {
+      const k = hp.ink;
+      const x0 = 50, x1 = w - 30, y0 = 34, barH = 34;
+      const E0 = 1.2, E1 = 3.5;
+      /* spectrum bar mapped on the ENERGY axis */
+      for (let px = x0; px <= x1; px++) {
+        const E = E0 + (px - x0) / (x1 - x0) * (E1 - E0);
+        const wl = 1240 / E;
+        if (wl >= 380 && wl <= 750) {
+          const [r, g, b] = wl2rgb(wl);
+          ctx.fillStyle = `rgb(${r},${g},${b})`;
+        } else ctx.fillStyle = k.grid;
+        ctx.fillRect(px, y0, 1.5, barH);
+      }
+      ctx.strokeStyle = k.axis; ctx.lineWidth = 1;
+      ctx.strokeRect(x0, y0, x1 - x0, barH);
+      /* energy ticks */
+      ctx.fillStyle = k.muted; ctx.font = "11.5px system-ui, sans-serif";
+      ctx.textAlign = "center"; ctx.textBaseline = "top";
+      for (let E = 1.5; E <= 3.5001; E += 0.5) {
+        const px = x0 + (E - E0) / (E1 - E0) * (x1 - x0);
+        ctx.strokeStyle = k.axis;
+        ctx.beginPath(); ctx.moveTo(px, y0 + barH); ctx.lineTo(px, y0 + barH + 5); ctx.stroke();
+        ctx.fillText(E.toFixed(1), px, y0 + barH + 7);
+      }
+      ctx.fillStyle = k.primary; ctx.font = "600 12px system-ui, sans-serif";
+      ctx.fillText("E_g in eV  →  higher energy, shorter wavelength", (x0 + x1) / 2, y0 + barH + 24);
+      /* IR / UV zone labels */
+      ctx.fillStyle = k.muted; ctx.font = "600 11px system-ui, sans-serif";
+      const pxIR = x0 + (1.653 - E0) / (E1 - E0) * (x1 - x0);
+      const pxUV = x0 + (3.263 - E0) / (E1 - E0) * (x1 - x0);
+      ctx.fillText("IR", (x0 + pxIR) / 2, y0 + 11);
+      ctx.fillText("UV", (pxUV + x1) / 2, y0 + 11);
+      /* marker triangle at current Eg */
+      const mx = x0 + (p.Eg - E0) / (E1 - E0) * (x1 - x0);
+      ctx.fillStyle = k.primary;
+      ctx.beginPath(); ctx.moveTo(mx, y0 - 3); ctx.lineTo(mx - 7, y0 - 14); ctx.lineTo(mx + 7, y0 - 14); ctx.closePath(); ctx.fill();
+      /* LED swatch */
+      const wl = 1240 / p.Eg;
+      const cy = y0 + barH + 82, cx = x0 + 48, R = 33;
+      const visible = wl >= 380 && wl <= 750;
+      if (visible) {
+        const [r, g, b] = wl2rgb(wl);
+        ctx.save();
+        ctx.shadowColor = `rgb(${r},${g},${b})`; ctx.shadowBlur = 26;
+        ctx.fillStyle = `rgb(${r},${g},${b})`;
+        ctx.beginPath(); ctx.arc(cx, cy, R, 0, 7); ctx.fill();
+        ctx.restore();
+      } else {
+        ctx.fillStyle = k.grid;
+        ctx.beginPath(); ctx.arc(cx, cy, R, 0, 7); ctx.fill();
+        ctx.fillStyle = k.muted; ctx.font = "700 12px system-ui, sans-serif";
+        ctx.fillText(wl > 750 ? "IR" : "UV", cx, cy - 7);
+      }
+      ctx.strokeStyle = k.axis; ctx.beginPath(); ctx.arc(cx, cy, R, 0, 7); ctx.stroke();
+      /* text block */
+      ctx.textAlign = "left"; ctx.textBaseline = "middle";
+      ctx.fillStyle = k.primary; ctx.font = "700 15px system-ui, sans-serif";
+      ctx.fillText("λ = " + wl.toFixed(0) + " nm — " + colorName(wl), cx + R + 22, cy - 18);
+      ctx.fillStyle = k.muted; ctx.font = "12.5px system-ui, sans-serif";
+      ctx.fillText("material family: " + material(p.Eg), cx + R + 22, cy + 4);
+      ctx.fillText("photon energy = E_g → forward voltage U_F ≈ " + p.Eg.toFixed(2) + " V (+ ohmic drops)", cx + R + 22, cy + 24);
+    },
+    readouts: [
+      { label: "Wavelength λ = hc/E_g", fn: p => (1240 / p.Eg).toFixed(0) + " nm" },
+      { label: "Photon energy", fn: p => p.Eg.toFixed(2) + " eV = " + EE.si(p.Eg * 1.602e-19, "J") },
+      { label: "U_F (order of magnitude)", fn: p => "≈ " + p.Eg.toFixed(1) + " V" }
+    ]
+  });
+});
+</script>
+
+</article>
+</main>
+</div>
+</body>
+</html>

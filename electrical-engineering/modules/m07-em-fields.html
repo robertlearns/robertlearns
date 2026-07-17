@@ -1,0 +1,1077 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>M07 · Electromagnetic Fields &amp; Maxwell's Equations — EE Knowledge Base</title>
+<link rel="stylesheet" href="../../assets/vendor/katex/katex.min.css">
+<link rel="stylesheet" href="../../assets/css/style.css">
+<script src="../../assets/vendor/katex/katex.min.js" defer></script>
+<script src="../../assets/vendor/katex/auto-render.min.js" defer></script>
+<script src="../curriculum.js" defer></script>
+<script src="../../assets/js/app.js" defer></script>
+<script src="../../assets/js/widgets.js" defer></script>
+</head>
+<body data-module="m07">
+<div class="layout">
+<main class="content">
+<article class="article">
+
+<span class="eyebrow">⚡ Fundamentals of Electrical Engineering · Module 07</span>
+<h1>Electromagnetic Fields &amp; Maxwell's Equations <span class="muted" style="font-weight:400;font-size:1.4rem">· <span class="de">Elektromagnetische Felder</span></span></h1>
+<p class="lead">Circuits are a brilliant abstraction — but underneath every resistor, capacitor and transmission line there are <em>fields</em>: invisible conditions of space that store energy, exert forces, and race outward at the speed of light. This module builds the field picture from Coulomb's law to Maxwell's four equations, and ends with the most beautiful punchline in physics: light itself falls out of the math.</p>
+
+<div class="page-meta">
+  <span><b>Corresponds to:</b> Theoretische Elektrotechnik / Elektromagnetische Felder (3rd–4th semester)</span>
+  <span><b>Prerequisites:</b> Modules 02, 04</span>
+  <span><b>Study time:</b> ≈ 7–9 h</span>
+</div>
+
+<h2 id="field-concept">1. The field concept — how forces cross empty space</h2>
+
+<p>Coulomb's experiments (1785) show that two charges attract or repel each other across empty space. Taken literally, that is deeply strange: how does charge A "know" that charge B moved? Newton had the same discomfort about gravity and called action at a distance an absurdity he left "to the consideration of my readers".</p>
+
+<p>The modern answer, due largely to Michael Faraday — a bookbinder's apprentice with no formal mathematics — is the <strong>field</strong> (<span class="de">Feld</span>): a charge does not act on distant charges directly. Instead it modifies the space around itself, creating a condition — an electric field \(\vec{E}\) — and a second charge placed anywhere responds to the field <em>at its own location</em>. The interaction is local, always:</p>
+<p style="text-align:center"><em>charge → field → force on other charge.</em></p>
+<p>For static problems the field looks like mathematical bookkeeping. It stops being optional the moment things change in time: wiggle charge A, and charge B a distance \(r\) away feels nothing until a time \(r/c\) later. During that delay the energy and momentum are not in either charge — they are demonstrably <em>in the field, travelling</em>. Radio, radar, fiber optics and this module's finale all live in that delay.</p>
+
+<div class="box intuition">
+  <div class="box-title"><span class="ic">💡</span>Intuition: the field as a landscape</div>
+  <p>Think of a field as a weather map for space. A scalar field assigns each point a number (temperature map, or our potential \(\varphi\)). A vector field assigns each point an arrow (wind map, or \(\vec{E}\) and \(\vec{B}\)). A test charge is a tiny weather balloon: release it anywhere and the local arrow tells you the force it feels. All the vector calculus in this module — flux, circulation, divergence, curl — is just precise language for reading such maps: <b>flux</b> asks "how much arrows flow out through a closed surface?", <b>circulation</b> asks "how much do the arrows swirl around a closed loop?".</p>
+</div>
+
+<h2 id="coulomb">2. Electrostatics — Coulomb's law and the field of charges</h2>
+
+<h3 id="coulomb-law">2.1 Coulomb's law</h3>
+<p>Two point charges \(q_1, q_2\) at distance \(r\) exert on each other the force</p>
+\[ F = \frac{1}{4\pi\varepsilon_0}\,\frac{q_1 q_2}{r^2}, \qquad
+   \varepsilon_0 = 8.854\cdot 10^{-12}\,\frac{\mathrm{As}}{\mathrm{Vm}} \]
+<p>where \(\varepsilon_0\) is the permittivity of free space (<span class="de">elektrische Feldkonstante</span>).</p>
+<p>Like charges repel (\(F&gt;0\), pointing apart), unlike charges attract. The prefactor \(1/4\pi\varepsilon_0 \approx 8.99\cdot 10^9\,\mathrm{Vm/As}\) is enormous: two charges of one coulomb each at 1 m distance would push apart with \(9\cdot10^9\) N — the weight of a small mountain. That is why macroscopic matter is so scrupulously neutral, and why the coulomb quantities we met in Module 04 flow as current but never pile up in one place.</p>
+
+<h3 id="efield">2.2 The electric field E</h3>
+<p>Factor Coulomb's law into "source" and "victim". The <strong>electric field strength</strong> (<span class="de">elektrische Feldstärke</span>) created by the source charge \(Q\) is defined as force per unit test charge:</p>
+\[ \boxed{\;\vec{E} = \frac{\vec{F}}{q}\;} \qquad [E] = \frac{\mathrm{N}}{\mathrm{C}} = \frac{\mathrm{V}}{\mathrm{m}}, \qquad
+   \text{point charge: } E(r) = \frac{Q}{4\pi\varepsilon_0 r^2}\ \text{(radial)}. \]
+<p>The V/m unit is no accident — we will connect \(E\) to voltage in Section 4. Typical magnitudes: ~100 V/m in fair-weather atmosphere, ~10 kV/m under a 400 kV line, 3 MV/m breakdown strength of air (sparks!), ~10 GV/m holding electrons inside atoms.</p>
+
+<p><strong>Superposition</strong> (<span class="de">Überlagerungsprinzip</span>): fields of several charges simply add as vectors, \(\vec{E} = \vec{E}_1 + \vec{E}_2 + \dots\) — the electrostatic field is linear in its sources, exactly like the circuits of Module 04 were linear in theirs.</p>
+
+<h3 id="field-lines">2.3 Field-line pictures</h3>
+<p><strong>Field lines</strong> (<span class="de">Feldlinien</span>) are curves that follow the local field direction. Three rules make them quantitative: they start on + charge and end on − charge (or at infinity); their local <em>density</em> encodes field strength; they never cross (the field has one direction per point). Three canonical pictures are worth memorizing:</p>
+
+<figure>
+  <div class="fig-frame">
+  <svg class="diagram" viewBox="0 0 680 230" role="img" aria-label="Field line pictures: point charge, dipole, parallel plates">
+    <!-- panel 1: point charge -->
+    <g>
+      <circle cx="110" cy="100" r="14" fill="var(--accent)" opacity="0.9"/>
+      <text x="110" y="105" text-anchor="middle" font-size="14" fill="#fff" font-weight="700">+</text>
+      <g stroke="var(--text-soft)" stroke-width="1.6">
+        <line x1="110" y1="82" x2="110" y2="30" marker-end="url(#farr)"/>
+        <line x1="110" y1="118" x2="110" y2="170" marker-end="url(#farr)"/>
+        <line x1="92" y1="100" x2="40" y2="100" marker-end="url(#farr)"/>
+        <line x1="128" y1="100" x2="180" y2="100" marker-end="url(#farr)"/>
+        <line x1="123" y1="87" x2="160" y2="50" marker-end="url(#farr)"/>
+        <line x1="97" y1="87" x2="60" y2="50" marker-end="url(#farr)"/>
+        <line x1="123" y1="113" x2="160" y2="150" marker-end="url(#farr)"/>
+        <line x1="97" y1="113" x2="60" y2="150" marker-end="url(#farr)"/>
+      </g>
+      <text x="110" y="205" text-anchor="middle" font-size="12" fill="var(--text-soft)">point charge: radial, ∝ 1/r²</text>
+    </g>
+    <!-- panel 2: dipole -->
+    <g>
+      <circle cx="300" cy="100" r="12" fill="var(--accent)" opacity="0.9"/>
+      <text x="300" y="105" text-anchor="middle" font-size="13" fill="#fff" font-weight="700">+</text>
+      <circle cx="420" cy="100" r="12" fill="var(--accent-2)" opacity="0.9"/>
+      <text x="420" y="105" text-anchor="middle" font-size="13" fill="#fff" font-weight="700">−</text>
+      <g stroke="var(--text-soft)" stroke-width="1.6" fill="none">
+        <path d="M312 100 H 408" marker-end="url(#farr)"/>
+        <path d="M308 90 Q 360 55 412 90" marker-end="url(#farr)"/>
+        <path d="M308 110 Q 360 145 412 110" marker-end="url(#farr)"/>
+        <path d="M303 88 Q 360 10 417 88" marker-end="url(#farr)"/>
+        <path d="M303 112 Q 360 190 417 112" marker-end="url(#farr)"/>
+      </g>
+      <text x="360" y="205" text-anchor="middle" font-size="12" fill="var(--text-soft)">dipole: + to −, bulging arcs</text>
+    </g>
+    <!-- panel 3: plates -->
+    <g>
+      <rect x="520" y="40" width="10" height="120" fill="var(--accent)" opacity="0.85"/>
+      <rect x="640" y="40" width="10" height="120" fill="var(--accent-2)" opacity="0.85"/>
+      <text x="525" y="30" text-anchor="middle" font-size="13" fill="var(--accent)">+</text>
+      <text x="645" y="30" text-anchor="middle" font-size="13" fill="var(--accent-2)">−</text>
+      <g stroke="var(--text-soft)" stroke-width="1.6">
+        <line x1="534" y1="58" x2="634" y2="58" marker-end="url(#farr)"/>
+        <line x1="534" y1="86" x2="634" y2="86" marker-end="url(#farr)"/>
+        <line x1="534" y1="114" x2="634" y2="114" marker-end="url(#farr)"/>
+        <line x1="534" y1="142" x2="634" y2="142" marker-end="url(#farr)"/>
+      </g>
+      <text x="585" y="205" text-anchor="middle" font-size="12" fill="var(--text-soft)">plates: homogeneous field</text>
+    </g>
+    <defs><marker id="farr" markerWidth="8" markerHeight="8" refX="6" refY="4" orient="auto">
+      <path d="M0 0 L7 4 L0 8 z" fill="var(--text-soft)"/></marker></defs>
+  </svg>
+  </div>
+  <figcaption><b>Fig. 2.1</b> — The three canonical electrostatic field pictures. The parallel-plate field is (away from the edges) <em>homogeneous</em>: same strength and direction everywhere — the electrostatic equivalent of a lab bench.</figcaption>
+</figure>
+
+<div class="widget">
+  <div class="w-head"><span class="ic">🧪</span>Interactive — field of two point charges <span class="w-tag">simulation</span></div>
+  <div class="w-body">
+    <p class="small mt0">Two charges, 20 cm apart. Drag the sliders through zero and watch the topology flip: opposite signs give the dipole pattern (lines from + to −), equal signs give mutual repulsion with a field-free saddle point in the middle. Switch to the vector view to see magnitude falling off with distance.</p>
+    <div id="w-charges"></div>
+  </div>
+</div>
+
+<div class="box pitfall">
+  <div class="box-title"><span class="ic">🚫</span>Classic pitfall: field lines are not trajectories</div>
+  <p>A field line shows the direction of the <em>force</em> on a positive test charge at each point — not the path a released charge follows. A charge has inertia: like a ball rolling in a bowl, its velocity and the force generally point in different directions. Only for a charge released from rest in a homogeneous field do line and trajectory coincide.</p>
+</div>
+
+<h2 id="gauss">3. Gauss's law — counting field lines through closed surfaces</h2>
+
+<h3 id="flux">3.1 Electric flux</h3>
+<p>Define the <strong>electric flux</strong> (<span class="de">elektrischer Fluss</span>) through a surface as "field strength × perpendicular area", summed over the surface:</p>
+\[ \Psi = \oint_A \vec{E}\cdot \mathrm{d}\vec{A} \]
+<p>Picture it as counting field lines poking outward through the surface (outward crossings count +, inward −). Gauss's law (<span class="de">Satz von Gauß</span>) is then a single powerful statement:</p>
+\[ \boxed{\;\oint_A \vec{E}\cdot\mathrm{d}\vec{A} = \frac{Q_{\text{enc}}}{\varepsilon_0}\;} \]
+<p><strong>The net number of field lines leaving any closed surface is proportional to the charge enclosed — nothing else matters.</strong> Charges outside the surface send lines in on one side and out on the other: net contribution zero. This is the integral way of saying "field lines begin and end only on charges". The local, per-point version of the same statement is the <em>divergence</em>: \(\operatorname{div}\vec E = \rho/\varepsilon_0\) — divergence measures how strongly a point acts as a source (a "sprinkler head") of field lines. We will not need the differential machinery here; the picture is enough.</p>
+
+<div class="box key">
+  <div class="box-title"><span class="ic">🔑</span>Key idea: symmetry does the integral for you</div>
+  <p>Gauss's law is always true but only <em>useful</em> when symmetry lets you pull \(E\) out of the integral: choose a surface on which \(|\vec E|\) is constant and \(\vec E\) is perpendicular (or parallel, contributing zero). Three geometries deliver: <b>spheres</b> around point/spherical charges, <b>cylinders</b> around line charges and wires, <b>pillboxes</b> straddling charged planes. These three solved examples carry you through most of electrostatics.</p>
+</div>
+
+<figure>
+  <div class="fig-frame">
+  <svg class="diagram" viewBox="0 0 620 240" role="img" aria-label="Gaussian sphere around a point charge and pillbox at a charged plane">
+    <!-- left: sphere -->
+    <g>
+      <circle cx="160" cy="120" r="80" fill="none" stroke="var(--accent-2)" stroke-width="2" stroke-dasharray="7 5"/>
+      <ellipse cx="160" cy="120" rx="80" ry="22" fill="none" stroke="var(--accent-2)" stroke-width="1.2" stroke-dasharray="4 4" opacity="0.7"/>
+      <circle cx="160" cy="120" r="11" fill="var(--accent)"/>
+      <text x="160" y="125" text-anchor="middle" font-size="12" fill="#fff" font-weight="700">Q</text>
+      <g stroke="var(--text-soft)" stroke-width="1.6">
+        <line x1="160" y1="105" x2="160" y2="55" marker-end="url(#garr)"/>
+        <line x1="175" y1="120" x2="228" y2="120" marker-end="url(#garr)"/>
+        <line x1="160" y1="135" x2="160" y2="185" marker-end="url(#garr)"/>
+        <line x1="145" y1="120" x2="92" y2="120" marker-end="url(#garr)"/>
+        <line x1="171" y1="109" x2="208" y2="72" marker-end="url(#garr)"/>
+        <line x1="149" y1="131" x2="112" y2="168" marker-end="url(#garr)"/>
+      </g>
+      <line x1="160" y1="120" x2="238" y2="98" stroke="var(--accent-2)" stroke-width="1.6"/>
+      <text x="212" y="94" font-size="13" fill="var(--accent-2)">r</text>
+      <text x="160" y="228" text-anchor="middle" font-size="12" fill="var(--text-soft)">Gaussian sphere: E · 4πr² = Q/ε₀</text>
+    </g>
+    <!-- right: pillbox at plane -->
+    <g>
+      <rect x="455" y="30" width="12" height="160" fill="var(--accent)" opacity="0.85"/>
+      <text x="461" y="20" text-anchor="middle" font-size="12" fill="var(--accent)">σ</text>
+      <rect x="415" y="85" width="92" height="60" fill="none" stroke="var(--accent-2)" stroke-width="2" stroke-dasharray="6 4" rx="6"/>
+      <g stroke="var(--text-soft)" stroke-width="1.6">
+        <line x1="470" y1="100" x2="530" y2="100" marker-end="url(#garr)"/>
+        <line x1="470" y1="130" x2="530" y2="130" marker-end="url(#garr)"/>
+        <line x1="452" y1="100" x2="392" y2="100" marker-end="url(#garr)"/>
+        <line x1="452" y1="130" x2="392" y2="130" marker-end="url(#garr)"/>
+      </g>
+      <text x="545" y="105" font-size="13" fill="var(--text-soft)">E</text>
+      <text x="461" y="228" text-anchor="middle" font-size="12" fill="var(--text-soft)">pillbox at a charged sheet: 2AE = σA/ε₀</text>
+    </g>
+    <defs><marker id="garr" markerWidth="8" markerHeight="8" refX="6" refY="4" orient="auto">
+      <path d="M0 0 L7 4 L0 8 z" fill="var(--text-soft)"/></marker></defs>
+  </svg>
+  </div>
+  <figcaption><b>Fig. 3.1</b> — Gauss's law at work. Left: a spherical surface around a point charge — by symmetry \(E\) is equal and radial everywhere on it. Right: a pillbox straddling a charged sheet — flux exits through both faces.</figcaption>
+</figure>
+
+<div class="example">
+  <div class="ex-head"><span class="ex-tag">Worked example</span> Gauss's law for a charged sphere</div>
+  <div class="ex-body">
+    <p>A metal sphere of radius \(R = 10\,\mathrm{cm}\) carries \(Q = 1\,\mathrm{\mu C}\). Find the field at the surface and at \(r = 30\,\mathrm{cm}\), and check against air breakdown (3 MV/m).</p>
+    <div class="step"><span class="step-label">Step 1 — choose the surface:</span> a concentric sphere of radius \(r\). By symmetry \(\vec E\) is radial with the same magnitude everywhere on it, so the flux integral collapses to \(E \cdot 4\pi r^2\).</div>
+    <div class="step"><span class="step-label">Step 2 — apply Gauss:</span>
+      \[ E \cdot 4\pi r^2 = \frac{Q}{\varepsilon_0} \;\Rightarrow\; E(r) = \frac{Q}{4\pi\varepsilon_0 r^2} \]
+      Outside <em>any</em> spherically symmetric charge, the field is exactly that of a point charge at the center — a free theorem from Gauss.</div>
+    <div class="step"><span class="step-label">Step 3 — numbers:</span>
+      at the surface: \( E = 8.99\cdot 10^9 \cdot \frac{10^{-6}}{0.1^2} \approx 9.0\cdot 10^5\,\mathrm{V/m} = 0.9\,\mathrm{MV/m} \).
+      At 30 cm: \( E = 8.99\cdot10^9 \cdot \frac{10^{-6}}{0.09} \approx 1.0\cdot 10^5\,\mathrm{V/m} \) — nine times weaker at three times the distance, as \(1/r^2\) demands.</div>
+    <div class="result-line">\(E_{\text{surface}} \approx 0.9\,\mathrm{MV/m}\) — below the 3 MV/m breakdown of air, but only by a factor 3. Roughly 3 µC on this sphere would spark. This is why high-voltage hardware uses large, smooth spheres: bigger \(R\) means lower surface field for the same charge.</div>
+  </div>
+</div>
+
+<p>The same pillbox argument in Fig. 3.1 gives the field of a large charged sheet with surface charge density \(\sigma\): flux \(2AE\) leaves through the two faces, enclosing charge \(\sigma A\), so \(E = \sigma/2\varepsilon_0\) — independent of distance. Put two oppositely charged sheets face to face (a capacitor!) and the fields add between the plates and cancel outside:</p>
+\[ E_{\text{between plates}} = \frac{\sigma}{\varepsilon_0}, \qquad E_{\text{outside}} = 0. \]
+<p>Keep this result warm — it is the seed of Section 5.</p>
+
+<h2 id="potential">4. Potential — the energy landscape of the field</h2>
+
+<h3 id="potential-def">4.1 From force to energy</h3>
+<p>Push a charge \(q\) against the field from point A to point B and you do work. Per unit charge, that work defines the <strong>voltage</strong> between the points — the same \(U\) we used throughout Module 04, now revealed as a line integral over the field:</p>
+\[ U_{AB} = \int_A^B \vec{E}\cdot\mathrm{d}\vec{s} \]
+<p>For electrostatic fields this integral is <em>path-independent</em> (walk any route from A to B, same energy — a conservative field, zero circulation: \(\oint \vec E\cdot\mathrm d\vec s = 0\)). Path independence lets us define a scalar <strong>potential</strong> (<span class="de">Potential</span>) \(\varphi\) at every point, an "electric altitude", with \(U_{AB} = \varphi_A - \varphi_B\). For a point charge, with the conventional zero at infinity:</p>
+\[ \varphi(r) = \frac{Q}{4\pi\varepsilon_0 r}. \]
+
+<h3 id="gradient">4.2 E = −grad φ and equipotentials</h3>
+<p>Conversely, the field is the downhill slope of the potential landscape:</p>
+\[ \boxed{\;\vec{E} = -\operatorname{grad}\varphi\;} \qquad \text{homogeneous field: } E = \frac{U}{d}. \]
+<p>The minus sign says the field points from high potential to low — "downhill". Surfaces of constant \(\varphi\) are <strong>equipotentials</strong> (<span class="de">Äquipotentialflächen</span>), the contour lines of the landscape; field lines cross them at right angles, like water flowing perpendicular to contour lines. Metal conductors in electrostatics are always equipotential volumes (otherwise their free electrons would still be moving), so field lines meet metal surfaces perpendicularly, and the field inside a closed metal shell is zero — the <strong>Faraday cage</strong> (<span class="de">Faradayscher Käfig</span>), the reason your car protects you from lightning and your phone loses reception in an elevator.</p>
+
+<p>The handy formula \(E = U/d\) for homogeneous fields explains everyday numbers: a 1 mm capacitor gap at 230 V holds \(E = 230\,\mathrm{kV/m}\); cell membranes (~5 nm, ~70 mV) sustain a staggering 14 MV/m.</p>
+
+<div class="box warn">
+  <div class="box-title"><span class="ic">⚠️</span>Volts don't hurt you — fields and energy do</div>
+  <p>A rubbed balloon sits at ~10 kV, a taser at 50 kV, both mostly harmless; a 230 V outlet can kill. Potential alone is meaningless without asking how much charge/energy is behind it and what field (and hence current) it can drive through you. This is the physics behind "it's the amps that kill" — and behind birds sitting happily on a 20 kV line: both feet at the <em>same</em> potential, so no voltage across the bird.</p>
+</div>
+
+<h2 id="capacitance">5. Capacitance — the capacitor derived from its field</h2>
+
+<h3 id="parallel-plate">5.1 The parallel-plate formula</h3>
+<p>Since Module 04 you have used \(C = Q/U\) as a given. Now we can <em>derive</em> it. Take two plates of area \(A\) at spacing \(d\) (small compared to the plate size), charged to \(+Q\) and \(-Q\):</p>
+<ol>
+  <li><b>Field from Gauss (Section 3):</b> \(E = \sigma/\varepsilon_0 = Q/(\varepsilon_0 A)\), homogeneous between the plates.</li>
+  <li><b>Voltage from the line integral:</b> \(U = E\,d = Q d/(\varepsilon_0 A)\).</li>
+  <li><b>Take the ratio:</b></li>
+</ol>
+\[ \boxed{\;C = \frac{Q}{U} = \frac{\varepsilon_0\varepsilon_r A}{d}\;} \]
+<p>Big plates and a small gap make a big capacitor — and the geometry, not the circuit, sets the value. The \(\varepsilon_r\) appears in Step 1 once a dielectric fills the gap, as follows.</p>
+
+<h3 id="dielectrics">5.2 Dielectrics and ε<sub>r</sub></h3>
+<p>Fill the gap with an insulator (<span class="de">Dielektrikum</span>) and \(C\) jumps by a factor \(\varepsilon_r\) (relative permittivity, <span class="de">Permittivitätszahl</span>). Why: the field polarizes the material — molecules stretch or rotate into tiny dipoles whose surface charge partially opposes the plate charge. The net field inside drops to \(E = E_0/\varepsilon_r\) for the same \(Q\), so \(U\) drops and \(C = Q/U\) rises. Typical values: air ≈ 1.0006, paper ≈ 3, glass/epoxy (FR-4) ≈ 4.5, ceramics 10–10 000, water ≈ 80. Ceramic class-2 dielectrics (X7R, barium titanate) are how a fingernail-sized MLCC reaches microfarads.</p>
+
+<h3 id="energy-density">5.3 Where the energy lives: ½εE²</h3>
+<p>Charging a capacitor to voltage \(U\) stores \(W = \frac{1}{2}CU^2\) (Module 04). Substitute \(C = \varepsilon A/d\) and \(U = Ed\):</p>
+\[ W = \tfrac12 \frac{\varepsilon A}{d}(Ed)^2 = \tfrac12\,\varepsilon E^2 \cdot (A\,d)
+   \;\Rightarrow\; \boxed{\;w_e = \frac{W}{V} = \tfrac12\,\varepsilon E^2\;} \]
+<p>The energy is proportional to the <em>volume of field</em> \(A\,d\) — it is stored in the field itself, at density \(\frac12\varepsilon E^2\) joules per cubic meter, not "in the plates". This is the first hard evidence that fields are physically real energy carriers.</p>
+
+<div class="widget">
+  <div class="w-head"><span class="ic">🧪</span>Interactive — parallel-plate capacitor <span class="w-tag">simulation</span></div>
+  <div class="w-body">
+    <p class="small mt0">Geometry is destiny: halve the gap \(d\) and \(C\) doubles — but at fixed voltage the field \(E = U/d\) doubles too, marching toward breakdown. Slide \(\varepsilon_r\) up to see the dielectric multiply \(C\) and the stored charge. The arrow density between the plates tracks the field strength.</p>
+    <div id="w-cap"></div>
+  </div>
+</div>
+
+<div class="box history">
+  <div class="box-title"><span class="ic">📜</span>From Leyden jar to supercapacitor</div>
+  <p>The 1745 Leyden jar (a glass bottle with foil inside and out) stored about 1 nF — enough to knock a row of monks off their feet in a famous demonstration for Louis XV. Modern supercapacitors reach thousands of farads in a soda-can volume by making \(A\) gigantic (porous activated carbon, ~2000 m² per gram) and \(d\) molecular (the electrochemical double layer, &lt; 1 nm). Same formula, twelve orders of magnitude apart. Capacitors as circuit elements return in transient analysis (Module 05) and power electronics (Module 18).</p>
+</div>
+
+<h2 id="current-field">6. Steady currents as a field — J and continuity</h2>
+<p>Current in a wire is a river of charge; the field view zooms into the cross-section. The <strong>current density</strong> (<span class="de">Stromdichte</span>) \(\vec J\) gives amperes per square meter at each point:</p>
+\[ I = \int_A \vec J \cdot \mathrm d\vec A, \qquad \vec J = \sigma \vec E \ \ \text{(Ohm's law, local form; } \sigma = 1/\rho \text{ conductivity)}. \]
+<p>The local Ohm's law \(\vec J = \sigma\vec E\) is Module 04's \(U = RI\) shrunk to a point: an E-field inside a conductor drives a proportional current density. Integrate it over a wire of length \(l\) and cross-section \(A\) and \(R = \rho l/A\) reappears.</p>
+<p>Charge conservation becomes a field statement, the <strong>continuity equation</strong> (<span class="de">Kontinuitätsgleichung</span>):</p>
+\[ \oint_A \vec J\cdot\mathrm d\vec A = -\frac{\mathrm dQ_{\text{enc}}}{\mathrm dt} \]
+<p>Net current flowing out of a closed surface drains the charge inside. For steady currents (\(\mathrm dQ/\mathrm dt = 0\)) the outflow is zero through every closed surface — which is exactly Kirchhoff's current law, now recognized as a special case of a field law. Typical design values: household wiring runs at \(J \approx 1\!-\!6\,\mathrm{A/mm^2}\); IC interconnects tolerate ~10⁴ A/mm² before electromigration starts eating the metal.</p>
+
+<h2 id="magnetostatics">7. Magnetostatics — currents make magnetic fields</h2>
+
+<h3 id="bfield">7.1 The B-field</h3>
+<p>In 1820 Hans Christian Ørsted noticed, mid-lecture, that a compass needle twitches next to a current-carrying wire: <strong>moving charge creates a magnetic field</strong>. We describe it by the <strong>magnetic flux density</strong> (<span class="de">magnetische Flussdichte</span>) \(\vec B\), unit tesla (T = Vs/m²), and its companion the <strong>magnetic field strength</strong> (<span class="de">magnetische Feldstärke</span>) \(\vec H\) with \(\vec B = \mu_0\mu_r \vec H\), where</p>
+\[ \mu_0 = 4\pi\cdot 10^{-7}\,\frac{\mathrm{Vs}}{\mathrm{Am}} \]
+<p>is the permeability of free space (<span class="de">magnetische Feldkonstante</span>).</p>
+<p>Magnetic field lines have a defining peculiarity: they always <strong>close on themselves</strong> — there are no magnetic charges to start or end on. Gauss's law for magnetism: \(\oint \vec B\cdot\mathrm d\vec A = 0\) through every closed surface. Cut a bar magnet in half and you get two smaller magnets, never a lone north pole. Scale of things: Earth's field ~50 µT, a fridge magnet ~10 mT, an electric machine's air gap ~1 T, an MRI scanner 1.5–7 T, the record steady lab field ~45 T.</p>
+
+<h3 id="ampere">7.2 Ampère's law and the straight wire</h3>
+<p>The magnetic counterpart of Gauss's law swaps flux for <em>circulation</em>. <strong>Ampère's law</strong> (<span class="de">Durchflutungsgesetz</span>) says: walk around any closed loop, summing the component of \(\vec H\) along your path — the total equals the current threading through the loop:</p>
+\[ \boxed{\;\oint \vec H\cdot\mathrm d\vec s = I_{\text{enc}}\;} \]
+<p>Where Gauss counts sources, Ampère counts <em>swirl</em>: currents are the vortices of the magnetic field (the differential version says \(\operatorname{curl}\vec H = \vec J\): curl measures local swirl the way divergence measures local sourcing). The classic application: an infinite straight wire carrying \(I\). By symmetry, \(\vec B\) forms concentric circles around the wire (direction: right-hand rule — thumb along \(I\), fingers curl along \(\vec B\)). Choose the loop to be such a circle of radius \(r\):</p>
+\[ H \cdot 2\pi r = I \;\Rightarrow\; \boxed{\;B = \frac{\mu_0 I}{2\pi r}\;} \]
+<p>Numbers: 10 A at 2 cm gives \(B = 4\pi\cdot10^{-7}\cdot 10 /(2\pi\cdot 0.02) = 100\,\mathrm{\mu T}\) — twice Earth's field. This is why a compass near a live cable lies, and why measurement labs twist their wire pairs (opposite currents at nearly the same place: fields cancel).</p>
+
+<h3 id="solenoid">7.3 The solenoid — and where inductance comes from</h3>
+<p>Wind the wire into a long coil (<span class="de">Zylinderspule</span>) of \(N\) turns over length \(l\). Inside, the fields of all turns reinforce into a nearly homogeneous axial field; outside, the field is weak. An Ampère loop running length \(l\) inside the coil and closing far outside encloses the current \(N I\):</p>
+\[ H\,l = N I \;\Rightarrow\; B = \frac{\mu_0 N I}{l} \quad\text{(air core).} \]
+<p>Now compute the flux through the coil's cross-section \(A\): \(\Phi = B A\), and each of the \(N\) turns links it, giving flux linkage (<span class="de">verketteter Fluss</span>) \(\Psi = N\Phi\). The <strong>inductance</strong> is defined as flux linkage per ampere:</p>
+\[ L = \frac{N\Phi}{I} = \frac{N \cdot \frac{\mu_0 N I}{l} A}{I}
+   \;\Rightarrow\; \boxed{\;L = \frac{\mu_0 \mu_r N^2 A}{l}\;} \]
+<p>The \(N^2\) is worth a pause: doubling the turns doubles the field <em>and</em> doubles the turns that link it — inductance grows quadratically. Just like \(C = \varepsilon A/d\), inductance is pure geometry (times material). And the field stores energy here too, mirror-image to the capacitor:</p>
+\[ W = \tfrac12 L I^2, \qquad w_m = \frac{B^2}{2\mu} \ \ \mathrm{J/m^3}. \]
+
+<div class="example">
+  <div class="ex-head"><span class="ex-tag">Worked example</span> A real solenoid, end to end</div>
+  <div class="ex-body">
+    <p>A coil: \(N = 500\) turns on a plastic (air-core) tube, length \(l = 10\,\mathrm{cm}\), diameter \(2\,\mathrm{cm}\), carrying \(I = 2\,\mathrm{A}\). Find \(B\), \(L\), and the stored energy.</p>
+    <div class="step"><span class="step-label">Step 1 — field:</span>
+      \( B = \frac{\mu_0 N I}{l} = \frac{4\pi\cdot10^{-7}\cdot 500\cdot 2}{0.1} \approx 12.6\,\mathrm{mT} \) — 250× Earth's field, enough to visibly attract a paper clip at the opening.</div>
+    <div class="step"><span class="step-label">Step 2 — inductance:</span> \( A = \pi r^2 = \pi (0.01)^2 = 3.14\cdot 10^{-4}\,\mathrm{m^2} \), so
+      \( L = \frac{4\pi\cdot10^{-7} \cdot 500^2 \cdot 3.14\cdot10^{-4}}{0.1} \approx 0.99\,\mathrm{mH} \approx 1\,\mathrm{mH} \).</div>
+    <div class="step"><span class="step-label">Step 3 — energy:</span>
+      \( W = \tfrac12 L I^2 = \tfrac12 \cdot 10^{-3}\cdot 4 = 2\,\mathrm{mJ} \). Sanity check via density: \( w_m = B^2/2\mu_0 \approx 63\,\mathrm{J/m^3} \) over the core volume \(A\,l \approx 3.1\cdot10^{-5}\,\mathrm{m^3}\) also gives ≈ 2 mJ ✓</div>
+    <div class="result-line">\(B \approx 12.6\,\mathrm{mT},\; L \approx 1\,\mathrm{mH},\; W = 2\,\mathrm{mJ}\). Slide an iron core in (\(\mu_r \sim 1000\)) and \(L\) jumps toward a henry — that is how chokes, relays and contactors are built.</div>
+  </div>
+</div>
+
+<h2 id="forces">8. Magnetic forces — motors before Maxwell</h2>
+
+<h3 id="force-wire">8.1 Force on a current-carrying conductor</h3>
+<p>A magnetic field exerts force on moving charge — and a current-carrying wire is exactly that. A straight conductor of length \(l\) carrying \(I\) perpendicular to a field \(B\) feels</p>
+\[ \boxed{\;F = B\,I\,l\;} \]
+<p>direction by the right-hand rule (or the German "UVW rule": <span class="de">Ursache–Vermittlung–Wirkung</span> — cause \(I\), mediation \(B\), effect \(F\), on thumb–index–middle finger). This single formula <em>is</em> the electric motor: put many conductor lengths in a ~1 T field, feed them tens of amperes, and torque appears (Module 17). It is also the loudspeaker, the galvanometer, and the reason busbars must be braced, as follows.</p>
+
+<h3 id="parallel-wires">8.2 Force between parallel conductors</h3>
+<p>Wire 2 sits in the circular field of wire 1, \(B_1 = \mu_0 I_1/(2\pi a)\), so it feels \(F = B_1 I_2 l\) per length \(l\):</p>
+\[ \frac{F}{l} = \frac{\mu_0\, I_1 I_2}{2\pi a} \]
+<p>Parallel currents <em>attract</em>, antiparallel currents <em>repel</em>. (Until 2019, this formula defined the ampere.) In everyday electronics the force is negligible — until a short circuit makes it terrifying:</p>
+
+<div class="example">
+  <div class="ex-head"><span class="ex-tag">Worked example</span> Busbar forces in a short circuit</div>
+  <div class="ex-body">
+    <p>In a substation, two busbars run in parallel at spacing \(a = 30\,\mathrm{cm}\). A fault drives a short-circuit current of \(I = 50\,\mathrm{kA}\) through them (out on one bar, back on the other). Find the force per meter, and at the first asymmetric peak (\(\hat I \approx 2.5\,I\)).</p>
+    <div class="step"><span class="step-label">Step 1 — steady value:</span>
+      \[ \frac{F}{l} = \frac{\mu_0 I^2}{2\pi a} = \frac{2\cdot10^{-7}\cdot (5\cdot10^4)^2}{0.3} \approx 1.7\,\mathrm{kN/m}. \]
+      Antiparallel currents: the bars are <em>pushed apart</em> with the weight-force of ~170 kg per meter.</div>
+    <div class="step"><span class="step-label">Step 2 — peak:</span> force scales with \(I^2\), so the 2.5× asymmetric current peak gives \(2.5^2 = 6.25\)× the force:
+      \( F/l \approx 10\,\mathrm{kN/m} \) — a tonne-weight per meter, as an impulsive blow within the first 10 ms.</div>
+    <div class="result-line">≈ 1.7 kN/m steady, ≈ 10 kN/m at the peak. This is why switchgear busbars sit in massive cast supports, and why standards (IEC 61439) demand a mechanical short-circuit withstand rating. Unbraced bars bend like spaghetti in fault videos — the magnetic force is very real.</div>
+  </div>
+</div>
+
+<h3 id="lorentz">8.3 The Lorentz force on a single charge</h3>
+<p>Underlying \(F = BIl\) is the force on each individual charge carrier, the <strong>Lorentz force</strong> (<span class="de">Lorentzkraft</span>):</p>
+\[ \boxed{\;\vec F = q\,(\vec E + \vec v \times \vec B)\;} \]
+<p>The magnetic part is always perpendicular to the velocity — it does no work, it only <em>steers</em>. A free charge in a uniform \(B\) therefore runs in circles (radius \(r = mv/qB\)): this steering deflected the electron beam in every CRT television, guides particles around the LHC's 27 km ring, and traps the plasma in fusion tokamaks. In a current-carrying conductor in a field, the steered carriers crowd toward one side, producing a measurable transverse voltage — the <strong>Hall effect</strong> (<span class="de">Hall-Effekt</span>), the working principle of the position sensors and clamp-on current probes you will meet in Modules 10 and 17.</p>
+
+<h2 id="materials">9. Magnetic materials — iron, hysteresis and why transformers hum</h2>
+
+<p>Materials respond to \(\vec H\) with \(\vec B = \mu_0\mu_r\vec H\). For almost everything \(\mu_r \approx 1\) (diamagnets slightly below, paramagnets slightly above). The exception that powers civilization is <strong>ferromagnetism</strong> (<span class="de">Ferromagnetismus</span>): in iron, nickel, cobalt and their alloys, atomic magnetic moments align spontaneously in microscopic <em>domains</em> (<span class="de">Weiss'sche Bezirke</span>). An external field grows the aligned domains, multiplying the flux density by \(\mu_r \sim 10^2\ldots 10^5\). Iron is to magnetic flux what copper is to current: a low-resistance path that lets us <em>guide</em> flux through cores and air gaps.</p>
+
+<p>Ferromagnets are neither linear nor memoryless. Cycle \(H\) up and down and \(B(H)\) traces a loop — <strong>hysteresis</strong> (<span class="de">Hysterese</span>):</p>
+
+<figure>
+  <div class="fig-frame">
+  <svg class="diagram" viewBox="0 0 560 300" role="img" aria-label="Hysteresis loop B versus H">
+    <!-- axes -->
+    <line x1="60" y1="150" x2="500" y2="150" stroke="var(--text-soft)" stroke-width="1.5" marker-end="url(#harr)"/>
+    <line x1="280" y1="285" x2="280" y2="20" stroke="var(--text-soft)" stroke-width="1.5" marker-end="url(#harr)"/>
+    <text x="505" y="140" font-size="14" fill="var(--text-soft)">H</text>
+    <text x="292" y="26" font-size="14" fill="var(--text-soft)">B</text>
+    <!-- hysteresis loop -->
+    <path d="M 130 235 C 200 225 240 205 265 175 C 285 150 295 105 320 80 C 345 58 390 48 430 45
+             C 400 48 340 60 320 80 L 430 45"
+          fill="none" stroke="none"/>
+    <path d="M 130 235 C 230 228 255 195 280 150 C 300 115 320 68 430 45"
+          fill="none" stroke="var(--accent)" stroke-width="2.5"/>
+    <path d="M 430 45 C 330 52 305 85 280 130 C 260 165 240 212 130 235"
+          fill="none" stroke="var(--accent-2)" stroke-width="2.5"/>
+    <!-- initial magnetization curve -->
+    <path d="M 280 150 C 310 140 330 110 355 85 C 380 65 405 52 430 45"
+          fill="none" stroke="var(--text-faint)" stroke-width="1.8" stroke-dasharray="5 5"/>
+    <!-- key points -->
+    <circle cx="280" cy="97" r="4.5" fill="var(--accent)"/>
+    <text x="240" y="92" font-size="12.5" fill="var(--accent)">B_r</text>
+    <circle cx="243" cy="150" r="4.5" fill="var(--accent-2)"/>
+    <text x="222" y="136" font-size="12.5" fill="var(--accent-2)">−H_c</text>
+    <circle cx="430" cy="45" r="4.5" fill="var(--text-soft)"/>
+    <text x="432" y="32" font-size="12.5" fill="var(--text-soft)">saturation</text>
+    <circle cx="130" cy="235" r="4.5" fill="var(--text-soft)"/>
+    <text x="120" y="256" font-size="12.5" fill="var(--text-soft)">−B_sat</text>
+    <!-- direction arrows on loop -->
+    <path d="M 320 68 l 12 -5" stroke="var(--accent)" stroke-width="2" marker-end="url(#harrA)" fill="none"/>
+    <path d="M 240 212 l -12 5" stroke="var(--accent-2)" stroke-width="2" marker-end="url(#harrB)" fill="none"/>
+    <text x="70" y="40" font-size="12" fill="var(--text-faint)">dashed: virgin curve</text>
+    <text x="70" y="58" font-size="12" fill="var(--text-faint)">loop area = loss per cycle</text>
+    <defs>
+      <marker id="harr" markerWidth="9" markerHeight="9" refX="7" refY="4.5" orient="auto"><path d="M0 0 L8 4.5 L0 9 z" fill="var(--text-soft)"/></marker>
+      <marker id="harrA" markerWidth="8" markerHeight="8" refX="6" refY="4" orient="auto"><path d="M0 0 L7 4 L0 8 z" fill="var(--accent)"/></marker>
+      <marker id="harrB" markerWidth="8" markerHeight="8" refX="6" refY="4" orient="auto"><path d="M0 0 L7 4 L0 8 z" fill="var(--accent-2)"/></marker>
+    </defs>
+  </svg>
+  </div>
+  <figcaption><b>Fig. 9.1</b> — Hysteresis loop of a ferromagnet. Remanence \(B_r\): flux remaining at \(H=0\) (permanent magnetization). Coercivity \(H_c\): reverse field needed to demagnetize. At saturation all domains are aligned — pushing \(H\) further gains almost nothing.</figcaption>
+</figure>
+
+<p>Read three engineering facts straight off the loop:</p>
+<ul>
+  <li><strong>Loop area = energy lost per cycle</strong> per unit volume (\(\oint H\,\mathrm dB\), in J/m³). A 50 Hz transformer traverses the loop 50 times per second, so wide loops mean hot cores. Transformer laminations use <em>soft</em> magnetic steel with a sliver-thin loop; permanent magnets (NdFeB) deliberately use enormously <em>wide</em> loops so they stay magnetized against opposing fields.</li>
+  <li><strong>Saturation</strong> (<span class="de">Sättigung</span>) at 1.5–2 T for iron caps every magnetic design: above it \(\mu_r\) collapses toward 1, inductance plummets, and magnetizing current spikes — the classic cause of transformer inrush current and of chokes that mysteriously stop choking at high load.</li>
+  <li><strong>Remanence + coercivity</strong> are memory: magnetic tape, hard-disk platters and magnetic stripe cards store bits as the sign of \(B_r\).</li>
+</ul>
+<p>The audible 100 Hz hum of a transformer is the core physically flexing (magnetostriction) twice per 50 Hz cycle — the hysteresis loop made audible. Core loss engineering returns in earnest with transformers and machines (Modules 17, 18).</p>
+
+<h2 id="induction">10. Induction — changing flux makes voltage</h2>
+
+<h3 id="faraday">10.1 Faraday's law</h3>
+<p>Electricity → magnetism was Ørsted's 1820 discovery. The reverse took Faraday eleven more years, because the effect only exists during <em>change</em>: a steady magnet near a coil induces nothing; move it, and a voltage appears. Define the <strong>magnetic flux</strong> (<span class="de">magnetischer Fluss</span>) through a loop, \(\Phi = \int \vec B \cdot \mathrm d\vec A\) (unit weber, Wb = Vs). Then <strong>Faraday's law of induction</strong> (<span class="de">Induktionsgesetz</span>):</p>
+\[ \boxed{\;u_{\text{ind}} = -\,\frac{\mathrm d\Phi}{\mathrm dt}\;} \qquad \text{coil of } N \text{ turns: } u_{\text{ind}} = -N\frac{\mathrm d\Phi}{\mathrm dt}. \]
+<p>Anything that changes \(\Phi = B A \cos\alpha\) works, giving the two practical cases:</p>
+<ul>
+  <li><strong>Changing field, resting conductor</strong> (<span class="de">Ruheinduktion</span>): \(B\) varies in time — transformers, wireless chargers, induction cooktops.</li>
+  <li><strong>Moving conductor, static field</strong> (<span class="de">Bewegungsinduktion</span>): area or orientation varies. A rod of length \(l\) sliding at speed \(v\) across a field \(B\) sweeps flux at rate \(B l v\), so \(u = B\,l\,v\) — microscopically this is just the Lorentz force \(qvB\) pushing carriers along the rod. A loop rotating at \(\omega\) has \(\Phi = BA\cos\omega t\), hence \(u = BA\omega\sin\omega t\): <em>every generator on the planet</em>, and the origin of the sine waves of Module 05.</li>
+</ul>
+
+<h3 id="lenz">10.2 Lenz's rule — the minus sign</h3>
+<p>The minus sign has a name and a personality. <strong>Lenz's rule</strong> (<span class="de">Lenzsche Regel</span>): the induced voltage drives a current whose own magnetic field <em>opposes the change of flux that created it</em>. It must be so — the opposite sign would amplify every disturbance into a free-energy runaway; Lenz is energy conservation wearing a minus sign.</p>
+
+<div class="box intuition">
+  <div class="box-title"><span class="ic">💡</span>Intuition: the magnet in the copper tube</div>
+  <p>Drop a strong neodymium magnet through a vertical copper tube. It falls in eerie slow motion — seconds instead of a blink. The approaching magnet increases flux through each ring of tube below it; induced eddy currents circulate to oppose the increase, making each ring a magnet that repels the falling one (and attracts it from above, where flux is decreasing). Copper is not magnetic at all — the drag is pure induction, and the magnet's lost potential energy reappears as heat in the tube walls. The same physics, scaled up, is the eddy-current brake in ICE trains and drop-tower rides, damping in analog meters, and the reason induction cooktops heat pans directly.</p>
+</div>
+
+<div class="widget">
+  <div class="w-head"><span class="ic">🧪</span>Interactive — induction: magnet through a coil <span class="w-tag">animation</span></div>
+  <div class="w-body">
+    <p class="small mt0">A magnet oscillates through a coil. Watch the two traces: the flux \(\Phi(t)\) peaks when the magnet is centered — and exactly there the induced voltage \(u = -N\,\mathrm d\Phi/\mathrm dt\) crosses <em>zero</em>, because the flux momentarily stops changing. The voltage is largest where the flux changes fastest. Crank the speed: \(\Phi\)'s peak height stays the same, but \(u\) grows — induction rewards <em>rate</em>, not amount.</p>
+    <div id="w-induction"></div>
+  </div>
+</div>
+
+<h3 id="self-mutual">10.3 Self-inductance, mutual inductance, transformer</h3>
+<p>A coil's own current creates flux through itself, so a <em>changing</em> current induces a voltage in the very same coil — <strong>self-induction</strong> (<span class="de">Selbstinduktion</span>). With \(N\Phi = L i\) from Section 7:</p>
+\[ u_L = L\,\frac{\mathrm di}{\mathrm dt} \]
+<p>— the defining equation of the inductor as a circuit element (transients: Module 05). It also explains the fat spark when you break an inductive circuit: forcing \(\mathrm di/\mathrm dt \to -\infty\) demands unbounded voltage, which the circuit finds by arcing across the opening switch. Hence flyback diodes across every relay coil.</p>
+<p>If a second coil shares part of the first coil's flux, the changing current in coil 1 induces voltage in coil 2 — <strong>mutual inductance</strong> (<span class="de">Gegeninduktivität</span>) \(M\), with \(u_2 = -M\,\mathrm di_1/\mathrm dt\). Wind both coils on one iron core so essentially <em>all</em> flux is shared, drive coil 1 with AC, and each turn of each winding sees the same \(\mathrm d\Phi/\mathrm dt\). The winding voltages are then simply proportional to the turn counts:</p>
+\[ \frac{U_2}{U_1} = \frac{N_2}{N_1} \]
+<p>— the <strong>transformer</strong> (<span class="de">Transformator</span>), the machine that made AC win the "War of the Currents" by letting grids step voltage up for low-loss transmission and back down for safe use. Full treatment in Modules 17 and 19; here it stands as induction's greatest hit.</p>
+
+<h2 id="maxwell">11. Maxwell's equations — the whole theory on one page</h2>
+
+<h3 id="displacement">11.1 The missing term: displacement current</h3>
+<p>By 1860 the four experimental laws (Gauss ×2, Ampère, Faraday) were known. James Clerk Maxwell, aged ~30, noticed Ampère's law is <em>inconsistent</em> for changing fields. The cleanest way to see it — the <strong>capacitor paradox</strong>: charge a capacitor through a wire and apply Ampère's law to a loop around the wire. The enclosed current is defined via a surface spanning the loop. Choose a flat disk pierced by the wire: \(I_{\text{enc}} = I\). Now balloon the surface out so it passes <em>between the capacitor plates</em>, where no charge flows: \(I_{\text{enc}} = 0\). Same loop, two answers — contradiction.</p>
+
+<figure>
+  <div class="fig-frame">
+  <svg class="diagram" viewBox="0 0 620 250" role="img" aria-label="Displacement current: Ampère loop with two spanning surfaces at a charging capacitor">
+    <!-- wire left, capacitor, wire right -->
+    <line x1="40" y1="125" x2="255" y2="125" class="wire" stroke-width="2.5"/>
+    <line x1="345" y1="125" x2="580" y2="125" class="wire" stroke-width="2.5"/>
+    <line x1="255" y1="70" x2="255" y2="180" stroke="var(--text-soft)" stroke-width="4"/>
+    <line x1="345" y1="70" x2="345" y2="180" stroke="var(--text-soft)" stroke-width="4"/>
+    <!-- E field between plates -->
+    <g stroke="var(--accent-2)" stroke-width="1.6">
+      <line x1="262" y1="90" x2="336" y2="90" marker-end="url(#darr2)"/>
+      <line x1="262" y1="125" x2="336" y2="125" marker-end="url(#darr2)"/>
+      <line x1="262" y1="160" x2="336" y2="160" marker-end="url(#darr2)"/>
+    </g>
+    <text x="300" y="62" text-anchor="middle" font-size="13" fill="var(--accent-2)">E increasing</text>
+    <!-- current arrow -->
+    <line x1="95" y1="112" x2="150" y2="112" stroke="var(--accent)" stroke-width="2.2" marker-end="url(#darr)"/>
+    <text x="122" y="100" text-anchor="middle" font-size="13" fill="var(--accent)">I</text>
+    <!-- Ampère loop around wire -->
+    <ellipse cx="185" cy="125" rx="14" ry="42" fill="none" stroke="var(--accent)" stroke-width="2"/>
+    <text x="185" y="196" text-anchor="middle" font-size="12.5" fill="var(--accent)">Ampère loop</text>
+    <!-- surface 1: disk -->
+    <text x="185" y="216" text-anchor="middle" font-size="12" fill="var(--text-faint)">surface 1 (disk): I_enc = I</text>
+    <!-- surface 2: balloon through gap -->
+    <path d="M 185 83 C 240 40 350 40 300 105 M 185 167 C 240 210 350 210 300 145"
+          fill="none" stroke="var(--accent-2)" stroke-width="1.8" stroke-dasharray="6 4"/>
+    <text x="430" y="230" text-anchor="middle" font-size="12" fill="var(--text-faint)">surface 2 (through the gap): I_enc = 0, but dΦ_E/dt ≠ 0</text>
+    <defs>
+      <marker id="darr" markerWidth="9" markerHeight="9" refX="7" refY="4.5" orient="auto"><path d="M0 0 L8 4.5 L0 9 z" fill="var(--accent)"/></marker>
+      <marker id="darr2" markerWidth="8" markerHeight="8" refX="6" refY="4" orient="auto"><path d="M0 0 L7 4 L0 8 z" fill="var(--accent-2)"/></marker>
+    </defs>
+  </svg>
+  </div>
+  <figcaption><b>Fig. 11.1</b> — The capacitor paradox. The same Ampère loop is spanned by two surfaces: the disk is pierced by the wire, the balloon passes through the gap where no conduction current flows. Maxwell's displacement current through the growing E-field restores consistency.</figcaption>
+</figure>
+
+<p>Maxwell's repair: between the plates the electric field is <em>growing</em>, and a changing electric flux acts exactly like a current — the <strong>displacement current</strong> (<span class="de">Verschiebungsstrom</span>):</p>
+\[ I_d = \varepsilon_0\,\frac{\mathrm d\Phi_E}{\mathrm dt} \]
+<p>One can check it has the same value as the wire current \(I\) (since \(\Phi_E = Q/\varepsilon_0\) between the plates, \(I_d = \mathrm dQ/\mathrm dt = I\)). Adding it to Ampère's law makes both surfaces agree — and, far more importantly, makes <em>changing E-fields create B-fields</em>, the symmetric partner to Faraday. That closes a loop with world-changing consequences.</p>
+
+<h3 id="four-equations">11.2 The four equations, in plain language</h3>
+
+<div class="table-wrap">
+<table class="data">
+<thead><tr><th>Law</th><th>Integral form</th><th>Plain-language reading</th></tr></thead>
+<tbody>
+<tr><td>Gauss (electric)</td><td>\( \displaystyle\oint_A \vec E\cdot\mathrm d\vec A = \frac{Q_{\text{enc}}}{\varepsilon_0} \)</td><td>Electric field lines start and end on charges; enclosed charge fixes the net outflow.</td></tr>
+<tr><td>Gauss (magnetic)</td><td>\( \displaystyle\oint_A \vec B\cdot\mathrm d\vec A = 0 \)</td><td>Magnetic field lines never start or end — no magnetic charges; the lines always close.</td></tr>
+<tr><td>Faraday</td><td>\( \displaystyle\oint \vec E\cdot\mathrm d\vec s = -\frac{\mathrm d\Phi_B}{\mathrm dt} \)</td><td>A changing magnetic flux stirs an electric vortex field around it (induction, with Lenz's minus).</td></tr>
+<tr><td>Ampère–Maxwell</td><td>\( \displaystyle\oint \vec B\cdot\mathrm d\vec s = \mu_0 I_{\text{enc}} + \mu_0\varepsilon_0 \frac{\mathrm d\Phi_E}{\mathrm dt} \)</td><td>Currents <em>and</em> changing electric flux stir a magnetic vortex field around them.</td></tr>
+</tbody>
+</table>
+</div>
+
+<p>Plus the Lorentz force \(\vec F = q(\vec E + \vec v\times\vec B)\) to connect fields back to mechanics, and the material relations \(\vec D = \varepsilon\vec E\), \(\vec B = \mu\vec H\), \(\vec J = \sigma\vec E\). That is, without exaggeration, <em>all</em> of classical electrical engineering: every circuit law you have learned is a limiting case (KCL from continuity, KVL from Faraday with negligible \(\mathrm d\Phi/\mathrm dt\), \(R\), \(L\), \(C\) from the three material/geometry formulas).</p>
+
+<div class="box key">
+  <div class="box-title"><span class="ic">🔑</span>Key idea: the self-sustaining loop</div>
+  <p>Look at the last two equations as a pair: a changing \(\vec B\) creates a curling \(\vec E\) (Faraday); a changing \(\vec E\) creates a curling \(\vec B\) (Maxwell's new term). Neither needs charges or wires — <b>the fields can regenerate each other in empty space</b>, each one's change sourcing the other, leapfrogging forward. That is an electromagnetic wave. Without the displacement current there is no leapfrog, no radio, no light.</p>
+</div>
+
+<div class="box warn">
+  <div class="box-title"><span class="ic">⚠️</span>When can you still use circuit theory?</div>
+  <p>Kirchhoff's laws assume fields stay <em>inside</em> the components and signals arrive everywhere in the circuit instantly. Rule of thumb: circuit theory is safe while the physical size of the circuit is far below the wavelength \(\lambda = c/f\) (say, &lt; λ/10). At 50 Hz, λ = 6000 km — a whole national grid is a "circuit". At 2.4 GHz, λ = 12.5 cm — a 3 cm PCB trace is a transmission line, not a wire (Module 21). When the lumped picture fails, Maxwell is what remains.</p>
+</div>
+
+<h2 id="waves">12. Electromagnetic waves — and the identity of light</h2>
+
+<h3 id="wave-speed">12.1 The speed falls out of the constants</h3>
+<p>Combine Faraday and Ampère–Maxwell in charge-free space and (two lines of vector calculus we happily skip) each field component obeys a wave equation with propagation speed \(c = 1/\sqrt{\mu_0\varepsilon_0}\). Maxwell computed that number in 1864 from two <em>tabletop</em> constants — one measured with capacitors, one with current balances:</p>
+
+<div class="example">
+  <div class="ex-head"><span class="ex-tag">Worked example</span> Maxwell's 1864 punchline, recomputed</div>
+  <div class="ex-body">
+    <p>Compute \(c = 1/\sqrt{\mu_0 \varepsilon_0}\) from \(\mu_0 = 4\pi\cdot10^{-7}\,\mathrm{Vs/Am}\) and \(\varepsilon_0 = 8.854\cdot10^{-12}\,\mathrm{As/Vm}\).</p>
+    <div class="step"><span class="step-label">Step 1 — the product:</span>
+      \( \mu_0\varepsilon_0 = 1.2566\cdot10^{-6} \cdot 8.854\cdot10^{-12} = 1.1127\cdot10^{-17}\,\mathrm{s^2/m^2} \). (Check the units: Vs/Am · As/Vm = s²/m² ✓)</div>
+    <div class="step"><span class="step-label">Step 2 — invert the root:</span>
+      \[ c = \frac{1}{\sqrt{1.1127\cdot10^{-17}}} = \frac{1}{3.336\cdot10^{-9}\,\mathrm{s/m}} \approx 2.998\cdot10^{8}\,\mathrm{m/s}. \]</div>
+    <div class="result-line">299 800 km/s — the measured speed of light, emerging from electrical bench measurements that had nothing to do with optics. Maxwell: "we can scarcely avoid the inference that <em>light itself</em> is an electromagnetic disturbance." Hertz confirmed it experimentally in 1887; radio, and everything wireless since, is the engineering follow-up.</div>
+  </div>
+</div>
+
+<h3 id="plane-wave">12.2 Anatomy of a plane wave</h3>
+<p>The simplest solution is the <strong>plane wave</strong> (<span class="de">ebene Welle</span>): \(\vec E\) and \(\vec B\) oscillate in phase, perpendicular to each other and to the propagation direction \(\vec k\) — a transverse wave, \(\vec E \perp \vec B \perp \vec k\). Their magnitudes are locked together, and their ratio in free space is a resistance:</p>
+\[ \frac{E}{B} = c, \qquad Z_0 = \frac{E}{H} = \sqrt{\frac{\mu_0}{\varepsilon_0}} \approx 377\,\Omega \]
+<p>— \(Z_0\) is the impedance of free space (<span class="de">Feldwellenwiderstand</span>).</p>
+<p>That 377 Ω is a real design quantity: antennas are impedance transformers between a 50 Ω cable and 377 Ω space (Module 21). The wave carries power — sunlight delivers ≈ 1.37 kW/m² above the atmosphere, corresponding to E-field amplitudes around 1 kV/m.</p>
+
+<div class="widget">
+  <div class="w-head"><span class="ic">🧪</span>Interactive — plane wave: E ⊥ B ⊥ k <span class="w-tag">animation</span></div>
+  <div class="w-body">
+    <p class="small mt0">A snapshot of a linearly polarized plane wave racing along \(z\). The E-field (vertical plane) and B-field (horizontal plane) oscillate <em>in phase</em> — both peak together, both cross zero together — a point many students misremember as 90° offset. Choose the wavelength and see what part of the radio world you are in.</p>
+    <div id="w-wave"></div>
+  </div>
+</div>
+
+<h3 id="spectrum">12.3 One phenomenon, twenty decades: the spectrum</h3>
+
+<div class="table-wrap">
+<table class="data">
+<thead><tr><th>Region</th><th>Frequency</th><th>Wavelength λ = c/f</th><th>EE relevance</th></tr></thead>
+<tbody>
+<tr><td>Power grid radiation</td><td>50 Hz</td><td>6000 km</td><td>grids don't radiate usefully — λ is continental</td></tr>
+<tr><td>AM / long wave</td><td>0.1–1.6 MHz</td><td>~200 m–3 km</td><td>first broadcasting; ground-following waves</td></tr>
+<tr><td>FM / VHF</td><td>~100 MHz</td><td>~3 m</td><td>broadcast radio; λ/2 dipoles ~1.5 m</td></tr>
+<tr><td>UHF / mobile, GPS</td><td>0.7–2.6 GHz</td><td>~12–40 cm</td><td>cellular bands, GNSS — antennas fit in phones</td></tr>
+<tr><td>Microwave / WiFi, radar</td><td>2.4–80 GHz</td><td>~4 mm–12.5 cm</td><td>WiFi, 5G mmWave, automotive radar, satellite links</td></tr>
+<tr><td>Infrared</td><td>~1–400 THz</td><td>750 nm–300 µm</td><td>fiber optics at 193 THz (1550 nm), thermal imaging, IR remotes</td></tr>
+<tr><td>Visible light</td><td>430–750 THz</td><td>400–700 nm</td><td>the one octave our eyes evolved to receive; LEDs, photovoltaics</td></tr>
+<tr><td>Ultraviolet</td><td>~10¹⁵–10¹⁶ Hz</td><td>10–400 nm</td><td>photolithography (EUV at 13.5 nm prints your CPU)</td></tr>
+<tr><td>X-ray / gamma</td><td>&gt; 10¹⁷ Hz</td><td>&lt; 3 nm</td><td>imaging, sterilization, radiation hardness of electronics</td></tr>
+</tbody>
+</table>
+</div>
+<p>Same four equations top to bottom — only \(f\) changes. Whether a given \(f\) behaves "like a circuit", "like a wave" or "like a particle stream" is a matter of scale, not of substance.</p>
+
+<h2 id="practical">13. Fields in practice — skin effect and shielding</h2>
+
+<h3 id="skin-effect">13.1 Skin effect</h3>
+<p>Feed AC into a thick conductor and induction acts <em>inside the metal itself</em>: the alternating flux inside the conductor drives eddy voltages that oppose current flow in the center and reinforce it at the surface (Lenz again). The current crowds into a surface layer — the <strong>skin effect</strong> (<span class="de">Skineffekt / Stromverdrängung</span>) — with exponentially decaying density characterized by the <strong>skin depth</strong> (<span class="de">Eindringtiefe</span>):</p>
+\[ \boxed{\;\delta = \sqrt{\frac{2\rho}{\omega\mu}} = \sqrt{\frac{\rho}{\pi f \mu}}\;} \]
+<p>Beyond a few \(\delta\) the conductor's interior is electrically dead weight: the effective resistance of a fat wire rises as \(\sqrt f\).</p>
+
+<div class="example">
+  <div class="ex-head"><span class="ex-tag">Worked example</span> Skin depth in copper: 50 Hz vs 1 MHz</div>
+  <div class="ex-body">
+    <p>Copper: \(\rho = 1.78\cdot10^{-8}\,\Omega\mathrm{m}\), \(\mu \approx \mu_0\). Find \(\delta\) at 50 Hz and at 1 MHz.</p>
+    <div class="step"><span class="step-label">Step 1 — 50 Hz:</span>
+      \[ \delta = \sqrt{\frac{1.78\cdot10^{-8}}{\pi \cdot 50 \cdot 4\pi\cdot10^{-7}}} = \sqrt{9.0\cdot10^{-5}\,\mathrm{m^2}} \approx 9.5\,\mathrm{mm}. \]</div>
+    <div class="step"><span class="step-label">Step 2 — 1 MHz:</span> \(\delta \propto 1/\sqrt f\), so scale by \(\sqrt{50/10^6}\):
+      \( \delta = 9.5\,\mathrm{mm}\cdot 7.07\cdot10^{-3} \approx 67\,\mathrm{\mu m} \) — a hair's breadth.</div>
+    <div class="result-line">At 50 Hz, wires up to ~2 cm diameter conduct almost uniformly — skin effect barely matters in your house. At 1 MHz only the outer 67 µm works. Engineering answers: <b>litz wire</b> (<span class="de">Hochfrequenzlitze</span>: hundreds of individually insulated 50 µm strands, woven so each takes a turn at the surface) for HF transformers and induction cooktops; <b>hollow tubes</b> for high-power RF and grid busbars (the core would carry nothing anyway — save the copper); <b>silver plating</b> of microwave waveguides, where only the surface layer counts.</div>
+  </div>
+</div>
+
+<h3 id="shielding">13.2 Shielding in one paragraph</h3>
+<p><strong>Electric fields</strong> are easy to stop: any grounded conductive enclosure is a Faraday cage — surface charges rearrange and terminate the field lines (Section 4). <strong>Magnetic fields</strong> are the stubborn ones. Static/low-frequency \(B\)-fields must be <em>detoured</em> through high-\(\mu_r\) material (mu-metal cans around sensitive transformers and photomultipliers). At higher frequencies eddy currents come to the rescue: an AC field hitting a conductive sheet induces currents that oppose it (Lenz), and a shield a few skin depths thick reflects/absorbs the wave — which is why an ordinary aluminum enclosure that is useless at 50 Hz shields excellently at 100 MHz. Real-world EMC — apertures, seams, cable entries, why the mesh in your microwave oven door stops 2.45 GHz but passes light — is Module 21's territory.</p>
+
+<div class="box german">
+  <div class="box-title"><span class="ic">🇩🇪</span>Vokabeln</div>
+  <p>field = <span class="de">Feld</span> · field strength = <span class="de">Feldstärke</span> · flux = <span class="de">Fluss</span> · flux density = <span class="de">Flussdichte</span> · charge density = <span class="de">Ladungsdichte</span> · permittivity = <span class="de">Permittivität</span> · permeability = <span class="de">Permeabilität</span> · equipotential surface = <span class="de">Äquipotentialfläche</span> · dielectric = <span class="de">Dielektrikum</span> · capacitance = <span class="de">Kapazität</span> · inductance = <span class="de">Induktivität</span> · induction = <span class="de">Induktion</span> · eddy current = <span class="de">Wirbelstrom</span> · hysteresis loop = <span class="de">Hystereseschleife</span> · saturation = <span class="de">Sättigung</span> · remanence = <span class="de">Remanenz</span> · coercivity = <span class="de">Koerzitivfeldstärke</span> · displacement current = <span class="de">Verschiebungsstrom</span> · plane wave = <span class="de">ebene Welle</span> · skin depth = <span class="de">Eindringtiefe</span> · shielding = <span class="de">Schirmung</span></p>
+</div>
+
+<h2 id="summary">14. Formula summary — <span class="de">Formelsammlung</span></h2>
+
+<div class="table-wrap">
+<table class="data">
+<thead><tr><th>Concept</th><th>Formula</th><th>Remember as</th></tr></thead>
+<tbody>
+<tr><td>Coulomb / E-field</td><td>\( F = \frac{q_1 q_2}{4\pi\varepsilon_0 r^2},\quad \vec E = \vec F/q \)</td><td>force per test charge, ∝ 1/r²</td></tr>
+<tr><td>Gauss (electric)</td><td>\( \oint \vec E\cdot\mathrm d\vec A = Q_{\text{enc}}/\varepsilon_0 \)</td><td>lines out = charge inside</td></tr>
+<tr><td>Potential</td><td>\( U = \int \vec E\cdot\mathrm d\vec s,\quad \vec E = -\operatorname{grad}\varphi,\quad E = U/d \)</td><td>field = downhill slope of φ</td></tr>
+<tr><td>Capacitor</td><td>\( C = \varepsilon_0\varepsilon_r A/d,\quad w_e = \tfrac12\varepsilon E^2 \)</td><td>geometry × material; energy in the field</td></tr>
+<tr><td>Local Ohm / continuity</td><td>\( \vec J = \sigma\vec E,\quad \oint\vec J\cdot\mathrm d\vec A = -\mathrm dQ/\mathrm dt \)</td><td>KCL is a field law</td></tr>
+<tr><td>Ampère / wire</td><td>\( \oint\vec H\cdot\mathrm d\vec s = I_{\text{enc}},\quad B = \mu_0 I/2\pi r \)</td><td>currents are B-field vortices</td></tr>
+<tr><td>Solenoid</td><td>\( B = \mu N I/l,\quad L = \mu N^2 A/l,\quad w_m = B^2/2\mu \)</td><td>N² — field and linkage both grow</td></tr>
+<tr><td>Forces</td><td>\( F = BIl,\quad F/l = \mu_0 I_1 I_2/2\pi a,\quad \vec F = q(\vec E + \vec v\times\vec B) \)</td><td>motor, busbar, steering force</td></tr>
+<tr><td>Induction</td><td>\( u = -N\,\mathrm d\Phi/\mathrm dt,\quad u = Blv,\quad u_L = L\,\mathrm di/\mathrm dt \)</td><td>rate of flux change; Lenz opposes</td></tr>
+<tr><td>Transformer</td><td>\( U_2/U_1 = N_2/N_1 \)</td><td>shared flux, counted per turn</td></tr>
+<tr><td>Wave</td><td>\( c = 1/\sqrt{\mu_0\varepsilon_0},\quad Z_0 = \sqrt{\mu_0/\varepsilon_0} \approx 377\,\Omega,\quad E/B = c \)</td><td>light is electromagnetic</td></tr>
+<tr><td>Skin depth</td><td>\( \delta = \sqrt{2\rho/\omega\mu} \)</td><td>AC hugs the surface, δ ∝ 1/√f</td></tr>
+</tbody>
+</table>
+</div>
+
+<h2 id="exercises">15. Exercises</h2>
+<p>Sketch the field picture before touching a formula — in field problems, the drawing <em>is</em> half the solution.</p>
+
+<div class="exercise">
+  <p class="ex-q"><span class="ex-num">E1</span>Two small spheres carry \(+2\,\mathrm{\mu C}\) and \(-2\,\mathrm{\mu C}\) at 10 cm separation. Find the force between them and the E-field magnitude at the midpoint. <span class="diff easy">easy</span></p>
+  <details><summary>Show solution</summary>
+    <div class="solution">
+      Force: \( F = \frac{q_1 q_2}{4\pi\varepsilon_0 r^2} = 8.99\cdot10^9 \cdot \frac{(2\cdot10^{-6})^2}{0.1^2} \approx 3.6\,\mathrm{N} \), attractive — the weight of a 370 g object, from micrograms of surplus electrons.
+      Midpoint: both fields point the <em>same</em> way (from + toward −), each \( E = 8.99\cdot10^9\cdot\frac{2\cdot10^{-6}}{0.05^2} = 7.2\,\mathrm{MV/m} \), so \(E_{\text{total}} \approx 14.4\,\mathrm{MV/m}\) — far above air breakdown (3 MV/m): in reality this pair would spark long before reaching 2 µC.
+    </div>
+  </details>
+</div>
+
+<div class="exercise">
+  <p class="ex-q"><span class="ex-num">E2</span>A parallel-plate capacitor: \(A = 50\,\mathrm{cm^2}\), \(d = 0.5\,\mathrm{mm}\), FR-4 dielectric (\(\varepsilon_r = 4.5\)), charged to 12 V. Find \(C\), \(E\), \(Q\) and \(W\). <span class="diff easy">easy</span></p>
+  <details><summary>Show solution</summary>
+    <div class="solution">
+      \( C = \frac{\varepsilon_0\varepsilon_r A}{d} = \frac{8.854\cdot10^{-12}\cdot 4.5 \cdot 5\cdot10^{-3}}{5\cdot10^{-4}} \approx 398\,\mathrm{pF} \approx 0.4\,\mathrm{nF} \).
+      \( E = U/d = 12/0.0005 = 24\,\mathrm{kV/m} \) — comfortably below FR-4's ~20 kV/mm rating.
+      \( Q = CU \approx 4.8\,\mathrm{nC} \); \( W = \tfrac12 C U^2 \approx 29\,\mathrm{nJ} \).
+      Remark: this is roughly the parasitic capacitance of two facing copper pours on a PCB — "capacitors" exist whether you draw them in the schematic or not.
+    </div>
+  </details>
+</div>
+
+<div class="exercise">
+  <p class="ex-q"><span class="ex-num">E3</span>An overhead line carries 1000 A. At what distance is its B-field equal to Earth's (~50 µT)? And what force per meter acts between two such conductors of a duplex bundle 40 cm apart carrying the same 1000 A in the same direction? <span class="diff med">medium</span></p>
+  <details><summary>Show solution</summary>
+    <div class="solution">
+      \( B = \frac{\mu_0 I}{2\pi r} \Rightarrow r = \frac{\mu_0 I}{2\pi B} = \frac{2\cdot10^{-7}\cdot 1000}{5\cdot10^{-5}} = 4\,\mathrm{m} \). Under the tower (~10–20 m) the line's field is below Earth's own — one reason public-exposure limits (100 µT at 50 Hz) are rarely approached.
+      Bundle force: \( F/l = \frac{\mu_0 I^2}{2\pi a} = \frac{2\cdot10^{-7}\cdot 10^6}{0.4} = 0.5\,\mathrm{N/m} \), <em>attractive</em> (parallel currents) — modest in operation, but the spacers holding bundle conductors apart are sized for the short-circuit case, where 20× the current means 400× the force.
+    </div>
+  </details>
+</div>
+
+<div class="exercise">
+  <p class="ex-q"><span class="ex-num">E4</span>A relay coil: \(N = 2000\) turns, core cross-section \(1\,\mathrm{cm^2}\), magnetic path length 5 cm, \(\mu_r = 800\). Find \(L\), and the induced voltage spike if opening the switch forces its 50 mA coil current to zero in 1 ms. <span class="diff med">medium</span></p>
+  <details><summary>Show solution</summary>
+    <div class="solution">
+      \( L = \frac{\mu_0\mu_r N^2 A}{l} = \frac{4\pi\cdot10^{-7}\cdot 800 \cdot 4\cdot10^6 \cdot 10^{-4}}{0.05} \approx 8.0\,\mathrm{H} \) — iron makes henries easy.
+      Spike: \( u_L = L\,\frac{\Delta i}{\Delta t} = 8.0 \cdot \frac{0.05}{10^{-3}} = 400\,\mathrm{V} \) across a coil fed from maybe 12 V!
+      That spike destroys the transistor switching the relay — hence the flyback diode (Module 08), which gives the current a path and clamps the voltage to ~0.7 V. Sanity check: stored energy \( \tfrac12 L i^2 = 10\,\mathrm{mJ} \) has to go <em>somewhere</em>; the diode lets it dissipate gently in the coil resistance.
+    </div>
+  </details>
+</div>
+
+<div class="exercise">
+  <p class="ex-q"><span class="ex-num">E5</span>A generator loop: 200 turns of area \(80\,\mathrm{cm^2}\) rotate at 3000 rpm in a 0.9 T field. Find the peak induced voltage and the frequency. <span class="diff med">medium</span></p>
+  <details><summary>Show solution</summary>
+    <div class="solution">
+      \( \omega = 2\pi n = 2\pi\cdot 50 = 314\,\mathrm{s^{-1}} \) (3000 rpm = 50 rev/s), so \( f = 50\,\mathrm{Hz} \) — not a coincidence: European grid frequency comes precisely from 3000 rpm two-pole machines.
+      \( \Phi = BA\cos\omega t \Rightarrow u = N B A \omega \sin\omega t \), peak
+      \( \hat u = 200 \cdot 0.9 \cdot 8\cdot10^{-3}\cdot 314 \approx 452\,\mathrm{V} \), i.e. \(U_{\text{rms}} \approx 320\,\mathrm{V}\).
+      Note the design levers: more turns, more field, more area, or more speed — every generator engineer trades among exactly these four.
+    </div>
+  </details>
+</div>
+
+<div class="exercise">
+  <p class="ex-q"><span class="ex-num">E6</span>Using Gauss's law with a cylindrical surface, derive the capacitance per meter of a coaxial cable (inner radius \(r_i\), shield radius \(r_a\), dielectric \(\varepsilon_r\)), then evaluate for RG-58: \(r_i = 0.45\,\mathrm{mm}\), \(r_a = 1.47\,\mathrm{mm}\), \(\varepsilon_r = 2.3\) (PE). <span class="diff hard">challenge</span></p>
+  <details><summary>Show solution</summary>
+    <div class="solution">
+      Put line charge \(q'\) (C/m) on the inner conductor. A coaxial Gaussian cylinder of radius \(r\) and length \(l\) has flux only through its curved wall:
+      \( E \cdot 2\pi r l = q' l/\varepsilon \Rightarrow E(r) = \frac{q'}{2\pi\varepsilon r} \).
+      Integrate for the voltage: \( U = \int_{r_i}^{r_a} E\,\mathrm dr = \frac{q'}{2\pi\varepsilon}\ln\frac{r_a}{r_i} \).
+      Hence \[ C' = \frac{q'}{U} = \frac{2\pi\varepsilon_0\varepsilon_r}{\ln(r_a/r_i)}. \]
+      Numbers: \( \ln(1.47/0.45) = \ln 3.27 = 1.184 \), so \( C' = \frac{2\pi\cdot 8.854\cdot10^{-12}\cdot 2.3}{1.184} \approx 108\,\mathrm{pF/m} \) — within a few percent of the RG-58 datasheet value (~100 pF/m). The same logarithm reappears in the cable's inductance and combines into its 50 Ω characteristic impedance (Module 21): field theory quietly underwrites every datasheet.
+    </div>
+  </details>
+</div>
+
+<h2 id="quiz">16. Self-assessment</h2>
+
+<div class="quiz" data-quiz-title="Module 07 — Self-test">
+<script type="application/json">
+[
+ {"q":"Doubling the distance to a point charge changes the E-field magnitude by a factor…",
+  "opts":["1/2","1/4","1/8","unchanged"],"a":1,
+  "explain":"\\(E \\propto 1/r^2\\): twice the distance means one quarter the field. (The potential \\(\\varphi \\propto 1/r\\) would halve — don't mix up the two laws.)"},
+ {"q":"Gauss's law says the net electric flux through a closed surface depends on…",
+  "opts":["all charges in the universe","only the charges enclosed by the surface","the shape of the surface","the dielectric constant outside"],"a":1,
+  "explain":"\\(\\oint \\vec E\\cdot\\mathrm d\\vec A = Q_{enc}/\\varepsilon_0\\). Outside charges send equal flux in and out — net zero. Shape and size of the surface are irrelevant, which is exactly what makes the law so powerful."},
+ {"q":"A parallel-plate capacitor is charged, disconnected, and then the gap d is doubled. What happens?",
+  "opts":["Q halves, U constant","C halves, U doubles, stored energy doubles","E doubles, C doubles","nothing changes"],"a":1,
+  "explain":"Disconnected means \\(Q\\) is trapped. \\(C = \\varepsilon A/d\\) halves, so \\(U = Q/C\\) doubles; \\(W = Q^2/2C\\) doubles too — you did mechanical work pulling the attracting plates apart, and that work is now field energy."},
+ {"q":"The field 2 cm from a long straight wire carrying 10 A is about…",
+  "opts":["100 µT","1 mT","6.3 µT","10 µT"],"a":0,
+  "explain":"\\(B = \\mu_0 I/(2\\pi r) = 2\\cdot10^{-7}\\cdot 10/0.02 = 10^{-4}\\,\\mathrm{T} = 100\\,\\mathrm{\\mu T}\\) — about twice Earth's field, enough to deflect a compass strongly."},
+ {"q":"Doubling the number of turns of a solenoid (same length, area, current) changes its inductance by…",
+  "opts":["×2","×4","×√2","nothing — L doesn't depend on N"],"a":1,
+  "explain":"\\(L = \\mu N^2 A/l\\): twice the turns make twice the field, and twice as many turns link it — \\(N^2\\), so ×4."},
+ {"q":"Two parallel busbars carry short-circuit current in opposite directions. They…",
+  "opts":["attract each other","feel no force — the fields cancel","repel each other","twist perpendicular to each other"],"a":2,
+  "explain":"Antiparallel currents repel, \\(F/l = \\mu_0 I_1 I_2/(2\\pi a)\\). At fault currents of tens of kA this reaches kN per meter — busbar bracing is a mechanical design problem."},
+ {"q":"The magnetic part of the Lorentz force can never…",
+  "opts":["deflect an electron beam","act on a neutral atom","do work on the charge","depend on velocity"],"a":2,
+  "explain":"\\(\\vec F = q\\vec v\\times\\vec B\\) is always perpendicular to \\(\\vec v\\), so it changes direction but never speed — zero work. Motors do deliver work, but trace the energy and it comes from the source driving the current against the induced back-EMF, not from the magnetic field itself."},
+ {"q":"A magnet falls through a vertical copper tube. It falls slowly because…",
+  "opts":["copper is weakly ferromagnetic","eddy currents create fields opposing the flux change (Lenz)","air pressure builds up in the tube","the tube becomes electrostatically charged"],"a":1,
+  "explain":"Copper is not magnetic at all. The moving magnet changes flux through the tube; induced eddy currents flow so as to oppose that change, braking the fall. The lost gravitational energy heats the copper."},
+ {"q":"Maxwell added the displacement current term to Ampère's law because…",
+  "opts":["conduction current alone gave contradictory results for surfaces through a charging capacitor's gap","wires heat up at high frequency","magnetic monopoles had been discovered","Faraday's law needed a minus sign"],"a":0,
+  "explain":"Same Ampère loop, two spanning surfaces: through the wire \\(I_{enc}=I\\), through the capacitor gap \\(I_{enc}=0\\) — contradiction. The term \\(\\varepsilon_0\\,\\mathrm d\\Phi_E/\\mathrm dt\\) fixes it, and as a bonus lets E and B regenerate each other: electromagnetic waves."},
+ {"q":"Skin depth in copper at 50 Hz is ≈ 9.5 mm. At 5 kHz it is about…",
+  "opts":["0.95 mm","9.5 mm — frequency doesn't matter","95 µm","3.4 mm"],"a":0,
+  "explain":"\\(\\delta \\propto 1/\\sqrt{f}\\); frequency rose ×100, so \\(\\delta\\) shrinks ×10 → 0.95 mm. This √f law is why litz wire appears in every switch-mode transformer above a few kHz."}
+]
+</script>
+</div>
+
+<script>
+document.addEventListener("ee-ready", () => {
+
+  /* ---------- Widget 1: field of two point charges ---------- */
+  EE.custom({
+    mount: "#w-charges", height: 340,
+    params: [
+      { key: "q1", label: "Charge q₁", min: -3, max: 3, step: 0.5, value: 2, unit: "µC", fmt: v => v.toFixed(1) },
+      { key: "q2", label: "Charge q₂", min: -3, max: 3, step: 0.5, value: -2, unit: "µC", fmt: v => v.toFixed(1) },
+      { key: "view", label: "Display", type: "select", value: "lines",
+        options: [{ label: "field lines", value: "lines" }, { label: "vector grid", value: "vectors" }] }
+    ],
+    readouts: [
+      { label: "Force between charges (20 cm apart)", fn: p => {
+          const F = 8.99e9 * p.q1 * p.q2 * 1e-12 / 0.04;
+          if (F === 0) return "0 N";
+          return EE.si(Math.abs(F), "N") + (F > 0 ? " — repulsive" : " — attractive");
+        } },
+      { label: "|E| at the midpoint", fn: p => EE.si(Math.abs(8.99e5 * (p.q1 - p.q2)), "V/m") }
+    ],
+    draw: (ctx, w, h, p, hp) => {
+      const k = hp.ink;
+      const ch = [
+        { x: w * 0.35, y: h * 0.5, q: p.q1, name: "q₁" },
+        { x: w * 0.65, y: h * 0.5, q: p.q2, name: "q₂" }
+      ];
+      /* field in pixel space */
+      function field(x, y) {
+        let ex = 0, ey = 0;
+        for (const c of ch) {
+          const dx = x - c.x, dy = y - c.y;
+          const r2 = Math.max(dx * dx + dy * dy, 25);
+          const r = Math.sqrt(r2);
+          ex += c.q * dx / (r2 * r);
+          ey += c.q * dy / (r2 * r);
+        }
+        return { ex, ey };
+      }
+      if (p.view === "lines") {
+        ctx.lineWidth = 1.3;
+        ctx.strokeStyle = k.muted;
+        for (const c of ch) {
+          if (c.q === 0) continue;
+          const nl = Math.max(8, Math.round(6 * Math.abs(c.q)));
+          const dir = c.q > 0 ? 1 : -1;
+          for (let i = 0; i < nl; i++) {
+            const a0 = (i / nl) * 2 * Math.PI + 0.12;
+            let x = c.x + 15 * Math.cos(a0), y = c.y + 15 * Math.sin(a0);
+            ctx.beginPath(); ctx.moveTo(x, y);
+            let arrowDrawn = false;
+            for (let s = 0; s < 320; s++) {
+              const f = field(x, y);
+              const m = Math.hypot(f.ex, f.ey);
+              if (m < 1e-9) break;
+              const step = 3.5;
+              x += dir * step * f.ex / m;
+              y += dir * step * f.ey / m;
+              ctx.lineTo(x, y);
+              if (x < -20 || x > w + 20 || y < -20 || y > h + 20) break;
+              let hit = false;
+              for (const o of ch) if (o !== c && Math.hypot(x - o.x, y - o.y) < 14) hit = true;
+              if (hit) break;
+              if (!arrowDrawn && s === 26) {
+                /* small arrowhead along the direction of E */
+                const ux = (dir > 0 ? 1 : -1) * f.ex / m, uy = (dir > 0 ? 1 : -1) * f.ey / m;
+                ctx.moveTo(x - 6 * ux - 3.5 * uy, y - 6 * uy + 3.5 * ux);
+                ctx.lineTo(x, y);
+                ctx.lineTo(x - 6 * ux + 3.5 * uy, y - 6 * uy - 3.5 * ux);
+                ctx.moveTo(x, y);
+                arrowDrawn = true;
+              }
+            }
+            ctx.stroke();
+          }
+        }
+      } else {
+        /* vector grid */
+        for (let gx = 24; gx < w - 10; gx += 34) {
+          for (let gy = 22; gy < h - 10; gy += 34) {
+            let near = false;
+            for (const c of ch) if (Math.hypot(gx - c.x, gy - c.y) < 24) near = true;
+            if (near) continue;
+            const f = field(gx, gy);
+            const m = Math.hypot(f.ex, f.ey);
+            if (m < 1e-9) continue;
+            const len = Math.min(15, 3 + 900 * Math.sqrt(m));
+            const al = Math.min(1, 0.25 + 2500 * m);
+            const ux = f.ex / m, uy = f.ey / m;
+            ctx.globalAlpha = al;
+            ctx.strokeStyle = k.muted; ctx.lineWidth = 1.4;
+            ctx.beginPath();
+            ctx.moveTo(gx - len * ux / 2, gy - len * uy / 2);
+            ctx.lineTo(gx + len * ux / 2, gy + len * uy / 2);
+            ctx.lineTo(gx + len * ux / 2 - 4 * ux - 2.5 * uy, gy + len * uy / 2 - 4 * uy + 2.5 * ux);
+            ctx.stroke();
+            ctx.globalAlpha = 1;
+          }
+        }
+      }
+      /* the charges themselves */
+      for (const c of ch) {
+        const col = c.q > 0 ? hp.color(5) : c.q < 0 ? hp.color(0) : k.muted;
+        ctx.fillStyle = col;
+        ctx.beginPath(); ctx.arc(c.x, c.y, 12, 0, 7); ctx.fill();
+        ctx.fillStyle = "#fff"; ctx.font = "700 14px system-ui, sans-serif";
+        ctx.textAlign = "center"; ctx.textBaseline = "middle";
+        ctx.fillText(c.q > 0 ? "+" : c.q < 0 ? "−" : "0", c.x, c.y + 0.5);
+        ctx.fillStyle = k.primary; ctx.font = "600 12px system-ui, sans-serif";
+        ctx.fillText(c.name + " = " + c.q.toFixed(1) + " µC", c.x, c.y + 28);
+      }
+    }
+  });
+
+  /* ---------- Widget 2: parallel-plate capacitor ---------- */
+  const E0 = 8.854e-12;
+  EE.custom({
+    mount: "#w-cap", height: 320,
+    params: [
+      { key: "A", label: "Plate area A", min: 5, max: 100, step: 5, value: 25, unit: "cm²", fmt: v => v.toFixed(0) },
+      { key: "d", label: "Gap d", min: 0.2, max: 5, step: 0.1, value: 1, unit: "mm", fmt: v => v.toFixed(1) },
+      { key: "er", label: "Dielectric ε_r", min: 1, max: 10, step: 0.5, value: 1, unit: "", fmt: v => v.toFixed(1) },
+      { key: "U", label: "Voltage U", min: 1, max: 100, step: 1, value: 50, unit: "V", fmt: v => v.toFixed(0) }
+    ],
+    readouts: [
+      { label: "Capacitance C", fn: p => EE.si(E0 * p.er * p.A * 1e-4 / (p.d * 1e-3), "F") },
+      { label: "Field E = U/d", fn: p => EE.si(p.U / (p.d * 1e-3), "V/m") },
+      { label: "Charge Q = C·U", fn: p => EE.si(E0 * p.er * p.A * 1e-4 / (p.d * 1e-3) * p.U, "C") },
+      { label: "Energy W = ½CU²", fn: p => EE.si(0.5 * E0 * p.er * p.A * 1e-4 / (p.d * 1e-3) * p.U * p.U, "J") }
+    ],
+    draw: (ctx, w, h, p, hp) => {
+      const k = hp.ink;
+      const cx = w / 2, cy = h / 2 - 10;
+      const gap = 36 + p.d * 26;
+      const ph = 70 + Math.sqrt(p.A) * 11;
+      const xL = cx - gap / 2, xR = cx + gap / 2;
+      const yT = cy - ph / 2, yB = cy + ph / 2;
+      /* dielectric slab */
+      if (p.er > 1.01) {
+        ctx.fillStyle = hp.color(1);
+        ctx.globalAlpha = 0.06 + 0.03 * (p.er - 1);
+        ctx.fillRect(xL + 5, yT, gap - 10, ph);
+        ctx.globalAlpha = 1;
+        ctx.fillStyle = k.muted; ctx.font = "600 12px system-ui, sans-serif";
+        ctx.textAlign = "center"; ctx.textBaseline = "bottom";
+        ctx.fillText("dielectric ε_r = " + p.er.toFixed(1), cx, yT - 26);
+      }
+      /* plates */
+      ctx.fillStyle = k.primary;
+      ctx.fillRect(xL - 6, yT, 6, ph);
+      ctx.fillRect(xR, yT, 6, ph);
+      /* field arrows: density tracks E = U/d */
+      const eVmm = p.U / p.d;
+      const n = Math.max(1, Math.min(13, Math.round(eVmm / 9)));
+      ctx.strokeStyle = hp.color(0); ctx.fillStyle = hp.color(0); ctx.lineWidth = 1.7;
+      for (let i = 1; i <= n; i++) {
+        const y = yT + (i / (n + 1)) * ph;
+        ctx.beginPath(); ctx.moveTo(xL + 8, y); ctx.lineTo(xR - 14, y); ctx.stroke();
+        ctx.beginPath();
+        ctx.moveTo(xR - 6, y); ctx.lineTo(xR - 14, y - 4); ctx.lineTo(xR - 14, y + 4);
+        ctx.closePath(); ctx.fill();
+      }
+      /* plate charges: density tracks σ = ε·E */
+      const nq = Math.max(2, Math.min(16, Math.round(eVmm * p.er / 32)));
+      ctx.font = "700 12px system-ui, sans-serif"; ctx.textAlign = "center"; ctx.textBaseline = "middle";
+      for (let i = 1; i <= nq; i++) {
+        const y = yT + (i / (nq + 1)) * ph;
+        ctx.fillStyle = hp.color(5); ctx.fillText("+", xL - 16, y);
+        ctx.fillStyle = hp.color(0); ctx.fillText("−", xR + 16, y);
+      }
+      /* labels */
+      ctx.fillStyle = k.primary; ctx.font = "600 12.5px system-ui, sans-serif";
+      ctx.textAlign = "center"; ctx.textBaseline = "top";
+      ctx.fillText("d = " + p.d.toFixed(1) + " mm", cx, yB + 12);
+      ctx.textAlign = "right"; ctx.fillText("A = " + p.A.toFixed(0) + " cm²", xL - 26, yT);
+      /* gap dimension line */
+      ctx.strokeStyle = k.axis; ctx.lineWidth = 1;
+      ctx.beginPath(); ctx.moveTo(xL, yB + 8); ctx.lineTo(xR, yB + 8); ctx.stroke();
+      ctx.beginPath(); ctx.moveTo(xL, yB + 4); ctx.lineTo(xL, yB + 12); ctx.stroke();
+      ctx.beginPath(); ctx.moveTo(xR, yB + 4); ctx.lineTo(xR, yB + 12); ctx.stroke();
+      /* E label */
+      ctx.fillStyle = hp.color(0); ctx.textAlign = "center"; ctx.textBaseline = "bottom";
+      ctx.fillText("E", cx, yT - 8);
+    }
+  });
+
+  /* ---------- Widget 3: plane wave E ⊥ B ⊥ k ---------- */
+  EE.custom({
+    mount: "#w-wave", height: 320, animate: true,
+    params: [
+      { key: "lam", label: "Wavelength λ", min: 0.5, max: 10, step: 0.5, value: 3, unit: "m", fmt: v => v.toFixed(1) }
+    ],
+    readouts: [
+      { label: "f = c/λ", fn: p => EE.si(2.998e8 / p.lam, "Hz") },
+      { label: "Band", fn: p => { const f = 2.998e8 / p.lam; return f < 5e7 ? "shortwave / CB radio" : f < 3e8 ? "VHF (FM broadcast ≈ 100 MHz)" : "UHF (DVB-T, LTE)"; } },
+      { label: "E/H in free space", fn: () => "Z₀ ≈ 377 Ω" }
+    ],
+    draw: (ctx, w, h, p, hp) => {
+      const k = hp.ink;
+      const x0 = 56, y0 = h / 2, x1 = w - 30;
+      const amp = Math.min(70, h * 0.27);
+      const lamPx = 46 + p.lam * 22;
+      const phase0 = hp.t * 2.2;
+      /* oblique unit vector for the y-axis (B direction, "into the page") */
+      const ox = 0.48, oy = 0.30;
+      /* axes */
+      ctx.strokeStyle = k.axis; ctx.lineWidth = 1.4;
+      ctx.beginPath(); ctx.moveTo(x0, y0); ctx.lineTo(x1, y0); ctx.stroke();
+      ctx.beginPath(); ctx.moveTo(x1, y0); ctx.lineTo(x1 - 9, y0 - 4); ctx.lineTo(x1 - 9, y0 + 4); ctx.closePath();
+      ctx.fillStyle = k.axis; ctx.fill();
+      ctx.beginPath(); ctx.moveTo(x0, y0 + amp + 14); ctx.lineTo(x0, y0 - amp - 14); ctx.stroke();
+      ctx.beginPath(); ctx.moveTo(x0 - amp * ox * 0.7, y0 + amp * oy * 0.7); ctx.lineTo(x0 + amp * ox * 0.9, y0 - amp * oy * 0.9); ctx.stroke();
+      ctx.fillStyle = k.muted; ctx.font = "600 12px system-ui, sans-serif";
+      ctx.textAlign = "left"; ctx.textBaseline = "middle";
+      ctx.fillText("k (propagation) →", x1 - 132, y0 + amp * 0.8 + 16);
+      ctx.fillText("x (E)", x0 + 8, y0 - amp - 8);
+      ctx.fillText("y (B)", x0 + amp * ox * 0.9 + 8, y0 - amp * oy * 0.9 - 12);
+      const NP = 150;
+      const val = z => Math.sin(2 * Math.PI * z / lamPx - phase0);
+      /* B field: oblique horizontal plane, drawn first (behind) */
+      ctx.strokeStyle = hp.color(2); ctx.lineWidth = 1.1; ctx.globalAlpha = 0.75;
+      for (let i = 0; i <= NP; i += 5) {
+        const z = x0 + (i / NP) * (x1 - x0 - 20);
+        const v = val(z - x0) * amp * 0.8;
+        ctx.beginPath(); ctx.moveTo(z, y0); ctx.lineTo(z + v * ox, y0 - v * oy); ctx.stroke();
+      }
+      ctx.globalAlpha = 1;
+      ctx.strokeStyle = hp.color(2); ctx.lineWidth = 2.4;
+      ctx.beginPath();
+      for (let i = 0; i <= NP; i++) {
+        const z = x0 + (i / NP) * (x1 - x0 - 20);
+        const v = val(z - x0) * amp * 0.8;
+        i ? ctx.lineTo(z + v * ox, y0 - v * oy) : ctx.moveTo(z + v * ox, y0 - v * oy);
+      }
+      ctx.stroke();
+      /* E field: vertical plane */
+      ctx.strokeStyle = hp.color(0); ctx.lineWidth = 1.1; ctx.globalAlpha = 0.75;
+      for (let i = 0; i <= NP; i += 5) {
+        const z = x0 + (i / NP) * (x1 - x0 - 20);
+        ctx.beginPath(); ctx.moveTo(z, y0); ctx.lineTo(z, y0 - val(z - x0) * amp); ctx.stroke();
+      }
+      ctx.globalAlpha = 1;
+      ctx.strokeStyle = hp.color(0); ctx.lineWidth = 2.6;
+      ctx.beginPath();
+      for (let i = 0; i <= NP; i++) {
+        const z = x0 + (i / NP) * (x1 - x0 - 20);
+        i ? ctx.lineTo(z, y0 - val(z - x0) * amp) : ctx.moveTo(z, y0 - val(z - x0) * amp);
+      }
+      ctx.stroke();
+      /* direct labels */
+      ctx.font = "700 13px system-ui, sans-serif"; ctx.textAlign = "left";
+      ctx.fillStyle = hp.color(0); ctx.fillText("E", x1 - 18, y0 - amp * 0.75);
+      ctx.fillStyle = hp.color(2); ctx.fillText("B", x1 - 18, y0 + amp * 0.55);
+      /* wavelength marker */
+      ctx.strokeStyle = k.muted; ctx.setLineDash([4, 4]); ctx.lineWidth = 1;
+      const zm0 = x0 + 20, zm1 = zm0 + lamPx;
+      if (zm1 < x1 - 40) {
+        ctx.beginPath(); ctx.moveTo(zm0, y0 + amp + 8); ctx.lineTo(zm1, y0 + amp + 8); ctx.stroke();
+        ctx.setLineDash([]);
+        ctx.fillStyle = k.muted; ctx.font = "600 12px system-ui, sans-serif";
+        ctx.textAlign = "center"; ctx.textBaseline = "top";
+        ctx.fillText("λ = " + p.lam.toFixed(1) + " m", (zm0 + zm1) / 2, y0 + amp + 12);
+      }
+      ctx.setLineDash([]);
+    }
+  });
+
+  /* ---------- Widget 4: induction — magnet through a coil ---------- */
+  EE.custom({
+    mount: "#w-induction", height: 380, animate: true,
+    params: [
+      { key: "speed", label: "Magnet speed", min: 0.2, max: 3, step: 0.1, value: 1, unit: "×", fmt: v => v.toFixed(1) },
+      { key: "N", label: "Coil turns N", min: 50, max: 500, step: 50, value: 200, unit: "", fmt: v => v.toFixed(0) }
+    ],
+    readouts: [
+      { label: "Peak flux (assumed)", fn: () => "Φ̂ = 1 mWb" },
+      { label: "Peak induced voltage", fn: p => EE.si(2.94e-3 * p.speed * p.N, "V") }
+    ],
+    draw: (ctx, w, h, p, hp) => {
+      const k = hp.ink;
+      const W0 = 0.35, OM = 1.2 * p.speed, PHI_HAT = 1e-3;
+      const xOf = t => Math.sin(OM * t);            /* normalized position, ±1 */
+      const vOf = t => OM * Math.cos(OM * t);
+      const phi = x => Math.pow(1 + (x / W0) * (x / W0), -1.5);          /* normalized flux */
+      const dphidx = x => -3 * x / (W0 * W0) * Math.pow(1 + (x / W0) * (x / W0), -2.5);
+      const uOf = t => -p.N * PHI_HAT * dphidx(xOf(t)) * vOf(t);         /* volts */
+      const t = hp.t;
+      /* ---- scene (top) ---- */
+      const sy = 62, cx = w / 2;
+      const px = x => cx + x * (w * 0.36);
+      /* coil */
+      ctx.strokeStyle = hp.color(4); ctx.lineWidth = 2;
+      for (let i = -3; i <= 3; i++) {
+        ctx.beginPath(); ctx.ellipse(cx + i * 9, sy, 6, 26, 0, 0, 7); ctx.stroke();
+      }
+      ctx.fillStyle = k.muted; ctx.font = "600 11.5px system-ui, sans-serif";
+      ctx.textAlign = "center"; ctx.textBaseline = "top";
+      ctx.fillText("coil, N = " + p.N, cx, sy + 32);
+      /* magnet */
+      const mx = px(xOf(t));
+      ctx.fillStyle = hp.color(5); ctx.fillRect(mx - 34, sy - 11, 34, 22);
+      ctx.fillStyle = hp.color(0); ctx.fillRect(mx, sy - 11, 34, 22);
+      ctx.fillStyle = "#fff"; ctx.font = "700 12px system-ui, sans-serif"; ctx.textBaseline = "middle";
+      ctx.fillText("N", mx - 17, sy); ctx.fillText("S", mx + 17, sy);
+      /* velocity arrow */
+      const vv = vOf(t);
+      if (Math.abs(vv) > 0.05) {
+        const dir = vv > 0 ? 1 : -1;
+        ctx.strokeStyle = k.primary; ctx.lineWidth = 1.8;
+        ctx.beginPath(); ctx.moveTo(mx, sy - 24); ctx.lineTo(mx + dir * 26, sy - 24); ctx.stroke();
+        ctx.fillStyle = k.primary;
+        ctx.beginPath();
+        ctx.moveTo(mx + dir * 32, sy - 24);
+        ctx.lineTo(mx + dir * 24, sy - 28); ctx.lineTo(mx + dir * 24, sy - 20);
+        ctx.closePath(); ctx.fill();
+      }
+      /* ---- strip charts (bottom) ---- */
+      const T = 6, NPts = 240;
+      const plots = [
+        { y0: 128, hh: 92, label: "Φ(t) in mWb", color: 1,
+          fn: tt => phi(xOf(tt)), scale: v => v, max: 1.05 },
+        { y0: 236, hh: 118, label: "u(t) = −N dΦ/dt in V", color: 5,
+          fn: tt => uOf(tt), scale: v => v, max: Math.max(0.4, 2.94e-3 * p.speed * p.N * 1.15) }
+      ];
+      const gx0 = 56, gx1 = w - 20;
+      for (const pl of plots) {
+        const mid = pl.y0 + pl.hh / 2;
+        const isU = pl.color === 5;
+        const top = pl.y0, bot = pl.y0 + pl.hh;
+        /* frame + zero line */
+        ctx.strokeStyle = k.grid; ctx.lineWidth = 1;
+        ctx.strokeRect(gx0, top, gx1 - gx0, pl.hh);
+        ctx.strokeStyle = k.axis;
+        const zy = isU ? mid : bot;
+        ctx.beginPath(); ctx.moveTo(gx0, zy); ctx.lineTo(gx1, zy); ctx.stroke();
+        /* trace */
+        ctx.strokeStyle = hp.color(pl.color); ctx.lineWidth = 2.2;
+        ctx.beginPath();
+        for (let i = 0; i <= NPts; i++) {
+          const tt = t - T + (i / NPts) * T;
+          let v = pl.fn(tt) / pl.max;
+          v = Math.max(-1, Math.min(1, v));
+          const x = gx0 + (i / NPts) * (gx1 - gx0);
+          const y = isU ? mid - v * (pl.hh / 2 - 4) : bot - v * (pl.hh - 6);
+          i ? ctx.lineTo(x, y) : ctx.moveTo(x, y);
+        }
+        ctx.stroke();
+        /* label */
+        ctx.fillStyle = hp.color(pl.color); ctx.font = "600 12px system-ui, sans-serif";
+        ctx.textAlign = "left"; ctx.textBaseline = "bottom";
+        ctx.fillText(pl.label, gx0 + 6, top - 2);
+        /* now marker */
+        ctx.fillStyle = k.muted; ctx.font = "11px system-ui, sans-serif";
+        ctx.textAlign = "right"; ctx.textBaseline = "top";
+        if (isU) ctx.fillText("now →", gx1 - 4, bot + 3);
+      }
+      /* zero-crossing hint below the u(t) plot, opposite the "now" marker */
+      ctx.fillStyle = k.muted; ctx.font = "11px system-ui, sans-serif";
+      ctx.textAlign = "left"; ctx.textBaseline = "top";
+      ctx.fillText("Φ max ⇔ u = 0 (flux momentarily constant)", gx0 + 2, 236 + 118 + 3);
+    }
+  });
+});
+</script>
+
+</article>
+</main>
+</div>
+</body>
+</html>

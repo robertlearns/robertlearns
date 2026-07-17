@@ -1,0 +1,1029 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>M11 · Microelectronics &amp; Chip Design — EE Knowledge Base</title>
+<link rel="stylesheet" href="../../assets/vendor/katex/katex.min.css">
+<link rel="stylesheet" href="../../assets/css/style.css">
+<script src="../../assets/vendor/katex/katex.min.js" defer></script>
+<script src="../../assets/vendor/katex/auto-render.min.js" defer></script>
+<script src="../curriculum.js" defer></script>
+<script src="../../assets/js/app.js" defer></script>
+<script src="../../assets/js/widgets.js" defer></script>
+</head>
+<body data-module="m11">
+<div class="layout">
+<main class="content">
+<article class="article">
+
+<span class="eyebrow">🔬 Electronics · Module 11</span>
+<h1>Microelectronics &amp; Chip Design <span class="muted" style="font-weight:400;font-size:1.4rem">· <span class="de">Mikroelektronik &amp; Chipentwurf</span></span></h1>
+<p class="lead">A modern processor packs more transistors than there are people on Earth onto a die you could balance on a fingertip — built with light, plasma and atomically pure silicon, designed by software because no human could draw it. This module explains how that is physically possible, how such chips are designed and manufactured, and why the whole enterprise obeys economics as much as physics.</p>
+
+<div class="page-meta">
+  <span><b>Corresponds to:</b> Mikroelektronik / VLSI-Entwurf (Master)</span>
+  <span><b>Prerequisites:</b> Modules 08, 10</span>
+  <span><b>Study time:</b> ≈ 6–8 h</span>
+</div>
+
+<h2 id="scale">1. Printing a city on a fingernail — the scale of the achievement</h2>
+
+<p>Start with the numbers, because they are the point. An <strong>integrated circuit</strong> (<span class="de">integrierte Schaltung</span>, IC) like Apple's M2 Ultra contains about <b>134 billion transistors</b>. The Intel 4004 of 1971, the first commercial microprocessor, had 2 300. That is a factor of ~60 million in fifty years — no other engineered artifact has improved by anything like this rate, ever.</p>
+
+<p>To make 134 billion of anything fit on ~8 cm² of silicon, each thing must be small. How small?</p>
+
+<div class="table-wrap">
+<table class="data">
+<thead><tr><th>Object</th><th>Size</th><th>Compared to a "3 nm" transistor (gate pitch ≈ 50 nm)</th></tr></thead>
+<tbody>
+<tr><td>Human hair</td><td>≈ 70 µm</td><td>≈ 1 400× wider — a hair falling on a die covers ~1 million transistors</td></tr>
+<tr><td>Red blood cell</td><td>≈ 7 µm</td><td>≈ 140× wider</td></tr>
+<tr><td>SARS-CoV-2 virus</td><td>≈ 100 nm</td><td>a <em>virus</em> is bigger than a logic transistor</td></tr>
+<tr><td>Fin / channel width</td><td>≈ 5 nm</td><td>about 20 silicon atoms across</td></tr>
+<tr><td>Gate oxide (historic min.)</td><td>≈ 1.2 nm</td><td>~5 atomic layers — electrons tunnel straight through</td></tr>
+</tbody>
+</table>
+</div>
+
+<div class="box intuition">
+  <div class="box-title"><span class="ic">💡</span>Intuition: the city on a fingernail</div>
+  <p>Scale a transistor up to the size of a person (~1 m) and the chip becomes a metropolis <b>200 km across</b> — the size of Bavaria, 100+ billion inhabitants, fifteen levels of elevated highways (the metal layers), a synchronized heartbeat reaching everyone billions of times per second — <em>printed</em>, essentially without error. Chip fabrication is literally printing a city on a fingernail, then printing seventy more identical cities on the same wafer.</p>
+</div>
+
+<div class="box history">
+  <div class="box-title"><span class="ic">📜</span>The most manufactured object in history</div>
+  <p>Jack Kilby (Texas Instruments, 1958) built the first IC; Robert Noyce (Fairchild, 1959) invented the planar version we still use — flat, photographically patterned layers, the key to mass production. Humanity now fabricates ~\(10^{21}\) transistors per year — more than all grains of sand on Earth's beaches, at ~a billionth of a euro each. Kilby got the 2000 Nobel Prize; Noyce co-founded Intel.</p>
+</div>
+
+<h2 id="moore">2. Moore's law, Dennard scaling, and the power wall</h2>
+
+<h3 id="moore-law">2.1 An economic observation, not a law of nature</h3>
+<p>In 1965 Gordon Moore, then at Fairchild, extrapolated from <em>four data points</em>: the component count of the most cost-effective IC doubles roughly every year (later revised: every two years). <strong>Moore's law</strong> (<span class="de">Mooresches Gesetz</span>) is not physics — it is an economic feedback loop: smaller transistors → more chips per wafer, faster circuits → more revenue → funds the next, more expensive fab → smaller transistors. The industry turned the prediction into a coordinated <em>roadmap</em> that whole supply chains synchronized to:</p>
+\[ N(t) \approx N_0 \cdot 2^{(t - t_0)/2\,\mathrm{yr}}. \]
+
+<div class="widget">
+  <div class="w-head"><span class="ic">🧪</span>Interactive — 50 years of Moore's law <span class="w-tag">data explorer</span></div>
+  <div class="w-body">
+    <p class="small mt0">Transistor counts of 15 milestone chips on a logarithmic axis — exponential growth becomes a straight line. The dashed line is the ideal "doubling every 2 years" from the Intel 4004. Move the slider to highlight a chip and compare it with the trend. Notice that five decades of engineering upheaval (planar → strained Si → high-k → FinFET) stay astonishingly close to one straight line.</p>
+    <div id="w-moore"></div>
+  </div>
+</div>
+
+<h3 id="dennard">2.2 Dennard scaling — why shrinking used to be free</h3>
+<p>Robert Dennard (IBM, 1974) showed <em>why</em> shrinking was such a good deal. Scale every dimension, and the voltage, by a factor \(1/k\) (with \(k \approx 1.4\) per generation):</p>
+
+<div class="table-wrap">
+<table class="data">
+<thead><tr><th>Quantity</th><th>Scaling</th><th>Consequence</th></tr></thead>
+<tbody>
+<tr><td>Length, width, oxide thickness</td><td>\(1/k\)</td><td>area per transistor \(1/k^2\) → 2× density</td></tr>
+<tr><td>Supply voltage \(U_{DD}\), threshold \(U_{th}\)</td><td>\(1/k\)</td><td>fields in the device stay constant</td></tr>
+<tr><td>Gate capacitance \(C\)</td><td>\(1/k\)</td><td>less charge to move</td></tr>
+<tr><td>Delay \(\tau \sim C U / I\)</td><td>\(1/k\)</td><td>clock frequency \(\times k\)</td></tr>
+<tr><td>Power per transistor \(\sim C U^2 f\)</td><td>\(1/k^2\)</td><td><b>power density constant!</b></td></tr>
+</tbody>
+</table>
+</div>
+
+<p>Every generation delivered <b>2× the transistors, 1.4× the speed, at the same total power</b> — a free lunch, served every two years for thirty years.</p>
+
+<div class="example">
+  <div class="ex-head"><span class="ex-tag">Worked example</span> Dennard scaling in numbers (while it still worked)</div>
+  <div class="ex-body">
+    <p>A 130 nm processor: 100 mm², 50 million transistors, 2.0 GHz at \(U_{DD} = 1.5\) V, 40 W. Predict the 90 nm successor under ideal Dennard scaling (\(k = 130/90 \approx 1.44\)).</p>
+    <div class="step"><span class="step-label">Step 1 — density:</span> area per transistor shrinks by \(k^2 \approx 2.1\); the same 100 mm² now holds ≈ <b>105 million transistors</b>.</div>
+    <div class="step"><span class="step-label">Step 2 — speed and voltage:</span> \(f' = 1.44 \cdot 2.0 \approx 2.9\,\mathrm{GHz}\); \(U_{DD}' = 1.5/1.44 \approx 1.05\,\mathrm{V}\).</div>
+    <div class="step"><span class="step-label">Step 3 — power:</span> power per transistor falls by \(k^2\), transistor count rises by \(k^2\): total stays ≈ <b>40 W</b>. Power density unchanged.</div>
+    <div class="result-line">2× transistors, 1.4× clock, same watts. Reality check: the 130 nm → 90 nm transition (~2004) was precisely where this stopped working — read on.</div>
+  </div>
+</div>
+
+<h3 id="powerwall">2.3 The end of the free lunch: the power wall</h3>
+<p>Dennard scaling requires the <strong>threshold voltage</strong> \(U_{th}\) (<span class="de">Schwellenspannung</span>, Module 08) to shrink along with \(U_{DD}\). But subthreshold leakage grows <em>exponentially</em> as \(U_{th}\) drops (§6.2) — around 2004–2005, at ~90 nm, leakage threatened to exceed useful switching power. So \(U_{th}\), and with it \(U_{DD}\), essentially <b>stopped scaling</b> (stuck near 0.7–1 V ever since). With \(U\) fixed but density still doubling, power density exploded toward hot-plate territory. Intel canceled its 4 GHz Pentium 4 in 2004; clocks have sat at ~3–5 GHz for twenty years. The industry's answer: stop making one core faster, put <b>multiple cores</b> on the die and hope software can use them — the <em>multicore era</em>, a direct consequence of device physics.</p>
+
+<h3 id="nodes">2.4 "3 nm" — a marketing label, and what actually changed</h3>
+<p>Node names once meant the transistor gate length. Since ~22 nm they are <b>pure marketing labels</b>: in a "3 nm" process, <em>no feature measures 3 nm</em> — gate pitch is ≈ 48 nm, metal pitch ≈ 24 nm. The label means roughly "density as if we had kept classic scaling". What really kept density improving was <em>geometry innovation</em>:</p>
+<ul>
+  <li><b>Planar → FinFET</b> (Intel 22 nm, 2011): the channel becomes a vertical fin which the gate grips on three sides — far better electrostatic control, less leakage at low \(U_{th}\).</li>
+  <li><b>FinFET → gate-all-around</b> (GAA, <span class="de">Nanosheet-Transistor</span>, Samsung 3 nm 2022, TSMC/Intel at 2 nm): stacked horizontal silicon nanosheets completely surrounded by the gate — the endpoint of electrostatic control.</li>
+</ul>
+
+<div class="box warn">
+  <div class="box-title"><span class="ic">⚠️</span>Don't compare node names across foundries</div>
+  <p>TSMC "N3", Samsung "3 nm" and Intel "Intel 3" are <em>brands</em> with different densities (Intel 7 ≈ TSMC N7 despite the different numbers). Compare processes by measurable quantities: transistor density (Mtr/mm²), SRAM cell size, performance per watt — never by the marketing nanometer.</p>
+</div>
+
+<h2 id="fab">3. How chips are made — the planar process</h2>
+
+<p>Fabrication (<span class="de">Halbleiterfertigung</span>) builds the chip as a stack of patterned layers on a <strong>wafer</strong> (<span class="de">Halbleiterscheibe</span>): a 300 mm disc, 775 µm thick, sliced from a Czochralski-grown single crystal of silicon at <b>99.999 999 9 %</b> purity ("nine nines" — one foreign atom per billion). Every layer uses variations of one loop: <em>deposit a film, pattern it with light, transfer the pattern by etching or implantation</em>. A leading-edge chip needs <b>~1 000 process steps and 3–4 months</b> from bare wafer to finished circuit.</p>
+
+<h3 id="litho">3.1 The pattern-transfer loop: oxidation, lithography, etch</h3>
+<ol>
+  <li><b>Oxidation / deposition</b> (<span class="de">Oxidation / Abscheidung</span>): grow SiO₂ thermally (silicon's gift to humanity: its native oxide is a near-perfect insulator) or deposit films by CVD/ALD — atomic-layer deposition puts down literally one atomic layer per cycle.</li>
+  <li><b>Photolithography</b> (<span class="de">Fotolithografie</span>): spin on a light-sensitive polymer, the <b>photoresist</b> (<span class="de">Fotolack</span>); project the layout of one layer through a <b>mask</b> (reticle) onto the wafer, demagnified 4×; develop away the exposed resist (positive resist). The resist now carries the pattern.</li>
+  <li><b>Etching</b> (<span class="de">Ätzen</span>): plasma ions bombard the wafer vertically (reactive-ion etching) and remove material wherever resist is missing — anisotropic, so walls stay vertical.</li>
+  <li><b>Strip</b> the resist. One layer done; repeat 60–80 times with different masks.</li>
+</ol>
+
+<figure>
+  <div class="fig-frame">
+  <svg class="diagram" viewBox="0 0 760 260" role="img" aria-label="Photolithography pattern transfer in four steps">
+    <!-- panel 1: coat -->
+    <g>
+      <rect x="15" y="175" width="150" height="30" fill="var(--bg-sunken)" stroke="var(--text-soft)" stroke-width="1.5"/>
+      <rect x="15" y="160" width="150" height="15" fill="none" stroke="var(--accent-2)" stroke-width="1.8"/>
+      <rect x="15" y="145" width="150" height="15" fill="var(--accent)" fill-opacity="0.20" stroke="var(--accent)" stroke-width="1.5"/>
+      <text x="90" y="196" text-anchor="middle" font-size="12" fill="var(--text-soft)">Si wafer</text>
+      <text x="172" y="171" font-size="11" fill="var(--accent-2)">film</text>
+      <text x="172" y="155" font-size="11" fill="var(--accent)">resist</text>
+      <text x="90" y="232" text-anchor="middle" font-size="12.5" font-weight="600">① deposit film, coat resist</text>
+    </g>
+    <!-- panel 2: expose -->
+    <g>
+      <rect x="205" y="175" width="150" height="30" fill="var(--bg-sunken)" stroke="var(--text-soft)" stroke-width="1.5"/>
+      <rect x="205" y="160" width="150" height="15" fill="none" stroke="var(--accent-2)" stroke-width="1.8"/>
+      <rect x="205" y="145" width="55" height="15" fill="var(--accent)" fill-opacity="0.20" stroke="var(--accent)" stroke-width="1.5"/>
+      <rect x="300" y="145" width="55" height="15" fill="var(--accent)" fill-opacity="0.20" stroke="var(--accent)" stroke-width="1.5"/>
+      <rect x="260" y="145" width="40" height="15" fill="var(--accent)" fill-opacity="0.55" stroke="var(--accent)" stroke-width="1.5"/>
+      <!-- mask -->
+      <rect x="205" y="88" width="55" height="9" fill="var(--text-soft)"/>
+      <rect x="300" y="88" width="55" height="9" fill="var(--text-soft)"/>
+      <text x="368" y="97" font-size="11" fill="var(--text-soft)">mask</text>
+      <!-- light -->
+      <line x1="240" y1="48" x2="240" y2="80" stroke="var(--accent)" stroke-width="1.8" marker-end="url(#arrL)"/>
+      <line x1="280" y1="48" x2="280" y2="138" stroke="var(--accent)" stroke-width="1.8" marker-end="url(#arrL)"/>
+      <line x1="320" y1="48" x2="320" y2="80" stroke="var(--accent)" stroke-width="1.8" marker-end="url(#arrL)"/>
+      <text x="280" y="40" text-anchor="middle" font-size="11.5" fill="var(--accent)">UV / EUV light</text>
+      <text x="280" y="232" text-anchor="middle" font-size="12.5" font-weight="600">② expose through mask</text>
+    </g>
+    <!-- panel 3: develop + etch -->
+    <g>
+      <rect x="395" y="175" width="150" height="30" fill="var(--bg-sunken)" stroke="var(--text-soft)" stroke-width="1.5"/>
+      <rect x="395" y="160" width="55" height="15" fill="none" stroke="var(--accent-2)" stroke-width="1.8"/>
+      <rect x="490" y="160" width="55" height="15" fill="none" stroke="var(--accent-2)" stroke-width="1.8"/>
+      <rect x="395" y="145" width="55" height="15" fill="var(--accent)" fill-opacity="0.20" stroke="var(--accent)" stroke-width="1.5"/>
+      <rect x="490" y="145" width="55" height="15" fill="var(--accent)" fill-opacity="0.20" stroke="var(--accent)" stroke-width="1.5"/>
+      <line x1="460" y1="105" x2="460" y2="138" stroke="var(--accent-2)" stroke-width="1.8" marker-end="url(#arrL2)"/>
+      <line x1="480" y1="105" x2="480" y2="138" stroke="var(--accent-2)" stroke-width="1.8" marker-end="url(#arrL2)"/>
+      <text x="470" y="96" text-anchor="middle" font-size="11.5" fill="var(--accent-2)">plasma etch</text>
+      <text x="470" y="232" text-anchor="middle" font-size="12.5" font-weight="600">③ develop, etch film</text>
+    </g>
+    <!-- panel 4: strip -->
+    <g>
+      <rect x="585" y="175" width="150" height="30" fill="var(--bg-sunken)" stroke="var(--text-soft)" stroke-width="1.5"/>
+      <rect x="585" y="160" width="55" height="15" fill="none" stroke="var(--accent-2)" stroke-width="1.8"/>
+      <rect x="680" y="160" width="55" height="15" fill="none" stroke="var(--accent-2)" stroke-width="1.8"/>
+      <text x="660" y="130" text-anchor="middle" font-size="11.5" fill="var(--text-soft)">pattern in film ✓</text>
+      <text x="660" y="232" text-anchor="middle" font-size="12.5" font-weight="600">④ strip resist — repeat ~70×</text>
+    </g>
+    <defs>
+      <marker id="arrL" markerWidth="9" markerHeight="9" refX="7" refY="4.5" orient="auto"><path d="M0 0 L8 4.5 L0 9 z" fill="var(--accent)"/></marker>
+      <marker id="arrL2" markerWidth="9" markerHeight="9" refX="7" refY="4.5" orient="auto"><path d="M0 0 L8 4.5 L0 9 z" fill="var(--accent-2)"/></marker>
+    </defs>
+  </svg>
+  </div>
+  <figcaption><b>Fig. 3.1</b> — One pass of the planar pattern-transfer loop with positive resist. A modern chip is built from ~70 such mask layers; misalign any one by a few nanometers and the chip is dead.</figcaption>
+</figure>
+
+<h3 id="euv">3.2 EUV — the €400-million light bulb</h3>
+<p>Feature size is limited by diffraction: \(\text{CD} \approx k_1 \lambda / \mathrm{NA}\). For decades the industry stretched 193 nm ArF lasers (immersion optics, printing one layer with 3–4 interleaved masks). The escape is <strong>extreme ultraviolet</strong> (EUV) at \(\lambda = 13.5\,\mathrm{nm}\) — and it borders on science fiction. In an ASML EUV scanner, 50 000 molten tin droplets per second fall through vacuum; each is hit <em>twice</em> by a 25 kW CO₂ laser (pre-pulse flattens it, main pulse vaporizes it into a ~500 000 K plasma, ~30× hotter than the sun's surface) which radiates EUV. Since <em>everything</em> absorbs 13.5 nm light there are no lenses — only Zeiss mirrors so flat that scaled to the size of Germany their largest bump would be 0.1 mm. Each machine: ~180 tonnes, 40 shipping containers, ~€180 M; the new high-NA generation (NA 0.55, for 2 nm and beyond) costs about <b>€400 M per machine</b>. Exactly one company on Earth (ASML, Veldhoven, NL) can build them — arguably the most concentrated technological chokepoint in the world economy.</p>
+
+<h3 id="doping">3.3 Doping, metallization, and the cleanroom</h3>
+<p><b>Doping</b> (<span class="de">Dotierung</span>) is done by <b>ion implantation</b> (<span class="de">Ionenimplantation</span>): boron or phosphorus/arsenic ions accelerated to 1–500 keV and shot into the exposed silicon — an atomic particle cannon with ~1 % dose control — then a rapid thermal anneal heals the lattice and activates the dopants (Module 08's pn-junctions are drawn this way). <b>Metallization</b> (<span class="de">Metallisierung</span>): after the transistors ("front end of line", FEOL) come <b>10–18 levels of copper wiring</b> (back end, BEOL), built by damascene plating: etch trenches into insulator, fill with Cu, polish flat, repeat — thin dense layers near the transistors, thick low-resistance highways on top (§8).</p>
+<p>All of it happens in a <b>cleanroom</b> (<span class="de">Reinraum</span>) of ISO class ~3: under ~1 000 particles ≥ 0.1 µm per m³ — city air has ~10⁹. Ceiling HEPA filters exchange the air hundreds of times per hour; the dirtiest object present is the human (~10⁷ particles shed per minute), hence bunny suits — and increasingly no humans at all: wafers travel in sealed FOUP pods on ceiling robots.</p>
+
+<h3 id="package">3.4 Wafer → die → package</h3>
+<p>A finished 300 mm wafer carries tens to hundreds of copies of the chip. Each is probed electrically on the wafer (<b>wafer test</b>); the wafer is sawn into <b>dies</b> (<span class="de">Nacktchip</span>); good dies are mounted in a <b>package</b> (<span class="de">Gehäuse</span>) — modern flip-chip solders the die face-down via thousands of microbumps — then tested again. The package spreads the die's connections to the ~mm scale of a circuit board and removes its heat.</p>
+
+<div class="box german">
+  <div class="box-title"><span class="ic">🇩🇪</span>Vokabeln</div>
+  <p>integrated circuit = <span class="de">integrierte Schaltung</span> · wafer = <span class="de">Halbleiterscheibe</span> · cleanroom = <span class="de">Reinraum</span> · photoresist = <span class="de">Fotolack</span> · exposure = <span class="de">Belichtung</span> · mask = <span class="de">Maske</span> · etching = <span class="de">Ätzen</span> · doping = <span class="de">Dotierung</span> · interconnect = <span class="de">Leiterbahn/Verdrahtung</span> · yield = <span class="de">Ausbeute</span> · design flow = <span class="de">Entwurfsablauf</span> · place &amp; route = <span class="de">Platzierung und Verdrahtung</span> · clock skew = <span class="de">Taktversatz</span> · power dissipation = <span class="de">Verlustleistung</span> · leakage current = <span class="de">Leckstrom</span> · memory = <span class="de">Speicher</span> · refresh = <span class="de">Auffrischung</span> · tapeout = <span class="de">Fertigungsfreigabe</span></p>
+</div>
+
+<h2 id="cmos">4. CMOS circuits beyond the inverter</h2>
+
+<p>Module 10 gave you the CMOS inverter and NAND/NOR: a PMOS pull-up network to \(U_{DD}\), an NMOS pull-down network to ground, exactly one conducting at a time — (almost) no static current. That principle generalizes beautifully.</p>
+
+<h3 id="aoi">4.1 Complex static gates (AOI/OAI)</h3>
+<p>Any inverting function of ANDs and ORs can be one single gate: series NMOS transistors implement AND (both must conduct), parallel NMOS implement OR; the PMOS network is the exact <b>dual</b> (series ↔ parallel swapped). Example — the <b>AOI21</b> gate ("AND-OR-INVERT"):</p>
+\[ Y = \overline{A\cdot B + C} \]
+<p>Pull-down: \(A, B\) in series (the AND), in parallel with \(C\) (the OR). Pull-up: \(A, B\) in parallel, in series with \(C\). Five transistors... plus nothing: one gate delay for a function that would take three separate gates (AND, OR, inverter) otherwise. Synthesis tools (§7) use AOI/OAI cells heavily.</p>
+
+<figure>
+  <div class="fig-frame">
+  <svg class="diagram" viewBox="0 0 560 470" role="img" aria-label="CMOS AOI21 gate transistor schematic">
+    <!-- VDD rail -->
+    <line x1="140" y1="40" x2="420" y2="40" class="wire"/>
+    <text x="120" y="45" text-anchor="end" font-size="14">U<tspan baseline-shift="sub" font-size="10">DD</tspan></text>
+    <!-- PMOS A (200,95) -->
+    <path class="wire" d="M200 40 V83 M200 107 V140"/>
+    <line x1="200" y1="83" x2="200" y2="107" class="wire"/>
+    <line x1="193" y1="83" x2="193" y2="107" class="wire"/>
+    <circle cx="186" cy="95" r="4" fill="none" stroke="var(--text-soft)" stroke-width="1.8"/>
+    <line x1="160" y1="95" x2="182" y2="95" class="wire"/>
+    <text x="152" y="100" text-anchor="end" font-size="14" fill="var(--accent)">A</text>
+    <!-- PMOS B (320,95) -->
+    <path class="wire" d="M320 40 V83 M320 107 V140"/>
+    <line x1="320" y1="83" x2="320" y2="107" class="wire"/>
+    <line x1="313" y1="83" x2="313" y2="107" class="wire"/>
+    <circle cx="306" cy="95" r="4" fill="none" stroke="var(--text-soft)" stroke-width="1.8"/>
+    <line x1="280" y1="95" x2="302" y2="95" class="wire"/>
+    <text x="272" y="100" text-anchor="end" font-size="14" fill="var(--accent)">B</text>
+    <!-- join drains, down to PMOS C -->
+    <line x1="200" y1="140" x2="320" y2="140" class="wire"/>
+    <path class="wire" d="M260 140 V168"/>
+    <!-- PMOS C (260,190) -->
+    <line x1="260" y1="178" x2="260" y2="202" class="wire"/>
+    <path class="wire" d="M260 168 V178 M260 202 V250"/>
+    <line x1="253" y1="178" x2="253" y2="202" class="wire"/>
+    <circle cx="246" cy="190" r="4" fill="none" stroke="var(--text-soft)" stroke-width="1.8"/>
+    <line x1="206" y1="190" x2="242" y2="190" class="wire"/>
+    <text x="198" y="195" text-anchor="end" font-size="14" fill="var(--accent)">C</text>
+    <!-- output node -->
+    <line x1="260" y1="250" x2="440" y2="250" class="wire"/>
+    <circle cx="440" cy="250" r="4.5" class="node"/>
+    <text x="456" y="255" font-size="15" font-weight="700">Y = A·B + C</text>
+    <line x1="474" y1="240" x2="528" y2="240" stroke="var(--text-soft)" stroke-width="1.6"/>
+    <!-- NMOS A (260,295) series -->
+    <path class="wire" d="M260 250 V283 M260 307 V333"/>
+    <line x1="260" y1="283" x2="260" y2="307" class="wire"/>
+    <line x1="253" y1="283" x2="253" y2="307" class="wire"/>
+    <line x1="212" y1="295" x2="249" y2="295" class="wire"/>
+    <text x="204" y="300" text-anchor="end" font-size="14" fill="var(--accent)">A</text>
+    <!-- NMOS B (260,357) series -->
+    <path class="wire" d="M260 333 V345 M260 369 V430"/>
+    <line x1="260" y1="345" x2="260" y2="369" class="wire"/>
+    <line x1="253" y1="345" x2="253" y2="369" class="wire"/>
+    <line x1="212" y1="357" x2="249" y2="357" class="wire"/>
+    <text x="204" y="362" text-anchor="end" font-size="14" fill="var(--accent)">B</text>
+    <!-- NMOS C (380,330) parallel branch -->
+    <path class="wire" d="M380 250 V318 M380 342 V430"/>
+    <line x1="380" y1="318" x2="380" y2="342" class="wire"/>
+    <line x1="373" y1="318" x2="373" y2="342" class="wire"/>
+    <line x1="332" y1="330" x2="369" y2="330" class="wire"/>
+    <text x="324" y="335" text-anchor="end" font-size="14" fill="var(--accent)">C</text>
+    <!-- GND rail -->
+    <line x1="200" y1="430" x2="420" y2="430" class="wire"/>
+    <text x="180" y="435" text-anchor="end" font-size="13" fill="var(--text-soft)">GND</text>
+    <!-- network labels -->
+    <text x="70" y="140" font-size="12" fill="var(--text-faint)">pull-up:</text>
+    <text x="70" y="156" font-size="12" fill="var(--text-faint)">(A ∥ B) — C</text>
+    <text x="70" y="330" font-size="12" fill="var(--text-faint)">pull-down:</text>
+    <text x="70" y="346" font-size="12" fill="var(--text-faint)">(A–B) ∥ C</text>
+  </svg>
+  </div>
+  <figcaption><b>Fig. 4.1</b> — AOI21 gate: \(Y = \overline{AB + C}\) in a single CMOS stage. NMOS series = AND, parallel = OR; the PMOS network is the series/parallel dual. Circles on the gates mark PMOS.</figcaption>
+</figure>
+
+<h3 id="tgate">4.2 Transmission gates</h3>
+<p>An NMOS transistor passes a strong 0 but a degraded 1 (it turns itself off as the output rises within \(U_{th}\) of the gate); a PMOS has the mirror-image problem. Put one of each in parallel, driven by complementary control signals, and you get the <b>transmission gate</b> (<span class="de">Transmissionsgatter</span>): a near-ideal bidirectional switch passing the full rail-to-rail swing. It is the workhorse of multiplexers, latches, flip-flops and switched-capacitor circuits.</p>
+
+<h3 id="dynamic">4.3 Dynamic logic — one paragraph</h3>
+<p>Static CMOS pays for its robustness with a full PMOS network. <b>Dynamic logic</b> replaces it with a clocked trick: <em>precharge</em> the output high through one PMOS while the clock is low, then <em>evaluate</em> — the NMOS network conditionally discharges it. Fewer transistors, less input capacitance, historically faster — but the "high" output floats: it leaks away, couples to neighbors, and inputs may only fall, never rise, during evaluation (domino discipline). It powered the fastest CPU datapaths of the 1990s–2000s; leakage and fragility have since pushed it back to niches (memory decoders, some datapaths).</p>
+
+<h2 id="delay">5. Speed: everything is an RC circuit</h2>
+
+<h3 id="rcmodel">5.1 The RC delay model and logical effort, lite</h3>
+<p>Digital speed is Module 04+05 physics: every gate output must charge or discharge the capacitance hanging on it through the on-resistance of its transistors. To first order,</p>
+\[ t_{pd} \approx 0.69\, R_{on} \, C_{load}, \]
+<p>the familiar RC step response. Two consequences structure all of timing:</p>
+<ul>
+  <li><b>Fanout</b> (<span class="de">Lastfaktor</span>): driving \(h\) copies of your own input capacitance costs delay ∝ \(h\). <b>Logical effort</b> writes gate delay as \(d = \tau\,(p + g\,h)\): technology constant \(\tau\), parasitic term \(p\), the gate's intrinsic effort \(g\) (NAND2: \(4/3\); NOR2: \(5/3\) — NORs are slow because of stacked PMOS), times fanout \(h\). The standard yardstick is the <b>FO4 delay</b> — an inverter driving 4 inverters — about 8–15 ps in current nodes; a good pipeline stage is ~20–40 FO4.</li>
+  <li>Big loads want <b>tapered buffer chains</b>: each stage ~4× larger than the last is near-optimal (minimize \(\sum h_i\) with \(\prod h_i\) fixed).</li>
+</ul>
+
+<h3 id="wires">5.2 Why interconnect now dominates</h3>
+<p>Transistors got faster with every shrink; wires got <em>worse</em>. A wire scaled by \(1/k\) in all three dimensions has \(R' \propto k^2\) per unit length (cross-section shrinks twice) while \(C'\) per unit length stays roughly constant — so the RC product per mm <em>grows</em>. A wire is a distributed RC line, and its 50 %-delay (Elmore, Module 05's step response generalized) is</p>
+\[ \boxed{\; t_{50\%} \approx 0.4\, R'C'\, L^2 \;} \]
+<p><b>quadratic in length</b> — doubling a wire quadruples its delay. The fix: break it with inverting <b>repeaters</b> every \(\ell\); the delay of \(N = L/\ell\) segments is \(N \cdot 0.4R'C'\ell^2 = 0.4R'C'L\ell\) — linear again. Modern chips spend a sizable fraction of transistors and power just repeating signals. Below ~7 nm, wire delay — not gate delay — limits most paths; that is why physical design (§7) matters as much as logic design.</p>
+
+<div class="example">
+  <div class="ex-head"><span class="ex-tag">Worked example</span> A long wire vs. a logic gate</div>
+  <div class="ex-body">
+    <p>A global on-chip wire runs \(L = 10\,\mathrm{mm}\) across a large die, with \(R' = 1\,\Omega/\mathrm{\mu m}\) and \(C' = 0.2\,\mathrm{fF}/\mathrm{\mu m}\). Compare its unrepeatered delay to an FO4 gate delay of 10 ps, then add repeaters every 0.5 mm.</p>
+    <div class="step"><span class="step-label">Step 1 — totals:</span> \( R = R'L = 1 \cdot 10^4 = 10\,\mathrm{k\Omega} \), \( C = C'L = 0.2\,\mathrm{fF} \cdot 10^4 = 2\,\mathrm{pF} \).</div>
+    <div class="step"><span class="step-label">Step 2 — unrepeatered:</span> \( t \approx 0.4\,RC = 0.4 \cdot 10^4 \cdot 2\cdot 10^{-12} = 8\,\mathrm{ns} \). That is <b>800 gate delays</b> — at 3 GHz (333 ps/cycle), 24 clock cycles just to cross the die!</div>
+    <div class="step"><span class="step-label">Step 3 — with repeaters:</span> 20 segments of 0.5 mm: per segment \(0.4 \cdot 500\,\Omega \cdot 0.1\,\mathrm{pF} = 20\,\mathrm{ps}\); total \(20 \cdot 20\,\mathrm{ps} = 0.4\,\mathrm{ns}\) plus ~20 repeater delays ≈ 0.2 ns → ≈ 0.6 ns.</div>
+    <div class="result-line">8 ns → 0.6 ns: repeaters buy 13×, but even so a cross-die signal costs ~2 clock cycles. Sanity check: this is why multi-GHz chips are pipelined even in their <em>wiring</em>, and why "just make it bigger" stopped working for single dies.</div>
+  </div>
+</div>
+
+<h3 id="clock">5.3 Clock distribution and skew</h3>
+<p>One signal reaches every one of ~10⁷ flip-flops: the clock (<span class="de">Takt</span>). Ideally all flip-flops see the edge simultaneously; the reality is <b>clock skew</b> (<span class="de">Taktversatz</span>) \(t_{skew}\) — arrival-time differences from unequal path lengths, load and process variation. Clock networks are built as balanced <b>H-trees</b>, buffered meshes, or grids to keep skew to a few tens of ps across a 20 mm die. Skew eats directly into the timing budget:</p>
+\[ T_{clk} \;\ge\; t_{cq} + t_{logic,max} + t_{setup} + t_{skew} \qquad\text{(setup)}, \]
+\[ t_{cq} + t_{logic,min} \;\ge\; t_{hold} + t_{skew} \qquad\text{(hold)}. \]
+
+<div class="box pitfall">
+  <div class="box-title"><span class="ic">🚫</span>Classic pitfall: "just lower the clock frequency"</div>
+  <p>A <b>setup</b> violation (data arrives too late) is fixed by slowing the clock — that's why your CPU can be underclocked. A <b>hold</b> violation (data races <em>through</em> and corrupts the same edge's capture) does <b>not depend on \(T_{clk}\)</b> at all: look at the hold inequality — no \(T_{clk}\) in it. A chip with hold violations is dead silicon at <em>any</em> frequency. This is why timing signoff sweats hold margins across every process/voltage/temperature corner before tapeout.</p>
+</div>
+
+<h2 id="power">6. Power: the budget that rules the design</h2>
+
+<h3 id="dynpower">6.1 Dynamic power — the α·C·U²·f law</h3>
+<p>When a gate output switches low→high, the supply delivers charge \(Q = CU_{DD}\) at voltage \(U_{DD}\): energy drawn \(E = C U_{DD}^2\). Exactly half, \(\tfrac12 C U_{DD}^2\), ends up stored on the capacitor; the other half is dissipated in the PMOS on-resistance (remarkably, <em>independent of the resistance value</em> — Module 04's capacitor-charging result). On the high→low transition the stored half is burned in the NMOS. So one full switching cycle costs \(E_{cycle} = C U_{DD}^2\). If a fraction \(\alpha\) (the <b>activity factor</b>, typically 0.05–0.2) of the total capacitance \(C\) switches each clock cycle at frequency \(f\):</p>
+\[ \boxed{\; P_{dyn} = \alpha \, C \, U_{DD}^2 \, f \;} \]
+<p>Every knob in low-power design is visible here:</p>
+<ul>
+  <li><b>Voltage scaling</b> — the quadratic lever, by far the strongest: 1.0 V → 0.7 V halves power at the same frequency. With the frequency reduction low voltage forces, <b>DVFS</b> (dynamic voltage &amp; frequency scaling) gives roughly cubic savings — your phone does this hundreds of times per second.</li>
+  <li><b>Clock gating</b> (<span class="de">Taktabschaltung</span>): the clock network alone is 20–40 % of \(P_{dyn}\) (α = 1 by definition!); idle blocks get their clock switched off — synthesized automatically today.</li>
+  <li><b>Less \(C\)</b>: smaller cells, shorter wires — a physical-design job.</li>
+  <li><b>Less \(\alpha\)</b>: architectural — don't move data you don't need (fetching an operand from DRAM costs ~100× the energy of multiplying it).</li>
+</ul>
+
+<div class="widget">
+  <div class="w-head"><span class="ic">🧪</span>Interactive — the dynamic-power lever <span class="w-tag">simulation</span></div>
+  <div class="w-body">
+    <p class="small mt0">Power vs. clock frequency for your chosen \(U_{DD}\) (solid) and for \(0.8\,U_{DD}\) (dashed) — the gap is the \(U^2\) lever. Numerically convenient: \(P/\mathrm{W} = \alpha \cdot C/\mathrm{nF} \cdot (U/\mathrm{V})^2 \cdot f/\mathrm{GHz}\). Try: halve the voltage and watch power drop 4× at constant \(f\); then check what your setting does to the battery-life readout (12 Wh phone battery, SoC only).</p>
+    <div id="w-power"></div>
+  </div>
+</div>
+
+<h3 id="leakage">6.2 Leakage — why the threshold voltage can't keep dropping</h3>
+<p>A MOSFET below threshold is not "off"; the drain current merely decays exponentially (Module 08's diode-like subthreshold conduction):</p>
+\[ I_{leak} \propto e^{-U_{th}/(n U_T)}, \qquad U_T = kT/q \approx 26\,\mathrm{mV}, \; n \approx 1.2\ldots1.5. \]
+<p>The <b>subthreshold slope</b> is at best ~60 mV/decade at room temperature (a thermodynamic limit): every 60–90 mV shaved off \(U_{th}\) multiplies leakage by 10. Between 180 nm and 65 nm, \(U_{th}\) fell ~250 mV — leakage grew ~4 orders of magnitude, reaching ~40 % of chip power around 2005: the arithmetic that killed Dennard scaling (§2.3). Leakage also rises steeply with temperature — hot chips leak more, get hotter; thermal runaway is a real signoff concern. Countermeasures: multiple \(U_{th}\) flavors (low-\(U_{th}\) cells only on critical paths), <b>power gating</b> (header switches disconnecting idle blocks), FinFET/GAA geometry (§2.4), body biasing (FD-SOI's specialty).</p>
+
+<h3 id="darksilicon">6.3 Dark silicon</h3>
+<p>Fixed voltage plus growing density means you can put more transistors on a die than you can afford to power <em>simultaneously</em>. The fraction that must stay off at any instant — <b>dark silicon</b> — grows every node. Architects respond with specialization: a phone SoC is a zoo of mostly-idle accelerators (ISP, video codec, neural engine, modem), each vastly more efficient at its one job than a CPU, each dark most of the time. Your chip is not a processor; it is a federation of specialists sharing a power budget.</p>
+
+<div class="example">
+  <div class="ex-head"><span class="ex-tag">Worked example</span> Power budget of a smartphone SoC</div>
+  <div class="ex-body">
+    <p>A phone SoC runs 2 big cores at \(f = 3\,\mathrm{GHz}\), \(U_{DD} = 0.9\,\mathrm{V}\), with effective switched capacitance \(\alpha C = 0.8\,\mathrm{nF}\) per core; GPU + accelerators add 1.5 W, leakage + always-on logic 0.5 W. Battery: 12 Wh. Estimate sustained runtime and the effect of DVFS to 0.6 V / 1 GHz.</p>
+    <div class="step"><span class="step-label">Step 1 — CPU dynamic power:</span> per core \( P = \alpha C\, U^2 f = 0.8\cdot10^{-9} \cdot 0.81 \cdot 3\cdot10^{9} \approx 1.9\,\mathrm{W} \); two cores ≈ 3.9 W.</div>
+    <div class="step"><span class="step-label">Step 2 — total and runtime:</span> \( P_{tot} \approx 3.9 + 1.5 + 0.5 \approx 5.9\,\mathrm{W} \). Runtime \( = 12\,\mathrm{Wh} / 5.9\,\mathrm{W} \approx 2\,\mathrm{h} \) — and the phone would be painfully hot (sustainable dissipation of a handheld is only ~3 W). This is peak, not sustained, operation.</div>
+    <div class="step"><span class="step-label">Step 3 — DVFS:</span> at 0.6 V, 1 GHz: per core \( 0.8\cdot10^{-9}\cdot 0.36 \cdot 10^9 \approx 0.29\,\mathrm{W} \) — <b>6.7× less</b> for 3× less speed. Energy <em>per operation</em> falls by \( (0.9/0.6)^2 = 2.25× \).</div>
+    <div class="result-line">Peak ≈ 5.9 W (throttled within seconds), efficient mode &lt; 1.5 W. The \(U^2\) lever explains the whole strategy of mobile computing: sprint briefly ("race to idle") or crawl efficiently — never jog at high voltage.</div>
+  </div>
+</div>
+
+<h2 id="flow">7. The digital design flow — from idea to tapeout</h2>
+
+<p>Nobody draws 100 billion transistors. A chip is <em>compiled</em>, through the most expensive software toolchain in existence (EDA: Synopsys, Cadence, Siemens). The flow (<span class="de">Entwurfsablauf</span>):</p>
+
+<figure>
+  <div class="fig-frame">
+  <svg class="diagram" viewBox="0 0 720 290" role="img" aria-label="Digital design flow from specification to tapeout">
+    <!-- row 1 -->
+    <rect x="20" y="35" width="140" height="46" rx="9" fill="none" stroke="var(--accent)" stroke-width="2"/>
+    <text x="90" y="55" text-anchor="middle" font-size="13" font-weight="600">Specification</text>
+    <text x="90" y="71" text-anchor="middle" font-size="11" fill="var(--text-soft)">what &amp; how fast</text>
+    <rect x="200" y="35" width="140" height="46" rx="9" fill="none" stroke="var(--accent)" stroke-width="2"/>
+    <text x="270" y="55" text-anchor="middle" font-size="13" font-weight="600">RTL design</text>
+    <text x="270" y="71" text-anchor="middle" font-size="11" fill="var(--text-soft)">Verilog / VHDL</text>
+    <rect x="380" y="35" width="140" height="46" rx="9" fill="none" stroke="var(--accent)" stroke-width="2"/>
+    <text x="450" y="55" text-anchor="middle" font-size="13" font-weight="600">Verification</text>
+    <text x="450" y="71" text-anchor="middle" font-size="11" fill="var(--text-soft)">&gt;50 % of effort!</text>
+    <rect x="560" y="35" width="140" height="46" rx="9" fill="none" stroke="var(--accent)" stroke-width="2"/>
+    <text x="630" y="55" text-anchor="middle" font-size="13" font-weight="600">Synthesis</text>
+    <text x="630" y="71" text-anchor="middle" font-size="11" fill="var(--text-soft)">→ standard cells</text>
+    <!-- row 2 -->
+    <rect x="560" y="185" width="140" height="46" rx="9" fill="none" stroke="var(--accent-2)" stroke-width="2"/>
+    <text x="630" y="205" text-anchor="middle" font-size="13" font-weight="600">Place &amp; Route</text>
+    <text x="630" y="221" text-anchor="middle" font-size="11" fill="var(--text-soft)">physical layout</text>
+    <rect x="380" y="185" width="140" height="46" rx="9" fill="none" stroke="var(--accent-2)" stroke-width="2"/>
+    <text x="450" y="205" text-anchor="middle" font-size="13" font-weight="600">Timing closure</text>
+    <text x="450" y="221" text-anchor="middle" font-size="11" fill="var(--text-soft)">setup/hold, all corners</text>
+    <rect x="200" y="185" width="140" height="46" rx="9" fill="none" stroke="var(--accent-2)" stroke-width="2"/>
+    <text x="270" y="205" text-anchor="middle" font-size="13" font-weight="600">DRC / LVS</text>
+    <text x="270" y="221" text-anchor="middle" font-size="11" fill="var(--text-soft)">physical signoff</text>
+    <rect x="20" y="185" width="140" height="46" rx="9" fill="none" stroke="var(--accent-2)" stroke-width="2"/>
+    <text x="90" y="205" text-anchor="middle" font-size="13" font-weight="600">Tapeout 🎉</text>
+    <text x="90" y="221" text-anchor="middle" font-size="11" fill="var(--text-soft)">masks → fab</text>
+    <!-- forward arrows row1 -->
+    <line x1="160" y1="58" x2="192" y2="58" class="wire" marker-end="url(#arrF)"/>
+    <line x1="340" y1="58" x2="372" y2="58" class="wire" marker-end="url(#arrF)"/>
+    <line x1="520" y1="58" x2="552" y2="58" class="wire" marker-end="url(#arrF)"/>
+    <!-- down and row2 arrows -->
+    <line x1="630" y1="81" x2="630" y2="177" class="wire" marker-end="url(#arrF)"/>
+    <line x1="560" y1="208" x2="528" y2="208" class="wire" marker-end="url(#arrF)"/>
+    <line x1="380" y1="208" x2="348" y2="208" class="wire" marker-end="url(#arrF)"/>
+    <line x1="200" y1="208" x2="168" y2="208" class="wire" marker-end="url(#arrF)"/>
+    <!-- feedback loops -->
+    <path d="M450 35 C 430 10, 290 10, 272 32" fill="none" stroke="var(--accent-2)" stroke-width="1.8" stroke-dasharray="6 4" marker-end="url(#arrFb)"/>
+    <text x="360" y="16" text-anchor="middle" font-size="11" fill="var(--accent-2)">bugs found → fix RTL</text>
+    <path d="M450 231 C 470 262, 590 262, 626 234" fill="none" stroke="var(--accent-2)" stroke-width="1.8" stroke-dasharray="6 4" marker-end="url(#arrFb)"/>
+    <text x="540" y="270" text-anchor="middle" font-size="11" fill="var(--accent-2)">violations → re-place, resize, ECO</text>
+    <defs>
+      <marker id="arrF" markerWidth="9" markerHeight="9" refX="7" refY="4.5" orient="auto"><path d="M0 0 L8 4.5 L0 9 z" fill="var(--text-soft)"/></marker>
+      <marker id="arrFb" markerWidth="9" markerHeight="9" refX="7" refY="4.5" orient="auto"><path d="M0 0 L8 4.5 L0 9 z" fill="var(--accent-2)"/></marker>
+    </defs>
+  </svg>
+  </div>
+  <figcaption><b>Fig. 7.1</b> — The ASIC design flow. The dashed loops dominate real schedules: verification→RTL iterations for months, then timing/physical iterations ("ECO loops") until every path passes at every corner.</figcaption>
+</figure>
+
+<h3 id="rtl">7.1 RTL: describing hardware in code</h3>
+<p>The design entry level is <b>register-transfer level</b> (RTL): you describe registers (flip-flops) and the combinational logic between them in a hardware description language — Verilog/SystemVerilog or VHDL (the latter born from a US DoD project, still common in Europe). Crucial mindset: this is <em>not programming</em>. Every line describes hardware that exists <em>simultaneously and permanently</em>; nothing "executes line by line". An 8-bit counter:</p>
+
+<pre><code>module counter #(parameter N = 8) (
+    input  wire          clk,
+    input  wire          rst_n,   // reset, active-low, synchronous
+    input  wire          en,
+    output reg  [N-1:0]  q
+);
+    always @(posedge clk) begin
+        if (!rst_n)      q &lt;= {N{1'b0}};   // reset wins
+        else if (en)     q &lt;= q + 1'b1;    // count when enabled
+    end
+endmodule</code></pre>
+
+<p>Synthesis will infer: \(N\) flip-flops, an \(N\)-bit incrementer, and multiplexers implementing the reset/enable priority. The <code>&lt;=</code> ("non-blocking") assignment means "all registers update together at the clock edge" — exactly how real flip-flops behave.</p>
+
+<h3 id="verification">7.2 Verification — more than half the work</h3>
+<p>You cannot patch silicon. A logic bug that escapes to tapeout costs a mask respin (months, millions) or a recall (Intel's 1994 Pentium FDIV bug: $475 M). Consequently <b>functional verification consumes over 50 % of the engineering effort</b> — verification engineers outnumber designers on most teams. The arsenal: constrained-random simulation with self-checking testbenches (UVM), coverage metrics ("every FSM transition exercised?"), assertions, <b>formal verification</b> (mathematical proof that a property can never be violated), and FPGA/emulator prototypes running real software before silicon exists. The uncomfortable truth: you never prove a big chip correct — you accumulate evidence until the residual risk is commercially acceptable.</p>
+
+<h3 id="synthesis">7.3 Synthesis, place &amp; route, timing closure</h3>
+<ul>
+  <li><b>Logic synthesis</b> compiles RTL into a netlist of <b>standard cells</b> (§8) from the foundry library, optimizing for your timing/area/power constraints — a million-line Verilog design becomes tens of millions of NAND/AOI/flip-flop instances.</li>
+  <li><b>Place &amp; route</b> (<span class="de">Platzierung und Verdrahtung</span>): placement assigns each cell an exact location in the cell rows; routing connects them over the 10–18 metal layers. Pure combinatorial optimization at absurd scale — and since wire delay dominates (§5.2), <em>placement quality largely determines chip speed</em>.</li>
+  <li><b>Static timing analysis (STA)</b> checks setup and hold (§5.3) on <em>every</em> path — no simulation vectors, exhaustive by construction — across process/voltage/temperature corners (slow silicon at −40 °C at 0.9·U<sub>DD</sub>, fast at 125 °C...). <b>Timing closure</b> is the iterative grind of fixing violators: resize cells, restructure logic, re-place, add repeaters — while budgeting the clock itself arriving tens of ps apart across the die (skew).</li>
+  <li><b>DRC/LVS signoff</b>: Design-Rule Check verifies every geometry obeys the foundry's thousands of layout rules; Layout-vs-Schematic proves the polygons implement exactly the verified netlist. Only then: <b>tapeout</b> (<span class="de">Fertigungsfreigabe</span>) — the layout goes to the mask shop. The name survives from when the data left on magnetic tape.</li>
+</ul>
+
+<div class="box key">
+  <div class="box-title"><span class="ic">🔑</span>Key idea: masks make errors expensive</div>
+  <p>A leading-edge mask set (~70 precision quartz plates, each e-beam-written over hours) costs <b>€20–40 M</b> at 3–5 nm — before a single wafer is printed. This one number shapes the industry: huge verification budgets, design reuse as licensed IP blocks (nobody redesigns a USB controller), small-volume products staying on older nodes (a 28 nm mask set: ~€1 M), and "just try it in silicon" not being a debugging strategy.</p>
+</div>
+
+<h2 id="cells">8. Standard cells and layout</h2>
+
+<p>The atom of digital layout is the <b>standard cell</b> (<span class="de">Standardzelle</span>): a pre-designed, pre-characterized layout of one logic function (INV, NAND2, AOI21, D-flip-flop...) with the analog problems already solved by the library vendor. All cells share one <b>fixed height</b> (in metal tracks, e.g. "6-track" ≈ 210 nm in a 5 nm-class library) so they snap into rows like books on shelves: \(U_{DD}\) rail along the top edge, ground along the bottom, PMOS row above NMOS row, pins on metal 1/2. Each function comes in many <b>drive strengths</b> (X1, X2, X4... wider transistors) and several \(U_{th}\) flavors, letting the tools trade speed against leakage per instance. The library ships with characterization tables — delay and power vs. input slew and output load — which is what static timing analysis computes with.</p>
+
+<p>Above the cells rises the wiring stack:</p>
+
+<figure>
+  <div class="fig-frame">
+  <svg class="diagram" viewBox="0 0 640 350" role="img" aria-label="Cross-section of a chip: transistors below, metal stack above">
+    <!-- substrate -->
+    <rect x="60" y="295" width="380" height="35" fill="var(--bg-sunken)" stroke="var(--text-soft)" stroke-width="1.5"/>
+    <text x="250" y="318" text-anchor="middle" font-size="12.5" fill="var(--text-soft)">silicon substrate</text>
+    <!-- fins / transistors -->
+    <g fill="var(--accent-2)" fill-opacity="0.55">
+      <rect x="95" y="272" width="10" height="23"/><rect x="135" y="272" width="10" height="23"/>
+      <rect x="205" y="272" width="10" height="23"/><rect x="245" y="272" width="10" height="23"/>
+      <rect x="315" y="272" width="10" height="23"/><rect x="355" y="272" width="10" height="23"/>
+    </g>
+    <rect x="88" y="268" width="64" height="8" fill="var(--accent)" fill-opacity="0.7"/>
+    <rect x="198" y="268" width="64" height="8" fill="var(--accent)" fill-opacity="0.7"/>
+    <rect x="308" y="268" width="64" height="8" fill="var(--accent)" fill-opacity="0.7"/>
+    <!-- contacts -->
+    <g fill="var(--text-soft)">
+      <rect x="97" y="248" width="6" height="20"/><rect x="207" y="248" width="6" height="20"/><rect x="317" y="248" width="6" height="20"/><rect x="357" y="248" width="6" height="20"/>
+    </g>
+    <!-- M1/M2 thin -->
+    <g fill="var(--accent)" fill-opacity="0.85">
+      <rect x="80" y="236" width="90" height="10"/><rect x="190" y="236" width="60" height="10"/><rect x="290" y="236" width="90" height="10"/>
+      <rect x="100" y="208" width="130" height="11"/><rect x="270" y="208" width="100" height="11"/>
+    </g>
+    <rect x="120" y="219" width="7" height="17" fill="var(--text-soft)"/>
+    <rect x="300" y="219" width="7" height="17" fill="var(--text-soft)"/>
+    <!-- M3/M4 -->
+    <g fill="var(--accent)" fill-opacity="0.7">
+      <rect x="80" y="172" width="180" height="14"/><rect x="290" y="172" width="120" height="14"/>
+    </g>
+    <rect x="150" y="186" width="8" height="22" fill="var(--text-soft)"/>
+    <rect x="330" y="186" width="8" height="22" fill="var(--text-soft)"/>
+    <!-- M5/M6 -->
+    <rect x="90" y="130" width="320" height="19" fill="var(--accent)" fill-opacity="0.55"/>
+    <rect x="200" y="149" width="9" height="23" fill="var(--text-soft)"/>
+    <!-- top metal -->
+    <rect x="80" y="78" width="340" height="28" fill="var(--accent)" fill-opacity="0.4"/>
+    <rect x="240" y="106" width="11" height="24" fill="var(--text-soft)"/>
+    <!-- bump -->
+    <circle cx="250" cy="52" r="17" fill="none" stroke="var(--accent-2)" stroke-width="2"/>
+    <text x="278" y="48" font-size="11.5" fill="var(--accent-2)">solder bump → package</text>
+    <!-- right side labels -->
+    <text x="470" y="284" font-size="12" fill="var(--text-soft)">FEOL: fins + gates</text>
+    <text x="470" y="242" font-size="12" fill="var(--text-soft)">M1–M2: inside cells,</text>
+    <text x="470" y="256" font-size="12" fill="var(--text-soft)">pins (thin, dense)</text>
+    <text x="470" y="182" font-size="12" fill="var(--text-soft)">M3–M6: signal routing</text>
+    <text x="470" y="142" font-size="12" fill="var(--text-soft)">M7+: clock &amp; power</text>
+    <text x="470" y="95" font-size="12" fill="var(--text-soft)">top: thick, low-R</text>
+    <text x="470" y="110" font-size="12" fill="var(--text-soft)">power grid, pads</text>
+  </svg>
+  </div>
+  <figcaption><b>Fig. 8.1</b> — Schematic cross-section (not to scale). Transistors exist only in one bottom layer (FEOL); everything above is interconnect (BEOL) — thin and dense near the cells, thick and fast toward the top, capped by solder bumps to the package. A real stack has 10–18 metal levels.</figcaption>
+</figure>
+
+<h2 id="memory">9. Memory: SRAM, DRAM, Flash — and why we need all three</h2>
+
+<h3 id="sram">9.1 SRAM — the 6T cell</h3>
+<p>On-chip caches are <b>static RAM</b>: each bit lives in <b>six transistors</b> — two cross-coupled inverters (4 transistors) that hold the bit by positive feedback, plus two NMOS access transistors connecting the internal nodes \(Q, \overline{Q}\) to a <b>bitline pair</b> when the <b>wordline</b> goes high.</p>
+
+<figure>
+  <div class="fig-frame">
+  <svg class="diagram" viewBox="0 0 640 300" role="img" aria-label="SRAM 6T cell: cross-coupled inverters with access transistors">
+    <!-- wordline -->
+    <line x1="60" y1="55" x2="580" y2="55" class="wire" stroke="var(--accent-2)" style="stroke:var(--accent-2)"/>
+    <text x="590" y="60" font-size="13" fill="var(--accent-2)">WL</text>
+    <!-- bitlines -->
+    <line x1="100" y1="30" x2="100" y2="280" class="wire"/>
+    <text x="100" y="20" text-anchor="middle" font-size="13">BL</text>
+    <line x1="540" y1="30" x2="540" y2="280" class="wire"/>
+    <text x="540" y="20" text-anchor="middle" font-size="13">BL&#x0305;</text>
+    <!-- access transistor left (150,160) horizontal channel -->
+    <path class="wire" d="M100 160 H136"/>
+    <line x1="136" y1="160" x2="164" y2="160" class="wire"/>
+    <line x1="136" y1="152" x2="164" y2="152" class="wire"/>
+    <path class="wire" d="M150 152 V55" stroke-dasharray="none"/>
+    <path class="wire" d="M164 160 H210"/>
+    <!-- node Q -->
+    <circle cx="210" cy="160" r="4.5" class="node"/>
+    <text x="210" y="185" text-anchor="middle" font-size="14" font-weight="700">Q</text>
+    <!-- access transistor right (490,160) -->
+    <path class="wire" d="M540 160 H504"/>
+    <line x1="476" y1="160" x2="504" y2="160" class="wire"/>
+    <line x1="476" y1="152" x2="504" y2="152" class="wire"/>
+    <path class="wire" d="M490 152 V55"/>
+    <path class="wire" d="M476 160 H430"/>
+    <!-- node Qbar -->
+    <circle cx="430" cy="160" r="4.5" class="node"/>
+    <text x="430" y="185" text-anchor="middle" font-size="14" font-weight="700">Q&#x0305;</text>
+    <!-- inverter 1: Q -> Qbar (top path) -->
+    <path class="wire" d="M210 160 V105 H280"/>
+    <path d="M280 88 L318 105 L280 122 Z" fill="none" stroke="var(--text-soft)" stroke-width="2"/>
+    <circle cx="323" cy="105" r="4.5" fill="none" stroke="var(--text-soft)" stroke-width="2"/>
+    <path class="wire" d="M328 105 H430 V160"/>
+    <!-- inverter 2: Qbar -> Q (bottom path) -->
+    <path class="wire" d="M430 160 V225 H360"/>
+    <path d="M360 242 L322 225 L360 208 Z" fill="none" stroke="var(--text-soft)" stroke-width="2"/>
+    <circle cx="317" cy="225" r="4.5" fill="none" stroke="var(--text-soft)" stroke-width="2"/>
+    <path class="wire" d="M312 225 H210 V160"/>
+    <text x="320" y="75" text-anchor="middle" font-size="11.5" fill="var(--text-faint)">each inverter = 2 transistors (Fig. 4.1 style)</text>
+    <text x="320" y="262" text-anchor="middle" font-size="11.5" fill="var(--text-faint)">positive feedback holds the bit as long as power is on</text>
+  </svg>
+  </div>
+  <figcaption><b>Fig. 9.1</b> — The 6T SRAM cell: a cross-coupled inverter pair (4 T) storing complementary values on \(Q\) and \(\overline{Q}\), plus two NMOS access transistors (6 T total) gated by the wordline WL, connecting to the bitline pair.</figcaption>
+</figure>
+
+<p><b>Read</b>: precharge both bitlines high, raise WL. The side storing 0 pulls its bitline down slightly (~100 mV); a <b>sense amplifier</b> — a deliberately metastable latch — amplifies the difference to full swing. Danger: the read current flows <em>through the internal 0-node</em>, bumping it upward; if the bump crossed the inverter threshold, reading would destroy the bit. <b>Read stability</b> requires the pull-down transistor stronger than the access transistor (the <em>cell ratio</em>). <b>Write</b>: drive the bitlines hard to the new value with WL high — the driver must <em>overpower</em> the feedback (access stronger than PMOS pull-up: <em>write margin</em>). The cell is a three-way tug-of-war among transistor strengths, quantified by the <b>static noise margin</b> — the butterfly plot below.</p>
+
+<div class="widget">
+  <div class="w-head"><span class="ic">🧪</span>Interactive — SRAM butterfly plot &amp; static noise margin <span class="w-tag">simulation</span></div>
+  <div class="w-body">
+    <p class="small mt0">The two cross-coupled inverter transfer curves (one plotted normally, its partner mirrored about the diagonal). The three intersections are the two stable states plus the metastable midpoint. The <b>static noise margin</b> is the side of the largest square fitting in a lobe (its corners are marked): the noise voltage needed to flip the cell. Lower \(U_{DD}\) or gain and watch the eyes close; add mismatch (a real-silicon effect of random dopant fluctuation) and see one lobe collapse — exactly how low-voltage SRAM fails first on a chip.</p>
+    <div id="w-sram"></div>
+  </div>
+</div>
+
+<h3 id="dram">9.2 DRAM — 1T1C and the refresh treadmill</h3>
+<p><b>Dynamic RAM</b> stores a bit as charge on a capacitor (~10–25 fF, built as a deep trench or tall stack) behind a single access transistor: <b>1T1C</b> — 6× denser than SRAM, made in dedicated fabs. Reading is charge sharing between \(C_S\) and the much larger bitline capacitance \(C_{BL}\):</p>
+\[ \Delta U = \frac{U_{DD}}{2}\,\frac{C_S}{C_S + C_{BL}} \approx 50\ldots100\,\mathrm{mV}, \]
+<p>sensed and — since the read <em>destroys</em> the charge — immediately written back. Worse, the capacitor leaks: every cell must be <b>refreshed</b> (<span class="de">Auffrischung</span>) every ~64 ms, row by row, forever. "Dynamic" is a polite word for "forgets constantly". The reward is cost: ~€2 per gigabyte, versus roughly a thousand times more for SRAM as on-die area.</p>
+
+<h3 id="flash">9.3 Flash — the floating gate</h3>
+<p><b>Flash</b> stores bits with <em>no power at all</em>: a second, electrically isolated <b>floating gate</b> (<span class="de">schwebendes Gate</span>) buried in the oxide between channel and control gate. Force electrons onto it by Fowler–Nordheim tunneling at ~20 V, and the trapped charge shifts the transistor's apparent \(U_{th}\) — read as 0 or 1 (or 8–16 levels in TLC/QLC: 3–4 bits per cell), retained for years. The price: each program/erase cycle damages the tunnel oxide — cells <b>wear out</b> after ~1 000 (QLC) to ~100 000 (SLC) cycles, so SSD controllers spread writes by wear leveling. Modern 3D-NAND stacks &gt; 200 cell layers vertically — the one place chips grew upward instead of shrinking sideways.</p>
+
+<h3 id="hierarchy">9.4 The memory hierarchy — why all three coexist</h3>
+<p>No single memory is simultaneously fast, dense and non-volatile, so systems layer them (<span class="de">Speicherhierarchie</span>): SRAM caches (ns, k€/GB) → DRAM main memory (tens of ns, €/GB) → Flash storage (µs, cents/GB). It works because programs reuse recently-touched data (locality) — each level caches the hotter subset of the level below. Architecture courses formalize this; physically it is the SRAM/DRAM/Flash trade-off triangle in action.</p>
+
+<h2 id="mixed">10. Mixed-signal on chip, briefly</h2>
+<p>Real chips must talk to the analog world, so analog circuitry (Modules 08–09) shares the die: <b>ADCs/DACs</b> (a phone SoC contains dozens — audio, touch, battery gauge, radio); <b>PLLs</b> (phase-locked loops) that multiply a 24 MHz crystal reference up to multi-GHz core clocks and synthesize radio carriers; regulators, temperature sensors, SerDes link transceivers at 100+ Gbit/s per lane. Mixed-signal design is hard precisely because §6's digital switching makes substrate and supplies noisy — microvolts of signal next to amperes of switching current; defenses include separate supply domains, guard rings, differential circuits, careful floorplanning. And digital shrinks with every node; analog does not (kT/C noise doesn't care about lithography) — one more driver of the chiplet idea (§12.3).</p>
+
+<h2 id="yield">11. Test and yield</h2>
+
+<h3 id="yieldmodel">11.1 Defects and the yield formula</h3>
+<p>Dust, scratches, lithography flaws: defects rain onto wafers at a <b>defect density</b> \(D_0\) (defects per cm², ~0.05–0.5 for a healthy process; a closely guarded secret). If defects land randomly and independently (Poisson statistics), a die of area \(A\) escapes unharmed with probability</p>
+\[ \boxed{\; Y = e^{-A\,D_0} \;} \qquad\text{(Poisson model)}, \]
+<p>and with the empirical Murphy model, which fits real (clustered) defects better: \( Y = \left(\frac{1 - e^{-A D_0}}{A D_0}\right)^2 \). The exponential is brutal to big dies: at \(D_0 = 0.1\,/\mathrm{cm}^2\), a 50 mm² mobile chip yields 95 %, an 800 mm² GPU only 45 %. Big dies aren't just linearly more expensive — they are exponentially rarer. (Memories cheat the exponential: spare rows/columns plus laser/fuse repair let a die tolerate defects, which is why DRAM/Flash can be huge.)</p>
+
+<h3 id="dft">11.2 Design for test</h3>
+<p>How do you check a billion internal nodes through a few hundred pins? You design the test access in: <b>scan chains</b> (<span class="de">Prüfpfad</span>) add a mux to every flip-flop so that in test mode all registers link into giant shift registers — the tester shifts in an arbitrary internal state, pulses one clock, and shifts out the response, checked against patterns from ATPG software (stuck-at and transition fault models). Plus built-in self-test (BIST) for memories and boundary scan (JTAG) at board level. Test time on a million-euro tester is a real per-chip cost; DFT logic is a few percent of area willingly paid. Dies failing wafer probe never get packaged; those failing only at speed are sold as the slower grade — <b>binning</b> (your "budget" CPU is often a flagship that missed timing, or has a defective core disabled).</p>
+
+<h2 id="economics">12. The economics: foundries, die cost, chiplets</h2>
+
+<h3 id="foundry">12.1 The fabless/foundry split</h3>
+<p>A leading-edge fab costs <b>€15–30 billion</b> — the most expensive factories ever built, profitable only at enormous volume. Hence the industry split in two: <b>fabless</b> companies (Apple, NVIDIA, Qualcomm, AMD...) design chips and buy manufacturing from <b>foundries</b> (<span class="de">Auftragsfertiger</span>). At the leading edge only three remain — <b>TSMC</b> (Taiwan, ~90 % of sub-5 nm output), <b>Samsung</b>, <b>Intel</b> — because each node's R&amp;D + fab cost eliminated another competitor (GlobalFoundries stopped at 12 nm; 1980s giants like NEC/Hitachi left long ago). This concentration — most advanced chips from one company, on one island, using lithography machines from one Dutch company — is why chips are now geopolitics: export controls, "Chips Acts", multi-billion-euro fab subsidies (TSMC Dresden included).</p>
+
+<h3 id="diecost">12.2 From wafer price to die cost</h3>
+<p>A processed 300 mm wafer at a leading-edge node sells for roughly <b>$17 000–20 000</b> (28 nm: ~$3 000). The customer buys wafers; the cost per <em>good</em> die follows from geometry and yield:</p>
+\[ N_{dies} \approx \frac{\pi (d/2)^2}{A} - \frac{\pi d}{\sqrt{2A}} \qquad\text{(area / die size, minus edge loss)}, \]
+\[ \text{cost per good die} = \frac{\text{wafer cost}}{N_{dies}\cdot Y}. \]
+
+<div class="widget">
+  <div class="w-head"><span class="ic">🧪</span>Interactive — die-cost calculator <span class="w-tag">calculator</span></div>
+  <div class="w-body">
+    <p class="small mt0">A 300 mm wafer with your die size: green dies are good, red ones hit a defect (Poisson yield, illustrative deterministic pattern). Grow the die area and watch two effects compound — fewer candidates per wafer <em>and</em> exponentially worse yield. Compare a 50 mm² mobile chip with an 800 mm² monster GPU at the same defect density.</p>
+    <div id="w-diecost"></div>
+  </div>
+</div>
+
+<div class="example">
+  <div class="ex-head"><span class="ex-tag">Worked example</span> Die cost end-to-end</div>
+  <div class="ex-body">
+    <p>A 100 mm² SoC on a 5 nm-class process: wafer cost $17 000, \(d = 300\) mm, \(D_0 = 0.1\,/\mathrm{cm}^2\). Find the cost per good die.</p>
+    <div class="step"><span class="step-label">Step 1 — gross dies per wafer:</span>
+      \( N = \frac{\pi \cdot 150^2}{100} - \frac{\pi \cdot 300}{\sqrt{200}} = \frac{70\,686}{100} - \frac{942.5}{14.14} \approx 707 - 67 \approx 640 \).</div>
+    <div class="step"><span class="step-label">Step 2 — yield:</span> \(A = 100\,\mathrm{mm^2} = 1\,\mathrm{cm^2}\):
+      \( Y = e^{-1 \cdot 0.1} = 0.905 \) → good dies \( \approx 640 \cdot 0.905 \approx 579 \).</div>
+    <div class="step"><span class="step-label">Step 3 — cost:</span> \( 17\,000 / 579 \approx \$29 \) per good die. Add packaging + final test (~$5–15), amortized masks/NRE (€30 M over 50 M units: $0.60), foundry and vendor margins → the chip your phone maker buys for ~$80–120.</div>
+    <div class="result-line">≈ $29 of silicon in a ~$1 000 phone. Sanity check: double the die area and the cost per good die roughly <em>2.4×</em>-es (fewer dies × worse yield) — area is the currency of chip architecture.</div>
+  </div>
+</div>
+
+<h3 id="chiplets">12.3 Chiplets and advanced packaging — the new frontier</h3>
+<p>If big dies yield exponentially badly, don't build big dies: build several small ones — <b>chiplets</b> — and reconnect them in the package on a silicon interposer or embedded bridges, with die-to-die links approaching on-die wiring density. AMD's EPYC (compute dies leading-edge, I/O die on a cheap mature node), Apple's M-Ultra (two dies bridged by 10 000 wires), NVIDIA's Blackwell (two reticle-limit dies): all chiplets. Benefits: yield (small dies), mix-and-match nodes (analog and I/O don't shrink anyway — §10), reuse across products. With 3D stacking (TSMC SoIC, HBM memory towers bonded onto processors), <b>packaging has become the new scaling axis</b>: "More than Moore". Moore's law isn't dead — it moved out of the plane.</p>
+
+<div class="box history">
+  <div class="box-title"><span class="ic">📜</span>Where you'll meet all this again</div>
+  <p>The MOSFET physics behind FinFETs: Module 08. Gates, flip-flops and timing discipline: Module 10. The RC mathematics of wires: Modules 04–05. Signal integrity and transmission-line effects of package/board interconnect: Module 21. And everything running <em>on</em> these chips — embedded software, DSP, communications (Modules 13+) — inherits this module's power and cost constraints as its ground rules.</p>
+</div>
+
+<h2 id="summary">13. Formula summary — <span class="de">Formelsammlung</span></h2>
+
+<div class="table-wrap">
+<table class="data">
+<thead><tr><th>Concept</th><th>Formula</th><th>Remember as</th></tr></thead>
+<tbody>
+<tr><td>Moore's law</td><td>\( N(t) = N_0 \cdot 2^{(t-t_0)/2\,\mathrm{yr}} \)</td><td>economics roadmap, not physics</td></tr>
+<tr><td>Diffraction limit (litho)</td><td>\( \text{CD} \approx k_1 \lambda / \mathrm{NA} \)</td><td>why EUV: λ 193 nm → 13.5 nm</td></tr>
+<tr><td>Dynamic power</td><td>\( P_{dyn} = \alpha\, C\, U_{DD}^2\, f \)</td><td>voltage is the squared lever</td></tr>
+<tr><td>Energy per switching cycle</td><td>\( E = C\,U_{DD}^2 \) (half lost each edge)</td><td>independent of R</td></tr>
+<tr><td>Subthreshold leakage</td><td>\( I \propto e^{-U_{th}/(nU_T)} \), ≥ 60 mV/dec</td><td>why \(U_{th}\) stopped scaling</td></tr>
+<tr><td>Gate delay (logical effort)</td><td>\( d = \tau (p + g\,h) \)</td><td>effort × fanout; FO4 ≈ 10 ps</td></tr>
+<tr><td>Unrepeatered wire delay</td><td>\( t_{50\%} \approx 0.4\,R'C'L^2 \)</td><td>quadratic → add repeaters → linear</td></tr>
+<tr><td>Setup constraint</td><td>\( T_{clk} \ge t_{cq} + t_{logic} + t_{setup} + t_{skew} \)</td><td>slower clock fixes it</td></tr>
+<tr><td>Hold constraint</td><td>\( t_{cq} + t_{logic,min} \ge t_{hold} + t_{skew} \)</td><td>frequency-independent — deadly</td></tr>
+<tr><td>Dies per wafer</td><td>\( N \approx \pi(d/2)^2/A - \pi d/\sqrt{2A} \)</td><td>area ratio minus edge loss</td></tr>
+<tr><td>Yield (Poisson)</td><td>\( Y = e^{-A D_0} \)</td><td>exponential penalty on big dies</td></tr>
+<tr><td>Yield (Murphy)</td><td>\( Y = \left(\frac{1-e^{-AD_0}}{AD_0}\right)^2 \)</td><td>kinder fit for clustered defects</td></tr>
+<tr><td>Cost per good die</td><td>\( \text{wafer cost}/(N \cdot Y) \)</td><td>area is the currency</td></tr>
+<tr><td>DRAM read signal</td><td>\( \Delta U = \frac{U_{DD}}{2}\frac{C_S}{C_S + C_{BL}} \)</td><td>charge sharing, ~100 mV</td></tr>
+</tbody>
+</table>
+</div>
+
+<h2 id="exercises">14. Exercises</h2>
+<p>Work these on paper first — several reuse the worked examples' methods with new numbers.</p>
+
+<div class="exercise">
+  <p class="ex-q"><span class="ex-num">E1</span>A logic block has total capacitance \(C = 200\,\mathrm{pF}\), activity \(\alpha = 0.15\), running at \(f = 1\,\mathrm{GHz}\) from \(U_{DD} = 0.8\,\mathrm{V}\). Find the dynamic power and the switching energy per clock cycle. <span class="diff easy">easy</span></p>
+  <details><summary>Show solution</summary>
+    <div class="solution">
+      \( P = \alpha C U^2 f = 0.15 \cdot 200\cdot10^{-12} \cdot 0.64 \cdot 10^9 = 19.2\,\mathrm{mW} \).
+      Per cycle: \( E = P/f = 19.2\,\mathrm{pJ} \) (equivalently \( \alpha C U^2 \)).
+      Sanity check: ~20 mW is typical for a mid-size accelerator block; a hundred such blocks explain a few watts of SoC power.
+    </div>
+  </details>
+</div>
+
+<div class="exercise">
+  <p class="ex-q"><span class="ex-num">E2</span>How many gross die candidates fit on a 300 mm wafer for a die of \(A = 80\,\mathrm{mm^2}\)? Use the edge-loss formula. <span class="diff easy">easy</span></p>
+  <details><summary>Show solution</summary>
+    <div class="solution">
+      \( N \approx \frac{\pi \cdot 150^2}{80} - \frac{\pi \cdot 300}{\sqrt{160}} = \frac{70\,686}{80} - \frac{942.5}{12.65} \approx 884 - 75 \approx 809 \) dies.
+      Note the edge term costs ~9 % — real layouts lose a few more to the wafer flat/notch, test structures and saw streets. Order of magnitude: a wafer of phone-class chips holds ~800 candidates; a wafer of 800 mm² GPUs only ~65.
+    </div>
+  </details>
+</div>
+
+<div class="exercise">
+  <p class="ex-q"><span class="ex-num">E3</span>A tablet SoC runs at 1.0 V / 3.0 GHz. For a light workload, DVFS drops it to 0.8 V / 2.4 GHz. By what factor does dynamic power fall? By what factor does energy <em>per operation</em> fall (operations scale with \(f\))? <span class="diff med">medium</span></p>
+  <details><summary>Show solution</summary>
+    <div class="solution">
+      Power ratio: \( \frac{P_2}{P_1} = \frac{U_2^2 f_2}{U_1^2 f_1} = 0.64 \cdot 0.8 = 0.512 \) → power halves (≈ 1.95× less).
+      Energy per operation \( \propto U^2 \) only: falls by \( 1/0.64 = 1.56× \).
+      Sanity check: the cube law \(P \propto U^3\) (when \(f \propto U\)) is why "run slower at low voltage" wins whenever the deadline allows — the same work costs 36 % less energy here.
+    </div>
+  </details>
+</div>
+
+<div class="exercise">
+  <p class="ex-q"><span class="ex-num">E4</span>A foundry reports 70 % yield on a 120 mm² die. Assuming the Poisson model, find \(D_0\), then predict the yield of a 60 mm² die on the same line. <span class="diff med">medium</span></p>
+  <details><summary>Show solution</summary>
+    <div class="solution">
+      \( A = 1.2\,\mathrm{cm^2} \): \( 0.7 = e^{-1.2 D_0} \Rightarrow D_0 = -\ln(0.7)/1.2 = 0.357/1.2 \approx 0.30\,/\mathrm{cm^2} \).
+      Half the area: \( Y = e^{-0.6 \cdot 0.30} = e^{-0.178} \approx 0.84 \).
+      Elegant shortcut: halving \(A\) square-roots the yield, \( \sqrt{0.7} = 0.837 \) ✓. This √-rule is exactly the yield argument for chiplets (E6).
+    </div>
+  </details>
+</div>
+
+<div class="exercise">
+  <p class="ex-q"><span class="ex-num">E5</span>An on-chip wire is 5 mm long with \(R' = 2\,\Omega/\mathrm{\mu m}\), \(C' = 0.2\,\mathrm{fF}/\mathrm{\mu m}\). (a) Unrepeatered 50 % delay? (b) Delay of the wire segments alone if repeaters split it into 10 equal segments? (c) Why does the improvement scale like the number of segments? <span class="diff med">medium</span></p>
+  <details><summary>Show solution</summary>
+    <div class="solution">
+      (a) \( R = 10\,\mathrm{k\Omega},\; C = 1\,\mathrm{pF} \): \( t = 0.4\,RC = 0.4 \cdot 10^4 \cdot 10^{-12} = 4\,\mathrm{ns} \).<br>
+      (b) Each 0.5 mm segment: \( 0.4 \cdot 1\,\mathrm{k\Omega} \cdot 0.1\,\mathrm{pF} = 40\,\mathrm{ps} \); ten in series: \( 0.4\,\mathrm{ns} \) (plus ~10 repeater delays, ~0.1 ns).<br>
+      (c) Segment delay \( \propto (L/N)^2 \), and there are \(N\) of them: total \( \propto L^2/N \) — the quadratic is tamed to linear by construction. Sanity check: 4 ns on a 5 mm wire is ~12 clock cycles at 3 GHz; no modern chip ships unrepeatered global wires.
+    </div>
+  </details>
+</div>
+
+<div class="exercise">
+  <p class="ex-q"><span class="ex-num">E6</span>Monolithic vs. chiplets, same $17 000 wafer, \(D_0 = 0.1\,/\mathrm{cm^2}\): compare the silicon cost of (a) one 800 mm² die with (b) four 200 mm² chiplets (ignore the die-to-die interface overhead; use the dies-per-wafer formula and Poisson yield). <span class="diff hard">challenge</span></p>
+  <details><summary>Show solution</summary>
+    <div class="solution">
+      (a) \( N = \frac{70\,686}{800} - \frac{942.5}{40} \approx 88 - 24 = 64 \) gross; \( Y = e^{-8\cdot0.1} = 0.449 \) → ≈ 29 good → <b>$592 per good die</b>.<br>
+      (b) \( N = \frac{70\,686}{200} - \frac{942.5}{20} \approx 353 - 47 = 306 \) gross; \( Y = e^{-2\cdot0.1} = 0.819 \) → ≈ 251 good → $67.8 each → 4 chiplets = <b>$271</b>.<br>
+      Chiplets cost <b>2.2× less silicon</b> for the same total area; even after adding an interposer and extra packaging (~$50–100) they win clearly — and (a) gets <em>worse</em> at the leading edge where \(D_0\) starts higher. This arithmetic, not fashion, is why AMD, Apple, Intel and NVIDIA all ship chiplets. Bonus subtlety: with Murphy instead of Poisson, (a) yields ~0.52 — better, but the conclusion stands.
+    </div>
+  </details>
+</div>
+
+<div class="exercise">
+  <p class="ex-q"><span class="ex-num">E7</span>Extend the Verilog counter of §7.1 with a synchronous <code>load</code> input (loads value <code>d</code>, priority between reset and enable), and state exactly what hardware synthesis will infer. <span class="diff hard">challenge</span></p>
+  <details><summary>Show solution</summary>
+    <div class="solution">
+      Inside the clocked block, insert the load branch between reset and count:<br>
+      <code>if (!rst_n) q &lt;= {N{1'b0}}; else if (load) q &lt;= d; else if (en) q &lt;= q + 1'b1;</code><br>
+      Inferred hardware: \(N\) D-flip-flops; an \(N\)-bit incrementer (a ripple/carry-lookahead adder with constant 1); a 3-way priority multiplexer per bit selecting {0, d, q+1, q}; the priority order comes from the if/else chain (reset highest). Nothing "executes" — all paths exist in parallel, and the mux select logic implements the priority.
+      Sanity check: if you had used two separate <code>always</code> blocks assigning <code>q</code>, synthesis would error out — one register, one driver.
+    </div>
+  </details>
+</div>
+
+<h2 id="quiz">15. Self-assessment</h2>
+
+<div class="quiz" data-quiz-title="Module 11 — Self-test">
+<script type="application/json">
+[
+ {"q":"A block with α = 0.2, C = 1 nF switches at f = 2 GHz from 1.0 V. Its dynamic power is…",
+  "opts":["0.1 W","0.4 W","0.8 W","4 W"],"a":1,
+  "explain":"\\(P = \\alpha C U^2 f = 0.2 \\cdot 10^{-9} \\cdot 1 \\cdot 2\\cdot10^{9} = 0.4\\,\\mathrm{W}\\). Handy shortcut: watts = α · (C in nF) · U² · (f in GHz)."},
+ {"q":"What does the \"3 nm\" in a modern process name refer to?",
+  "opts":["the transistor gate length","the metal wire width","the gate-oxide thickness","nothing physical — it is a marketing label for a density class"],"a":3,
+  "explain":"Since ~22 nm, node names are brands: in a \"3 nm\" process the gate pitch is ≈ 48 nm and metal pitch ≈ 24 nm. Compare processes by transistor density and performance per watt, never by the label."},
+ {"q":"The light in an EUV lithography scanner is generated by…",
+  "opts":["a 13.5 nm semiconductor laser diode","a CO₂ laser vaporizing 50 000 tin droplets per second into plasma","a synchrotron storage ring in the fab basement","an excimer lamp with wavelength filters"],"a":1,
+  "explain":"Molten tin droplets are hit twice by a 25 kW CO₂ laser; the resulting ~500 000 K plasma radiates at 13.5 nm. Since everything absorbs EUV, the optics are ultra-flat mirrors in vacuum — no lenses. Only ASML builds these machines."},
+ {"q":"Dennard scaling broke down around 2005 primarily because…",
+  "opts":["lithography could not print smaller features","the threshold voltage could no longer be reduced without exponential leakage, so supply voltage stopped scaling","copper wiring replaced aluminum","wafers could not be made larger than 300 mm"],"a":1,
+  "explain":"Subthreshold leakage grows ~10× per 60–90 mV of \\(U_{th}\\) reduction. With \\(U_{th}\\) (and hence \\(U_{DD}\\)) pinned, power density rose with density — the power wall. The industry's answer was multicore, not faster clocks."},
+ {"q":"A 200 mm² die is made on a line with D₀ = 0.1 defects/cm². Poisson yield?",
+  "opts":["98 %","90.5 %","81.9 %","67 %"],"a":2,
+  "explain":"\\(A = 2\\,\\mathrm{cm^2}\\): \\(Y = e^{-2\\cdot0.1} = e^{-0.2} \\approx 0.819\\). The exponential is why doubling die area more than doubles cost per good die."},
+ {"q":"Which statement about SRAM and DRAM is correct?",
+  "opts":["SRAM needs periodic refresh; DRAM does not","DRAM stores data in cross-coupled inverters","SRAM holds its data as long as power is applied; DRAM must be refreshed every ~64 ms","both lose data in nanoseconds without refresh"],"a":2,
+  "explain":"The 6T SRAM cell's positive feedback holds the bit statically (hence the name). DRAM stores charge on a leaky capacitor and needs constant refresh — plus its reads are destructive and must write back."},
+ {"q":"Halving the supply voltage at constant frequency changes dynamic power by…",
+  "opts":["½","¼","1/8","it stays the same"],"a":1,
+  "explain":"\\(P \\propto U^2\\): half the voltage, one quarter of the power. (In practice you must also slow the clock at low voltage, giving roughly cubic total savings — the basis of DVFS.)"},
+ {"q":"In a typical industrial chip project, the largest share of engineering effort goes to…",
+  "opts":["drawing the transistor layout by hand","logic synthesis","functional verification","choosing the package"],"a":2,
+  "explain":"Verification consumes over half the effort — you cannot patch silicon, and a mask respin costs months and millions (Pentium FDIV: $475 M). Verification engineers typically outnumber designers."},
+ {"q":"A transmission gate uses an NMOS and a PMOS in parallel because…",
+  "opts":["it doubles the switching speed","NMOS passes a strong 0 and PMOS a strong 1, so together they pass the full voltage range","it halves the leakage current","one transistor acts as a spare if the other fails"],"a":1,
+  "explain":"An NMOS alone degrades a logic 1 by \\(U_{th}\\) (it shuts off as the output rises); PMOS has the mirror problem for 0. The complementary pair passes rail-to-rail — the key to CMOS multiplexers and latches."},
+ {"q":"Which statement about on-chip wires in scaled technologies is correct?",
+  "opts":["wires speed up with each node just like transistors","the delay of an unrepeatered wire grows with the square of its length, and scaled wires get relatively slower","wire delay is negligible compared to gate delay","copper wires have zero resistance below 10 nm"],"a":1,
+  "explain":"\\(t \\approx 0.4 R'C' L^2\\); shrinking a wire's cross-section raises \\(R'\\) per length, so the RC per mm worsens every node. Interconnect, not transistors, dominates modern timing — repeaters restore linear scaling at a power cost."}
+]
+</script>
+</div>
+
+<script>
+document.addEventListener("ee-ready", () => {
+
+  /* ---------- shared helpers (deterministic, no Math.random) ---------- */
+  const WAFER_R = 147;               /* usable radius in mm (300 mm wafer, 3 mm edge) */
+  function grossDies(A) {            /* count full dies inside usable radius */
+    const s = Math.sqrt(A), m = Math.ceil(WAFER_R / s) + 1;
+    let n = 0;
+    for (let i = -m; i < m; i++) for (let j = -m; j < m; j++) {
+      const x = i * s, y = j * s;
+      if (Math.hypot(x, y) <= WAFER_R && Math.hypot(x + s, y) <= WAFER_R &&
+          Math.hypot(x, y + s) <= WAFER_R && Math.hypot(x + s, y + s) <= WAFER_R) n++;
+    }
+    return n;
+  }
+  const pYield = (A, D0) => Math.exp(-(A / 100) * D0);   /* A in mm², D0 per cm² */
+  const hash01 = i => { const x = Math.sin(i * 127.1 + 311.7) * 43758.5453; return x - Math.floor(x); };
+
+  /* ---------- 1. Moore's law chart ---------- */
+  const chips = [
+    { n: "Intel 4004",    y: 1971, t: 2300 },
+    { n: "Intel 8080",    y: 1974, t: 6000 },
+    { n: "Intel 8086",    y: 1978, t: 29e3 },
+    { n: "Intel 80286",   y: 1982, t: 134e3 },
+    { n: "Intel 80386",   y: 1985, t: 275e3 },
+    { n: "Intel 80486",   y: 1989, t: 1.2e6 },
+    { n: "Pentium",       y: 1993, t: 3.1e6 },
+    { n: "Pentium II",    y: 1997, t: 7.5e6 },
+    { n: "Pentium 4",     y: 2000, t: 42e6 },
+    { n: "Core 2 Duo",    y: 2006, t: 291e6 },
+    { n: "Core i7",       y: 2008, t: 731e6 },
+    { n: "Apple A7",      y: 2013, t: 1e9 },
+    { n: "Apple A11",     y: 2017, t: 4.3e9 },
+    { n: "Apple M1",      y: 2020, t: 16e9 },
+    { n: "Apple M2 Ultra",y: 2023, t: 134e9 }
+  ];
+  const moore = yr => 2300 * Math.pow(2, (yr - 1971) / 2);
+  EE.custom({
+    mount: "#w-moore", height: 340,
+    params: [
+      { key: "chip", label: "Highlight chip", min: 0, max: chips.length - 1, step: 1, value: 14,
+        fmt: v => chips[Math.round(v)].n, unit: "" }
+    ],
+    readouts: [
+      { label: "Chip · year", fn: p => { const c = chips[Math.round(p.chip)]; return c.n + " · " + c.y; } },
+      { label: "Transistors", fn: p => EE.si(chips[Math.round(p.chip)].t, "") },
+      { label: "vs. 2-year-doubling trend", fn: p => { const c = chips[Math.round(p.chip)];
+          return "×" + EE.fmt(c.t / moore(c.y), 2); } }
+    ],
+    draw: (ctx, w, h, p, H) => {
+      const k = H.ink;
+      const v = H.makeView({ min: 1969, max: 2027, label: "year" }, { min: 3, max: 11.6, label: "" });
+      ctx.font = "11.5px system-ui, sans-serif";
+      /* decade gridlines (log y drawn manually) */
+      ctx.strokeStyle = k.grid; ctx.fillStyle = k.muted;
+      ctx.textAlign = "right"; ctx.textBaseline = "middle";
+      for (let e = 3; e <= 11; e++) {
+        const y = v.Y(e);
+        ctx.beginPath(); ctx.moveTo(v.padL, y); ctx.lineTo(v.padL + v.iw, y); ctx.stroke();
+        ctx.fillText(EE.si(Math.pow(10, e), ""), v.padL - 6, y);
+      }
+      ctx.textAlign = "center"; ctx.textBaseline = "top";
+      for (let yr = 1970; yr <= 2025; yr += 5) {
+        const x = v.X(yr);
+        ctx.beginPath(); ctx.moveTo(x, v.padT); ctx.lineTo(x, v.padT + v.ih); ctx.stroke();
+        if (yr % 10 === 0) ctx.fillText(yr, x, v.padT + v.ih + 6);
+      }
+      ctx.strokeStyle = k.axis; ctx.strokeRect(v.padL, v.padT, v.iw, v.ih);
+      ctx.fillStyle = k.primary; ctx.font = "600 12px system-ui, sans-serif";
+      ctx.fillText("year", v.padL + v.iw / 2, h - 16);
+      ctx.save(); ctx.translate(13, v.padT + v.ih / 2); ctx.rotate(-Math.PI / 2);
+      ctx.textBaseline = "bottom"; ctx.fillText("transistors per chip (log)", 0, 0); ctx.restore();
+      /* trend line: doubling every 2 years from the 4004 */
+      ctx.save();
+      ctx.beginPath(); ctx.rect(v.padL, v.padT, v.iw, v.ih); ctx.clip();
+      ctx.strokeStyle = H.color(2); ctx.setLineDash([6, 4]); ctx.lineWidth = 1.8;
+      ctx.beginPath();
+      ctx.moveTo(v.X(1969), v.Y(Math.log10(moore(1969))));
+      ctx.lineTo(v.X(2027), v.Y(Math.log10(moore(2027))));
+      ctx.stroke(); ctx.setLineDash([]);
+      ctx.fillStyle = H.color(2); ctx.font = "600 11px system-ui, sans-serif";
+      ctx.textAlign = "left"; ctx.textBaseline = "bottom";
+      ctx.fillText("2× every 2 years", v.X(1994), v.Y(Math.log10(moore(1994))) - 8);
+      /* data points */
+      const sel = Math.round(p.chip);
+      chips.forEach((c, i) => {
+        const x = v.X(c.y), y = v.Y(Math.log10(c.t));
+        ctx.beginPath(); ctx.arc(x, y, i === sel ? 6.5 : 4, 0, 7);
+        ctx.fillStyle = i === sel ? H.color(5) : H.color(0); ctx.fill();
+        ctx.strokeStyle = k.surface; ctx.lineWidth = 1.6; ctx.stroke();
+      });
+      const c = chips[sel], cx = v.X(c.y), cy = v.Y(Math.log10(c.t));
+      ctx.fillStyle = H.color(5); ctx.font = "600 11.5px system-ui, sans-serif";
+      ctx.textAlign = c.y > 2010 ? "right" : "left"; ctx.textBaseline = "bottom";
+      ctx.fillText(c.n, cx + (c.y > 2010 ? -9 : 9), cy - 6);
+      ctx.restore();
+    }
+  });
+
+  /* ---------- 2. Dynamic power explorer ---------- */
+  const pdyn = (p, f, v) => p.alpha * p.C * v * v * f;   /* W with C in nF, f in GHz */
+  EE.functionPlot({
+    mount: "#w-power", height: 300,
+    x: { min: 0, max: 4, label: "clock frequency f in GHz" },
+    y: p => ({ min: 0, max: Math.max(0.2, pdyn(p, 4, p.V)) * 1.12, label: "P_dyn in W" }),
+    params: [
+      { key: "alpha", label: "Activity α", min: 0.05, max: 0.6, step: 0.01, value: 0.2, unit: "", fmt: v => v.toFixed(2) },
+      { key: "C", label: "Switched capacitance C", min: 0.2, max: 3, step: 0.05, value: 1, unit: "nF", fmt: v => v.toFixed(2) },
+      { key: "V", label: "Supply U_DD", min: 0.5, max: 1.2, step: 0.01, value: 1.0, unit: "V", fmt: v => v.toFixed(2) },
+      { key: "f", label: "Operating point f", min: 0.2, max: 4, step: 0.05, value: 2.5, unit: "GHz", fmt: v => v.toFixed(2) }
+    ],
+    curves: [
+      { label: "at U_DD", color: 0, fn: (f, p) => pdyn(p, f, p.V) },
+      { label: "at 0.8·U_DD", color: 1, dash: [6, 4], fn: (f, p) => pdyn(p, f, 0.8 * p.V) }
+    ],
+    annotations: p => [
+      { type: "vline", x: p.f, label: "your f" },
+      { type: "point", x: p.f, y: pdyn(p, p.f, p.V), label: EE.si(pdyn(p, p.f, p.V), "W") },
+      { type: "point", x: p.f, y: pdyn(p, p.f, 0.8 * p.V), label: "−36 %" }
+    ],
+    readouts: [
+      { label: "P_dyn at your point", fn: p => EE.si(pdyn(p, p.f, p.V), "W") },
+      { label: "Energy per cycle", fn: p => EE.si(p.alpha * p.C * 1e-9 * p.V * p.V, "J") },
+      { label: "Battery life (12 Wh, SoC only)", fn: p => (12 / pdyn(p, p.f, p.V)).toFixed(1) + " h" }
+    ]
+  });
+
+  /* ---------- 3. Die-cost calculator with wafer map ---------- */
+  EE.custom({
+    mount: "#w-diecost", height: 360,
+    params: [
+      { key: "wc", label: "Wafer cost", min: 3000, max: 25000, step: 500, value: 17000, unit: "$", fmt: v => v.toFixed(0) },
+      { key: "A", label: "Die area", min: 25, max: 820, step: 5, value: 100, unit: "mm²", fmt: v => v.toFixed(0) },
+      { key: "D0", label: "Defect density D₀", min: 0.02, max: 0.5, step: 0.01, value: 0.10, unit: "/cm²", fmt: v => v.toFixed(2) }
+    ],
+    readouts: [
+      { label: "Gross dies / wafer", fn: p => grossDies(p.A).toFixed(0) },
+      { label: "Yield (Poisson)", fn: p => (100 * pYield(p.A, p.D0)).toFixed(1) + " %" },
+      { label: "Good dies", fn: p => Math.round(grossDies(p.A) * pYield(p.A, p.D0)).toFixed(0) },
+      { label: "Cost per good die", fn: p => "$" + (p.wc / Math.max(1, grossDies(p.A) * pYield(p.A, p.D0))).toFixed(1) }
+    ],
+    draw: (ctx, w, h, p, H) => {
+      const k = H.ink;
+      const cx = Math.min(w * 0.36, 220), cy = h / 2;
+      const Rpx = Math.min(cy - 16, cx - 12), sc = Rpx / 150;
+      /* wafer disc */
+      ctx.beginPath(); ctx.arc(cx, cy, 150 * sc, 0, 7);
+      ctx.fillStyle = k.accentSoft; ctx.fill();
+      ctx.strokeStyle = k.axis; ctx.lineWidth = 1.6; ctx.stroke();
+      /* notch */
+      ctx.beginPath(); ctx.arc(cx, cy + 150 * sc, 5, 0, 7);
+      ctx.fillStyle = k.surface; ctx.fill(); ctx.strokeStyle = k.axis; ctx.stroke();
+      /* die grid */
+      const s = Math.sqrt(p.A), m = Math.ceil(WAFER_R / s) + 1;
+      const Y = pYield(p.A, p.D0);
+      let idx = 0, good = 0, bad = 0;
+      for (let i = -m; i < m; i++) for (let j = -m; j < m; j++) {
+        const x = i * s, y = j * s;
+        idx++;
+        const inside = Math.hypot(x, y) <= WAFER_R && Math.hypot(x + s, y) <= WAFER_R &&
+                       Math.hypot(x, y + s) <= WAFER_R && Math.hypot(x + s, y + s) <= WAFER_R;
+        if (!inside) continue;
+        const ok = hash01(idx) < Y;
+        ok ? good++ : bad++;
+        ctx.fillStyle = ok ? H.color(3) : H.color(5);
+        ctx.globalAlpha = ok ? 0.5 : 0.75;
+        ctx.fillRect(cx + x * sc + 0.6, cy + y * sc + 0.6, s * sc - 1.2, s * sc - 1.2);
+        ctx.globalAlpha = 1;
+      }
+      /* legend / numbers on the right */
+      const lx = cx + 150 * sc + 34;
+      ctx.font = "600 13px system-ui, sans-serif"; ctx.textAlign = "left"; ctx.textBaseline = "middle";
+      ctx.fillStyle = H.color(3); ctx.fillRect(lx, cy - 58, 13, 13);
+      ctx.fillStyle = k.primary; ctx.fillText("good: " + good, lx + 20, cy - 51);
+      ctx.fillStyle = H.color(5); ctx.fillRect(lx, cy - 30, 13, 13);
+      ctx.fillStyle = k.primary; ctx.fillText("defective: " + bad, lx + 20, cy - 23);
+      ctx.fillStyle = k.muted; ctx.font = "12px system-ui, sans-serif";
+      ctx.fillText("300 mm wafer, die " + p.A.toFixed(0) + " mm²", lx, cy + 6);
+      ctx.fillText("Y = e^(−A·D₀) = " + (100 * Y).toFixed(1) + " %", lx, cy + 26);
+      ctx.fillStyle = k.primary; ctx.font = "700 15px system-ui, sans-serif";
+      ctx.fillText("$" + (p.wc / Math.max(1, good)).toFixed(1) + " / good die", lx, cy + 52);
+    }
+  });
+
+  /* ---------- 4. SRAM butterfly / static noise margin ---------- */
+  const vtc  = (x, V, VM, g) => V / (1 + Math.exp(4 * g * (x - VM) / V));         /* inverter VTC */
+  const ivtc = (x, V, VM, g) => {                                                  /* inverse VTC */
+    if (x <= V * 1e-4 || x >= V * (1 - 1e-4)) return NaN;
+    return VM + Math.log(V / x - 1) * V / (4 * g);
+  };
+  function snmLobe(p, lower) {   /* largest 45°-diagonal square in one butterfly lobe */
+    const V = p.V, VM1 = V / 2 + p.dv, VM2 = V / 2;
+    const f1 = x => vtc(x, V, VM1, p.g), f2 = x => ivtc(x, V, VM2, p.g);
+    let best = 0, bx1 = 0, bx2 = 0, bc = 0;
+    for (let ci = 1; ci < 60; ci++) {
+      const c = (lower ? -1 : 1) * V * ci / 60;
+      let x1 = null, x2 = null, prev1 = null, prev2 = null;
+      for (let xi = 0; xi <= 200; xi++) {
+        const x = V * xi / 200;
+        const d1 = f1(x) - (x + c);
+        if (prev1 !== null && isFinite(d1) && prev1 * d1 <= 0 && x1 === null) x1 = x;
+        if (isFinite(d1)) prev1 = d1;
+        const y2 = f2(x);
+        if (isFinite(y2)) {
+          const d2 = y2 - (x + c);
+          if (prev2 !== null && prev2 * d2 <= 0 && x2 === null) x2 = x;
+          prev2 = d2;
+        }
+      }
+      if (x1 !== null && x2 !== null) {
+        const sSide = Math.abs(x2 - x1);
+        if (sSide > best) { best = sSide; bx1 = Math.min(x1, x2); bx2 = Math.max(x1, x2); bc = c; }
+      }
+    }
+    return { s: best, x1: bx1, x2: bx2, c: bc };
+  }
+  EE.functionPlot({
+    mount: "#w-sram", height: 400,
+    x: p => ({ min: 0, max: p.V, label: "U(Q) in V" }),
+    y: p => ({ min: 0, max: p.V, label: "U(Q̅) in V" }),
+    params: [
+      { key: "V", label: "Supply U_DD", min: 0.4, max: 1.2, step: 0.02, value: 1.0, unit: "V", fmt: v => v.toFixed(2) },
+      { key: "g", label: "Inverter gain", min: 1.5, max: 12, step: 0.5, value: 5, unit: "", fmt: v => v.toFixed(1) },
+      { key: "dv", label: "Mismatch ΔU_M (inverter 1)", min: -0.15, max: 0.15, step: 0.005, value: 0, unit: "V", fmt: v => (v * 1000).toFixed(0) + " m" }
+    ],
+    curves: [
+      { label: "inverter 1", color: 0, fn: (x, p) => vtc(x, p.V, p.V / 2 + p.dv, p.g) },
+      { label: "inverter 2 (mirrored)", color: 5, fn: (x, p) => ivtc(x, p.V, p.V / 2, p.g) }
+    ],
+    annotations: p => {
+      const lo = snmLobe(p, true), hi = snmLobe(p, false);
+      const worst = lo.s < hi.s ? lo : hi;
+      return [
+        { type: "point", x: worst.x1, y: worst.x1 + worst.c, label: "SNM square" },
+        { type: "point", x: worst.x2, y: worst.x2 + worst.c, label: "" },
+        { type: "point", x: p.V / 2 + p.dv / 2, y: p.V / 2 + p.dv / 2, label: "metastable" }
+      ];
+    },
+    readouts: [
+      { label: "SNM lobe 0-side", fn: p => EE.si(snmLobe(p, true).s, "V") },
+      { label: "SNM lobe 1-side", fn: p => EE.si(snmLobe(p, false).s, "V") },
+      { label: "Static noise margin (min)", fn: p => EE.si(Math.min(snmLobe(p, true).s, snmLobe(p, false).s), "V") }
+    ]
+  });
+});
+</script>
+
+</article>
+</main>
+</div>
+</body>
+</html>

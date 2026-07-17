@@ -1,0 +1,979 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>M17 · Electrical Machines &amp; Drives — EE Knowledge Base</title>
+<link rel="stylesheet" href="../../assets/vendor/katex/katex.min.css">
+<link rel="stylesheet" href="../../assets/css/style.css">
+<script src="../../assets/vendor/katex/katex.min.js" defer></script>
+<script src="../../assets/vendor/katex/auto-render.min.js" defer></script>
+<script src="../curriculum.js" defer></script>
+<script src="../../assets/js/app.js" defer></script>
+<script src="../../assets/js/widgets.js" defer></script>
+</head>
+<body data-module="m17">
+<div class="layout">
+<main class="content">
+<article class="article">
+
+<span class="eyebrow">🏭 Power Engineering · Module 17</span>
+<h1>Electrical Machines &amp; Drives <span class="muted" style="font-weight:400;font-size:1.4rem">· <span class="de">Elektrische Maschinen &amp; Antriebe</span></span></h1>
+<p class="lead">Roughly two thirds of all industrial electricity on Earth ends its life inside an electric motor, and essentially all of it <em>began</em> its life inside a generator — which is the same machine running backwards. This module builds the four classical machines (transformer, induction, synchronous, DC) from two laws you already own, then adds the power electronics that turned them from constant-speed workhorses into the precision actuators inside every EV, robot and wind turbine.</p>
+
+<div class="page-meta">
+  <span><b>Corresponds to:</b> Elektrische Maschinen und Antriebe (4th–5th semester)</span>
+  <span><b>Prerequisites:</b> Modules 05, 07</span>
+  <span><b>Study time:</b> ≈ 7–9 h</span>
+</div>
+
+<h2 id="energy-conversion">1. From two laws to every machine</h2>
+
+<p>Module 07 gave you two facts about a conductor of length \(l\) in a magnetic field \(B\):</p>
+\[ F = B\,I\,l \qquad \text{(force on a current-carrying conductor)} \]
+\[ u_{\text{ind}} = B\,l\,v \qquad \text{(voltage induced in a moving conductor)} \]
+<p>Every rotating machine in this module is an industrial-scale packaging of these two equations. And here is the point students often miss: <strong>they always act together</strong>. Push current through a conductor in a field and it moves (<em>motor</em>); but the moment it moves, it induces a back-voltage that opposes the current. Drag a conductor through a field and it generates voltage (<em>generator</em>); but the moment you draw current, a force appears that opposes the dragging. The product tells the story of energy conversion:</p>
+\[ P_{\text{el}} = u_{\text{ind}}\, I = (Blv)\,I = (BIl)\,v = F\,v = P_{\text{mech}}. \]
+<p>Electrical power in equals mechanical power out (before losses) — the conductor in the field is a lossless power converter, and the direction of power flow is set purely by the operating point.</p>
+
+<div class="box key">
+  <div class="box-title"><span class="ic">🔑</span>Key idea: motor and generator are the same machine</div>
+  <p>There is no constructional difference between an electric motor and a generator (<span class="de">Motor / Generator</span>). Every machine in this module runs in both directions of power flow. Your EV proves it several times per minute: accelerator down — the PMSM is a motor; brake pedal — the <em>same</em> machine becomes a generator and recharges the battery. Which mode you are in is a question of operating point, not of hardware.</p>
+</div>
+
+<figure>
+  <div class="fig-frame">
+  <svg class="diagram" viewBox="0 0 640 240" role="img" aria-label="Linear machine: conducting bar on rails in a magnetic field">
+    <!-- field region dots (B out of page) -->
+    <g fill="none" stroke="var(--text-faint)">
+      <rect x="150" y="30" width="420" height="150" stroke-dasharray="5 5" rx="8"/>
+    </g>
+    <g fill="var(--text-soft)">
+      <circle cx="190" cy="60" r="2.5"/><circle cx="260" cy="60" r="2.5"/><circle cx="330" cy="60" r="2.5"/><circle cx="470" cy="60" r="2.5"/><circle cx="540" cy="60" r="2.5"/>
+      <circle cx="190" cy="150" r="2.5"/><circle cx="260" cy="150" r="2.5"/><circle cx="330" cy="150" r="2.5"/><circle cx="470" cy="150" r="2.5"/><circle cx="540" cy="150" r="2.5"/>
+    </g>
+    <text x="562" y="50" text-anchor="end" font-size="13" fill="var(--text-soft)">B (out of page)</text>
+    <!-- rails -->
+    <path class="wire" d="M60 80 H560 M60 130 H560"/>
+    <!-- source -->
+    <circle cx="60" cy="105" r="22" fill="none" stroke="var(--text-soft)" stroke-width="2"/>
+    <line x1="60" y1="83" x2="60" y2="127" class="wire"/>
+    <text x="60" y="160" text-anchor="middle" font-size="13">U</text>
+    <!-- sliding bar -->
+    <rect x="392" y="68" width="16" height="74" fill="var(--accent)" opacity="0.25" stroke="var(--accent)" stroke-width="2" rx="3"/>
+    <!-- current arrow in bar -->
+    <line x1="400" y1="85" x2="400" y2="118" stroke="var(--accent)" stroke-width="2.2" marker-end="url(#arrM1)"/>
+    <text x="414" y="106" font-size="13" fill="var(--accent)">I</text>
+    <!-- force arrow -->
+    <line x1="416" y1="105" x2="486" y2="105" stroke="var(--accent-2)" stroke-width="2.4" marker-end="url(#arrM2)"/>
+    <text x="452" y="95" text-anchor="middle" font-size="13" fill="var(--accent-2)">F = BIl</text>
+    <!-- velocity arrow -->
+    <line x1="400" y1="52" x2="450" y2="52" stroke="var(--text-soft)" stroke-width="2" marker-end="url(#arrM3)"/>
+    <text x="426" y="42" text-anchor="middle" font-size="12" fill="var(--text-soft)">v → u<tspan baseline-shift="sub" font-size="9">ind</tspan> = Blv</text>
+    <text x="330" y="215" text-anchor="middle" font-size="12" fill="var(--text-faint)">the "linear machine" — unroll it into a circle and you have a rotor</text>
+    <defs>
+      <marker id="arrM1" markerWidth="9" markerHeight="9" refX="7" refY="4.5" orient="auto"><path d="M0 0 L8 4.5 L0 9 z" fill="var(--accent)"/></marker>
+      <marker id="arrM2" markerWidth="9" markerHeight="9" refX="7" refY="4.5" orient="auto"><path d="M0 0 L8 4.5 L0 9 z" fill="var(--accent-2)"/></marker>
+      <marker id="arrM3" markerWidth="9" markerHeight="9" refX="7" refY="4.5" orient="auto"><path d="M0 0 L8 4.5 L0 9 z" fill="var(--text-soft)"/></marker>
+    </defs>
+  </svg>
+  </div>
+  <figcaption><b>Fig. 1.1</b> — The conceptual "linear machine": a bar on rails in a field. Current → force (motor); motion → induced voltage (generator). Both happen simultaneously; the balance \(U = u_{\text{ind}} + RI\) sets the operating point. Every rotating machine is this picture bent into a circle.</figcaption>
+</figure>
+
+<h2 id="ideal-transformer">2. The ideal transformer — induction without motion</h2>
+
+<p>Before anything rotates, meet the machine with no moving parts at all. Wind two coils, \(N_1\) and \(N_2\) turns, on a common iron core. The core guides essentially all the flux \(\Phi\) through <em>both</em> windings. Faraday's law (Module 07) applied to each winding:</p>
+\[ u_1 = N_1 \frac{\mathrm{d}\Phi}{\mathrm{d}t}, \qquad u_2 = N_2 \frac{\mathrm{d}\Phi}{\mathrm{d}t}. \]
+<p>Same \(\mathrm{d}\Phi/\mathrm{d}t\) in both — so dividing the equations eliminates it:</p>
+\[ \boxed{\;\frac{u_1}{u_2} = \frac{N_1}{N_2} = \ddot{u}\;} \]
+<p>with the turns ratio \(\ddot{u}\) (<span class="de">Übersetzungsverhältnis</span> — yes, German notation really uses <em>ü</em>). An ideal transformer is lossless, so \(u_1 i_1 = u_2 i_2\), giving the current relation and, in one more step, the famous impedance transformation:</p>
+\[ \frac{i_1}{i_2} = \frac{N_2}{N_1}, \qquad Z_1 = \ddot{u}^2\, Z_2 . \]
+
+<div class="box intuition">
+  <div class="box-title"><span class="ic">💡</span>Intuition: a gearbox for electricity</div>
+  <p>A mechanical gearbox trades speed for torque at constant power; a transformer (<span class="de">Transformator</span>) trades voltage for current at constant power. The turns ratio is the gear ratio. And just as a gearbox lets a small fast engine drive a heavy slow wheel, the transformer lets a 400 kV transmission line feed your 230 V wall socket — the single trick that decided the "War of Currents" in favor of AC.</p>
+</div>
+
+<p>Note what the derivation required: \(\mathrm{d}\Phi/\mathrm{d}t \neq 0\). A transformer only works with <em>changing</em> flux — connect it to DC and it is just a heater (a very brief one: only the small winding resistance limits the current). This is why the transformer is an AC-only device, and why DC grids had no cheap way to change voltage levels in 1890.</p>
+
+<h2 id="real-transformer">3. The real transformer — equivalent circuit and how to measure it</h2>
+
+<p>Real transformers deviate from the ideal in four physically distinct ways, and each one becomes an element of the standard equivalent circuit (<span class="de">Ersatzschaltbild</span>). Secondary quantities are referred to the primary side (denoted with a prime: \(R_2' = \ddot{u}^2 R_2\), \(u_2' = \ddot{u}\, u_2\)):</p>
+
+<ul>
+  <li>\(R_1,\; R_2'\) — the windings are copper wire with resistance: <b>copper losses</b> \(\propto I^2\).</li>
+  <li>\(X_{1\sigma},\; X_{2\sigma}'\) — <b>leakage reactances</b> (<span class="de">Streureaktanzen</span>): a few percent of the flux takes shortcuts through air and links only one winding, acting like a small series inductance.</li>
+  <li>\(X_h\) — the <b>magnetizing reactance</b> (<span class="de">Hauptreaktanz</span>): the core has finite permeability, so a (small) magnetizing current must flow to establish \(\Phi\) even with no load.</li>
+  <li>\(R_{Fe}\) — a fictitious parallel resistor representing <b>iron losses</b> (hysteresis + eddy currents), which flow whenever the core is magnetized, load or no load.</li>
+</ul>
+
+<figure>
+  <div class="fig-frame">
+  <svg class="diagram" viewBox="0 0 760 270" role="img" aria-label="Transformer T equivalent circuit">
+    <!-- top rail with series elements -->
+    <path class="wire" d="M40 60 H120 M190 60 H240 M310 60 H370 M370 60 H420 M490 60 H540 M610 60 H720"/>
+    <!-- R1 -->
+    <rect x="120" y="48" width="70" height="24" fill="none" stroke="var(--text-soft)" stroke-width="2"/>
+    <text x="155" y="38" text-anchor="middle" font-size="14">R₁</text>
+    <!-- X1s -->
+    <rect x="240" y="48" width="70" height="24" fill="none" stroke="var(--text-soft)" stroke-width="2"/>
+    <text x="275" y="38" text-anchor="middle" font-size="14">X₁σ</text>
+    <!-- node -->
+    <circle cx="400" cy="60" r="4" class="node"/>
+    <!-- X2s' -->
+    <rect x="420" y="48" width="70" height="24" fill="none" stroke="var(--text-soft)" stroke-width="2"/>
+    <text x="455" y="38" text-anchor="middle" font-size="14">X'₂σ</text>
+    <!-- R2' -->
+    <rect x="540" y="48" width="70" height="24" fill="none" stroke="var(--text-soft)" stroke-width="2"/>
+    <text x="575" y="38" text-anchor="middle" font-size="14">R'₂</text>
+    <!-- shunt branch: two parallel vertical boxes -->
+    <path class="wire" d="M400 60 V95 M360 95 H440 M360 95 V115 M440 95 V115 M360 185 V205 M440 185 V205 M360 205 H440 M400 205 V220"/>
+    <rect x="348" y="115" width="24" height="70" fill="none" stroke="var(--text-soft)" stroke-width="2"/>
+    <text x="330" y="154" text-anchor="end" font-size="14">R<tspan baseline-shift="sub" font-size="10">Fe</tspan></text>
+    <rect x="428" y="115" width="24" height="70" fill="none" stroke="var(--text-soft)" stroke-width="2"/>
+    <text x="470" y="154" font-size="14">X<tspan baseline-shift="sub" font-size="10">h</tspan></text>
+    <!-- bottom rail -->
+    <path class="wire" d="M40 220 H720"/>
+    <circle cx="400" cy="220" r="4" class="node"/>
+    <!-- terminals -->
+    <circle cx="40" cy="60" r="4" class="node"/><circle cx="40" cy="220" r="4" class="node"/>
+    <circle cx="720" cy="60" r="4" class="node"/><circle cx="720" cy="220" r="4" class="node"/>
+    <!-- voltage arrows -->
+    <line x1="62" y1="85" x2="62" y2="195" stroke="var(--accent)" stroke-width="2" marker-end="url(#arrT1)"/>
+    <text x="76" y="145" font-size="14" fill="var(--accent)">U₁</text>
+    <line x1="698" y1="85" x2="698" y2="195" stroke="var(--accent)" stroke-width="2" marker-end="url(#arrT1)"/>
+    <text x="672" y="145" text-anchor="end" font-size="14" fill="var(--accent)">U'₂</text>
+    <!-- current arrows -->
+    <line x1="72" y1="48" x2="108" y2="48" stroke="var(--accent-2)" stroke-width="2" marker-end="url(#arrT2)"/>
+    <text x="90" y="36" text-anchor="middle" font-size="13" fill="var(--accent-2)">I₁</text>
+    <line x1="636" y1="48" x2="672" y2="48" stroke="var(--accent-2)" stroke-width="2" marker-end="url(#arrT2)"/>
+    <text x="654" y="36" text-anchor="middle" font-size="13" fill="var(--accent-2)">I'₂</text>
+    <text x="400" y="252" text-anchor="middle" font-size="12" fill="var(--text-faint)">magnetizing branch: carries only the small no-load current I₀</text>
+    <defs>
+      <marker id="arrT1" markerWidth="9" markerHeight="9" refX="7" refY="4.5" orient="auto"><path d="M0 0 L8 4.5 L0 9 z" fill="var(--accent)"/></marker>
+      <marker id="arrT2" markerWidth="9" markerHeight="9" refX="7" refY="4.5" orient="auto"><path d="M0 0 L8 4.5 L0 9 z" fill="var(--accent-2)"/></marker>
+    </defs>
+  </svg>
+  </div>
+  <figcaption><b>Fig. 3.1</b> — T-equivalent circuit of a real transformer, secondary referred to the primary. Series elements = copper and leakage (load-dependent); shunt branch = magnetization and iron loss (voltage-dependent, present even at no load).</figcaption>
+</figure>
+
+<h3 id="trafo-tests">3.1 No-load and short-circuit test — extracting the parameters</h3>
+
+<p>The elegance of this circuit is that two cheap measurements separate all its parameters, because each test switches off one half of the physics:</p>
+
+<div class="table-wrap">
+<table class="data">
+<thead><tr><th>Test</th><th>Setup</th><th>What dominates</th><th>You obtain</th></tr></thead>
+<tbody>
+<tr><td><b>No-load</b> (<span class="de">Leerlaufversuch</span>)</td><td>Rated voltage on one winding, other winding open</td><td>Only tiny \(I_0\) flows → series drops negligible; full flux in core</td><td>\(P_0 \approx P_{Fe}\) (iron losses), \(I_0\) → \(R_{Fe},\, X_h\)</td></tr>
+<tr><td><b>Short-circuit</b> (<span class="de">Kurzschlussversuch</span>)</td><td>Secondary shorted; primary voltage <em>raised from zero</em> until rated current flows</td><td>Needed voltage \(U_{sc}\) is only 4–12 % of rated → core barely magnetized, iron losses negligible</td><td>\(P_{sc} \approx P_{Cu}\) (copper losses), \(u_k = U_{sc}/U_N\) → \(R_1{+}R_2',\; X_\sigma\)</td></tr>
+</tbody>
+</table>
+</div>
+
+<p>The <strong>relative short-circuit voltage</strong> \(u_k\) (<span class="de">relative Kurzschlussspannung</span>) is stamped on every transformer nameplate (typically 4–6 % for distribution units, 10–15 % for large grid transformers). It is simultaneously (a) the series impedance in per-unit, (b) the key to voltage regulation, and (c) the inverse of the worst-case fault current: a transformer with \(u_k = 5\,\%\) delivers \(1/0.05 = 20\times\) rated current into a bolted short — the number your circuit breakers (Module 19) must be sized for.</p>
+
+<p><strong>Voltage regulation</strong> (<span class="de">Spannungsänderung</span>): under load, the series impedance drops voltage. Splitting \(u_k\) into its resistive part \(u_R\) and reactive part \(u_X\), Kapp's approximation gives the relative sag at load fraction \(x\) and power factor \(\cos\varphi\):</p>
+\[ \Delta u \approx x\,(u_R \cos\varphi + u_X \sin\varphi). \]
+<p>Inductive loads (\(\sin\varphi > 0\)) sag the most; capacitive loads can even <em>raise</em> the secondary voltage — a genuine effect used (and feared) in grid operation.</p>
+
+<h2 id="trafo-losses">4. Losses, efficiency — and why the AC grid exists</h2>
+
+<h3 id="iron-copper">4.1 Iron vs. copper: two losses, two behaviors</h3>
+
+<p><strong>Iron losses</strong> \(P_{Fe}\) (<span class="de">Eisenverluste</span>) occur in the magnetized core, independent of load:</p>
+<ul>
+  <li><b>Hysteresis loss</b> \(\propto f \cdot \hat{B}^{\,\approx 2}\): each cycle around the B–H loop dissipates the loop's area (Module 07). Cure: soft magnetic silicon steel with a skinny loop.</li>
+  <li><b>Eddy-current loss</b> \(\propto f^2 \hat{B}^2 d^2\): the core is itself a conductor sitting in changing flux, so ring currents circulate in it. Cure: slice the core into thin insulated <b>laminations</b> (<span class="de">Blechung</span>, 0.23–0.35 mm) perpendicular to the eddy paths — \(d\) shrinks, loss collapses quadratically. This is why every transformer and machine core you ever open is a stack of sheets, never a solid block.</li>
+</ul>
+<p><strong>Copper losses</strong> \(P_{Cu} = I^2 (R_1 + R_2')\) (<span class="de">Kupferverluste / Stromwärmeverluste</span>) grow with the <em>square</em> of load current: \(P_{Cu}(x) = x^2 P_{Cu,N}\).</p>
+
+<p>Efficiency at load fraction \(x\) and power factor \(\cos\varphi\), with rated apparent power \(S_N\):</p>
+\[ \eta(x) = \frac{x\,S_N \cos\varphi}{x\,S_N \cos\varphi + P_{Fe} + x^2 P_{Cu,N}} , \qquad
+   \eta_{\max} \text{ at } x_{opt} = \sqrt{\frac{P_{Fe}}{P_{Cu,N}}} . \]
+<p>Maximum efficiency occurs where the constant loss equals the load-dependent loss — a pattern you will meet again in power electronics and even in economics. Distribution transformers idle most of the day, so they are deliberately designed with low \(P_{Fe}\), putting \(x_{opt}\) around 40–50 % load.</p>
+
+<div class="widget">
+  <div class="w-head"><span class="ic">🧪</span>Interactive — transformer efficiency &amp; regulation vs. load <span class="w-tag">simulation</span></div>
+  <div class="w-body">
+    <p class="small mt0">A 50 kVA distribution transformer. Slide the load and watch η: it rises steeply (iron loss gets diluted), peaks at \(x_{opt}=\sqrt{P_{Fe}/P_{Cu,N}}\), then droops as copper loss (∝ x²) takes over. Lower the power factor: the transformer still carries full current, but delivers less active power — efficiency and regulation both suffer.</p>
+    <div id="w-trafoeff"></div>
+  </div>
+</div>
+
+<div class="example">
+  <div class="ex-head"><span class="ex-tag">Worked example</span> Efficiency of a 50 kVA distribution transformer</div>
+  <div class="ex-body">
+    <p>Nameplate: \(S_N = 50\,\mathrm{kVA}\), \(P_0 = 200\,\mathrm{W}\) (no-load test), \(P_{sc} = 1000\,\mathrm{W}\) at rated current (short-circuit test). Load: \(x = 1\) and \(x = x_{opt}\), both at \(\cos\varphi = 0.9\).</p>
+    <div class="step"><span class="step-label">Step 1 — full load:</span>
+      output \(= 1 \cdot 50\,\mathrm{kVA} \cdot 0.9 = 45\,\mathrm{kW}\); losses \(= 200 + 1^2 \cdot 1000 = 1200\,\mathrm{W}\).
+      \( \eta = \frac{45\,000}{46\,200} = 97.4\,\% \).</div>
+    <div class="step"><span class="step-label">Step 2 — optimal load point:</span>
+      \( x_{opt} = \sqrt{200/1000} = 0.447 \). Output \(= 0.447 \cdot 45 = 20.1\,\mathrm{kW}\); losses \(= 200 + 0.447^2 \cdot 1000 = 400\,\mathrm{W}\) (note: exactly \(2 P_{Fe}\)).
+      \( \eta_{\max} = \frac{20\,100}{20\,500} = 98.0\,\% \).</div>
+    <div class="result-line">η ≈ 97.4 % at full load, peaking at 98.0 % near 45 % load — right where a residential transformer spends its day. Large grid transformers exceed 99.5 %: electrical machines are among the most efficient devices humanity builds.</div>
+  </div>
+</div>
+
+<h3 id="why-ac">4.2 The killer application: high-voltage transmission</h3>
+
+<div class="example">
+  <div class="ex-head"><span class="ex-tag">Worked example</span> Transmitting 100 MW at 400 V vs. 400 kV</div>
+  <div class="ex-body">
+    <p>A city needs \(P = 100\,\mathrm{MW}\) from a plant 100 km away. The three-phase line has \(R = 5\,\Omega\) per conductor (≈ 0.05 Ω/km, a realistic overhead line). Compare the line losses at transmission voltages of 400 V and 400 kV (line-to-line, \(\cos\varphi = 1\)).</p>
+    <div class="step"><span class="step-label">Step 1 — current follows from power:</span>
+      \( I = \dfrac{P}{\sqrt{3}\, U} \). At 400 kV: \( I = \dfrac{100 \cdot 10^6}{\sqrt{3} \cdot 400\,000} \approx 144\,\mathrm{A} \). At 400 V: \( I \approx 144\,000\,\mathrm{A} \) — a thousand times more.</div>
+    <div class="step"><span class="step-label">Step 2 — losses in the three conductors:</span>
+      \( P_{loss} = 3 I^2 R \). At 400 kV: \( 3 \cdot 144^2 \cdot 5 \approx 312\,\mathrm{kW} \) — just <b>0.3 %</b> of the shipment.
+      At 400 V: \( 3 \cdot (144\,000)^2 \cdot 5 \approx 312\,\mathrm{GW} \) — <b>3000 times the power we tried to send</b>. The line would vaporize; physically, the city simply cannot be supplied.</div>
+    <div class="step"><span class="step-label">Step 3 — the scaling law:</span>
+      at fixed power, \( P_{loss} \propto I^2 \propto 1/U^2 \). Raising the voltage 1000× cuts losses 10⁶×.</div>
+    <div class="result-line">Loss ratio \((400\,\mathrm{kV}/400\,\mathrm{V})^2 = 10^6\). <em>This</em> is why the grid is AC: only the transformer could move power up to 400 kV for the journey and back down to 400 V for your socket — cheaply, passively, at 99+ % efficiency. Edison's DC had no such ladder in 1890 (modern HVDC does, using power electronics — Module 19).</div>
+  </div>
+</div>
+
+<div class="box history">
+  <div class="box-title"><span class="ic">📜</span>1891: Lauffen → Frankfurt, the demo that built the modern world</div>
+  <p>At the Frankfurt Electrotechnical Exhibition, Oskar von Miller, Michail Dolivo-Dobrowolsky (AEG) and Charles Brown transmitted ~200 kW of three-phase power 176 km from a waterfall in Lauffen am Neckar to Frankfurt at 15 kV (stepped up from 55 V!), lighting a thousand bulbs and driving a pump for an artificial waterfall — at ~75 % overall efficiency, when skeptics predicted &lt;50 %. Within a decade, three-phase AC with transformers became the world standard. Dolivo-Dobrowolsky had also just invented the squirrel-cage induction motor (Section 6) — the exhibition showcased the entire architecture of today's grid.</p>
+</div>
+
+<h3 id="threephase-trafo">4.3 Three-phase transformers, vector groups, inrush</h3>
+
+<p>Three-phase transformers put three wound limbs on one core. Each side can be connected in star (Y) or delta (D), and the combination shifts the phase between primary and secondary in multiples of 30°. The <strong>vector group</strong> (<span class="de">Schaltgruppe</span>) code, e.g. <b>Dyn5</b>, reads: primary <b>D</b>elta, secondary star (<b>y</b>) with <b>n</b>eutral brought out, secondary lagging by \(5 \times 30° = 150°\). The classic European distribution transformer is Dyn5: the delta primary suppresses harmful third-harmonic currents, the star secondary provides the 230/400 V neutral. Rule of grid life: <em>only transformers of compatible vector groups may be paralleled</em> — a 30° mismatch is a permanent short circuit.</p>
+
+<p><strong>Inrush</strong> (<span class="de">Einschaltstromstoß</span>): energize a transformer at the wrong instant (voltage near zero) and the flux, which must start from its remanent value rather than the steady-state offset, can transiently reach ~2× rated — deep into saturation. The magnetizing current then spikes to 5–10× rated current for several cycles. Harmless to the transformer, but protection relays must be designed not to trip on it.</p>
+
+<h2 id="drehfeld">5. The rotating field — the idea that runs the world</h2>
+
+<p>Now to rotation. The central trick of all AC machines is this: <strong>three stationary coils can create a rotating magnet</strong> — no moving parts, nothing spinning, yet a magnetic field that revolves at precisely controlled speed. This is the <strong>rotating field</strong> (<span class="de">Drehfeld</span>), and it deserves a careful derivation.</p>
+
+<p>Place three identical windings in the stator (<span class="de">Ständer</span>), their magnetic axes 120° apart in space, and feed them the three-phase currents of Module 05, 120° apart in <em>time</em>:</p>
+\[ i_a = \hat{I}\cos(\omega t), \qquad i_b = \hat{I}\cos(\omega t - 120°), \qquad i_c = \hat{I}\cos(\omega t - 240°). \]
+<p>Each winding alone produces a <em>pulsating</em> MMF along its fixed axis, proportional to its current. Represent each axis as a unit phasor in the cross-section plane: \(1,\ e^{j120°},\ e^{j240°}\). The total MMF vector is</p>
+\[ \underline{F}(t) \;\propto\; i_a \cdot 1 + i_b\, e^{j120°} + i_c\, e^{j240°}. \]
+<p>Substitute \(\cos x = \tfrac12 (e^{jx} + e^{-jx})\) and collect terms. Each phase contributes a co-rotating part \(\tfrac12 e^{j\omega t}\) and a counter-rotating part; for phase b the counter-rotating part is \(\tfrac12 e^{-j(\omega t - 120°)} e^{j120°} = \tfrac12 e^{-j\omega t} e^{j240°}\), and similarly for c. The three counter-rotating parts are 120° apart — <strong>they sum to zero</strong>. The three co-rotating parts are all in phase and add:</p>
+\[ \boxed{\;\underline{F}(t) \;\propto\; \tfrac{3}{2}\, \hat{I}\, e^{j\omega t}\;} \]
+<p>A vector of <em>constant</em> magnitude \( \tfrac32 \hat I \), rotating at exactly the supply angular frequency ω. Three pulsating fields conspire into one perfectly smooth rotation. Swap any two supply leads and the sequence reverses — the field (and every AC motor) runs backwards. That is literally how you reverse a three-phase motor: exchange two wires.</p>
+
+<div class="box intuition">
+  <div class="box-title"><span class="ic">💡</span>Intuition: three friends pushing a merry-go-round</div>
+  <p>One person pushing a merry-go-round from a fixed spot delivers pulsating, jerky torque. Three people spaced 120° around it, each pushing in turn with sinusoidally rising and falling effort, timed 120° apart — the merry-go-round feels one perfectly constant push travelling around it. Nobody moves from their spot; the <em>push</em> rotates. That is the Drehfeld, and it is also why three-phase power is constant in time (Module 05) while single-phase power pulsates.</p>
+</div>
+
+<figure>
+  <div class="fig-frame">
+  <svg class="diagram" viewBox="0 0 640 300" role="img" aria-label="Three-phase stator winding cross-section with 120 degree spaced winding axes">
+    <!-- stator -->
+    <circle cx="240" cy="150" r="118" fill="none" stroke="var(--text-soft)" stroke-width="10" opacity="0.35"/>
+    <circle cx="240" cy="150" r="60" fill="none" stroke="var(--text-faint)" stroke-width="1.6" stroke-dasharray="5 4"/>
+    <text x="240" y="190" text-anchor="middle" font-size="12" fill="var(--text-faint)">rotor</text>
+    <!-- phase U conductors at 90 and 270 deg -->
+    <circle cx="240" cy="32" r="12" fill="none" stroke="var(--accent)" stroke-width="2"/>
+    <circle cx="240" cy="32" r="3.2" fill="var(--accent)"/>
+    <text x="240" y="12" text-anchor="middle" font-size="13" fill="var(--accent)">U</text>
+    <circle cx="240" cy="268" r="12" fill="none" stroke="var(--accent)" stroke-width="2"/>
+    <path d="M233 261 L247 275 M247 261 L233 275" stroke="var(--accent)" stroke-width="2"/>
+    <text x="240" y="296" text-anchor="middle" font-size="13" fill="var(--accent)">U′</text>
+    <!-- phase V conductors at 210 and 30 deg -->
+    <circle cx="138" cy="209" r="12" fill="none" stroke="var(--accent-2)" stroke-width="2"/>
+    <circle cx="138" cy="209" r="3.2" fill="var(--accent-2)"/>
+    <text x="114" y="228" text-anchor="middle" font-size="13" fill="var(--accent-2)">V</text>
+    <circle cx="342" cy="91" r="12" fill="none" stroke="var(--accent-2)" stroke-width="2"/>
+    <path d="M335 84 L349 98 M349 84 L335 98" stroke="var(--accent-2)" stroke-width="2"/>
+    <text x="368" y="82" text-anchor="middle" font-size="13" fill="var(--accent-2)">V′</text>
+    <!-- phase W conductors at 330 and 150 deg -->
+    <circle cx="342" cy="209" r="12" fill="none" stroke="var(--text-soft)" stroke-width="2"/>
+    <circle cx="342" cy="209" r="3.2" fill="var(--text-soft)"/>
+    <text x="368" y="228" text-anchor="middle" font-size="13" fill="var(--text-soft)">W</text>
+    <circle cx="138" cy="91" r="12" fill="none" stroke="var(--text-soft)" stroke-width="2"/>
+    <path d="M131 84 L145 98 M145 84 L131 98" stroke="var(--text-soft)" stroke-width="2"/>
+    <text x="112" y="82" text-anchor="middle" font-size="13" fill="var(--text-soft)">W′</text>
+    <!-- axis arrows -->
+    <line x1="240" y1="150" x2="298" y2="150" stroke="var(--accent)" stroke-width="2.4" marker-end="url(#arrD1)"/>
+    <text x="286" y="140" font-size="12" fill="var(--accent)">axis U</text>
+    <!-- legend right -->
+    <g font-size="13">
+      <text x="470" y="90" fill="var(--text-soft)">⊙ current out of page</text>
+      <text x="470" y="115" fill="var(--text-soft)">⊗ current into page</text>
+      <text x="470" y="155" fill="var(--text-soft)">winding axes: U at 0°,</text>
+      <text x="470" y="175" fill="var(--text-soft)">V at 120°, W at 240°</text>
+      <text x="470" y="215" fill="var(--text-soft)">currents shifted 120°</text>
+      <text x="470" y="235" fill="var(--text-soft)">in time → field rotates</text>
+    </g>
+    <defs>
+      <marker id="arrD1" markerWidth="9" markerHeight="9" refX="7" refY="4.5" orient="auto"><path d="M0 0 L8 4.5 L0 9 z" fill="var(--accent)"/></marker>
+    </defs>
+  </svg>
+  </div>
+  <figcaption><b>Fig. 5.1</b> — Simplest possible three-phase stator (one slot pair per phase, one pole pair). Windings 120° apart in <em>space</em> + currents 120° apart in <em>time</em> = a constant-magnitude MMF rotating at ω. Real machines distribute each winding over many slots to make the field sinusoidal in space.</figcaption>
+</figure>
+
+<div class="widget">
+  <div class="w-head"><span class="ic">🧪</span>Interactive — the rotating field, live <span class="w-tag">animation</span></div>
+  <div class="w-body">
+    <p class="small mt0">The module's centerpiece. Watch the three phase currents (inset) pulse in their fixed windings while the resultant MMF vector (red) rotates with <em>constant</em> length — the tip traces a perfect circle. Slide the frequency: the field speeds up proportionally. Swap two phases: it instantly reverses. Animation is slowed 30× so your eye can follow.</p>
+    <div id="w-drehfeld"></div>
+  </div>
+</div>
+
+<h3 id="poles">5.1 Pole pairs and synchronous speed</h3>
+
+<p>Repeat the winding pattern \(p\) times around the circumference and the field advances only \(1/p\) of a revolution per electrical cycle. With \(p\) <strong>pole pairs</strong> (<span class="de">Polpaarzahl</span>), the field's mechanical speed — the <strong>synchronous speed</strong> (<span class="de">synchrone Drehzahl</span>) — is</p>
+\[ \boxed{\; n_s = \frac{f}{p} = \frac{60 f}{p}\ \mathrm{rpm} \;} \]
+
+<div class="example">
+  <div class="ex-head"><span class="ex-tag">Worked example</span> The synchronous-speed menu at 50 Hz</div>
+  <div class="ex-body">
+    <p>A machine on the European 50 Hz grid can only choose its field speed from a discrete menu set by \(p\). Compute it.</p>
+    <div class="step"><span class="step-label">Step 1 — apply \(n_s = 60 f / p\):</span> with \(f = 50\,\mathrm{Hz}\): \(n_s = 3000/p\) rpm.</div>
+    <div class="step"><span class="step-label">Step 2 — tabulate:</span></div>
+    <div class="table-wrap">
+    <table class="data">
+    <thead><tr><th>Pole pairs p</th><th>Poles</th><th>n_s at 50 Hz</th><th>n_s at 60 Hz</th><th>Typical machine</th></tr></thead>
+    <tbody>
+    <tr><td>1</td><td>2</td><td>3000 rpm</td><td>3600 rpm</td><td>turbo-generator in gas/steam plants</td></tr>
+    <tr><td>2</td><td>4</td><td>1500 rpm</td><td>1800 rpm</td><td>the standard industrial motor</td></tr>
+    <tr><td>3</td><td>6</td><td>1000 rpm</td><td>1200 rpm</td><td>large pumps, mills</td></tr>
+    <tr><td>4</td><td>8</td><td>750 rpm</td><td>900 rpm</td><td>slow heavy drives</td></tr>
+    <tr><td>~40</td><td>~80</td><td>75 rpm</td><td>—</td><td>hydro generator (slow water turbine)</td></tr>
+    </tbody>
+    </table>
+    </div>
+    <div class="result-line">Fixed grid frequency → quantized speeds. A hydro turbine turning at 75 rpm needs 40 pole pairs — hence the enormous ring-shaped rotors in dam powerhouses. Breaking free of this menu is exactly what the frequency converter (Section 9) is for.</div>
+  </div>
+</div>
+
+<h2 id="induction">6. The induction machine — the world's workhorse</h2>
+
+<p>Put a shorted conductor cage inside the rotating field and something wonderful happens. The <strong>induction machine</strong> (<span class="de">Asynchronmaschine</span>) has the simplest rotor imaginable: aluminum or copper bars, short-circuited by end rings — the <strong>squirrel cage</strong> (<span class="de">Käfigläufer</span>). No windings to a power source, no brushes, no magnets. The chain of cause and effect:</p>
+<ol>
+  <li>The stator field rotates at \(n_s\); suppose the rotor turns slower, at \(n\).</li>
+  <li>Relative to the rotor, the field still moves — so it <em>induces</em> voltages in the bars (\(u = Blv\), with \(v\) the <em>relative</em> speed).</li>
+  <li>The bars are shorted → currents flow.</li>
+  <li>Currents in a field → force (\(F = BIl\)) → torque, pulling the rotor <em>along with</em> the field.</li>
+</ol>
+<p>The rotor can never quite catch up: at \(n = n_s\) the relative motion vanishes, induction stops, currents and torque collapse. The machine <em>needs</em> to lag — asynchronously. The lag is the <strong>slip</strong> (<span class="de">Schlupf</span>):</p>
+\[ \boxed{\; s = \frac{n_s - n}{n_s} \;} \qquad \text{rotor frequency: } f_2 = s \cdot f_1 . \]
+<p>At standstill \(s = 1\) (rotor sees full 50 Hz — the machine is momentarily just a shorted transformer); at rated load \(s \approx 0.02\ldots0.06\); at synchronism \(s = 0\), torque zero.</p>
+
+<div class="example">
+  <div class="ex-head"><span class="ex-tag">Worked example</span> Reading a nameplate: slip and rotor frequency</div>
+  <div class="ex-body">
+    <p>A 4-pole (p = 2), 50 Hz induction motor's nameplate says 1440 rpm at rated load. Find slip, rotor frequency, and the speed of the rotor's own field.</p>
+    <div class="step"><span class="step-label">Step 1 — synchronous speed:</span> \( n_s = 60 \cdot 50 / 2 = 1500\,\mathrm{rpm} \).</div>
+    <div class="step"><span class="step-label">Step 2 — slip:</span> \( s = (1500 - 1440)/1500 = 0.04 = 4\,\% \).</div>
+    <div class="step"><span class="step-label">Step 3 — rotor frequency:</span> \( f_2 = s f_1 = 0.04 \cdot 50 = 2\,\mathrm{Hz} \). The rotor currents oscillate at just 2 Hz.</div>
+    <div class="step"><span class="step-label">Step 4 — the beautiful consistency check:</span> the rotor's current field rotates at \(s \cdot n_s = 60\,\mathrm{rpm}\) <em>relative to the rotor</em>, which itself turns at 1440 rpm — so relative to the stator: \(1440 + 60 = 1500\,\mathrm{rpm}\). Rotor field and stator field rotate <b>in exact lockstep</b>, at every load. That is why a steady torque is possible at all.</div>
+    <div class="result-line">s = 4 %, f₂ = 2 Hz. Nameplate speeds just below a menu value (1440 → 1500, 2890 → 3000) are the fingerprint of an induction machine.</div>
+  </div>
+</div>
+
+<h3 id="kloss">6.1 The torque–slip characteristic and Kloss's formula</h3>
+
+<p>Solving the machine's equivalent circuit (structurally the transformer's, with the rotor branch resistance \(R_2'/s\) — the slip-dependence encodes the mechanical load) yields the torque–slip curve, compactly written as <strong>Kloss's formula</strong> (<span class="de">Kloßsche Formel</span>):</p>
+\[ \boxed{\;\frac{T}{T_k} = \frac{2}{\dfrac{s}{s_k} + \dfrac{s_k}{s}}\;} \]
+<p>with breakdown torque \(T_k\) (<span class="de">Kippmoment</span>) at breakdown slip \(s_k\) (typically 0.15–0.3). Anatomy of the curve:</p>
+<ul>
+  <li><b>Small slip</b> (\(s \ll s_k\)): \(T \approx 2 T_k s / s_k\) — <em>linear</em>. This is the steep, stable operating region: load increases → rotor slows slightly → torque rises to match. The machine self-regulates like a spring.</li>
+  <li><b>\(s = s_k\)</b>: maximum torque \(T_k\), typically 2–3× rated. Load beyond this and the motor <em>stalls</em> (kippt — tips over).</li>
+  <li><b>Large slip</b> (\(s \gg s_k\)): \(T \approx 2 T_k s_k / s\) — falling. Starting torque at \(s=1\) is modest despite huge current.</li>
+  <li><b>Regions:</b> \(0 &lt; s &lt; 1\) motor · \(s &lt; 0\) (driven faster than \(n_s\)) generator — this is how most wind turbines of the 1990s fed the grid · \(s &gt; 1\) (field vs. rotation opposed) brake (<span class="de">Gegenstrombremsung</span>, plugging).</li>
+</ul>
+<p>Since torque comes from \(B \cdot I\) and both scale with stator voltage, \(T_k \propto U^2\) — a 10 % undervoltage costs 19 % of breakdown torque, a classic cause of stalled motors on weak grids.</p>
+
+<div class="widget">
+  <div class="w-head"><span class="ic">🧪</span>Interactive — torque–slip curve (Kloss) <span class="w-tag">simulation</span></div>
+  <div class="w-body">
+    <p class="small mt0">Torque (per unit of rated) vs. slip; s &lt; 0 is generator territory. Raise the rotor resistance: the peak keeps its <em>height</em> but slides toward s = 1 — old slip-ring machines exploited this for starting. Drop the voltage: the whole curve collapses with U² and the rated operating point (dot) slides to higher slip — until the motor can no longer deliver rated torque at all.</p>
+    <div id="w-kloss"></div>
+  </div>
+</div>
+
+<h3 id="starting">6.2 The starting problem</h3>
+
+<p>At switch-on, \(s = 1\): the cage looks like a shorted transformer secondary and draws 5–8× rated current while producing only ~1–1.5× rated torque. For big motors on weak grids this current is unacceptable. Classical remedies:</p>
+<ul>
+  <li><b>Star–delta starting</b> (<span class="de">Stern-Dreieck-Anlauf</span>): start with windings in star — each sees \(U/\sqrt{3}\) — then switch to delta. Current from the grid drops to <b>1/3</b>… but so does torque (∝ U²). Only works for loads that start nearly unloaded (fans, saws).</li>
+  <li><b>Soft starter</b>: thyristors ramp the voltage up smoothly. Same torque penalty, but no switching jolt.</li>
+  <li><b>Rotor resistance</b> (slip-ring machines, <span class="de">Schleifringläufer</span>): external resistors shift \(s_k\) toward 1 — full torque at start, resistors shorted once running. Elegant, but reintroduces brushes; now largely historical.</li>
+  <li><b>Frequency converter</b> (Section 9): start at low frequency, keeping slip small throughout — full torque at rated current. The modern answer to everything.</li>
+</ul>
+
+<div class="box pitfall">
+  <div class="box-title"><span class="ic">🚫</span>Classic pitfall: "star–delta reduces the current, great, no downsides"</div>
+  <p>Exam favorite: star–delta reduces line current to 1/3 — <em>and torque to 1/3 as well</em>, since each winding voltage falls by \(1/\sqrt3\) and \(T \propto U^2\): \((1/\sqrt3)^2 = 1/3\). Start a loaded conveyor in star and it simply won't turn; worse, the delta switchover under high slip produces a current spike that can exceed direct-on-line starting. Also: don't confuse \(n_s\) (field, e.g. 1500 rpm) with rated speed (rotor, e.g. 1440 rpm) — an induction motor listed "1500 rpm" would produce zero torque at exactly 1500.</p>
+</div>
+
+<p><strong>Single-phase induction motors</strong> (washing machine, older fridge compressors): one winding alone makes a <em>pulsating</em> field — decomposable into two counter-rotating fields whose torques cancel at standstill. Such a motor hums but cannot decide a direction. Cure: an auxiliary winding fed through a capacitor fakes a second phase, creating an (elliptical) rotating field for starting. Three-phase machines need no such crutch — another gift of the Drehfeld.</p>
+
+<div class="box key">
+  <div class="box-title"><span class="ic">🔑</span>Why the induction machine rules industry</div>
+  <p>No brushes, no magnets, no electrical connection to the rotor whatsoever — just an aluminum cage die-cast into iron. It cannot lose excitation, barely wears, survives dirt, overload and abuse, and costs less per kW than any other machine. The price: speed chained to the grid frequency (until inverters, Section 9) and a mediocre power factor (it draws magnetizing reactive power from the grid — Module 05's cosφ penalty in the flesh). An estimated ~90 % of industrial motors are squirrel-cage induction machines.</p>
+</div>
+
+<h2 id="synchronous">7. The synchronous machine — the grid's backbone</h2>
+
+<p>Replace the cage with a rotor that carries its <em>own</em> DC-excited field winding (<span class="de">Erregerwicklung</span>) — or permanent magnets — and the physics changes character. The rotor is now a magnet; it does not need slip to carry current. It locks magnetically to the rotating field and turns at <strong>exactly</strong> \(n_s\): the <strong>synchronous machine</strong> (<span class="de">Synchronmaschine</span>).</p>
+
+<p>Torque now comes from the angular offset between the rotor's field axis and the stator field axis: the <strong>load angle</strong> \(\delta\) (<span class="de">Polradwinkel</span>). Think of rotor and field as coupled by a magnetic torsion spring: no load → they align, \(\delta = 0\); mechanical load → the rotor falls back by \(\delta\), and the twisted "spring" transmits torque. From the phasor diagram (round-rotor machine, per phase: internal EMF \(E\), terminal voltage \(U\), synchronous reactance \(X_d\)):</p>
+\[ \boxed{\; P = \frac{3\, U E}{X_d} \sin\delta \;} \]
+<ul>
+  <li>\(\delta &gt; 0\) (rotor ahead): generator, power flows to the grid. \(\delta &lt; 0\): motor.</li>
+  <li>Power grows with \(\sin\delta\) up to the <b>static stability limit</b> \(\delta = 90°\). Push a generator beyond it and the magnetic spring "slips a tooth" — the machine <em>pole-slips</em> (<span class="de">außer Tritt fallen</span>), a violent fault. Grid operators keep \(\delta\) at 20–30° for margin; the whole discipline of grid stability (Module 19) is about keeping thousands of these coupled rotors in step.</li>
+  <li>Bonus: the DC excitation is a free knob. Overexcite → the machine <em>delivers</em> reactive power; underexcite → absorbs it. Synchronous generators are the grid's voltage regulators, not just its power sources.</li>
+</ul>
+
+<p><strong>Grid synchronization</strong> (<span class="de">Synchronisation</span>): before connecting a synchronous generator to the live grid you must match <b>four</b> things — voltage magnitude, frequency, phase sequence, and phase angle. Classically checked with the dark-lamp method (lamps across the breaker go dark when all match) or a synchroscope; today an automatic synchronizer closes the breaker within a fraction of a degree. Connect misaligned and the grid — effectively an infinite machine — slams the rotor into step with a torque transient that can shear the shaft.</p>
+
+<p>Historically, essentially <em>all</em> classical grid power — coal, gas, nuclear, hydro — has come from synchronous generators, and their spinning mass provides the inertia that stabilizes grid frequency second-to-second. Meanwhile the <strong>permanent-magnet synchronous machine (PMSM)</strong> (<span class="de">permanenterregte Synchronmaschine</span>), fed by an inverter that generates its own rotating field at any frequency, has become the premium traction motor: no rotor losses (no cage currents, no excitation), highest efficiency and torque density — the machine inside most EVs, from Zoe to Model 3 (rear), usually with rotor magnets buried in V-shapes (IPM) for extra reluctance torque and field-weakening capability.</p>
+
+<h2 id="dc-machine">8. The DC machine — the grand old lady</h2>
+
+<p>The oldest machine still deserves study, because inverter-fed AC drives are controlled to <em>imitate</em> it. Construction: a stationary field (wound poles or magnets) creates a fixed flux \(\Phi\); the rotor (<span class="de">Anker</span>, armature) carries a winding whose current must always flow <em>left under the N pole, right under the S pole</em> to keep torque one-way. Since the rotor turns, each conductor alternately passes N and S — its current must alternate. The component that performs this switching is the <strong>commutator</strong> (<span class="de">Kommutator / Stromwender</span>): copper segments on the shaft, wiping past stationary carbon brushes.</p>
+
+<div class="box intuition">
+  <div class="box-title"><span class="ic">💡</span>Intuition: the commutator is a mechanical inverter</div>
+  <p>Inside the rotor winding, the current is AC (frequency = rotation speed). At the terminals, it is DC. The commutator converts between them — it is a rotary power-electronic converter built from copper and carbon, invented half a century before the transistor. Modern "brushless DC" machines simply replace it with six transistors and a position sensor: same job, no wear, no sparks. Once you see this, the entire machine zoo becomes one family: every machine needs AC in its windings; they differ only in <em>what</em> does the inverting — the grid (induction, synchronous), a commutator (DC), or a transistor bridge (BLDC/PMSM).</p>
+</div>
+
+<figure>
+  <div class="fig-frame">
+  <svg class="diagram" viewBox="0 0 660 280" role="img" aria-label="DC machine cross-section and commutator principle">
+    <!-- left: cross-section -->
+    <path d="M60 140 a80 80 0 0 1 40 -69 l0 138 a80 80 0 0 1 -40 -69 z" fill="var(--accent)" opacity="0.18" stroke="var(--accent)" stroke-width="2" transform="translate(20 0)"/>
+    <path d="M300 140 a80 80 0 0 0 -40 -69 l0 138 a80 80 0 0 0 40 -69 z" fill="var(--accent-2)" opacity="0.18" stroke="var(--accent-2)" stroke-width="2" transform="translate(-20 0)"/>
+    <text x="66" y="145" font-size="16" font-weight="700" fill="var(--accent)">N</text>
+    <text x="286" y="145" font-size="16" font-weight="700" fill="var(--accent-2)">S</text>
+    <!-- rotor -->
+    <circle cx="180" cy="140" r="52" fill="none" stroke="var(--text-soft)" stroke-width="2"/>
+    <!-- conductors -->
+    <circle cx="180" cy="96" r="9" fill="none" stroke="var(--text-soft)" stroke-width="2"/>
+    <circle cx="180" cy="96" r="2.6" fill="var(--text-soft)"/>
+    <circle cx="180" cy="184" r="9" fill="none" stroke="var(--text-soft)" stroke-width="2"/>
+    <path d="M175 179 L185 189 M185 179 L175 189" stroke="var(--text-soft)" stroke-width="2"/>
+    <!-- flux arrows N to S -->
+    <line x1="118" y1="140" x2="152" y2="140" stroke="var(--text-faint)" stroke-width="2" marker-end="url(#arrC1)"/>
+    <line x1="210" y1="140" x2="244" y2="140" stroke="var(--text-faint)" stroke-width="2" marker-end="url(#arrC1)"/>
+    <text x="181" y="132" text-anchor="middle" font-size="12" fill="var(--text-faint)">Φ</text>
+    <!-- force arrows -->
+    <line x1="196" y1="90" x2="228" y2="80" stroke="var(--accent)" stroke-width="2.4" marker-end="url(#arrC2)"/>
+    <line x1="164" y1="190" x2="132" y2="200" stroke="var(--accent)" stroke-width="2.4" marker-end="url(#arrC2)"/>
+    <text x="236" y="70" font-size="12" fill="var(--accent)">F</text>
+    <text x="120" y="216" font-size="12" fill="var(--accent)">F</text>
+    <text x="180" y="252" text-anchor="middle" font-size="12" fill="var(--text-faint)">torque = force pair on the loop</text>
+    <!-- right: commutator -->
+    <circle cx="480" cy="130" r="40" fill="none" stroke="var(--text-soft)" stroke-width="2"/>
+    <path d="M480 90 A40 40 0 0 1 480 170" fill="none" stroke="var(--accent)" stroke-width="6"/>
+    <path d="M480 170 A40 40 0 0 1 480 90" fill="none" stroke="var(--accent-2)" stroke-width="6"/>
+    <line x1="480" y1="92" x2="480" y2="168" stroke="var(--text-faint)" stroke-width="1"/>
+    <!-- brushes -->
+    <rect x="428" y="120" width="16" height="20" fill="var(--text-soft)" opacity="0.7"/>
+    <rect x="516" y="120" width="16" height="20" fill="var(--text-soft)" opacity="0.7"/>
+    <path class="wire" d="M428 130 H390 M532 130 H570"/>
+    <text x="382" y="118" text-anchor="end" font-size="13">−</text>
+    <text x="578" y="118" font-size="13">+</text>
+    <text x="480" y="70" text-anchor="middle" font-size="12" fill="var(--text-soft)">two segments, rotating with the coil</text>
+    <text x="480" y="220" text-anchor="middle" font-size="12" fill="var(--text-faint)">brushes swap the connection every half turn:</text>
+    <text x="480" y="238" text-anchor="middle" font-size="12" fill="var(--text-faint)">AC in the coil ↔ DC at the terminals</text>
+    <defs>
+      <marker id="arrC1" markerWidth="9" markerHeight="9" refX="7" refY="4.5" orient="auto"><path d="M0 0 L8 4.5 L0 9 z" fill="var(--text-faint)"/></marker>
+      <marker id="arrC2" markerWidth="9" markerHeight="9" refX="7" refY="4.5" orient="auto"><path d="M0 0 L8 4.5 L0 9 z" fill="var(--accent)"/></marker>
+    </defs>
+  </svg>
+  </div>
+  <figcaption><b>Fig. 8.1</b> — Left: DC machine cross-section — flux Φ from N to S, armature currents (⊙/⊗) placed so both forces turn the rotor the same way. Right: the commutator — rotating segments and stationary brushes reverse the coil connection every half-turn, keeping the torque direction constant.</figcaption>
+</figure>
+
+<h3 id="dc-equations">8.1 Two equations describe everything</h3>
+
+<p>With machine constant \(k\) (geometry, turns) and flux \(\Phi\):</p>
+\[ \boxed{\; T = k\,\Phi\, I_a \;} \qquad \boxed{\; U = k\,\Phi\,\omega + R_a I_a \;} \]
+<p>Torque proportional to current; terminal voltage = back-EMF plus resistive drop. Rearranged, the speed–torque line:</p>
+\[ \omega = \frac{U}{k\Phi} - \frac{R_a}{(k\Phi)^2}\, T \]
+<p>— a straight, gently drooping line. Two independent control knobs fall out immediately:</p>
+<ul>
+  <li><b>Armature voltage control</b> (\(U \downarrow\uparrow\)): shifts the line vertically. Speed ∝ voltage, full torque available at every speed — the <em>constant-torque</em> region below base speed.</li>
+  <li><b>Field weakening</b> (<span class="de">Feldschwächung</span>, \(\Phi \downarrow\)): with \(U\) at maximum, reducing flux raises the no-load speed \(U/k\Phi\) — speeds <em>above</em> base speed. But \(T = k\Phi I_a\): less flux means less torque per ampere, so this is the <em>constant-power</em> region. Every EV uses exactly this strategy (electronically) above ~50 km/h.</li>
+</ul>
+<p><b>Characteristics by field connection:</b> the <b>shunt/separately-excited</b> machine (<span class="de">Nebenschlussmaschine</span>, Φ constant) gives the stiff, nearly constant-speed line above — the precision drive of the pre-inverter era. The <b>series machine</b> (<span class="de">Reihenschlussmaschine</span>, field carries \(I_a\), so \(\Phi \propto I_a\) and \(T \propto I_a^2\)): brutal starting torque, speed soaring dangerously at no load — the classic traction and starter motor; its AC-tolerant sibling, the <b>universal motor</b>, still screams away at 20 000+ rpm in your drill and vacuum cleaner. Beyond those niches (plus automotive 12 V auxiliaries and precision legacy servos), brushed DC has been displaced by inverter-fed AC — the commutator's wear, sparking and maintenance lost to six silent transistors.</p>
+
+<div class="widget">
+  <div class="w-head"><span class="ic">🧪</span>Interactive — DC motor characteristics <span class="w-tag">simulation</span></div>
+  <div class="w-body">
+    <p class="small mt0">Speed–torque line of a separately excited DC motor (R_a = 0.8 Ω, kΦ = 1.2 V·s at full field) against a fan load (T ∝ n²). Lower the armature voltage: the line shifts down in parallel — clean speed control. Weaken the field instead: no-load speed rises, but the line tilts and torque per ampere drops — watch the armature-current readout climb. That is why field weakening is for high-speed, <em>low-torque</em> cruising.</p>
+    <div id="w-dcmotor"></div>
+  </div>
+</div>
+
+<h2 id="drives">9. Drives — power electronics sets the machines free</h2>
+
+<h3 id="cube-law">9.1 Why variable speed is an energy revolution</h3>
+
+<p>Pumps and fans obey affinity laws: flow \(\propto n\), pressure \(\propto n^2\), hence power</p>
+\[ P \propto n^3 . \]
+<p>Run a pump at 80 % speed and it consumes ~51 % power; at half speed, 12.5 %. Yet for a century, flow was regulated by <em>throttling</em> — running the motor flat out against a partly closed valve, like controlling a car's speed with the brake while flooring the accelerator. The variable-frequency drive (VFD, <span class="de">Frequenzumrichter</span>) replaces the valve with the frequency knob:</p>
+
+<div class="example">
+  <div class="ex-head"><span class="ex-tag">Worked example</span> Retrofitting a 15 kW pump with a VFD</div>
+  <div class="ex-body">
+    <p>A 15 kW pump runs 4000 h/year, but the process needs only 70 % of full flow. Compare (a) throttling — motor stays near full speed, drawing ≈ 85 % of rated power against the valve — with (b) a VFD at 70 % speed (drive efficiency 97 %). Electricity: 0.30 €/kWh.</p>
+    <div class="step"><span class="step-label">Step 1 — throttled power:</span> \(P_a \approx 0.85 \cdot 15 = 12.8\,\mathrm{kW}\). (The valve converts the excess head straight into heat and noise.)</div>
+    <div class="step"><span class="step-label">Step 2 — VFD power via the cube law:</span> \( P_b = 15 \cdot 0.7^3 / 0.97 = 15 \cdot 0.343 / 0.97 \approx 5.3\,\mathrm{kW} \).</div>
+    <div class="step"><span class="step-label">Step 3 — annual savings:</span> \( \Delta P = 7.5\,\mathrm{kW} \) × 4000 h = <b>30 000 kWh/a</b> → \(30\,000 \cdot 0.30 = 9000\) €/year.</div>
+    <div class="result-line">A ~1500 € drive pays for itself in about two months, then saves ~9000 €/year for decades. Multiply by the millions of pumps and fans worldwide — motor-driven systems consume ~2/3 of industrial electricity — and VFDs are one of the largest levers in industrial energy efficiency, full stop.</div>
+  </div>
+</div>
+
+<h3 id="vf-foc">9.2 V/f control and field-oriented control</h3>
+
+<p><b>V/f control</b> (<span class="de">U/f-Kennliniensteuerung</span>): the induction machine's flux is set by the ratio of voltage to frequency (\(\Phi \propto U/f\), from \(u = N\,\mathrm{d}\Phi/\mathrm{d}t\)). So a VFD that lowers \(f\) must lower \(U\) proportionally, keeping flux — and thus available torque — constant from a few Hz up to base speed. Above base speed, \(U\) has hit its ceiling: \(\Phi\) necessarily falls as \(1/f\) — field weakening again, constant power. V/f is open-loop, dead simple, and runs every fan and pump drive on the planet.</p>
+
+<p><b>Field-oriented control (FOC)</b> (<span class="de">feldorientierte Regelung</span>), honestly in one paragraph: the reason a DC machine is easy to control is that flux (field winding) and torque (armature current) are separate knobs at 90° to each other. In an AC machine both hide inside the same three stator currents. FOC mathematically rotates the measurement frame so it spins along with the machine's flux (the d/q transformation); in that frame the AC currents become two <em>DC</em> quantities — \(i_d\), which sets flux, and \(i_q\), which sets torque. Two ordinary PI controllers regulate them independently, and the inverter transforms the result back into three phase voltages, thousands of times per second. Requires rotor position/flux knowledge (encoder or estimation), but delivers DC-machine-grade dynamics from a cageful of aluminum: torque steps in milliseconds. Every EV, servo and modern crane drive runs FOC.</p>
+
+<h3 id="four-quadrant">9.3 Four quadrants and regenerative braking</h3>
+
+<p>Plot speed (±) against torque (±): four quadrants. Q1 forward motoring, Q3 reverse motoring; Q2/Q4 — torque opposing motion — are <strong>braking</strong>, and since our machines convert both ways, braking means <strong>generating</strong> (<span class="de">Nutzbremsung / Rekuperation</span>). A modern inverter passes this recovered energy back to the DC link and thence to the battery (EV) or grid (trains, cranes, elevators). An ICE train throws its kinetic energy into brake dust; an electric one sells it back — regeneration recovers on the order of 20–40 % of traction energy in stop-and-go rail service. Where no return path exists, a brake chopper burns the energy in a resistor — functional, but the accountant weeps. <b>Servo drives</b> (PMSM + encoder + cascaded current/speed/position loops) are the four-quadrant idea perfected: positioning to arc-seconds with torque reversals hundreds of times per second, in every robot joint and CNC axis.</p>
+
+<h2 id="selection">10. Choosing a machine — comparison, efficiency classes, thermal limits</h2>
+
+<div class="table-wrap">
+<table class="data">
+<thead><tr><th></th><th>Induction (cage)</th><th>PMSM</th><th>BLDC</th><th>Brushed DC</th><th>Stepper</th></tr></thead>
+<tbody>
+<tr><td>Efficiency</td><td>good (IE3: ~92–96 %)</td><td>excellent (95–97 %+)</td><td>very good</td><td>moderate (brush + rotor loss)</td><td>poor (holding current)</td></tr>
+<tr><td>Cost</td><td>lowest per kW</td><td>high (magnets)</td><td>moderate</td><td>low (small sizes)</td><td>very low (small)</td></tr>
+<tr><td>Maintenance</td><td>~none (bearings only)</td><td>~none</td><td>~none</td><td>brushes wear (500–5000 h)</td><td>none</td></tr>
+<tr><td>Control needed</td><td>none (grid) / VFD</td><td>inverter + FOC mandatory</td><td>simple 6-step commutation</td><td>just a DC voltage</td><td>open-loop pulse train</td></tr>
+<tr><td>Weakness</td><td>slip losses, poor cosφ</td><td>magnet cost, demagnetization heat limit</td><td>torque ripple</td><td>sparks, wear, speed limit</td><td>loses steps under overload</td></tr>
+<tr><td>Typical use</td><td>pumps, fans, conveyors — industry's default</td><td>EVs, servos, wind (direct drive)</td><td>drones, fans, e-bikes, HDDs</td><td>toys, car auxiliaries, universal-motor tools</td><td>3-D printers, small positioning</td></tr>
+</tbody>
+</table>
+</div>
+
+<p><b>Efficiency classes</b> (IEC 60034-30-1): IE1 standard → IE2 high → IE3 premium → IE4 super-premium; each step cuts losses by ~15–20 %. The EU mandates at least IE3 for most 0.75–1000 kW motors (IE4 for some ranges since 2023) — regulation with real teeth, given that a motor's lifetime energy bill exceeds its purchase price ~100-fold.</p>
+
+<p><b>Thermal limits &amp; duty cycles:</b> a machine's rating is a <em>temperature</em> rating: insulation classes B/F/H permit 130/155/180 °C, and a rule of thumb halves insulation life for every ~10 K sustained over-temperature. Since heating depends on the load <em>history</em>, IEC defines duty types (<span class="de">Betriebsarten</span>): <b>S1</b> continuous, <b>S2</b> short-time (a big motor may deliver 150 % for 10 min cold), <b>S3</b> intermittent periodic, up to S10. A crane motor rated S3-40 % would cook in an S1 pump application — always match the duty cycle, not just the kilowatts. This is also why overload capability is a matter of <em>minutes</em>, set by thermal mass, while breakdown torque is a hard electromagnetic ceiling.</p>
+
+<div class="box german">
+  <div class="box-title"><span class="ic">🇩🇪</span>Vokabeln</div>
+  <p>transformer = <span class="de">Transformator</span> · turns ratio = <span class="de">Übersetzungsverhältnis ü</span> · leakage = <span class="de">Streuung</span> · vector group = <span class="de">Schaltgruppe</span> · rotating field = <span class="de">Drehfeld</span> · stator/rotor = <span class="de">Ständer/Läufer</span> · pole-pair number = <span class="de">Polpaarzahl</span> · induction machine = <span class="de">Asynchronmaschine</span> · squirrel cage = <span class="de">Käfigläufer</span> · slip = <span class="de">Schlupf</span> · breakdown torque = <span class="de">Kippmoment</span> · synchronous machine = <span class="de">Synchronmaschine</span> · load angle = <span class="de">Polradwinkel</span> · commutator = <span class="de">Stromwender/Kommutator</span> · armature = <span class="de">Anker</span> · field weakening = <span class="de">Feldschwächung</span> · variable-frequency drive = <span class="de">Frequenzumrichter</span> · regenerative braking = <span class="de">Nutzbremsung/Rekuperation</span> · duty type = <span class="de">Betriebsart</span></p>
+</div>
+
+<h2 id="summary">11. Formula summary — <span class="de">Formelsammlung</span></h2>
+
+<div class="table-wrap">
+<table class="data">
+<thead><tr><th>Concept</th><th>Formula</th><th>Remember as</th></tr></thead>
+<tbody>
+<tr><td>Force / induced voltage</td><td>\( F = BIl \), \( u = Blv \)</td><td>same conductor: motor and generator at once</td></tr>
+<tr><td>Ideal transformer</td><td>\( u_1/u_2 = N_1/N_2 = \ddot u \), \( i_1/i_2 = 1/\ddot u \), \( Z_1 = \ddot u^2 Z_2 \)</td><td>gearbox for electricity (AC only!)</td></tr>
+<tr><td>Transformer tests</td><td>no-load → \(P_{Fe}, X_h\); short-circuit → \(P_{Cu}, u_k\)</td><td>each test isolates one branch</td></tr>
+<tr><td>Transformer efficiency</td><td>\( \eta = \dfrac{xS_N\cos\varphi}{xS_N\cos\varphi + P_{Fe} + x^2 P_{Cu,N}} \), max at \(x{=}\sqrt{P_{Fe}/P_{Cu,N}}\)</td><td>peak where fixed loss = load loss</td></tr>
+<tr><td>Transmission loss</td><td>\( P_{loss} = 3I^2R \propto 1/U^2 \) at fixed P</td><td>why the grid is high-voltage AC</td></tr>
+<tr><td>Rotating field</td><td>\( \underline F \propto \tfrac32 \hat I e^{j\omega t} \)</td><td>3 pulsating fields → 1 constant rotation</td></tr>
+<tr><td>Synchronous speed</td><td>\( n_s = 60 f / p \) rpm</td><td>3000/1500/1000/750 … at 50 Hz</td></tr>
+<tr><td>Slip</td><td>\( s = (n_s - n)/n_s \), \( f_2 = s f_1 \)</td><td>rated: 2–6 %; standstill: s = 1</td></tr>
+<tr><td>Kloss formula</td><td>\( T/T_k = 2 / (s/s_k + s_k/s) \), \( T_k \propto U^2 \)</td><td>linear near s=0, peak at s_k, stall beyond</td></tr>
+<tr><td>Synchronous power</td><td>\( P = \dfrac{3UE}{X_d}\sin\delta \)</td><td>magnetic torsion spring; unstable past 90°</td></tr>
+<tr><td>DC machine</td><td>\( T = k\Phi I_a \), \( U = k\Phi\omega + R_a I_a \)</td><td>voltage sets speed, current sets torque</td></tr>
+<tr><td>Speed control</td><td>\(U_a\): constant torque · \(\Phi\downarrow\): constant power</td><td>base speed is the boundary</td></tr>
+<tr><td>Pump/fan power</td><td>\( P \propto n^3 \)</td><td>80 % speed ≈ 51 % power — the VFD jackpot</td></tr>
+<tr><td>V/f control</td><td>\( U/f = \) const → \( \Phi = \) const</td><td>from \(u = N\,\mathrm d\Phi/\mathrm dt\)</td></tr>
+</tbody>
+</table>
+</div>
+
+<h2 id="exercises">12. Exercises</h2>
+<p>Machines reward number-sense: always sanity-check against the 50 Hz speed menu and typical slips before trusting your algebra.</p>
+
+<div class="exercise">
+  <p class="ex-q"><span class="ex-num">E1</span>A transformer has \(N_1 = 800\) turns on the 230 V side. How many turns give 11.5 V out? A 2 A load flows on the secondary — what is the primary current (ideal transformer)? <span class="diff easy">easy</span></p>
+  <details><summary>Show solution</summary>
+    <div class="solution">
+      \( \ddot u = 230/11.5 = 20 \Rightarrow N_2 = 800/20 = 40 \) turns.
+      Currents transform inversely: \( I_1 = I_2 / \ddot u = 2/20 = 0.1\,\mathrm{A} \).
+      Check via power: \(230 \cdot 0.1 = 23\,\mathrm{W} = 11.5 \cdot 2\) ✓. Low-voltage side: thick wire, few turns; high-voltage side: thin wire, many turns — same copper cross-section·turns product on both.
+    </div>
+  </details>
+</div>
+
+<div class="exercise">
+  <p class="ex-q"><span class="ex-num">E2</span>A hydro generator must turn at exactly 750 rpm on the 50 Hz grid. How many poles does it need? What if the plant exported to a 60 Hz grid instead? <span class="diff easy">easy</span></p>
+  <details><summary>Show solution</summary>
+    <div class="solution">
+      \( p = 60 f / n_s = 3000/750 = 4 \) pole pairs = <b>8 poles</b>.
+      At 60 Hz the same 8-pole machine would run at \(3600/4 = 900\,\mathrm{rpm}\); to keep 750 rpm you'd need \(p = 3600/750 = 4.8\) — not an integer! No synchronous machine can link 750 rpm to 60 Hz directly; you'd change the turbine speed or use a converter. Speeds are <em>quantized</em> by the grid — the deep reason variable-speed hydro and wind use power electronics.
+    </div>
+  </details>
+</div>
+
+<div class="exercise">
+  <p class="ex-q"><span class="ex-num">E3</span>A 6-pole, 50 Hz induction motor delivers 11 kW at 960 rpm. Find synchronous speed, slip, rotor frequency, and shaft torque. <span class="diff med">medium</span></p>
+  <details><summary>Show solution</summary>
+    <div class="solution">
+      \( p = 3 \Rightarrow n_s = 3000/3 = 1000\,\mathrm{rpm} \). Slip \( s = (1000-960)/1000 = 4\,\% \); rotor frequency \( f_2 = 0.04 \cdot 50 = 2\,\mathrm{Hz} \).
+      Torque: \( \omega = 2\pi \cdot 960/60 = 100.5\,\mathrm{s^{-1}} \), so \( T = P/\omega = 11\,000/100.5 \approx 109\,\mathrm{N\,m} \).
+      Sanity: rated slip of a few percent ✓; ~110 N·m from an 11 kW machine at ~1000 rpm is the right order (rule of thumb: \(T \approx 9550\, P[\mathrm{kW}]/n[\mathrm{rpm}]\,\mathrm{N\,m}\)).
+    </div>
+  </details>
+</div>
+
+<div class="exercise">
+  <p class="ex-q"><span class="ex-num">E4</span>Short-circuit test on a 10 kVA, 400 V transformer (rated current 25 A): rated current flows at \(U_{sc} = 20\,\mathrm{V}\), absorbing \(P_{sc} = 300\,\mathrm{W}\). Find \(u_k\), the series impedance \(Z\), its parts \(R\) and \(X\), and the worst-case fault current. <span class="diff med">medium</span></p>
+  <details><summary>Show solution</summary>
+    <div class="solution">
+      \( u_k = 20/400 = 5\,\% \) — a typical distribution value.
+      \( Z = U_{sc}/I_N = 20/25 = 0.8\,\Omega \); \( R = P_{sc}/I_N^2 = 300/625 = 0.48\,\Omega \); \( X = \sqrt{0.8^2 - 0.48^2} = 0.64\,\Omega \).
+      Bolted short at rated voltage: \( I_{sc} = I_N/u_k = 25/0.05 = 500\,\mathrm{A} \) — 20× rated. Your breaker and cabling must interrupt and survive exactly this. (Note the test never exposed the transformer to danger: only 20 V were applied.)
+    </div>
+  </details>
+</div>
+
+<div class="exercise">
+  <p class="ex-q"><span class="ex-num">E5</span>A separately excited DC motor: \(U = 220\,\mathrm{V}\), \(R_a = 0.5\,\Omega\), drawing \(I_a = 20\,\mathrm{A}\) at 1500 rpm. Find the back-EMF, \(k\Phi\), and torque. The load then drops so that \(I_a = 15\,\mathrm{A}\) — what is the new speed? <span class="diff med">medium</span></p>
+  <details><summary>Show solution</summary>
+    <div class="solution">
+      Back-EMF: \( E = U - R_a I_a = 220 - 10 = 210\,\mathrm{V} \). With \( \omega = 2\pi \cdot 1500/60 = 157.1\,\mathrm{s^{-1}} \): \( k\Phi = E/\omega = 1.337\,\mathrm{V\,s} \).
+      Torque: \( T = k\Phi I_a = 1.337 \cdot 20 = 26.7\,\mathrm{N\,m} \).
+      At 15 A: \( E' = 220 - 7.5 = 212.5\,\mathrm{V} \Rightarrow \omega' = 212.5/1.337 = 158.9\,\mathrm{s^{-1}} \Rightarrow n' \approx 1518\,\mathrm{rpm} \).
+      Only ~1 % speed rise for a 25 % load drop — the separately excited DC machine is naturally speed-stiff, which is why it was <em>the</em> precision drive for a century.
+    </div>
+  </details>
+</div>
+
+<div class="exercise">
+  <p class="ex-q"><span class="ex-num">E6</span>An induction motor has \(s_k = 0.20\) and \(T_k = 2.5\,T_N\). Using Kloss's formula, find the rated slip and the starting torque (as a fraction of \(T_N\)). <span class="diff hard">challenge</span></p>
+  <details><summary>Show solution</summary>
+    <div class="solution">
+      Set \(T = T_N\): \( \frac{1}{2.5} = \frac{2}{s/s_k + s_k/s} \Rightarrow \frac{s}{s_k} + \frac{s_k}{s} = 5 \). With \(x = s/s_k\): \(x^2 - 5x + 1 = 0 \Rightarrow x = \frac{5 - \sqrt{21}}{2} \approx 0.209\) (small root = stable branch; the large root \(x \approx 4.79\) is the same torque on the unstable side).
+      \( s_N = 0.209 \cdot 0.20 \approx 4.2\,\% \) ✓ (right in the typical range — Kloss is self-consistent).
+      Starting torque, \(s = 1\): \( T_1 = \frac{2 \cdot 2.5}{1/0.2 + 0.2} T_N = \frac{5}{5.2} T_N \approx 0.96\,T_N \).
+      So despite drawing 5–8× rated current, the machine starts with <em>less than rated torque</em> — the starting problem of Section 6.2 in one number.
+    </div>
+  </details>
+</div>
+
+<div class="exercise">
+  <p class="ex-q"><span class="ex-num">E7</span>A round-rotor synchronous generator: \(X_d = 2\,\Omega\) per phase, terminal voltage 400 V line-to-line (star), internal EMF \(E = 290\,\mathrm{V}\) per phase. (a) Power delivered at \(\delta = 25°\)? (b) Maximum possible power? (c) The turbine suddenly supplies 120 kW — what happens? <span class="diff hard">challenge</span></p>
+  <details><summary>Show solution</summary>
+    <div class="solution">
+      Phase voltage: \( U = 400/\sqrt3 = 231\,\mathrm{V} \).
+      (a) \( P = \frac{3UE}{X_d}\sin\delta = \frac{3 \cdot 231 \cdot 290}{2} \cdot \sin 25° = 100.5\,\mathrm{kW} \cdot 0.423 \approx 42.5\,\mathrm{kW} \).
+      (b) \( P_{max} = 100.5\,\mathrm{kW} \) at \( \delta = 90° \).
+      (c) 120 kW &gt; \(P_{max}\): no load angle can transmit it. The rotor accelerates, δ passes 90°, transmitted power <em>falls</em>, the rotor accelerates harder — pole slipping. Protection must trip the machine within fractions of a second. In real grid operation you would first raise the excitation (E ↑ → \(P_{max}\) ↑); this coupling between excitation, reactive power and stability is the daily bread of Module 19.
+    </div>
+  </details>
+</div>
+
+<h2 id="quiz">13. Self-assessment</h2>
+
+<div class="quiz" data-quiz-title="Module 17 — Self-test">
+<script type="application/json">
+[
+ {"q":"A transformer with N₁ = 460 and N₂ = 24 turns is fed with 230 V. The secondary voltage is…",
+  "opts":["4.4 kV","12 V","24 V","110 V"],"a":1,
+  "explain":"\\(u_2 = u_1 N_2/N_1 = 230 \\cdot 24/460 = 12\\,\\mathrm{V}\\). Voltage scales directly with the turns ratio."},
+ {"q":"Transformer and machine cores are stacked from thin insulated sheets in order to…",
+  "opts":["make manufacturing cheaper","reduce hysteresis loss","suppress eddy currents by shortening their paths","increase the magnetic flux"],"a":2,
+  "explain":"Eddy-current loss scales with the square of sheet thickness. Laminating (Blechung) chops the conductive core into thin slices perpendicular to the current loops. Hysteresis is a material property — laminating does nothing for it; that is what silicon steel is for."},
+ {"q":"The rotating field of a symmetric three-phase winding has…",
+  "opts":["pulsating magnitude at 2f","constant magnitude 1.5·Î, rotating at ω","constant magnitude 3·Î, fixed in space","magnitude depending on the load"],"a":1,
+  "explain":"The three counter-rotating components cancel; the co-rotating ones add to \\(\\tfrac32\\hat I\\), turning at exactly ω. Constant magnitude — that is why three-phase machines can produce ripple-free torque."},
+ {"q":"A 6-pole induction motor on 50 Hz runs at synchronous speed…",
+  "opts":["3000 rpm","1500 rpm","1000 rpm","750 rpm"],"a":2,
+  "explain":"6 poles → p = 3 pole pairs → \\(n_s = 60 \\cdot 50/3 = 1000\\,\\mathrm{rpm}\\). Memorize the 50 Hz menu: 3000, 1500, 1000, 750…"},
+ {"q":"An induction motor could deliver torque at exactly synchronous speed…",
+  "opts":["if the voltage were raised","never — without relative motion nothing is induced in the rotor","if the rotor resistance were smaller","only in generator mode"],"a":1,
+  "explain":"Torque requires rotor currents, rotor currents require induced voltage, and induction requires slip (relative motion between field and rotor). At s = 0 the cage sees constant flux — zero current, zero torque. The machine is asynchronous by necessity, not by accident."},
+ {"q":"An induction motor runs at 1470 rpm on a 50 Hz grid (n_s = 1500 rpm). Its rotor currents oscillate at…",
+  "opts":["50 Hz","2 Hz","1 Hz","25 Hz"],"a":2,
+  "explain":"\\(s = (1500-1470)/1500 = 0.02\\), and \\(f_2 = s f_1 = 0.02 \\cdot 50 = 1\\,\\mathrm{Hz}\\). At rated load the rotor is electrically an almost-DC device — one reason cage losses are small."},
+ {"q":"Star–delta starting of an induction motor reduces the line current to 1/3. The starting torque…",
+  "opts":["is unchanged","also drops to 1/3","drops to 1/√3","increases"],"a":1,
+  "explain":"Each winding sees \\(U/\\sqrt3\\), and \\(T \\propto U^2\\) gives \\((1/\\sqrt3)^2 = 1/3\\). Current and torque both drop by the same factor — star–delta only works for loads that start light."},
+ {"q":"The commutator of a DC machine…",
+  "opts":["regulates the field current","converts the AC in the rotating winding to DC at the terminals","only reduces sparking","keeps the speed constant"],"a":1,
+  "explain":"The winding current must alternate as conductors pass N and S poles; the terminal current is DC. The commutator is a mechanical inverter/rectifier — the same job done by the transistor bridge in a brushless machine."},
+ {"q":"Weakening the field (Φ ↓) of a DC motor at constant armature voltage makes it…",
+  "opts":["run slower, since the force decreases","run faster, since ω ≈ U/(kΦ)","stall","draw less current at the same torque"],"a":1,
+  "explain":"Counter-intuitive but central: speed is set by the back-EMF balance \\(U \\approx k\\Phi\\omega\\), so less flux means the motor must spin faster to generate the same back-EMF. The price: torque per ampere falls — field weakening is the constant-power, high-speed region. (Losing the field entirely makes the motor race away — a classic failure.)"},
+ {"q":"A fan absorbs 8 kW at full speed. Run at 50 % speed by a VFD, it absorbs about…",
+  "opts":["4 kW","2 kW","1 kW","8 kW, unchanged"],"a":2,
+  "explain":"Cube law: \\(P \\propto n^3\\), so \\(8 \\cdot 0.5^3 = 1\\,\\mathrm{kW}\\). Halving the speed cuts power eightfold — the economic argument for variable-speed drives in one line."}
+]
+</script>
+</div>
+
+<script>
+document.addEventListener("ee-ready", () => {
+
+  /* ---------- Widget 1: rotating field animation ---------- */
+  EE.custom({
+    mount: "#w-drehfeld", height: 400, animate: true,
+    params: [
+      { key: "f", label: "Stator frequency f", min: 5, max: 60, step: 1, value: 50, unit: "Hz", fmt: v => v.toFixed(0) },
+      { key: "seq", label: "Phase sequence", type: "select", value: 1,
+        options: [
+          { label: "L1 → L2 → L3 (forward)", value: 1 },
+          { label: "L1 → L3 → L2 (two leads swapped)", value: -1 }
+        ] }
+    ],
+    readouts: [
+      { label: "n_s (p = 1)", fn: p => (60 * p.f).toFixed(0) + " rpm" },
+      { label: "n_s (p = 2)", fn: p => (30 * p.f).toFixed(0) + " rpm" },
+      { label: "Field rotation", fn: p => p.seq > 0 ? "counter-clockwise" : "clockwise" }
+    ],
+    draw: (ctx, w, h, p, H) => {
+      const SLOW = 30;
+      const wt = 2 * Math.PI * p.f * H.t / SLOW;
+      const cols = [H.color(0), H.color(2), H.color(3)];
+      const names = ["L1", "L2", "L3"];
+      const axes = [0, 2 * Math.PI / 3, 4 * Math.PI / 3];
+      const cur = k => Math.cos(wt - p.seq * k * 2 * Math.PI / 3);
+      const cx = w * 0.28, cy = h * 0.52, R = Math.min(w * 0.22, h * 0.38);
+      const unit = 0.42 * R; // MMF drawing scale per unit current
+
+      ctx.save();
+      ctx.font = "12px system-ui, sans-serif";
+      ctx.lineJoin = "round";
+
+      const arrow = (x1, y1, x2, y2, col, lw) => {
+        const dx = x2 - x1, dy = y2 - y1, L = Math.hypot(dx, dy);
+        if (L < 2) return;
+        const ux = dx / L, uy = dy / L, hs = Math.min(9, L * 0.4);
+        ctx.strokeStyle = col; ctx.fillStyle = col; ctx.lineWidth = lw;
+        ctx.beginPath(); ctx.moveTo(x1, y1); ctx.lineTo(x2 - ux * hs, y2 - uy * hs); ctx.stroke();
+        ctx.beginPath();
+        ctx.moveTo(x2, y2);
+        ctx.lineTo(x2 - ux * hs - uy * hs * 0.5, y2 - uy * hs + ux * hs * 0.5);
+        ctx.lineTo(x2 - ux * hs + uy * hs * 0.5, y2 - uy * hs - ux * hs * 0.5);
+        ctx.closePath(); ctx.fill();
+      };
+
+      // stator bore
+      ctx.strokeStyle = H.ink.primary; ctx.globalAlpha = 0.30; ctx.lineWidth = 9;
+      ctx.beginPath(); ctx.arc(cx, cy, R, 0, 7); ctx.stroke();
+      ctx.globalAlpha = 1; ctx.lineWidth = 1;
+      // shaft
+      ctx.strokeStyle = H.ink.primary; ctx.globalAlpha = 0.25;
+      ctx.beginPath(); ctx.arc(cx, cy, 4, 0, 7); ctx.stroke();
+      ctx.globalAlpha = 1;
+
+      // tip-trace circle for resultant
+      ctx.strokeStyle = H.ink.primary; ctx.globalAlpha = 0.25; ctx.setLineDash([4, 4]);
+      ctx.beginPath(); ctx.arc(cx, cy, 1.5 * unit, 0, 7); ctx.stroke();
+      ctx.setLineDash([]); ctx.globalAlpha = 1;
+
+      // windings (conductor pairs at axis ± 90°) + per-phase MMF arrows
+      let Fx = 0, Fy = 0;
+      for (let k = 0; k < 3; k++) {
+        const i = cur(k), ax = axes[k], col = cols[k];
+        Fx += i * Math.cos(ax); Fy += i * Math.sin(ax);
+        [1, -1].forEach(sgn => {
+          const a = ax + sgn * Math.PI / 2;
+          const x = cx + R * Math.cos(a), y = cy - R * Math.sin(a);
+          const r = 5 + 4 * Math.abs(i);
+          ctx.beginPath(); ctx.arc(x, y, r, 0, 7);
+          ctx.fillStyle = col; ctx.globalAlpha = 0.18 + 0.5 * Math.abs(i); ctx.fill();
+          ctx.globalAlpha = 1; ctx.strokeStyle = col; ctx.lineWidth = 1.6; ctx.stroke();
+          // dot (out of page) or cross
+          const out = i * sgn > 0;
+          ctx.strokeStyle = H.ink.primary; ctx.fillStyle = H.ink.primary; ctx.lineWidth = 1.4;
+          if (Math.abs(i) > 0.04) {
+            if (out) { ctx.beginPath(); ctx.arc(x, y, 2, 0, 7); ctx.fill(); }
+            else {
+              const c = r * 0.5;
+              ctx.beginPath(); ctx.moveTo(x - c, y - c); ctx.lineTo(x + c, y + c);
+              ctx.moveTo(x + c, y - c); ctx.lineTo(x - c, y + c); ctx.stroke();
+            }
+          }
+          if (sgn === 1) {
+            const lx = cx + (R + 20) * Math.cos(a), ly = cy - (R + 20) * Math.sin(a);
+            ctx.fillStyle = col; ctx.textAlign = "center"; ctx.textBaseline = "middle";
+            ctx.fillText(names[k], lx, ly);
+          }
+        });
+        // per-phase MMF component along its axis
+        arrow(cx, cy, cx + i * unit * Math.cos(ax), cy - i * unit * Math.sin(ax), col, 1.8);
+      }
+
+      // resultant MMF (magnitude 1.5, constant)
+      arrow(cx, cy, cx + Fx * unit, cy - Fy * unit, H.color(5), 3.2);
+      ctx.fillStyle = H.color(5); ctx.textAlign = "left";
+      ctx.fillText("F (resultant, |F| = 1.5)", cx + R * 0.32, cy - R - 14);
+
+      // ---- waveform inset: phase currents over one period ----
+      const gx = w * 0.56, gw = w * 0.40, gy = h * 0.14, gh = h * 0.30;
+      ctx.strokeStyle = H.ink.primary; ctx.globalAlpha = 0.4; ctx.lineWidth = 1;
+      ctx.beginPath(); ctx.moveTo(gx, gy + gh / 2); ctx.lineTo(gx + gw, gy + gh / 2); ctx.stroke();
+      ctx.globalAlpha = 1;
+      for (let k = 0; k < 3; k++) {
+        ctx.strokeStyle = cols[k]; ctx.lineWidth = 1.8; ctx.beginPath();
+        for (let n = 0; n <= 72; n++) {
+          const th = n / 72 * 2 * Math.PI;
+          const y = gy + gh / 2 - Math.cos(th - p.seq * k * 2 * Math.PI / 3) * gh * 0.45;
+          const x = gx + n / 72 * gw;
+          if (n === 0) ctx.moveTo(x, y); else ctx.lineTo(x, y);
+        }
+        ctx.stroke();
+      }
+      // time cursor + instantaneous dots
+      const frac = ((wt % (2 * Math.PI)) + 2 * Math.PI) % (2 * Math.PI) / (2 * Math.PI);
+      const cxr = gx + frac * gw;
+      ctx.strokeStyle = H.ink.primary; ctx.globalAlpha = 0.5; ctx.setLineDash([3, 3]);
+      ctx.beginPath(); ctx.moveTo(cxr, gy); ctx.lineTo(cxr, gy + gh); ctx.stroke();
+      ctx.setLineDash([]); ctx.globalAlpha = 1;
+      for (let k = 0; k < 3; k++) {
+        ctx.fillStyle = cols[k];
+        ctx.beginPath(); ctx.arc(cxr, gy + gh / 2 - cur(k) * gh * 0.45, 3.2, 0, 7); ctx.fill();
+      }
+      ctx.fillStyle = H.ink.primary; ctx.globalAlpha = 0.7; ctx.textAlign = "left";
+      ctx.fillText("phase currents (one period), slowed " + SLOW + "×", gx, gy - 10);
+      ctx.globalAlpha = 1;
+      ctx.restore();
+    }
+  });
+
+  /* ---------- Widget 2: Kloss torque-slip curve ---------- */
+  EE.functionPlot({
+    mount: "#w-kloss", height: 330,
+    x: { min: -0.4, max: 1, label: "slip s" },
+    y: { min: -3.6, max: 3.6, label: "T / T_N" },
+    params: [
+      { key: "u", label: "Stator voltage U/U_N", min: 0.5, max: 1.1, step: 0.01, value: 1, fmt: v => v.toFixed(2) },
+      { key: "r", label: "Rotor resistance R₂/R₂ₙ", min: 0.5, max: 4, step: 0.1, value: 1, fmt: v => v.toFixed(1) }
+    ],
+    curves: [
+      { label: "T(s)", color: 0, fn: (s, p) => {
+          const sk = 0.15 * p.r, Tk = 2.4 * p.u * p.u;
+          const d = s / sk + sk / s;
+          return isFinite(d) && d !== 0 ? 2 * Tk / d : 0;
+        } }
+    ],
+    annotations: p => {
+      const sk = 0.15 * p.r, Tk = 2.4 * p.u * p.u;
+      const a = [
+        { type: "vline", x: 0, label: "s = 0 (synchronous)" },
+        { type: "hline", y: 1, label: "rated torque T_N" },
+        { type: "point", x: sk, y: Tk, label: "breakdown T_k" }
+      ];
+      if (Tk > 1) {
+        const sN = sk * (Tk - Math.sqrt(Tk * Tk - 1));
+        a.push({ type: "point", x: sN, y: 1, label: "rated point" });
+      }
+      return a;
+    },
+    readouts: [
+      { label: "Breakdown torque T_k", fn: p => (2.4 * p.u * p.u).toFixed(2) + " × T_N" },
+      { label: "Breakdown slip s_k", fn: p => (0.15 * p.r).toFixed(3) },
+      { label: "Rated slip (T = T_N)", fn: p => {
+          const sk = 0.15 * p.r, Tk = 2.4 * p.u * p.u;
+          return Tk > 1 ? (100 * sk * (Tk - Math.sqrt(Tk * Tk - 1))).toFixed(1) + " %" : "— stalls (T_k < T_N)!";
+        } },
+      { label: "Starting torque T(s=1)", fn: p => {
+          const sk = 0.15 * p.r, Tk = 2.4 * p.u * p.u;
+          return (2 * Tk / (1 / sk + sk)).toFixed(2) + " × T_N";
+        } }
+    ]
+  });
+
+  /* ---------- Widget 3: transformer efficiency vs load ---------- */
+  EE.functionPlot({
+    mount: "#w-trafoeff", height: 310,
+    x: { min: 0.05, max: 1.25, label: "load fraction x = S/S_N" },
+    y: { min: 80, max: 100, label: "efficiency η in %" },
+    params: [
+      { key: "x", label: "Operating load x", min: 0.05, max: 1.25, step: 0.01, value: 1, fmt: v => v.toFixed(2) },
+      { key: "pfe", label: "Iron loss P_Fe", min: 100, max: 600, step: 10, value: 200, unit: "W", fmt: v => v.toFixed(0) },
+      { key: "pcu", label: "Copper loss P_Cu,N (full load)", min: 400, max: 2000, step: 20, value: 1000, unit: "W", fmt: v => v.toFixed(0) },
+      { key: "pf", label: "Load power factor", type: "select", value: 1,
+        options: [
+          { label: "cos φ = 1.00", value: 1 },
+          { label: "cos φ = 0.80", value: 0.8 },
+          { label: "cos φ = 0.60", value: 0.6 }
+        ] }
+    ],
+    curves: [
+      { label: "η(x)", color: 0, fn: (x, p) => {
+          const out = x * 50000 * p.pf;
+          return 100 * out / (out + p.pfe + x * x * p.pcu);
+        } }
+    ],
+    annotations: p => {
+      const xo = Math.sqrt(p.pfe / p.pcu);
+      const eff = x => { const o = x * 50000 * p.pf; return 100 * o / (o + p.pfe + x * x * p.pcu); };
+      return [
+        { type: "vline", x: xo, label: "x_opt = √(P_Fe/P_Cu)" },
+        { type: "point", x: p.x, y: eff(p.x), label: "your load" }
+      ];
+    },
+    readouts: [
+      { label: "η at your load", fn: p => { const o = p.x * 50000 * p.pf; return (100 * o / (o + p.pfe + p.x * p.x * p.pcu)).toFixed(2) + " %"; } },
+      { label: "Total losses", fn: p => EE.si(p.pfe + p.x * p.x * p.pcu, "W") },
+      { label: "Max-η load point", fn: p => "x = " + Math.sqrt(p.pfe / p.pcu).toFixed(2) },
+      { label: "Voltage sag Δu (u_R=1.5 %, u_X=5 %)", fn: p => {
+          const sin = Math.sqrt(Math.max(0, 1 - p.pf * p.pf));
+          return (p.x * (1.5 * p.pf + 5 * sin)).toFixed(1) + " %";
+        } }
+    ]
+  });
+
+  /* ---------- Widget 4: DC motor speed-torque characteristics ---------- */
+  EE.functionPlot({
+    mount: "#w-dcmotor", height: 330,
+    x: { min: 0, max: 70, label: "torque T in N·m" },
+    y: { min: 0, max: 4600, label: "speed n in rpm" },
+    params: [
+      { key: "U", label: "Armature voltage U_a", min: 50, max: 220, step: 5, value: 220, unit: "V", fmt: v => v.toFixed(0) },
+      { key: "phi", label: "Field flux Φ/Φ_N", min: 0.4, max: 1, step: 0.02, value: 1, fmt: v => v.toFixed(2) }
+    ],
+    curves: [
+      { label: "motor n(T)", color: 0, fn: (T, p) => {
+          const kf = 1.2 * p.phi;
+          const n = (p.U / kf - 0.8 * T / (kf * kf)) * 60 / (2 * Math.PI);
+          return n > 0 ? n : NaN;
+        } },
+      { label: "fan load", color: 2, dash: [6, 4], fn: T => 1500 * Math.sqrt(T / 25) }
+    ],
+    annotations: p => {
+      const kf = 1.2 * p.phi;
+      const n0 = p.U / kf * 60 / (2 * Math.PI);           // no-load speed, rpm
+      const c = 0.8 / (kf * kf) * 60 / (2 * Math.PI);     // rpm per N·m
+      const kL = 25 / (1500 * 1500);                       // fan: T = kL n²
+      const nOp = (-1 + Math.sqrt(1 + 4 * c * kL * n0)) / (2 * c * kL);
+      const TOp = kL * nOp * nOp;
+      return [
+        { type: "point", x: TOp, y: nOp, label: "operating point" },
+        { type: "hline", y: n0, label: "no-load speed" }
+      ];
+    },
+    readouts: [
+      { label: "No-load speed", fn: p => (p.U / (1.2 * p.phi) * 60 / (2 * Math.PI)).toFixed(0) + " rpm" },
+      { label: "Operating point", fn: p => {
+          const kf = 1.2 * p.phi;
+          const n0 = p.U / kf * 60 / (2 * Math.PI);
+          const c = 0.8 / (kf * kf) * 60 / (2 * Math.PI);
+          const kL = 25 / 2250000;
+          const nOp = (-1 + Math.sqrt(1 + 4 * c * kL * n0)) / (2 * c * kL);
+          return nOp.toFixed(0) + " rpm, " + (kL * nOp * nOp).toFixed(1) + " N·m";
+        } },
+      { label: "Armature current I_a = T/kΦ", fn: p => {
+          const kf = 1.2 * p.phi;
+          const n0 = p.U / kf * 60 / (2 * Math.PI);
+          const c = 0.8 / (kf * kf) * 60 / (2 * Math.PI);
+          const kL = 25 / 2250000;
+          const nOp = (-1 + Math.sqrt(1 + 4 * c * kL * n0)) / (2 * c * kL);
+          return (kL * nOp * nOp / kf).toFixed(1) + " A";
+        } }
+    ]
+  });
+});
+</script>
+
+</article>
+</main>
+</div>
+</body>
+</html>

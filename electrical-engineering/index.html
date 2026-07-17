@@ -1,0 +1,89 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>EE Knowledge Base — Electrical Engineering from Abitur to Master</title>
+<link rel="stylesheet" href="../assets/vendor/katex/katex.min.css">
+<link rel="stylesheet" href="../assets/css/style.css">
+<script src="../assets/vendor/katex/katex.min.js" defer></script>
+<script src="../assets/vendor/katex/auto-render.min.js" defer></script>
+<script src="curriculum.js" defer></script>
+<script src="../assets/js/app.js" defer></script>
+</head>
+<body>
+
+<section class="hero">
+  <h1>Electrical Engineering<br><span style="background:linear-gradient(90deg,var(--accent),var(--accent-2));-webkit-background-clip:text;background-clip:text;color:transparent">from Abitur to Master's level</span></h1>
+  <p class="sub">A complete, self-contained knowledge base covering the core curriculum of a German university degree in <span class="de">Elektrotechnik</span> — Bachelor and Master — explained from first principles, with interactive simulations, worked examples, exercises and self-assessment tests.</p>
+  <div class="cta-row">
+    <a class="btn" href="modules/m01-complex-linear-algebra.html">Start with Module 01 →</a>
+    <a class="btn ghost" href="#curriculum">Browse the curriculum</a>
+  </div>
+</section>
+
+<div class="home-wrap">
+
+  <div class="stat-row">
+    <div class="stat"><div class="n">21</div><div class="l">Modules</div></div>
+    <div class="stat"><div class="n">6</div><div class="l">Subject areas</div></div>
+    <div class="stat"><div class="n" id="stat-widgets">83</div><div class="l">Interactive sims</div></div>
+    <div class="stat"><div class="n" id="stat-quiz">210</div><div class="l">Quiz questions</div></div>
+    <div class="stat"><div class="n" id="stat-exerc">144</div><div class="l">Exercises</div></div>
+  </div>
+
+  <div class="progress-wrap">
+    <div class="pw-top">
+      <b>Your progress</b>
+      <span class="muted" id="prog-label">0 / 21 modules completed</span>
+    </div>
+    <div class="bar"><span id="prog-bar"></span></div>
+  </div>
+
+  <section class="cat-block" style="margin-top:26px">
+    <h2>📖 How to use this knowledge base</h2>
+    <p class="cat-desc" style="max-width:900px">
+      The modules follow the study order of a typical German <span class="de">Elektrotechnik</span> degree: mathematics first, then the electrical fundamentals (<span class="de">Grundlagen der Elektrotechnik</span>), then electronics, systems theory, and finally the classic specializations of the <span class="de">Hauptstudium</span> and Master. Every module is written to be readable with Abitur-level knowledge <em>plus the modules before it</em> — so if you go in order, nothing will assume something you haven't seen. Each module ends with exercises (with hidden step-by-step solutions) and an auto-graded self-test; your scores and completed modules are stored locally in your browser. German technical vocabulary is given <span class="de">kursiv in Klammern</span> throughout, so you can map everything onto German lectures and textbooks.
+    </p>
+  </section>
+
+  <div id="curriculum"></div>
+</div>
+
+<footer class="site-footer">
+  EE Knowledge Base · built for self-study · progress is stored only in your browser (localStorage) · math rendered offline with KaTeX
+</footer>
+
+<script>
+document.addEventListener("ee-ready", () => {
+  const wrap = document.getElementById("curriculum");
+  let html = "";
+  for (const part of EE_CURRICULUM.parts) {
+    html += `<section class="cat-block">
+      <h2>${part.icon} ${part.title} <span class="muted" style="font-weight:400;font-size:.95rem">· <span class="de">${part.de}</span></span></h2>
+      <p class="cat-desc">${part.desc}</p><div class="card-grid">`;
+    for (const m of part.modules) {
+      const done = EEStore.isDone(m.id);
+      const quiz = EEStore.quizBest(m.id);
+      html += `<a class="mod-card ${done ? "done" : ""}" href="modules/${m.file}">
+        <span class="mc-done">✓ done</span>
+        <div class="mc-top"><span class="mc-ic">${m.icon}</span><span class="mc-num">Module ${m.num}</span></div>
+        <h3>${m.title}</h3>
+        <span class="mc-de">${m.de}</span>
+        <p>${m.desc}</p>
+        ${quiz ? `<p class="small" style="margin-top:8px"><span class="badge">quiz best: ${quiz.score}/${quiz.total}</span></p>` : ""}
+      </a>`;
+    }
+    html += `</div></section>`;
+  }
+  wrap.innerHTML = html;
+
+  /* progress bar */
+  const total = EE_MODULES.length;
+  const done = EE_MODULES.filter(m => EEStore.isDone(m.id)).length;
+  document.getElementById("prog-label").textContent = `${done} / ${total} modules completed`;
+  document.getElementById("prog-bar").style.width = (100 * done / total) + "%";
+});
+</script>
+</body>
+</html>

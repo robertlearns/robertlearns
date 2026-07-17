@@ -1,0 +1,956 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>M20 · Communications Engineering — EE Knowledge Base</title>
+<link rel="stylesheet" href="../../assets/vendor/katex/katex.min.css">
+<link rel="stylesheet" href="../../assets/css/style.css">
+<script src="../../assets/vendor/katex/katex.min.js" defer></script>
+<script src="../../assets/vendor/katex/auto-render.min.js" defer></script>
+<script src="../curriculum.js" defer></script>
+<script src="../../assets/js/app.js" defer></script>
+<script src="../../assets/js/widgets.js" defer></script>
+</head>
+<body data-module="m20">
+<div class="layout">
+<main class="content">
+<article class="article">
+
+<span class="eyebrow">📶 Communications &amp; High Frequency · Module 20</span>
+<h1>Communications Engineering <span class="muted" style="font-weight:400;font-size:1.4rem">· <span class="de">Nachrichtentechnik</span></span></h1>
+<p class="lead">Every phone call, WiFi packet, satellite image and podcast is the same engineering problem: push information through a channel that is too narrow, too noisy and shared with everyone else. This module builds the whole discipline — modulation, noise, digital transmission, and Shannon's astonishing theory that tells us the exact speed limit of any channel and promises we can drive right up to it, error-free.</p>
+
+<div class="page-meta">
+  <span><b>Corresponds to:</b> Nachrichtentechnik / Übertragungstechnik (4th–6th semester)</span>
+  <span><b>Prerequisites:</b> Modules 12, 13</span>
+  <span><b>Study time:</b> ≈ 7–9 h</span>
+</div>
+
+<h2 id="comm-problem">1. The communication problem</h2>
+
+<p>In 1948 Claude Shannon opened <em>A Mathematical Theory of Communication</em> with one diagram, and the field has never needed a better one. A <strong>source</strong> (<span class="de">Quelle</span>) produces a message; a <strong>transmitter</strong> (<span class="de">Sender</span>) converts it into a signal suited to the physical medium; the <strong>channel</strong> (<span class="de">Kanal</span>) — cable, fiber, or free space — distorts it and adds <strong>noise</strong> (<span class="de">Rauschen</span>); the <strong>receiver</strong> (<span class="de">Empfänger</span>) tries to undo the damage and deliver the message to the <strong>sink</strong> (<span class="de">Senke</span>). Everything in this module is a refinement of one of these five blocks.</p>
+
+<figure>
+  <div class="fig-frame">
+  <svg class="diagram" viewBox="0 0 760 210" role="img" aria-label="Shannon's model of a communication system">
+    <defs><marker id="arrA" markerWidth="9" markerHeight="9" refX="7" refY="4.5" orient="auto"><path d="M0 0 L8 4.5 L0 9 z" fill="var(--accent)"/></marker></defs>
+    <!-- blocks -->
+    <rect x="20"  y="60" width="110" height="46" rx="8" fill="none" stroke="var(--text-soft)" stroke-width="2"/>
+    <text x="75" y="80" text-anchor="middle" font-size="14">Source</text>
+    <text x="75" y="97" text-anchor="middle" font-size="11" fill="var(--text-faint)">Quelle</text>
+    <rect x="180" y="60" width="130" height="46" rx="8" fill="none" stroke="var(--text-soft)" stroke-width="2"/>
+    <text x="245" y="80" text-anchor="middle" font-size="14">Transmitter</text>
+    <text x="245" y="97" text-anchor="middle" font-size="11" fill="var(--text-faint)">coder + modulator</text>
+    <rect x="360" y="60" width="110" height="46" rx="8" fill="none" stroke="var(--accent-2)" stroke-width="2"/>
+    <text x="415" y="80" text-anchor="middle" font-size="14">Channel</text>
+    <text x="415" y="97" text-anchor="middle" font-size="11" fill="var(--text-faint)">Kanal</text>
+    <rect x="520" y="60" width="120" height="46" rx="8" fill="none" stroke="var(--text-soft)" stroke-width="2"/>
+    <text x="580" y="80" text-anchor="middle" font-size="14">Receiver</text>
+    <text x="580" y="97" text-anchor="middle" font-size="11" fill="var(--text-faint)">demod + decoder</text>
+    <rect x="690" y="60" width="55" height="46" rx="8" fill="none" stroke="var(--text-soft)" stroke-width="2"/>
+    <text x="717" y="88" text-anchor="middle" font-size="14">Sink</text>
+    <!-- arrows -->
+    <line x1="130" y1="83" x2="172" y2="83" stroke="var(--accent)" stroke-width="2" marker-end="url(#arrA)"/>
+    <line x1="310" y1="83" x2="352" y2="83" stroke="var(--accent)" stroke-width="2" marker-end="url(#arrA)"/>
+    <line x1="470" y1="83" x2="512" y2="83" stroke="var(--accent)" stroke-width="2" marker-end="url(#arrA)"/>
+    <line x1="640" y1="83" x2="682" y2="83" stroke="var(--accent)" stroke-width="2" marker-end="url(#arrA)"/>
+    <!-- noise source -->
+    <rect x="360" y="150" width="110" height="40" rx="8" fill="none" stroke="var(--text-faint)" stroke-width="2" stroke-dasharray="6 4"/>
+    <text x="415" y="169" text-anchor="middle" font-size="13">noise</text>
+    <text x="415" y="184" text-anchor="middle" font-size="11" fill="var(--text-faint)">Rauschen n(t)</text>
+    <line x1="415" y1="150" x2="415" y2="112" stroke="var(--accent)" stroke-width="2" marker-end="url(#arrA)"/>
+    <!-- labels on signals -->
+    <text x="151" y="72" text-anchor="middle" font-size="12" fill="var(--accent)">m(t)</text>
+    <text x="331" y="72" text-anchor="middle" font-size="12" fill="var(--accent)">s(t)</text>
+    <text x="491" y="72" text-anchor="middle" font-size="12" fill="var(--accent)">r(t)</text>
+    <text x="661" y="72" text-anchor="middle" font-size="12" fill="var(--accent)">m̂(t)</text>
+    <text x="380" y="30" text-anchor="middle" font-size="12" fill="var(--text-faint)">r(t) = s(t) ⊛ h(t) + n(t)</text>
+  </svg>
+  </div>
+  <figcaption><b>Fig. 1.1</b> — Shannon's communication system (1948). The channel filters the transmitted signal with its impulse response \(h(t)\) and adds noise \(n(t)\). The receiver's job: recover \(\hat{m}(t) \approx m(t)\).</figcaption>
+</figure>
+
+<p>Every design in this field trades three resources against each other — the <strong>resource triangle</strong>:</p>
+<ul>
+  <li><strong>Bandwidth</strong> \(B\) (<span class="de">Bandbreite</span>): the slice of spectrum you may occupy. Regulated, auctioned (German 5G spectrum sold for €6.5 billion in 2019), and physically scarce.</li>
+  <li><strong>Power</strong> \(P\) (equivalently SNR): more transmit power beats down the noise — but batteries drain, regulations cap emissions, and other users suffer interference.</li>
+  <li><strong>Complexity</strong>: signal-processing effort at both ends. Moore's law made this the cheapest resource — which is precisely why modern systems (5G, WiFi 6) burn enormous computation to save bandwidth and power.</li>
+</ul>
+
+<div class="box key">
+  <div class="box-title"><span class="ic">🔑</span>Key idea: one problem, one currency</div>
+  <p>Every technique in this module — AM, FM, QAM, Hamming codes, OFDM — is a different way of spending bandwidth, power and complexity to buy the same commodity: <em>reliable information rate</em>. Shannon's capacity formula (Section 9) is the exchange rate table, and it is exact.</p>
+</div>
+
+<div class="box german">
+  <div class="box-title"><span class="ic">🇩🇪</span>Vokabeln</div>
+  <p>communications engineering = <span class="de">Nachrichtentechnik</span> · transmission = <span class="de">Übertragung</span> · carrier = <span class="de">Träger</span> · envelope = <span class="de">Hüllkurve</span> · sideband = <span class="de">Seitenband</span> · frequency deviation = <span class="de">Frequenzhub</span> · noise figure = <span class="de">Rauschzahl</span> · symbol rate = <span class="de">Symbolrate/Schrittgeschwindigkeit</span> · intersymbol interference = <span class="de">Zwischensymbolinterferenz</span> · eye diagram = <span class="de">Augendiagramm</span> · channel capacity = <span class="de">Kanalkapazität</span> · source/channel coding = <span class="de">Quellen-/Kanalcodierung</span> · entropy = <span class="de">Entropie</span> · multipath propagation = <span class="de">Mehrwegeausbreitung</span> · link budget = <span class="de">Streckenbilanz</span></p>
+</div>
+
+<h2 id="why-modulate">2. Baseband, passband — why modulate at all?</h2>
+
+<p>A microphone signal lives in the <strong>baseband</strong> (<span class="de">Basisband</span>): roughly 300 Hz – 3.4 kHz for telephone speech, 20 Hz – 20 kHz for music. Why not just amplify it and feed an antenna? Three killer reasons:</p>
+
+<p><strong>1. Antenna size.</strong> An antenna radiates efficiently only when its length is comparable to the wavelength, typically \(\lambda/4\) (Module 21). With \(\lambda = c/f\):</p>
+<div class="table-wrap">
+<table class="data">
+<thead><tr><th>Signal</th><th>Frequency</th><th>Wavelength \(\lambda\)</th><th>\(\lambda/4\) antenna</th></tr></thead>
+<tbody>
+<tr><td>Speech, directly</td><td>3 kHz</td><td>100 km</td><td>25 km — absurd</td></tr>
+<tr><td>MW broadcast (AM)</td><td>1 MHz</td><td>300 m</td><td>75 m — the classic radio masts</td></tr>
+<tr><td>FM broadcast</td><td>100 MHz</td><td>3 m</td><td>75 cm — a car antenna</td></tr>
+<tr><td>WiFi</td><td>2.4 GHz</td><td>12.5 cm</td><td>3.1 cm — printed on the PCB</td></tr>
+</tbody>
+</table>
+</div>
+<p><strong>2. Multiplexing.</strong> If everyone transmitted at baseband, all signals would sit on top of each other. Shifting each user to a different carrier frequency lets thousands share one medium (Section 11).</p>
+<p><strong>3. Channel allocation.</strong> Physics and regulation assign each service a frequency window where propagation behaves well (MW bends around the Earth, GHz penetrates the ionosphere for satellites). You must move your signal to where your channel is.</p>
+
+<p><strong>Modulation</strong> (<span class="de">Modulation</span>) is therefore the act of imprinting the message \(m(t)\) onto a high-frequency <strong>carrier</strong> (<span class="de">Träger</span>) \(\cos(2\pi f_c t)\). A cosine has exactly three adjustable properties — amplitude, frequency, phase — so there are exactly three modulation families: AM, FM, PM. Recall from Fourier theory (Module 12) that multiplying by \(\cos(2\pi f_c t)\) shifts a spectrum from around 0 up to around \(\pm f_c\): baseband becomes <strong>passband</strong> (<span class="de">Bandpasslage</span>).</p>
+
+<h2 id="am">3. Amplitude modulation — radio you could build in 1920</h2>
+
+<h3 id="am-time">3.1 Time domain and modulation index</h3>
+<p>With a single-tone message \(m(t) = \cos(2\pi f_m t)\), conventional AM transmits</p>
+\[ s_{AM}(t) = \hat{U}_c\,\bigl(1 + m\cos(2\pi f_m t)\bigr)\,\cos(2\pi f_c t), \]
+<p>where \(m\) is the <strong>modulation index</strong> (<span class="de">Modulationsgrad</span>), \(0 \le m \le 1\). The message rides as the <strong>envelope</strong> (<span class="de">Hüllkurve</span>) of the carrier. If \(m &gt; 1\) (<span class="de">Übermodulation</span>) the factor \(1 + m\cos(\cdot)\) goes negative, the envelope no longer equals the message, and a simple receiver hears gross distortion — try it in the widget below.</p>
+
+<h3 id="am-spectrum">3.2 The spectrum — carrier plus two sidebands</h3>
+<p>Expand the product with \(\cos a \cos b = \tfrac12[\cos(a{-}b) + \cos(a{+}b)]\):</p>
+\[ s_{AM}(t) = \hat{U}_c \cos(2\pi f_c t) \;+\; \frac{m\hat{U}_c}{2}\cos\bigl(2\pi (f_c{-}f_m) t\bigr) \;+\; \frac{m\hat{U}_c}{2}\cos\bigl(2\pi (f_c{+}f_m) t\bigr). \]
+<p>Three spectral lines: the carrier at \(f_c\), plus a <strong>lower and an upper sideband</strong> (<span class="de">unteres/oberes Seitenband</span>) at \(f_c \mp f_m\). A real message occupying \(0\dots f_{m,\max}\) produces mirror-image sideband <em>bands</em>, so the occupied RF bandwidth is</p>
+\[ \boxed{\,B_{AM} = 2 f_{m,\max}\,} \]
+<p>— twice the message bandwidth. An MW station carrying 4.5 kHz audio occupies 9 kHz, which is exactly the European MW channel spacing.</p>
+
+<figure>
+  <div class="fig-frame">
+  <svg class="diagram" viewBox="0 0 680 230" role="img" aria-label="AM spectrum: baseband message shifted to carrier with two sidebands">
+    <defs><marker id="arrB" markerWidth="9" markerHeight="9" refX="7" refY="4.5" orient="auto"><path d="M0 0 L8 4.5 L0 9 z" fill="var(--text-soft)"/></marker></defs>
+    <!-- axes -->
+    <line x1="40" y1="170" x2="650" y2="170" stroke="var(--text-soft)" stroke-width="2" marker-end="url(#arrB)"/>
+    <text x="655" y="188" font-size="13" text-anchor="end">f</text>
+    <!-- baseband triangle -->
+    <path d="M60 170 L60 100 L140 170 Z" fill="none" stroke="var(--accent)" stroke-width="2"/>
+    <text x="80" y="88" font-size="13" fill="var(--accent)">|M(f)|  baseband</text>
+    <text x="60" y="190" font-size="12" text-anchor="middle">0</text>
+    <text x="140" y="190" font-size="12" text-anchor="middle">f_m</text>
+    <!-- shift arrow -->
+    <path d="M180 120 C230 90 270 90 320 118" fill="none" stroke="var(--text-faint)" stroke-width="2" stroke-dasharray="6 4" marker-end="url(#arrB)"/>
+    <text x="250" y="82" font-size="12" fill="var(--text-faint)" text-anchor="middle">× cos(2πf_c t)</text>
+    <!-- carrier line -->
+    <line x1="470" y1="170" x2="470" y2="60" stroke="var(--accent-2)" stroke-width="3"/>
+    <circle cx="470" cy="60" r="3.5" fill="var(--accent-2)"/>
+    <text x="470" y="48" font-size="13" text-anchor="middle" fill="var(--accent-2)">carrier</text>
+    <!-- LSB (mirrored) and USB -->
+    <path d="M470 170 L390 170 L470 110 Z" fill="none" stroke="var(--accent)" stroke-width="2"/>
+    <path d="M470 170 L470 110 L550 170 Z" fill="none" stroke="var(--accent)" stroke-width="2"/>
+    <text x="418" y="205" font-size="12" text-anchor="middle">LSB</text>
+    <text x="522" y="205" font-size="12" text-anchor="middle">USB</text>
+    <text x="390" y="190" font-size="12" text-anchor="middle">f_c−f_m</text>
+    <text x="470" y="190" font-size="12" text-anchor="middle">f_c</text>
+    <text x="550" y="190" font-size="12" text-anchor="middle">f_c+f_m</text>
+    <!-- bandwidth brace -->
+    <path d="M390 218 H550" stroke="var(--text-faint)" stroke-width="1.5"/>
+    <path d="M390 213 V223 M550 213 V223" stroke="var(--text-faint)" stroke-width="1.5"/>
+    <text x="470" y="228" font-size="12" text-anchor="middle" fill="var(--text-faint)">B = 2f_m</text>
+  </svg>
+  </div>
+  <figcaption><b>Fig. 3.1</b> — Modulation in the frequency domain: the baseband spectrum \(|M(f)|\) is shifted to the carrier and mirrored into a lower sideband (LSB) and upper sideband (USB). Total width \(2f_m\).</figcaption>
+</figure>
+
+<h3 id="am-power">3.3 Power — where AM wastes watts</h3>
+<p>The carrier term contains <em>no information whatsoever</em> — it is the same cosine whether you broadcast Beethoven or silence. Yet it eats most of the transmit power:</p>
+\[ P_{\text{carrier}} = \frac{\hat{U}_c^2}{2R}, \qquad P_{\text{sidebands}} = 2\cdot\frac{(m\hat{U}_c/2)^2}{2R} = \frac{m^2}{2} P_{\text{carrier}}
+\;\;\Rightarrow\;\; \frac{P_{\text{sidebands}}}{P_{\text{total}}} = \frac{m^2}{2+m^2}. \]
+
+<div class="example">
+  <div class="ex-head"><span class="ex-tag">Worked example</span> AM power split of a broadcast transmitter</div>
+  <div class="ex-body">
+    <p>An MW transmitter runs a 100 kW carrier. Compute the useful (sideband) power for full modulation \(m = 1\) and for a realistic program average \(m = 0.3\).</p>
+    <div class="step"><span class="step-label">Step 1 — full modulation:</span>
+      \( P_{SB} = \frac{m^2}{2}P_c = 0.5 \cdot 100 = 50\,\mathrm{kW} \); total 150 kW, useful fraction \( \frac{1}{3} \approx 33\,\% \). That is the <em>best case</em>.</div>
+    <div class="step"><span class="step-label">Step 2 — realistic modulation:</span>
+      \( P_{SB} = \frac{0.09}{2}\cdot 100 = 4.5\,\mathrm{kW} \); total 104.5 kW, useful fraction \( \frac{4.5}{104.5} \approx 4.3\,\% \).</div>
+    <div class="step"><span class="step-label">Step 3 — interpret:</span> over 95 % of the electricity bill of a typical AM station heats the ether with a pure, information-free cosine. Both sidebands also carry the <em>same</em> information (mirror images), doubling the waste.</div>
+    <div class="result-line">Useful power: 33 % at \(m=1\), only ≈ 4 % at \(m=0.3\). AM buys receiver simplicity with transmitter watts.</div>
+  </div>
+</div>
+
+<h3 id="envelope">3.4 Envelope detection — why AM won the 1920s</h3>
+<p>So why did the world start with such a wasteful scheme? Because the receiver is almost free: a diode rectifies the RF signal and an RC low-pass (<span class="de">Hüllkurvendemodulator</span>, envelope detector) traces the envelope — which, for \(m \le 1\), <em>is</em> the message. Diode + capacitor + headphones: the crystal radio (<span class="de">Detektorempfänger</span>), buildable at a kitchen table in 1920, needing no battery at all. The transmitted carrier is exactly what makes this trick work: it keeps the envelope positive.</p>
+
+<div class="box history">
+  <div class="box-title"><span class="ic">📜</span>DSB, SSB — spending complexity to save power and bandwidth</div>
+  <p>Suppress the carrier and you get <strong>DSB-SC</strong> (double sideband, suppressed carrier): all power in the sidebands, but the receiver now needs a synchronized local oscillator (coherent detection) — no more crystal radios. Transmit only one sideband and you get <strong>SSB</strong> (<span class="de">Einseitenbandmodulation</span>): half the bandwidth, all power useful. SSB became <em>the</em> mode for long-haul telephony and amateur radio from the 1950s. The historical arc — AM → DSB → SSB — is the resource triangle in action: each step trades receiver complexity for power and bandwidth efficiency.</p>
+</div>
+
+<h2 id="fm">4. Frequency modulation — trading bandwidth for quiet</h2>
+
+<h3 id="fm-concept">4.1 Instantaneous frequency</h3>
+<p>Instead of the amplitude, wiggle the frequency. Define the <strong>instantaneous frequency</strong> (<span class="de">Momentanfrequenz</span>) as the derivative of the total phase:</p>
+\[ f_i(t) = \frac{1}{2\pi}\frac{\mathrm{d}\varphi(t)}{\mathrm{d}t} = f_c + k_f\, m(t), \]
+<p>where \(k_f\) (Hz/V) sets how far the message pushes the frequency. The peak excursion \(\Delta f = k_f\,\hat{m}\) is the <strong>frequency deviation</strong> (<span class="de">Frequenzhub</span>). For a single tone \(m(t)=\cos(2\pi f_m t)\), integrating the phase gives</p>
+\[ s_{FM}(t) = \hat{U}_c \cos\!\bigl(2\pi f_c t + \beta \sin(2\pi f_m t)\bigr), \qquad \boxed{\,\beta = \frac{\Delta f}{f_m}\,} \]
+<p>with the <strong>FM modulation index</strong> \(\beta\). Crucially, the amplitude is <em>constant</em>: all information lives in the zero crossings. <strong>Phase modulation (PM)</strong> is the sibling: \(\varphi(t) = 2\pi f_c t + k_p m(t)\) — FM of the differentiated message. PM matters less for analog audio but becomes the backbone of digital transmission (PSK, Section 6).</p>
+
+<h3 id="carson">4.2 Bandwidth — Carson's rule</h3>
+<p>An exact FM spectrum requires Bessel functions (the sidebands at \(f_c \pm n f_m\) have amplitudes \(J_n(\beta)\)) — infinitely many sidebands! In practice their amplitudes die off quickly beyond the deviation, and John Carson's 1922 rule captures ≈ 98 % of the power:</p>
+\[ \boxed{\,B_{FM} \approx 2\,(\Delta f + f_m) = 2 f_m (\beta + 1).\,} \]
+
+<div class="example">
+  <div class="ex-head"><span class="ex-tag">Worked example</span> Carson's rule for broadcast FM</div>
+  <div class="ex-body">
+    <p>European FM broadcasting uses deviation \(\Delta f = 75\,\mathrm{kHz}\) and transmits audio (plus stereo pilot/subcarrier) up to \(f_m = 15\,\mathrm{kHz}\). Find \(\beta\), the Carson bandwidth, and compare with the channel raster.</p>
+    <div class="step"><span class="step-label">Step 1 — modulation index:</span>
+      \( \beta = \Delta f / f_m = 75/15 = 5 \) — “wideband FM”.</div>
+    <div class="step"><span class="step-label">Step 2 — Carson bandwidth:</span>
+      \( B \approx 2(\Delta f + f_m) = 2(75 + 15) = 180\,\mathrm{kHz} \).</div>
+    <div class="step"><span class="step-label">Step 3 — sanity check:</span> FM stations are spaced on a 100 kHz raster but assigned ≥ 200–300 kHz apart in one region — a 180 kHz signal fits a 200 kHz allocation with a small guard band. ✓</div>
+    <div class="result-line">\(\beta = 5\), \(B \approx 180\,\mathrm{kHz}\) — <em>twelve times</em> the 15 kHz message. FM deliberately spends bandwidth.</div>
+  </div>
+</div>
+
+<h3 id="fm-noise">4.3 What the bandwidth buys: noise robustness</h3>
+<p>Why spend 12× bandwidth? Because additive noise mostly perturbs the <em>amplitude</em> of a signal, and FM ignores amplitude — the receiver hard-limits the signal and only evaluates zero crossings. Analysis (and Module 13's noise theory) shows the demodulated SNR of wideband FM improves roughly as \(3\beta^2(\beta+1)\) relative to AM at equal received power — for \(\beta = 5\), a gain of order 20 dB, further helped by pre-/de-emphasis filtering. This is why music radio moved to FM: the medium is quiet enough for high fidelity. It is our first concrete instance of Shannon's grand bargain — <strong>bandwidth can be exchanged for SNR</strong>.</p>
+<p>FM also exhibits the <strong>capture effect</strong> (<span class="de">Capture-Effekt</span>): when two FM stations land on one frequency, the receiver locks onto the stronger one and suppresses the weaker almost completely (a few dB difference suffices), instead of mixing both as AM does. Great for cellular reuse of frequencies; occasionally startling on a road trip when the station "flips".</p>
+
+<div class="widget">
+  <div class="w-head"><span class="ic">🧪</span>Interactive — AM / FM explorer <span class="w-tag">simulation</span></div>
+  <div class="w-body">
+    <p class="small mt0">Top: the message. Bottom: the modulated carrier. In AM, watch the dashed envelope trace the message — then push \(m\) past 1 and see overmodulation fold the envelope (the crackle of an overdriven AM transmitter). In FM, the amplitude stays rigid while the zero crossings bunch and stretch; raise \(\beta\) and watch the Carson bandwidth readout grow.</p>
+    <div id="w-modulate"></div>
+  </div>
+</div>
+
+<h2 id="noise">5. Noise — the adversary, quantified</h2>
+
+<h3 id="thermal">5.1 Thermal noise: N = kTB</h3>
+<p>Every resistor at temperature \(T\) generates thermal noise (Johnson–Nyquist noise, <span class="de">Wärmerauschen</span>, Module 13) — the Brownian motion of its electrons. The available noise power in a bandwidth \(B\) is beautifully simple:</p>
+\[ \boxed{\,N = k\,T\,B\,}, \qquad k = 1.38\cdot 10^{-23}\,\mathrm{J/K}. \]
+<p>At the reference temperature \(T_0 = 290\,\mathrm{K}\): \(kT_0 = 4.0\cdot10^{-21}\,\mathrm{W/Hz} = -174\,\mathrm{dBm/Hz}\) — a number every RF engineer knows by heart. Worked numbers for a 20 MHz WiFi channel:</p>
+\[ N = -174\,\mathrm{dBm/Hz} + 10\log_{10}(20\cdot10^6)\,\mathrm{dB} = -174 + 73 = -101\,\mathrm{dBm} \approx 0.08\,\mathrm{pW}. \]
+<p>If your laptop receives a −70 dBm WiFi signal, the physics-given <strong>signal-to-noise ratio</strong> (<span class="de">Signal-Rausch-Abstand</span>) is \(\mathrm{SNR} = -70-(-101) = 31\,\mathrm{dB}\) — before the receiver adds its own noise. Other noise sources (shot noise in junctions, flicker noise, man-made interference) add on top, but \(kTB\) is the floor nature never waives.</p>
+
+<h3 id="nf">5.2 Noise figure and the Friis formula — why the LNA comes first</h3>
+<p>A real amplifier amplifies the input noise <em>and adds its own</em>. Its <strong>noise figure</strong> (<span class="de">Rauschzahl</span>) \(F\) says by what factor it degrades the SNR: \(F = \mathrm{SNR_{in}}/\mathrm{SNR_{out}}\) (as a ratio; NF \(= 10\log_{10}F\) in dB). For a cascade of stages with gains \(G_i\) and noise factors \(F_i\), Friis' formula gives</p>
+\[ \boxed{\,F_{\text{total}} = F_1 + \frac{F_2 - 1}{G_1} + \frac{F_3 - 1}{G_1 G_2} + \dots\,} \]
+<p>Each later stage's noise is divided by all the gain before it. <strong>Consequence:</strong> the first stage dominates. Numbers: a low-noise amplifier (<span class="de">rauscharmer Vorverstärker</span>, LNA) with NF = 1 dB (\(F_1 = 1.26\)), gain 20 dB (\(G_1 = 100\)), followed by a noisy mixer with NF = 8 dB (\(F_2 = 6.3\)):</p>
+\[ F = 1.26 + \frac{6.3 - 1}{100} = 1.31 \;\Rightarrow\; \mathrm{NF} = 1.2\,\mathrm{dB}. \]
+<p>Swap the order and \(F = 6.3 + (1.26-1)/G_{mixer} \approx 6.4\) → NF ≈ 8 dB: a 7 dB catastrophe, identical parts. This is why the LNA of a satellite dish sits <em>at the dish</em> (in the LNB), not at the TV end of 20 m of lossy cable — attenuation before the first amplifier adds dB-for-dB to the noise figure.</p>
+
+<h3 id="awgn">5.3 The AWGN channel model</h3>
+<p>For analysis we abstract the channel as <strong>AWGN</strong> — additive white Gaussian noise: \(r(t) = s(t) + n(t)\), with \(n(t)\) white (flat spectral density \(N_0/2\)) and Gaussian (Central Limit Theorem: it is the sum of countless independent electron jitters, Module 13). AWGN is the fruit-fly of communications: simple enough to compute everything, realistic enough for satellite, deep-space and cable links. Mobile radio adds multipath fading on top (Section 11).</p>
+
+<div class="box pitfall">
+  <div class="box-title"><span class="ic">🚫</span>Classic pitfall: dB, dBm, and adding them</div>
+  <p>dBm is an absolute power level (referenced to 1 mW); dB is a <em>ratio</em>. You may add dB to dBm (gain applied to a level) but never dBm to dBm — “−70 dBm + (−101 dBm)” is nonsense; two −70 dBm signals sum to −67 dBm (powers add, \(+3\,\mathrm{dB}\)). In exams, convert to linear when in doubt: \(P/\mathrm{mW} = 10^{(x\,\mathrm{dBm})/10}\).</p>
+</div>
+
+<h2 id="digital">6. Digital modulation — bits, symbols, constellations</h2>
+
+<h3 id="symbols">6.1 From bits to waveforms</h3>
+<p>Digital transmission sends a <em>discrete</em> alphabet: the bit stream is chopped into groups of \(\log_2 M\) bits, each group selects one of \(M\) <strong>symbols</strong>, and each symbol is one allowed combination of carrier amplitude and phase, held for a symbol duration \(T_s\). Two rates must never be confused:</p>
+\[ \text{symbol rate } R_s = \frac{1}{T_s} \;\;[\mathrm{Baud}], \qquad \text{bit rate } R_b = R_s \cdot \log_2 M \;\;[\mathrm{bit/s}]. \]
+<p>Bandwidth is governed by the <em>symbol</em> rate (Section 8). So to push more bits through fixed bandwidth, you enlarge the alphabet \(M\) — packing symbols closer together.</p>
+
+<h3 id="constellations">6.2 The constellation diagram — THE picture of digital communications</h3>
+<p>Write each symbol as \(s(t) = I\cos(2\pi f_c t) - Q\sin(2\pi f_c t)\): a point \((I, Q)\) in the complex plane (the phasor language of Module 12, frozen per symbol). Plotting all \(M\) allowed points gives the <strong>constellation diagram</strong> (<span class="de">Konstellationsdiagramm</span>):</p>
+<ul>
+  <li><strong>ASK / OOK</strong> (on-off keying): two amplitudes, 0 and 1 — how the very first digital radio and today's cheapest remote controls work; also, in intensity form, most fiber optics.</li>
+  <li><strong>BPSK</strong>: two phases, \(\pm 1\) on the real axis. 1 bit/symbol, maximally robust — used by GPS and deep-space probes.</li>
+  <li><strong>QPSK</strong>: four phases (corners of a square), 2 bit/symbol at the <em>same</em> error rate per bit as BPSK — a free lunch, which is why almost nothing uses BPSK when QPSK is available.</li>
+  <li><strong>16 / 64 / 256-QAM</strong> (quadrature amplitude modulation, <span class="de">Quadraturamplitudenmodulation</span>): square grids of 16/64/256 points, 4/6/8 bit/symbol.</li>
+</ul>
+<p>The trade-off is geometric: with fixed average power, more points means smaller distances between neighbors, so less noise suffices to push a received point across a decision boundary. <strong>Denser = faster but noise-hungrier.</strong> Quantitatively, each step 16→64→256-QAM costs roughly 6 dB more required SNR for the same symbol-error rate.</p>
+
+<div class="widget">
+  <div class="w-head"><span class="ic">🧪</span>Interactive — constellations under noise <span class="w-tag">simulation</span></div>
+  <div class="w-body">
+    <p class="small mt0">600 received symbols with Gaussian noise clouds around the ideal points (rings). Faint lines are the decision boundaries; symbols that crossed into a wrong region are highlighted in red and counted in the SER readout. Try 64-QAM at 18 dB (a mess), then the same SNR with QPSK (flawless) — that comparison <em>is</em> adaptive modulation.</p>
+    <div id="w-constellation"></div>
+  </div>
+</div>
+
+<div class="box key">
+  <div class="box-title"><span class="ic">🔑</span>Key idea: what your WiFi actually does</div>
+  <p>Your router measures the channel every few milliseconds and picks the densest constellation the current SNR supports — QPSK across the garden, 256-QAM next to the router (WiFi 6 dares 1024-QAM at short range). Move your laptop and the link rate changes not because "the WiFi is weak" but because the modem has rationally retreated to a sparser constellation. LTE/5G do exactly the same (adaptive modulation and coding, AMC).</p>
+</div>
+
+<h2 id="receiver">7. Receiving bits: matched filter, decisions, BER</h2>
+
+<h3 id="matched">7.1 The matched filter — correlate with what you sent</h3>
+<p>Buried in noise, how do you best detect a known pulse shape \(g(t)\)? Filter the received signal with the time-reversed pulse itself, \(h(t) = g(T_s - t)\) — the <strong>matched filter</strong> (<span class="de">signalangepasstes Filter</span>), equivalent to correlating the input with a template of what the transmitter sent. It maximizes the sampling-instant SNR over <em>all</em> linear filters, achieving \(\mathrm{SNR}_{\max} = 2E_s/N_0\) — depending only on the symbol <em>energy</em> \(E_s\), not the pulse shape. Intuition: the filter re-aligns and adds up every part of the signal coherently, while the noise adds only incoherently (random-walk style).</p>
+
+<h3 id="ber">7.2 Decision regions and the BER waterfall</h3>
+<p>After matched filtering and sampling, the receiver holds a noisy constellation point and simply picks the nearest ideal point — <strong>decision regions</strong> (<span class="de">Entscheidungsgebiete</span>) are the cells around each constellation point. An error occurs when Gaussian noise carries the point across a boundary; the probability is governed by the Gaussian tail function \(Q(x)\) (<span class="de">Q-Funktion</span>). For BPSK:</p>
+\[ P_b = Q\!\left(\sqrt{\tfrac{2E_b}{N_0}}\right), \]
+<p>with \(E_b\) the energy spent per bit and \(N_0\) the noise density — \(E_b/N_0\) is the universal "SNR per bit" currency for comparing schemes. Plot \(P_b\) against \(E_b/N_0\) in dB and you get the famous <strong>waterfall curves</strong>: flat and hopeless at low SNR, then plunging many decades per few dB. BPSK needs ≈ 9.6 dB for \(P_b = 10^{-5}\); 16-QAM needs ≈ 4 dB more; each denser QAM shifts the waterfall right. Channel coding (Section 10) shifts it <em>left</em> — that shift is the "coding gain".</p>
+
+<h2 id="isi">8. ISI and pulse shaping — the art of not smearing</h2>
+
+<h3 id="isi-problem">8.1 Why rectangular pulses fail</h3>
+<p>A crisp rectangular symbol pulse has a \(\mathrm{sinc}\)-shaped spectrum stretching to infinity (Module 12). A real channel is band-limited; it truncates that spectrum, and the time-domain pulse smears into its neighbors: <strong>intersymbol interference</strong> (ISI, <span class="de">Zwischensymbolinterferenz</span>) — the received value of each symbol is contaminated by the tails of previous and following ones. At high symbol rates this, not noise, is often the binding constraint.</p>
+
+<h3 id="nyquist-isi">8.2 Nyquist's criterion and the raised cosine</h3>
+<p>Nyquist (1928) asked: which pulse shapes have tails that pass through <em>zero at every other symbol's sampling instant</em>? Answer: any pulse whose spectrum folds (aliases) to a constant when sampled at rate \(R_s\) — zero-ISI needs at least \(B \ge R_s/2\), and the minimum-bandwidth solution is the ideal \(\mathrm{sinc}\) pulse. But sinc decays as \(1/t\) and any timing error unleashes huge ISI. Practice uses the <strong>raised-cosine</strong> family (<span class="de">Kosinus-roll-off-Filter</span>) with roll-off factor \(\alpha \in [0,1]\):</p>
+\[ \boxed{\,B = \frac{R_s}{2}(1+\alpha)\,} \qquad \text{(baseband; RF bandwidth } = R_s(1+\alpha)). \]
+<p>\(\alpha = 0\) is the fragile sinc; \(\alpha = 1\) doubles the bandwidth but gives fast-decaying, timing-tolerant tails. Real systems pick \(\alpha \approx 0.2\dots0.35\) and split the filtering into a root-raised-cosine at each end — so the <em>cascade</em> is raised-cosine <em>and</em> each half is the other's matched filter. Elegant.</p>
+
+<h3 id="eye">8.3 The eye diagram — the engineer's oscilloscope diagnostic</h3>
+<p>Overlay the received waveform in slices of two symbol periods and an <strong>eye diagram</strong> (<span class="de">Augendiagramm</span>) appears. Open eye: sample anywhere near the middle and decide safely. ISI, noise and jitter each close the eye in a characteristic way — one oscilloscope picture diagnoses the whole link.</p>
+
+<div class="widget">
+  <div class="w-head"><span class="ic">🧪</span>Interactive — eye diagram &amp; raised-cosine roll-off <span class="w-tag">simulation</span></div>
+  <div class="w-body">
+    <p class="small mt0">Random ±1 symbols through a raised-cosine pulse, sliced into overlapping 2-symbol windows. At the exact sampling instant (dashed line, τ = 0) the eye is fully open for <em>any</em> α — Nyquist's promise. Now add a timing error τ and lower α toward 0: the slowly decaying sinc tails pile up and the eye slams shut. This is why nobody uses α = 0.</p>
+    <div id="w-eye"></div>
+  </div>
+</div>
+
+<h2 id="info-theory">9. Information theory — the crown of the discipline</h2>
+
+<h3 id="entropy">9.1 Information and entropy — measuring surprise</h3>
+<p>Shannon's first stroke of genius: information is <em>surprise</em>. A message that was certain anyway carries none. The information content of a symbol with probability \(p\) is</p>
+\[ I = \log_2 \frac{1}{p} \;\;[\mathrm{bit}], \]
+<p>and the average over a source's alphabet is its <strong>entropy</strong> (<span class="de">Entropie</span>):</p>
+\[ \boxed{\,H = \sum_i p_i \log_2 \frac{1}{p_i}\,} \quad [\mathrm{bit/symbol}]. \]
+<p>Worked source example — a weather station emitting one symbol per day: ☀ with \(p=0.5\), ☁ with \(p=0.25\), 🌧 with \(p=0.125\), ❄ with \(p=0.125\):</p>
+\[ H = 0.5\cdot 1 + 0.25 \cdot 2 + 0.125\cdot 3 + 0.125 \cdot 3 = 1.75\ \mathrm{bit/symbol}, \]
+<p>less than the \(\log_2 4 = 2\) bits a naive fixed-length code would spend — because the source is predictable. (Uniform probabilities maximize entropy; certainty gives \(H=0\).)</p>
+
+<h3 id="source-coding">9.2 Source coding — compressing to the entropy limit</h3>
+<p>Shannon's <strong>source coding theorem</strong> (<span class="de">Quellencodierungstheorem</span>): a source of entropy \(H\) can be encoded losslessly with an average of <em>arbitrarily close to, but never fewer than,</em> \(H\) bits per symbol. Entropy is the hard floor of compression. Huffman's algorithm (1952) builds an optimal prefix-free code by repeatedly merging the two least probable symbols. For our weather source:</p>
+<div class="table-wrap">
+<table class="data">
+<thead><tr><th>Symbol</th><th>\(p_i\)</th><th>Huffman code</th><th>Length</th><th>\(p_i \cdot l_i\)</th></tr></thead>
+<tbody>
+<tr><td>☀ sun</td><td>0.5</td><td><code>0</code></td><td>1</td><td>0.5</td></tr>
+<tr><td>☁ clouds</td><td>0.25</td><td><code>10</code></td><td>2</td><td>0.5</td></tr>
+<tr><td>🌧 rain</td><td>0.125</td><td><code>110</code></td><td>3</td><td>0.375</td></tr>
+<tr><td>❄ snow</td><td>0.125</td><td><code>111</code></td><td>3</td><td>0.375</td></tr>
+</tbody>
+</table>
+</div>
+<p>Average length \(\bar{L} = 1.75\) bit/symbol \(= H\) exactly — Huffman hits the entropy floor whenever the probabilities are powers of ½. ZIP, PNG, MP3, H.265: all are elaborate machines for approaching \(H\) (MP3 additionally <em>lowers</em> \(H\) first by discarding what your ear cannot hear — lossy coding).</p>
+
+<h3 id="capacity">9.3 Channel capacity — the speed limit of the universe’s channels</h3>
+<p>The masterstroke. For the band-limited AWGN channel, the <strong>Shannon–Hartley capacity</strong> (<span class="de">Kanalkapazität</span>) is</p>
+\[ \boxed{\,C = B \cdot \log_2\!\left(1 + \mathrm{SNR}\right)\,} \quad [\mathrm{bit/s}]. \]
+<p>And its meaning is <em>astonishing</em>: for any rate \(R &lt; C\) there exist codes making the error probability <strong>arbitrarily small</strong> — not "small", but as close to zero as you like, over a noisy channel, at finite power. Conversely, above \(C\), reliable communication is impossible, full stop. Before 1948 engineers believed noise imposed a quality-vs-speed trade-off forever; Shannon proved you can have perfection, below a hard speed limit. Note the asymmetry: capacity grows <em>linearly</em> in bandwidth but only <em>logarithmically</em> in power — doubling \(B\) doubles \(C\); doubling \(P\) adds just 1 bit/s/Hz at high SNR. That is why the industry fights for spectrum, not for bigger amplifiers.</p>
+
+<div class="example">
+  <div class="ex-head"><span class="ex-tag">Worked example</span> Capacity of a 20 MHz, 30 dB channel</div>
+  <div class="ex-body">
+    <p>A WiFi link has \(B = 20\,\mathrm{MHz}\) and SNR = 30 dB. Find \(C\) and compare with a real modem.</p>
+    <div class="step"><span class="step-label">Step 1 — SNR to linear:</span> \( \mathrm{SNR} = 10^{30/10} = 1000 \).</div>
+    <div class="step"><span class="step-label">Step 2 — capacity:</span>
+      \( C = 20\cdot10^6 \cdot \log_2(1001) \approx 20\cdot10^6 \cdot 9.97 \approx 199\,\mathrm{Mbit/s} \).</div>
+    <div class="step"><span class="step-label">Step 3 — reality check:</span> a single-stream 802.11n radio in 20 MHz peaks at 72 Mbit/s — about 36 % of capacity. Modern WiFi 6 with LDPC codes and 1024-QAM gets much closer to the line. Nobody gets <em>above</em> it. Ever.</div>
+    <div class="result-line">\(C \approx 199\,\mathrm{Mbit/s}\) — ≈ 10 bit/s per Hz of spectrum at 30 dB.</div>
+  </div>
+</div>
+
+<div class="table-wrap">
+<table class="data">
+<thead><tr><th>Channel</th><th>Bandwidth</th><th>Typical SNR</th><th>Shannon capacity</th><th>Real systems</th></tr></thead>
+<tbody>
+<tr><td>Analog phone line</td><td>3.1 kHz</td><td>35 dB</td><td>≈ 36 kbit/s</td><td>V.34 modem: 33.6 kbit/s (!)</td></tr>
+<tr><td>ADSL2+ copper pair</td><td>2.2 MHz</td><td>~25 dB</td><td>≈ 18 Mbit/s</td><td>up to 24 Mbit/s (higher SNR near DSLAM)</td></tr>
+<tr><td>LTE, 20 MHz</td><td>20 MHz</td><td>~20 dB</td><td>≈ 133 Mbit/s</td><td>150 Mbit/s peak (needs 2×2 MIMO)</td></tr>
+<tr><td>5G NR, 100 MHz @ 3.6 GHz</td><td>100 MHz</td><td>~25 dB</td><td>≈ 830 Mbit/s</td><td>~1 Gbit/s (more with MIMO layers)</td></tr>
+</tbody>
+</table>
+</div>
+<p>The V.34 telephone modem sitting within a whisker of its channel's capacity is one of engineering's quiet triumphs — and MIMO systems "beating" the single-channel number are not violating Shannon: they create <em>multiple parallel channels</em> (Section 11).</p>
+
+<p>One more jewel: let \(B \to \infty\) at fixed power and the capacity saturates; rearranging yields a minimum energy per bit for reliable communication at all:</p>
+\[ \frac{E_b}{N_0} \ge \ln 2 = 0.693 \;\;\widehat{=}\; -1.59\,\mathrm{dB} \]
+<p>— the <strong>Shannon limit</strong>. Modern LDPC/turbo codes operate within a few tenths of a dB of it.</p>
+
+<div class="widget">
+  <div class="w-head"><span class="ic">🧪</span>Interactive — the Shannon capacity <span class="w-tag">simulation</span></div>
+  <div class="w-body">
+    <p class="small mt0">Capacity versus SNR for your chosen bandwidth; the marked point is your channel. Note the logarithmic flattening: from 30 dB to 40 dB (ten times the power!) buys only ≈ 33 % more rate, while doubling \(B\) doubles everything. Reference lines show real-system rates for comparison.</p>
+    <div id="w-capacity"></div>
+  </div>
+</div>
+
+<h2 id="coding">10. Channel coding — spending bits to buy reliability</h2>
+
+<p>Shannon proved good codes <em>exist</em> but not how to build them; the next 60 years of coding theory chased that promise. <strong>Channel coding</strong> (<span class="de">Kanalcodierung</span>) adds structured redundancy so the receiver can detect and correct errors. A code mapping \(k\) data bits into \(n\) coded bits has <strong>code rate</strong> \(R_c = k/n\).</p>
+
+<h3 id="repetition">10.1 The repetition code — and why it is terrible</h3>
+<p>Send every bit three times, decide by majority. With raw bit-error probability \(p = 10^{-2}\), a block fails only if ≥ 2 of 3 bits flip:</p>
+\[ P_e = 3p^2(1-p) + p^3 \approx 3\cdot10^{-4}. \]
+<p>Errors drop 30-fold — but the rate drops to \(R_c = 1/3\). To reach \(10^{-9}\) you would need ever more repetitions, with rate crawling toward zero. Yet Shannon says rates near \(C\) (a healthy constant!) suffice for <em>any</em> reliability. Repetition wastes its redundancy protecting each bit in isolation; good codes protect many bits <em>jointly</em>, so that each parity bit says something about the whole block.</p>
+
+<h3 id="hamming">10.2 Hamming(7,4) — jointly protecting a block, fully worked</h3>
+<p>Richard Hamming (1950, annoyed that his weekend batch jobs crashed on single bit errors) designed the first single-error-<em>correcting</em> code. Hamming(7,4) packs \(k=4\) data bits \(d_1 d_2 d_3 d_4\) and 3 parity bits into \(n=7\), rate \(R_c = 4/7 \approx 0.57\). Place parity bits at positions 1, 2, 4 (the powers of two); each parity bit covers the positions whose binary index contains its power:</p>
+\[ p_1 = d_1 \oplus d_2 \oplus d_4, \qquad p_2 = d_1 \oplus d_3 \oplus d_4, \qquad p_3 = d_2 \oplus d_3 \oplus d_4 \]
+<p>(⊕ = XOR; codeword order \(p_1 p_2 d_1 p_3 d_2 d_3 d_4\)). The magic: recomputing the three parity checks at the receiver yields a 3-bit <strong>syndrome</strong> (<span class="de">Syndrom</span>) that <em>spells out the binary address of the flipped bit</em>.</p>
+
+<figure>
+  <div class="fig-frame">
+  <svg class="diagram" viewBox="0 0 560 300" role="img" aria-label="Hamming(7,4) Venn diagram: three parity circles covering four data bits">
+    <circle cx="235" cy="115" r="92" fill="var(--accent)" fill-opacity="0.07" stroke="var(--accent)" stroke-width="2"/>
+    <circle cx="325" cy="115" r="92" fill="var(--accent-2)" fill-opacity="0.07" stroke="var(--accent-2)" stroke-width="2"/>
+    <circle cx="280" cy="192" r="92" fill="var(--text-soft)" fill-opacity="0.07" stroke="var(--text-soft)" stroke-width="2"/>
+    <text x="140" y="52" font-size="13" fill="var(--accent)">circle p₁</text>
+    <text x="420" y="52" font-size="13" fill="var(--accent-2)" text-anchor="end">circle p₂</text>
+    <text x="280" y="296" font-size="13" fill="var(--text-soft)" text-anchor="middle">circle p₃</text>
+    <!-- regions -->
+    <text x="188" y="105" font-size="15" text-anchor="middle">p₁</text>
+    <text x="372" y="105" font-size="15" text-anchor="middle">p₂</text>
+    <text x="280" y="248" font-size="15" text-anchor="middle">p₃</text>
+    <text x="280" y="95" font-size="15" text-anchor="middle">d₁</text>
+    <text x="222" y="180" font-size="15" text-anchor="middle">d₂</text>
+    <text x="338" y="180" font-size="15" text-anchor="middle">d₃</text>
+    <text x="280" y="150" font-size="15" text-anchor="middle" font-weight="700">d₄</text>
+  </svg>
+  </div>
+  <figcaption><b>Fig. 10.1</b> — Hamming(7,4) as a Venn diagram: each parity bit makes its circle contain an even number of 1s. A single flipped bit violates a unique combination of circles — locating it exactly.</figcaption>
+</figure>
+
+<div class="example">
+  <div class="ex-head"><span class="ex-tag">Worked example</span> Hamming(7,4): encode, corrupt, correct</div>
+  <div class="ex-body">
+    <p>Encode the data nibble \(d_1d_2d_3d_4 = 1011\), flip one bit in transit, and let the receiver repair it.</p>
+    <div class="step"><span class="step-label">Step 1 — parity bits:</span>
+      \( p_1 = 1{\oplus}0{\oplus}1 = 0 \), \( p_2 = 1{\oplus}1{\oplus}1 = 1 \), \( p_3 = 0{\oplus}1{\oplus}1 = 0 \).
+      Codeword (positions 1…7 = \(p_1 p_2 d_1 p_3 d_2 d_3 d_4\)): <b>0110011</b>.</div>
+    <div class="step"><span class="step-label">Step 2 — the channel strikes:</span> position 5 (\(d_2\)) flips → received <b>0110<u>1</u>11</b>.</div>
+    <div class="step"><span class="step-label">Step 3 — syndrome:</span> recompute each check over its circle, including the parity bit itself:<br>
+      \( s_1 = p_1{\oplus}d_1{\oplus}d_2{\oplus}d_4 = 0{\oplus}1{\oplus}1{\oplus}1 = 1 \) (violated)<br>
+      \( s_2 = p_2{\oplus}d_1{\oplus}d_3{\oplus}d_4 = 1{\oplus}1{\oplus}1{\oplus}1 = 0 \) (ok)<br>
+      \( s_3 = p_3{\oplus}d_2{\oplus}d_3{\oplus}d_4 = 0{\oplus}1{\oplus}1{\oplus}1 = 1 \) (violated)</div>
+    <div class="step"><span class="step-label">Step 4 — decode the syndrome:</span> read \((s_3 s_2 s_1) = 101_2 = 5\) — the corrupted position, directly as a binary number. Flip bit 5 back → <b>0110011</b> ✓, extract \(1011\).</div>
+    <div class="result-line">One flipped bit located and corrected using only 3 extra bits for 4 data bits. Two flips, however, would mislead the decoder — Hamming(7,4) corrects 1 error or detects 2 (minimum distance 3).</div>
+  </div>
+</div>
+
+<h3 id="modern-codes">10.3 Coding gain and the modern arsenal</h3>
+<p>A code's <strong>coding gain</strong> (<span class="de">Codierungsgewinn</span>) is how many dB less \(E_b/N_0\) you need for a target BER compared to uncoded transmission — the leftward shift of the waterfall curve. The modern lineup, name and role:</p>
+<div class="table-wrap">
+<table class="data">
+<thead><tr><th>Code family</th><th>Decoding</th><th>Era</th><th>Where it runs today</th></tr></thead>
+<tbody>
+<tr><td>Convolutional codes (<span class="de">Faltungscodes</span>)</td><td>Viterbi algorithm (1967)</td><td>1960s–</td><td>GSM, GPS, DVB legacy, WiFi legacy rates</td></tr>
+<tr><td>Reed–Solomon (block, symbol-based)</td><td>algebraic</td><td>1960</td><td>CD/DVD, QR codes, DVB, space probes (with conv. inner code)</td></tr>
+<tr><td>Turbo codes</td><td>iterative, two decoders gossiping</td><td>1993</td><td>UMTS/3G, LTE data channels — first to graze the Shannon limit</td></tr>
+<tr><td>LDPC (low-density parity-check)</td><td>iterative belief propagation</td><td>1963/re-1996</td><td>WiFi 5/6, 5G data, DVB-S2, 10GBASE-T — within ~0.5 dB of Shannon</td></tr>
+<tr><td>Polar codes</td><td>successive cancellation</td><td>2009</td><td>5G control channels — first <em>provably</em> capacity-achieving construction</td></tr>
+</tbody>
+</table>
+</div>
+<p>Gallager invented LDPC in his 1963 PhD thesis; it was forgotten for 30 years because the decoding was computationally hopeless. Moore's law resurrected it — complexity, the third corner of the resource triangle, got cheap.</p>
+
+<h2 id="multiplex">11. Sharing the channel — multiplexing, OFDM, MIMO</h2>
+
+<h3 id="fdm-tdm-cdma">11.1 Three orthogonalities: frequency, time, code</h3>
+<p><strong>FDM</strong> (<span class="de">Frequenzmultiplex</span>): each user gets a frequency slice — classic radio dials, analog telephony's 12-channel carrier groups, the guard bands paying the rent. <strong>TDM</strong> (<span class="de">Zeitmultiplex</span>): everyone uses the full band, but in rotating time slots — E1 telephone lines (32 slots), GSM (8 slots per carrier); requires tight synchronization. <strong>CDMA</strong> (<span class="de">Codemultiplex</span>): all users transmit simultaneously over the full band, each spreading its data with a unique fast pseudo-random code; the receiver correlates with "its" code and all other users average out as mild noise. Spreading also buries the signal below the noise floor and shrugs off narrowband interference — invented for military radios, then powering 3G/UMTS and, in essence, GPS.</p>
+
+<h3 id="ofdm">11.2 OFDM — the winner takes all</h3>
+<p>Radio signals reach the receiver via many paths (direct, wall-reflected, building-diffracted): <strong>multipath</strong> (<span class="de">Mehrwegeausbreitung</span>). Path-delay differences of ~1 µs smear symbols into each other; equivalently, the channel's frequency response develops deep notches — <strong>frequency-selective fading</strong>. For a single fast carrier at 20 Msym/s (50 ns symbols), 1 µs of delay spread means each symbol collides with 20 neighbors. Equalizing that is brutal.</p>
+<p><strong>OFDM</strong> (orthogonal frequency-division multiplexing, <span class="de">orthogonales Frequenzmultiplexverfahren</span>) flips the problem: split the data over <em>hundreds of parallel, slow subcarriers</em> — e.g. 20 MHz → 64 subcarriers of 312.5 kHz each, symbols now 4 µs long, so 1 µs of smear touches only a fraction of each symbol. Prepend each symbol with a <strong>cyclic prefix</strong> (<span class="de">Guard-Intervall</span>) — a copy of its own tail — that absorbs the multipath transient entirely; within each narrow subcarrier the channel is just a complex constant, fixed by one multiplication. Subcarriers are spaced exactly \(1/T_s\) apart, so each one's spectral peak lands on all the others' nulls — overlapping yet orthogonal, no guard bands wasted. Best of all, modulating/demodulating all subcarriers at once is a single (I)FFT — computationally almost free. WiFi, LTE, 5G NR, DVB-T2 and DSL (as DMT) <em>all</em> chose OFDM: it converts an intractable equalization problem into trivial per-subcarrier arithmetic.</p>
+
+<figure>
+  <div class="fig-frame">
+  <svg class="diagram" viewBox="0 0 640 200" role="img" aria-label="OFDM subcarriers: overlapping spectra, each peaking where the neighbors are zero">
+    <line x1="30" y1="160" x2="610" y2="160" stroke="var(--text-soft)" stroke-width="2"/>
+    <text x="600" y="182" font-size="13">f</text>
+    <!-- five overlapping triangle spectra spaced Δf, zero at neighbours' peaks -->
+    <path d="M100 160 L180 50 L260 160" fill="none" stroke="var(--accent)" stroke-width="2"/>
+    <path d="M180 160 L260 50 L340 160" fill="none" stroke="var(--accent-2)" stroke-width="2"/>
+    <path d="M260 160 L340 50 L420 160" fill="none" stroke="var(--accent)" stroke-width="2"/>
+    <path d="M340 160 L420 50 L500 160" fill="none" stroke="var(--accent-2)" stroke-width="2"/>
+    <path d="M420 160 L500 50 L580 160" fill="none" stroke="var(--accent)" stroke-width="2"/>
+    <!-- sampling lines at peaks -->
+    <line x1="180" y1="160" x2="180" y2="50" stroke="var(--text-faint)" stroke-width="1.2" stroke-dasharray="4 4"/>
+    <line x1="260" y1="160" x2="260" y2="50" stroke="var(--text-faint)" stroke-width="1.2" stroke-dasharray="4 4"/>
+    <line x1="340" y1="160" x2="340" y2="50" stroke="var(--text-faint)" stroke-width="1.2" stroke-dasharray="4 4"/>
+    <line x1="420" y1="160" x2="420" y2="50" stroke="var(--text-faint)" stroke-width="1.2" stroke-dasharray="4 4"/>
+    <line x1="500" y1="160" x2="500" y2="50" stroke="var(--text-faint)" stroke-width="1.2" stroke-dasharray="4 4"/>
+    <text x="340" y="30" font-size="13" text-anchor="middle" fill="var(--text-soft)">subcarrier spacing Δf = 1/T_s</text>
+    <path d="M340 165 H420" stroke="var(--text-faint)" stroke-width="1.5"/>
+    <path d="M340 161 V169 M420 161 V169" stroke="var(--text-faint)" stroke-width="1.5"/>
+    <text x="380" y="185" font-size="12" text-anchor="middle" fill="var(--text-faint)">Δf</text>
+  </svg>
+  </div>
+  <figcaption><b>Fig. 11.1</b> — OFDM subcarrier spectra (schematic; real shapes are sinc-like). At each subcarrier's center frequency all other subcarriers pass through zero — the spectra overlap heavily yet do not interfere at the sampling frequencies.</figcaption>
+</figure>
+
+<h3 id="mimo">11.3 MIMO — more antennas, more channels</h3>
+<p><strong>MIMO</strong> (multiple input, multiple output) uses several antennas at both ends. If the multipath environment is rich enough, the matrix channel between \(N_t\) transmit and \(N_r\) receive antennas has multiple independent eigenmodes — effectively <em>parallel spatial channels in the same band at the same time</em>. Capacity scales up to \(\min(N_t, N_r)\)-fold: <strong>spatial multiplexing</strong>. This — not a Shannon violation, but Shannon applied per spatial stream — is how LTE doubles and WiFi quadruples the single-channel numbers. 5G's <strong>massive MIMO</strong> base stations carry 64+ antenna elements and use <strong>beamforming</strong> (<span class="de">Strahlformung</span>): phasing the elements so the radiated energy focuses on each user (Module 21's array theory), boosting SNR and letting many users reuse the same resource blocks in different directions.</p>
+
+<h2 id="systems">12. Systems in practice — the link budget and a grand tour</h2>
+
+<h3 id="linkbudget">12.1 The link budget — one addition that designs the radio</h3>
+<p>Will the link work? Add up, in dB: transmit power, all gains, minus all losses; compare with what the receiver needs. That sum is the <strong>link budget</strong> (<span class="de">Streckenbilanz</span>). The main loss is <strong>free-space path loss</strong> (FSPL, <span class="de">Freiraumdämpfung</span>) — really just the \(1/(4\pi d^2)\) thinning of power over a sphere, referenced to an isotropic antenna:</p>
+\[ \mathrm{FSPL} = 20\log_{10}(d_{\mathrm{km}}) + 20\log_{10}(f_{\mathrm{MHz}}) + 32.44 \;\mathrm{dB}. \]
+
+<div class="example">
+  <div class="ex-head"><span class="ex-tag">Worked example</span> WiFi link budget through the house</div>
+  <div class="ex-body">
+    <p>Router: 20 dBm EIRP (EU legal limit at 2.4 GHz; EIRP = transmit power + antenna gain). Laptop 30 m away, two brick walls in the path (≈ 7 dB each), laptop antenna gain 2 dBi. Receiver sensitivity for 65 Mbit/s (64-QAM, MCS 7): −75 dBm. Does it work?</p>
+    <div class="step"><span class="step-label">Step 1 — free-space path loss:</span>
+      \( \mathrm{FSPL} = 20\log_{10}(0.03) + 20\log_{10}(2400) + 32.44 = -30.5 + 67.6 + 32.4 \approx 69.5\,\mathrm{dB} \).</div>
+    <div class="step"><span class="step-label">Step 2 — total losses:</span> \( 69.5 + 2\cdot 7 = 83.5\,\mathrm{dB} \).</div>
+    <div class="step"><span class="step-label">Step 3 — received power:</span>
+      \( P_r = 20 - 83.5 + 2 = -61.5\,\mathrm{dBm} \).</div>
+    <div class="step"><span class="step-label">Step 4 — margin:</span> \( -61.5 - (-75) = 13.5\,\mathrm{dB} \) of <strong>fade margin</strong> — comfortable; fading dips and a closed door still fit. One more floor (~15 dB) would eat it, and the modem would down-shift to QPSK: fewer Mbit/s, same physics.</div>
+    <div class="result-line">Link closes with ≈ 13.5 dB margin at 65 Mbit/s. Every radio system ever fielded was designed by exactly this addition.</div>
+  </div>
+</div>
+
+<h3 id="tour">12.2 Grand tour of the systems around you</h3>
+<div class="table-wrap">
+<table class="data">
+<thead><tr><th>System</th><th>Spectrum</th><th>Modulation / access</th><th>The one thing to know</th></tr></thead>
+<tbody>
+<tr><td>AM radio (MW/LW)</td><td>0.15–1.6 MHz</td><td>AM, envelope detection</td><td>1920s tech, still on air; ground wave covers whole countries at night</td></tr>
+<tr><td>FM radio</td><td>87.5–108 MHz</td><td>WBFM, β ≈ 5</td><td>bandwidth traded for 20 dB of quiet; capture effect</td></tr>
+<tr><td>DAB+ / DVB-T2</td><td>VHF/UHF</td><td>OFDM + QAM, LDPC/RS</td><td>digital broadcast: one frequency network-wide thanks to the cyclic prefix</td></tr>
+<tr><td>GSM (2G, 1991)</td><td>900/1800 MHz</td><td>GMSK, TDMA (8 slots)</td><td>digital voice + the accidental killer app: SMS</td></tr>
+<tr><td>UMTS (3G, 2001)</td><td>2.1 GHz</td><td>WCDMA, turbo codes</td><td>code multiplex; mobile internet begins</td></tr>
+<tr><td>LTE (4G, 2010)</td><td>0.7–2.6 GHz, ≤20 MHz</td><td>OFDMA + up to 256-QAM, MIMO</td><td>all-IP; the OFDM+MIMO+AMC blueprint</td></tr>
+<tr><td>5G NR (2019)</td><td>0.6–3.7 GHz + mmWave</td><td>scalable OFDM, LDPC + polar</td><td>massive MIMO beamforming; ms-latency slicing</td></tr>
+<tr><td>WiFi (802.11ax)</td><td>2.4/5/6 GHz</td><td>OFDMA, ≤1024-QAM, LDPC</td><td>adaptive modulation every packet; listen-before-talk access</td></tr>
+<tr><td>Bluetooth</td><td>2.4 GHz</td><td>GFSK, frequency hopping</td><td>1600 hops/s dodge WiFi; ~1 mW reaches ~10 m</td></tr>
+<tr><td>GPS</td><td>1.575 GHz</td><td>BPSK + CDMA spreading</td><td>received at −130 dBm, <em>below</em> the noise floor — 43 dB of spreading gain digs it out</td></tr>
+</tbody>
+</table>
+</div>
+
+<div class="box history">
+  <div class="box-title"><span class="ic">📜</span>Where you'll meet all this again</div>
+  <p>Antennas, transmission lines and impedance matching — the physical layer under every link budget — are Module 21. The DSP that implements all of this (FFTs for OFDM, digital filters as pulse shapers) builds on Modules 12 and 13. And the "match for maximum power transfer" rule from Module 04 is why every RF chain in this module is a 50 Ω world.</p>
+</div>
+
+<h2 id="summary">13. Formula summary — <span class="de">Formelsammlung</span></h2>
+
+<div class="table-wrap">
+<table class="data">
+<thead><tr><th>Concept</th><th>Formula</th><th>Remember as</th></tr></thead>
+<tbody>
+<tr><td>AM signal</td><td>\( s = \hat{U}_c(1+m\cos\omega_m t)\cos\omega_c t \)</td><td>message = envelope; \(m \le 1\)!</td></tr>
+<tr><td>AM bandwidth / power</td><td>\( B = 2f_m;\;\; P_{SB}/P_{tot} = \tfrac{m^2}{2+m^2} \)</td><td>carrier carries no info (≤ 33 % useful)</td></tr>
+<tr><td>FM index &amp; Carson</td><td>\( \beta = \Delta f/f_m;\;\; B \approx 2f_m(\beta+1) \)</td><td>bandwidth bought, noise sold</td></tr>
+<tr><td>Thermal noise</td><td>\( N = kTB \), \(-174\) dBm/Hz @ 290 K</td><td>the floor nature never waives</td></tr>
+<tr><td>Friis cascade</td><td>\( F = F_1 + \tfrac{F_2-1}{G_1} + \dots \)</td><td>the first stage decides — LNA first</td></tr>
+<tr><td>Rates</td><td>\( R_b = R_s \log_2 M \)</td><td>baud ≠ bit/s; bandwidth follows \(R_s\)</td></tr>
+<tr><td>BPSK error rate</td><td>\( P_b = Q(\sqrt{2E_b/N_0}) \)</td><td>the waterfall curve</td></tr>
+<tr><td>Nyquist / raised cosine</td><td>\( B = \tfrac{R_s}{2}(1+\alpha) \) (baseband)</td><td>zero ISI at the sampling instants</td></tr>
+<tr><td>Entropy</td><td>\( H = \sum p_i \log_2(1/p_i) \)</td><td>compression floor (source coding)</td></tr>
+<tr><td>Channel capacity</td><td>\( C = B\log_2(1+\mathrm{SNR}) \)</td><td>linear in B, log in power</td></tr>
+<tr><td>Shannon limit</td><td>\( E_b/N_0 \ge \ln 2 \;\widehat{=}\; -1.59\,\mathrm{dB} \)</td><td>minimum energy per bit, ever</td></tr>
+<tr><td>Hamming(7,4)</td><td>syndrome = address of flipped bit</td><td>corrects 1, detects 2 (d = 3)</td></tr>
+<tr><td>Free-space path loss</td><td>\( 20\log d_{km} + 20\log f_{MHz} + 32.44 \)</td><td>+6 dB per doubling of distance</td></tr>
+</tbody>
+</table>
+</div>
+
+<h2 id="exercises">14. Exercises</h2>
+<p>Work these on paper before opening the solutions — the struggle is the learning.</p>
+
+<div class="exercise">
+  <p class="ex-q"><span class="ex-num">E1</span>Compute the \(\lambda/4\) antenna length for (a) direct transmission of a 10 kHz audio signal, (b) the same audio modulated onto a 100 MHz FM carrier. Comment. <span class="diff easy">easy</span></p>
+  <details><summary>Show solution</summary>
+    <div class="solution">
+      (a) \( \lambda = c/f = 3\cdot10^8/10^4 = 30\,\mathrm{km} \) → \(\lambda/4 = 7.5\,\mathrm{km}\) — a tower taller than Mount Everest is high.
+      (b) \( \lambda = 3\,\mathrm{m} \) → \(\lambda/4 = 75\,\mathrm{cm}\) — a car whip antenna.
+      Same information, 100 000× smaller antenna: this single ratio is the founding business case for modulation.
+    </div>
+  </details>
+</div>
+
+<div class="exercise">
+  <p class="ex-q"><span class="ex-num">E2</span>Find the thermal noise floor (290 K) of a 20 MHz WiFi channel in dBm. The receiver has NF = 6 dB and needs SNR = 25 dB for 64-QAM. What is its sensitivity? <span class="diff easy">easy</span></p>
+  <details><summary>Show solution</summary>
+    <div class="solution">
+      Floor: \( -174 + 10\log_{10}(2\cdot10^7) = -174 + 73 = -101\,\mathrm{dBm} \).
+      The receiver behaves as if the floor were \( -101 + 6 = -95\,\mathrm{dBm} \) (noise figure).
+      Sensitivity: \( -95 + 25 = -70\,\mathrm{dBm} \). Sanity check: real 802.11 datasheets quote −70…−75 dBm for 64-QAM rates — our three-line estimate lands right on top of them.
+    </div>
+  </details>
+</div>
+
+<div class="exercise">
+  <p class="ex-q"><span class="ex-num">E3</span>A narrowband FM voice radio uses \(\Delta f = 5\,\mathrm{kHz}\) and \(f_m = 3\,\mathrm{kHz}\). Find \(\beta\) and the Carson bandwidth. Does it fit the standard 25 kHz channel raster? How many such voice channels fit where ONE broadcast-FM station sits? <span class="diff med">medium</span></p>
+  <details><summary>Show solution</summary>
+    <div class="solution">
+      \( \beta = 5/3 \approx 1.67 \); \( B \approx 2(5+3) = 16\,\mathrm{kHz} \) — fits a 25 kHz raster with guard space. ✓
+      Broadcast FM occupies ≈ 200 kHz (Section 4), so \(200/25 = 8\) two-way voice channels fit in one music station's slot. Spectrum regulators perform exactly this arithmetic all day.
+    </div>
+  </details>
+</div>
+
+<div class="exercise">
+  <p class="ex-q"><span class="ex-num">E4</span>A receive chain: antenna cable with 3 dB loss (a passive loss of \(L\) has \(F = L\), \(G = 1/L\)), then an LNA (NF 1 dB, gain 20 dB), then a mixer (NF 10 dB). Compute the total NF. Then move the LNA in front of the cable (mast-mounted) and recompute. <span class="diff med">medium</span></p>
+  <details><summary>Show solution</summary>
+    <div class="solution">
+      Linear values: cable \(F=2, G=0.5\); LNA \(F=1.26, G=100\); mixer \(F=10\).
+      <br>Cable first: \( F = 2 + \frac{1.26-1}{0.5} + \frac{10-1}{0.5 \cdot 100} = 2 + 0.52 + 0.18 = 2.70 \) → NF ≈ 4.3 dB.
+      <br>LNA first: \( F = 1.26 + \frac{2-1}{100} + \frac{10-1}{100 \cdot 0.5} = 1.26 + 0.01 + 0.18 = 1.45 \) → NF ≈ 1.6 dB.
+      <br>Same parts, 2.7 dB better — nearly double the noise performance, i.e. the same link works at ~1.4× the distance. This is why satellite LNBs and cell-tower TMAs sit at the antenna.
+    </div>
+  </details>
+</div>
+
+<div class="exercise">
+  <p class="ex-q"><span class="ex-num">E5</span>A cable modem transmits 8 Msym/s with raised-cosine roll-off \(\alpha = 0.25\) using 256-QAM. Find the occupied RF bandwidth, the raw bit rate, and the spectral efficiency. Compare with the capacity limit if SNR = 35 dB. <span class="diff med">medium</span></p>
+  <details><summary>Show solution</summary>
+    <div class="solution">
+      RF bandwidth: \( B = R_s(1+\alpha) = 8 \cdot 1.25 = 10\,\mathrm{MHz} \).
+      Bit rate: \( R_b = R_s \log_2 256 = 8 \cdot 8 = 64\,\mathrm{Mbit/s} \); efficiency \(64/10 = 6.4\,\mathrm{bit/s/Hz}\).
+      Capacity: \( C = 10^7 \log_2(1+10^{3.5}) = 10^7 \cdot 11.63 \approx 116\,\mathrm{Mbit/s} \) — the modem uses 55 % of it; the gap pays for the roll-off excess bandwidth, coding overhead and implementation margin. (DOCSIS 3.1 closes much of it with 4096-QAM + LDPC + OFDM.)
+    </div>
+  </details>
+</div>
+
+<div class="exercise">
+  <p class="ex-q"><span class="ex-num">E6</span>With raw error probability \(p = 10^{-3}\): (a) block error probability of the (3,1) repetition code; (b) probability that Hamming(7,4) fails (≥ 2 errors in 7 bits); (c) compare the rates. Which protects 4 data bits with fewer transmitted bits at better reliability? <span class="diff hard">challenge</span></p>
+  <details><summary>Show solution</summary>
+    <div class="solution">
+      (a) \( P_e = 3p^2(1-p)+p^3 \approx 3\cdot10^{-6} \) per data bit.
+      (b) \( P_{fail} = 1 - (1-p)^7 - 7p(1-p)^6 \approx \binom{7}{2}p^2 = 21\cdot10^{-6} \) per 7-bit block, i.e. ≈ \(5\cdot10^{-6}\) per data bit — same order as repetition.
+      (c) Rates: repetition sends \(4\times3 = 12\) bits for 4 data bits (\(R_c = 1/3\)); Hamming sends 7 (\(R_c = 4/7\)). Comparable protection for <em>almost half the bits</em> — the profit from protecting bits jointly. Longer modern codes push this advantage to the Shannon limit; repetition never gets better per redundant bit.
+    </div>
+  </details>
+</div>
+
+<div class="exercise">
+  <p class="ex-q"><span class="ex-num">E7</span>Satellite TV link budget: a GEO satellite (36 000 km) radiates EIRP = 52 dBW at 12 GHz. Your 60 cm dish has 37 dB gain; system noise temperature 100 K; transponder bandwidth 33 MHz. Find the received power, the noise power, and the SNR. Is DVB-S2 with 8PSK (needs ~11 dB) feasible? <span class="diff hard">challenge</span></p>
+  <details><summary>Show solution</summary>
+    <div class="solution">
+      FSPL: \( 20\log(36000) + 20\log(12000) + 32.44 = 91.1 + 81.6 + 32.4 = 205.1\,\mathrm{dB} \).
+      Received: \( P_r = 52 - 205.1 + 37 = -116.1\,\mathrm{dBW} = -86.1\,\mathrm{dBm} \) — about 2.5 picowatts collected by the dish.
+      Noise: \( N = kTB = 1.38\cdot10^{-23}\cdot 100 \cdot 33\cdot10^6 = 4.6\cdot10^{-14}\,\mathrm{W} = -103.4\,\mathrm{dBm} \).
+      SNR \( = -86.1+103.4 \approx 17\,\mathrm{dB} \) — comfortably above the ~11 dB needed: ✓, with ~6 dB of rain-fade margin. Heavy thunderstorms eat exactly that margin, which is why satellite TV pixelates in a downpour.
+    </div>
+  </details>
+</div>
+
+<h2 id="quiz">15. Self-assessment</h2>
+
+<div class="quiz" data-quiz-title="Module 20 — Self-test">
+<script type="application/json">
+[
+ {"q":"An AM transmitter runs at modulation index m = 0.5. What fraction of the total transmitted power is in the information-bearing sidebands?",
+  "opts":["50 %","25 %","11 %","33 %"],"a":2,
+  "explain":"\\(P_{SB}/P_{tot} = \\frac{m^2}{2+m^2} = \\frac{0.25}{2.25} \\approx 11\\,\\%\\). Even at full modulation (m = 1) the best case is only 33 % — the carrier itself carries no information."},
+ {"q":"Broadcast FM uses Δf = 75 kHz and audio up to 15 kHz. Carson's rule gives an occupied bandwidth of…",
+  "opts":["90 kHz","150 kHz","180 kHz","30 kHz"],"a":2,
+  "explain":"\\(B \\approx 2(\\Delta f + f_m) = 2(75+15) = 180\\,\\mathrm{kHz}\\) — which is why FM stations sit in ~200 kHz allocations."},
+ {"q":"Why is the low-noise amplifier placed as the very first element of a receiver chain?",
+  "opts":["It provides impedance matching to the antenna","Friis: later stages' noise is divided by the gain before them, so the first stage dominates the total noise figure","It filters out-of-band interference before mixing","It prevents the mixer from saturating"],"a":1,
+  "explain":"Friis' formula \\(F = F_1 + \\frac{F_2-1}{G_1} + \\dots\\): everything after the first high-gain, low-noise stage contributes almost nothing. Loss BEFORE the LNA adds dB-for-dB to the noise figure."},
+ {"q":"A link sends 10 Msym/s using 64-QAM. The bit rate is…",
+  "opts":["10 Mbit/s","60 Mbit/s","640 Mbit/s","6.4 Mbit/s"],"a":1,
+  "explain":"64-QAM carries \\(\\log_2 64 = 6\\) bit per symbol: \\(R_b = 10\\cdot10^6 \\cdot 6 = 60\\,\\mathrm{Mbit/s}\\). Baud and bit/s differ exactly by the bits-per-symbol factor."},
+ {"q":"Compared with QPSK at the same average power and symbol rate, 64-QAM…",
+  "opts":["is more robust because it uses more amplitude levels","carries more bits per symbol but needs substantially higher SNR, since constellation points sit closer together","carries more bits per symbol at the same error rate","needs more bandwidth for the same symbol rate"],"a":1,
+  "explain":"Denser constellations shrink the distance between neighboring points, so less noise causes a decision error. Bandwidth is set by the SYMBOL rate and stays the same — the price is paid in SNR, not spectrum."},
+ {"q":"A symbol stream at R_s = 10 Msym/s is pulse-shaped with raised cosine, roll-off α = 0.25. The occupied RF (passband) bandwidth is…",
+  "opts":["12.5 MHz","10 MHz","6.25 MHz","20 MHz"],"a":0,
+  "explain":"RF bandwidth \\(= R_s(1+\\alpha) = 10\\cdot1.25 = 12.5\\,\\mathrm{MHz}\\). Only the unrealizable \\(\\alpha = 0\\) sinc pulse achieves the Nyquist minimum of 10 MHz."},
+ {"q":"A channel has B = 10 MHz and SNR = 15 dB. Its Shannon capacity is approximately…",
+  "opts":["150 Mbit/s","10 Mbit/s","50 Mbit/s","32 Mbit/s"],"a":2,
+  "explain":"SNR \\(= 10^{1.5} \\approx 31.6\\); \\(C = 10^7\\log_2(32.6) \\approx 10^7 \\cdot 5.03 \\approx 50\\,\\mathrm{Mbit/s}\\)."},
+ {"q":"To double the capacity of a link operating at high SNR, the cheapest lever according to C = B·log₂(1+SNR) is…",
+  "opts":["doubling the transmit power","doubling the bandwidth","halving the noise figure","doubling the antenna gain"],"a":1,
+  "explain":"Capacity is LINEAR in B but only logarithmic in SNR: doubling B doubles C, while doubling power adds just one bit/s/Hz (at high SNR). Hence the multi-billion-euro spectrum auctions — and misconception alert: more watts do NOT proportionally mean more Mbit/s."},
+ {"q":"A Hamming(7,4) receiver computes the syndrome (s₃s₂s₁) = 110₂ = 6. What does it do?",
+  "opts":["Discards the block — uncorrectable","Flips bit 6 of the codeword; a single error there is now corrected","Flips bits 1 and 2","Requests retransmission of bit 3"],"a":1,
+  "explain":"The syndrome directly spells the binary address of the (single) corrupted position — here position 6. That self-addressing structure is the elegance of Hamming codes. (Two errors, however, would be miscorrected: d_min = 3.)"},
+ {"q":"Why did WiFi, LTE, 5G and DVB-T all adopt OFDM?",
+  "opts":["It needs no synchronization between transmitter and receiver","It concentrates all power in one fast carrier for maximum range","Many slow subcarriers plus a cyclic prefix turn a frequency-selective multipath channel into many trivial flat channels, equalized by one multiplication each","It eliminates thermal noise through orthogonality"],"a":2,
+  "explain":"Multipath delay spread devastates one fast serial carrier (massive ISI) but barely dents each long OFDM symbol; the cyclic prefix absorbs the transient and the FFT does all the work. Orthogonality packs subcarriers with zero mutual interference — but it does nothing against noise, and OFDM actually requires TIGHT synchronization."}
+]
+</script>
+</div>
+
+<script>
+document.addEventListener("ee-ready", () => {
+
+  const TAU = 2 * Math.PI;
+  // Deterministic pseudo-randomness (no Math.random): sine hash + Box-Muller
+  function hashf(n) { const s = Math.sin(n) * 43758.5453123; return s - Math.floor(s); }
+  function gaussn(i) {
+    const u1 = Math.min(Math.max(hashf(i * 12.9898 + 78.233), 1e-9), 1 - 1e-9);
+    const u2 = hashf(i * 39.4257 + 11.1359);
+    return Math.sqrt(-2 * Math.log(u1)) * Math.cos(TAU * u2);
+  }
+
+  /* ---------- 1. AM / FM explorer ---------- */
+  EE.custom({
+    mount: "#w-modulate", height: 370,
+    params: [
+      { key: "mode", label: "Modulation", type: "select", value: "am",
+        options: [{ label: "AM", value: "am" }, { label: "FM", value: "fm" }] },
+      { key: "fm", label: "Message f_m", min: 1, max: 5, step: 0.5, value: 2, unit: "Hz", fmt: v => v.toFixed(1) },
+      { key: "fc", label: "Carrier f_c", min: 10, max: 60, step: 1, value: 24, unit: "Hz", fmt: v => v.toFixed(0) },
+      { key: "m", label: "AM depth m", min: 0, max: 1.5, step: 0.05, value: 0.8, fmt: v => v.toFixed(2) },
+      { key: "beta", label: "FM index β", min: 0, max: 8, step: 0.1, value: 3, fmt: v => v.toFixed(1) }
+    ],
+    readouts: [
+      { label: "Occupied bandwidth", fn: p => String(p.mode) === "fm"
+          ? EE.si(2 * (p.beta + 1) * p.fm, "Hz") + " (Carson)"
+          : EE.si(2 * p.fm, "Hz") + " (2·f_m)" },
+      { label: "Sideband power share", fn: p => String(p.mode) === "fm"
+          ? "— (constant envelope)"
+          : (100 * p.m * p.m / (2 + p.m * p.m)).toFixed(1) + " %" },
+      { label: "Envelope", fn: p => String(p.mode) === "fm" ? "constant — noise-immune"
+          : (p.m > 1 ? "OVERMODULATED — distortion!" : "= message ✓ (m ≤ 1)") }
+    ],
+    draw: (ctx, w, h, p, hp) => {
+      const ink = hp.ink();
+      const isFM = String(p.mode) === "fm";
+      const padL = 14, padR = 14, N = 1400, T = 1.0;
+      const pw = w - padL - padR;
+      const msg = t => Math.cos(TAU * p.fm * t);
+      const env = t => 1 + p.m * msg(t);
+      const sig = t => isFM
+        ? Math.cos(TAU * p.fc * t + p.beta * Math.sin(TAU * p.fm * t))
+        : env(t) * Math.cos(TAU * p.fc * t);
+      const norm = isFM ? 1.05 : Math.max(1.05, 1 + p.m);
+      const panels = [
+        { y0: 10, hh: h * 0.34, title: "message m(t)" },
+        { y0: h * 0.42, hh: h * 0.54, title: isFM ? "s(t) = cos(ω_c t + β sin ω_m t)" : "s(t) = (1 + m·cos ω_m t)·cos ω_c t" }
+      ];
+      ctx.font = "12px system-ui, sans-serif";
+      for (const pn of panels) {
+        ctx.save(); ctx.globalAlpha = 0.3; ctx.strokeStyle = ink; ctx.lineWidth = 1;
+        ctx.beginPath(); ctx.moveTo(padL, pn.y0 + pn.hh / 2); ctx.lineTo(w - padR, pn.y0 + pn.hh / 2); ctx.stroke();
+        ctx.restore();
+        ctx.fillStyle = ink; ctx.globalAlpha = 0.8;
+        ctx.fillText(pn.title, padL + 2, pn.y0 + 12);
+        ctx.globalAlpha = 1;
+      }
+      function curve(fn, pn, amp, col, dash, lw) {
+        ctx.save();
+        if (dash) ctx.setLineDash(dash);
+        ctx.strokeStyle = col; ctx.lineWidth = lw || 1.6; ctx.beginPath();
+        for (let i = 0; i <= N; i++) {
+          const t = T * i / N;
+          const x = padL + pw * i / N;
+          const y = pn.y0 + pn.hh / 2 - (fn(t) / amp) * (pn.hh / 2 - 12);
+          if (i === 0) ctx.moveTo(x, y); else ctx.lineTo(x, y);
+        }
+        ctx.stroke(); ctx.restore();
+      }
+      curve(msg, panels[0], 1.1, hp.color(1));
+      curve(sig, panels[1], norm, hp.color(0), null, 1.3);
+      if (!isFM) {
+        curve(env, panels[1], norm, hp.color(2), [6, 4], 1.5);
+        curve(t => -env(t), panels[1], norm, hp.color(2), [6, 4], 1.5);
+      }
+    }
+  });
+
+  /* ---------- 2. Constellations under noise ---------- */
+  function constPoints(M) {
+    if (M === 2) return [[-1, 0], [1, 0]];
+    const s = Math.round(Math.sqrt(M));
+    const lv = [];
+    for (let k = 0; k < s; k++) lv.push(2 * k - (s - 1));
+    const pts = []; let E = 0;
+    for (const a of lv) for (const b of lv) { pts.push([a, b]); E += a * a + b * b; }
+    E /= pts.length;
+    const g = 1 / Math.sqrt(E);
+    return pts.map(q => [q[0] * g, q[1] * g]);
+  }
+  function simulate(p) {
+    const M = Number(p.M);
+    const snr = Math.pow(10, p.snr / 10);
+    const pts = constPoints(M);
+    const sig = Math.sqrt(0.5 / snr);
+    const N = 600; const out = []; let err = 0;
+    for (let i = 0; i < N; i++) {
+      const s = Math.floor(hashf(i * 7.31 + 3.7) * M) % M;
+      const x = pts[s][0] + gaussn(i * 2 + 1) * sig;
+      const y = pts[s][1] + gaussn(i * 2 + 2) * sig;
+      let best = 0, bd = 1e9;
+      for (let k = 0; k < pts.length; k++) {
+        const dx = x - pts[k][0], dy = y - pts[k][1];
+        const d = dx * dx + dy * dy;
+        if (d < bd) { bd = d; best = k; }
+      }
+      const e = (best !== s);
+      if (e) err++;
+      out.push([x, y, e]);
+    }
+    return { out, pts, ser: err / N, sig, M };
+  }
+  EE.custom({
+    mount: "#w-constellation", height: 380,
+    params: [
+      { key: "M", label: "Modulation", type: "select", value: 64,
+        options: [{ label: "BPSK", value: 2 }, { label: "QPSK", value: 4 },
+                  { label: "16-QAM", value: 16 }, { label: "64-QAM", value: 64 }] },
+      { key: "snr", label: "SNR (E_s/N_0)", min: 4, max: 30, step: 1, value: 18, unit: "dB", fmt: v => v.toFixed(0) }
+    ],
+    readouts: [
+      { label: "Bits per symbol", fn: p => Math.log2(Number(p.M)).toFixed(0) },
+      { label: "Measured SER", fn: p => { const r = simulate(p); return (100 * r.ser).toFixed(1) + " % (" + Math.round(r.ser * 600) + "/600)"; } },
+      { label: "Noise σ per axis", fn: p => Math.sqrt(0.5 / Math.pow(10, p.snr / 10)).toFixed(3) }
+    ],
+    draw: (ctx, w, h, p, hp) => {
+      const ink = hp.ink();
+      const r = simulate(p);
+      const cx = w / 2, cy = h / 2;
+      const half = Math.min(w, h) / 2 - 16;
+      const sc = half / 1.55;
+      // plot frame
+      ctx.save(); ctx.globalAlpha = 0.35; ctx.strokeStyle = ink; ctx.lineWidth = 1;
+      ctx.strokeRect(cx - half, cy - half, 2 * half, 2 * half);
+      // decision boundaries: midpoints between distinct axis levels
+      const lvx = Array.from(new Set(r.pts.map(q => q[0]))).sort((a, b) => a - b);
+      const lvy = Array.from(new Set(r.pts.map(q => q[1]))).sort((a, b) => a - b);
+      ctx.setLineDash([4, 4]);
+      for (let i = 0; i + 1 < lvx.length; i++) {
+        const bx = cx + sc * (lvx[i] + lvx[i + 1]) / 2;
+        ctx.beginPath(); ctx.moveTo(bx, cy - half); ctx.lineTo(bx, cy + half); ctx.stroke();
+      }
+      for (let i = 0; i + 1 < lvy.length; i++) {
+        const by = cy - sc * (lvy[i] + lvy[i + 1]) / 2;
+        ctx.beginPath(); ctx.moveTo(cx - half, by); ctx.lineTo(cx + half, by); ctx.stroke();
+      }
+      ctx.restore();
+      // axes labels
+      ctx.fillStyle = ink; ctx.globalAlpha = 0.7; ctx.font = "12px system-ui, sans-serif";
+      ctx.fillText("I", cx + half - 12, cy - 6);
+      ctx.fillText("Q", cx + 6, cy - half + 14);
+      ctx.globalAlpha = 1;
+      // received symbols
+      for (const q of r.out) {
+        const x = cx + sc * q[0], y = cy - sc * q[1];
+        if (x < cx - half || x > cx + half || y < cy - half || y > cy + half) continue;
+        ctx.beginPath();
+        if (q[2]) { ctx.globalAlpha = 0.95; ctx.fillStyle = hp.color(5); ctx.arc(x, y, 2.8, 0, TAU); }
+        else { ctx.globalAlpha = 0.5; ctx.fillStyle = hp.color(0); ctx.arc(x, y, 2, 0, TAU); }
+        ctx.fill();
+      }
+      ctx.globalAlpha = 1;
+      // ideal points as rings
+      ctx.strokeStyle = ink; ctx.lineWidth = 1.6;
+      for (const q of r.pts) {
+        ctx.beginPath(); ctx.arc(cx + sc * q[0], cy - sc * q[1], 4.5, 0, TAU); ctx.stroke();
+      }
+    }
+  });
+
+  /* ---------- 3. Shannon capacity ---------- */
+  const capOf = (B, snrDb) => B * Math.log2(1 + Math.pow(10, snrDb / 10));
+  EE.functionPlot({
+    mount: "#w-capacity", height: 310,
+    x: { min: 0, max: 40, label: "SNR in dB" },
+    y: p => ({ min: 0, max: p.B * 13.5, label: "C in Mbit/s" }),
+    params: [
+      { key: "B", label: "Bandwidth B", min: 1, max: 160, step: 1, value: 20, unit: "MHz", fmt: v => v.toFixed(0) },
+      { key: "snr", label: "Your SNR", min: 0, max: 40, step: 0.5, value: 30, unit: "dB", fmt: v => v.toFixed(1) }
+    ],
+    curves: [
+      { label: "C = B·log₂(1+SNR)", color: 0, fn: (x, p) => capOf(p.B, x) }
+    ],
+    annotations: p => {
+      const a = [{ type: "point", x: p.snr, y: capOf(p.B, p.snr), label: "your channel" }];
+      const ymax = p.B * 13.5;
+      const refs = [[24, "ADSL2+ (24 Mbit/s)"], [150, "LTE 20 MHz peak (150)"], [1000, "5G ~1 Gbit/s"]];
+      for (const r of refs) if (r[0] < ymax * 0.92 && r[0] > ymax * 0.04)
+        a.push({ type: "hline", y: r[0], label: r[1] });
+      return a;
+    },
+    readouts: [
+      { label: "Capacity C", fn: p => EE.si(1e6 * capOf(p.B, p.snr), "bit/s") },
+      { label: "Spectral efficiency", fn: p => (capOf(p.B, p.snr) / p.B).toFixed(2) + " bit/s/Hz" },
+      { label: "SNR linear", fn: p => EE.fmt(Math.pow(10, p.snr / 10)) + " : 1" }
+    ]
+  });
+
+  /* ---------- 4. Eye diagram / raised cosine ---------- */
+  const sincN = x => Math.abs(x) < 1e-9 ? 1 : Math.sin(Math.PI * x) / (Math.PI * x);
+  function rcPulse(t, a) {
+    const d = 1 - Math.pow(2 * a * t, 2);
+    if (Math.abs(d) < 1e-4) return (Math.PI / 4) * sincN(1 / (2 * a));
+    return sincN(t) * Math.cos(Math.PI * a * t) / d;
+  }
+  const bitOf = k => hashf(k * 4.717 + 0.913) < 0.5 ? -1 : 1;
+  function yAt(t, a) {
+    let y = 0;
+    const k0 = Math.floor(t);
+    for (let k = k0 - 8; k <= k0 + 9; k++) y += bitOf(k) * rcPulse(t - k, a);
+    return y;
+  }
+  function eyeOpening(p) {
+    let mn = Infinity;
+    for (let k = 8; k <= 40; k++) {
+      const v = bitOf(k) * yAt(k + p.tau, p.alpha);
+      if (v < mn) mn = v;
+    }
+    return mn;
+  }
+  EE.custom({
+    mount: "#w-eye", height: 350,
+    params: [
+      { key: "alpha", label: "Roll-off α", min: 0.05, max: 1, step: 0.05, value: 0.5, fmt: v => v.toFixed(2) },
+      { key: "tau", label: "Timing error τ/T", min: 0, max: 0.4, step: 0.02, value: 0, fmt: v => v.toFixed(2) }
+    ],
+    readouts: [
+      { label: "Worst-case eye opening", fn: p => { const o = eyeOpening(p); return o > 0 ? (100 * o).toFixed(0) + " % of nominal" : "CLOSED — bit errors even without noise!"; } },
+      { label: "Excess bandwidth", fn: p => (100 * p.alpha).toFixed(0) + " % above Nyquist minimum" }
+    ],
+    draw: (ctx, w, h, p, hp) => {
+      const ink = hp.ink();
+      const padL = 14, padR = 14, padT = 10, padB = 14;
+      const pw = w - padL - padR, ph = h - padT - padB;
+      const ymax = 1.9;
+      const X = f => padL + pw * f;          // f in 0..1 over 2T window
+      const Y = v => padT + ph / 2 - (v / ymax) * (ph / 2);
+      // frame + midline
+      ctx.save(); ctx.globalAlpha = 0.3; ctx.strokeStyle = ink; ctx.lineWidth = 1;
+      ctx.strokeRect(padL, padT, pw, ph);
+      ctx.beginPath(); ctx.moveTo(padL, Y(0)); ctx.lineTo(padL + pw, Y(0)); ctx.stroke();
+      ctx.beginPath(); ctx.moveTo(padL, Y(1)); ctx.lineTo(padL + pw, Y(1)); ctx.stroke();
+      ctx.beginPath(); ctx.moveTo(padL, Y(-1)); ctx.lineTo(padL + pw, Y(-1)); ctx.stroke();
+      ctx.restore();
+      // traces: overlapping 2T windows
+      const SP = 56;
+      ctx.strokeStyle = hp.color(0); ctx.lineWidth = 1; ctx.globalAlpha = 0.3;
+      for (let wi = 6; wi <= 42; wi++) {
+        ctx.beginPath();
+        for (let s = 0; s <= SP; s++) {
+          const t = wi + 2 * s / SP;
+          const x = X(s / SP), y = Y(yAt(t, p.alpha));
+          if (s === 0) ctx.moveTo(x, y); else ctx.lineTo(x, y);
+        }
+        ctx.stroke();
+      }
+      ctx.globalAlpha = 1;
+      // sampling instant line (symbol instant at window centre + tau)
+      const xs = X((1 + p.tau) / 2);
+      ctx.save(); ctx.setLineDash([6, 4]); ctx.strokeStyle = hp.color(2); ctx.lineWidth = 1.8;
+      ctx.beginPath(); ctx.moveTo(xs, padT); ctx.lineTo(xs, padT + ph); ctx.stroke(); ctx.restore();
+      ctx.fillStyle = hp.color(2); ctx.font = "12px system-ui, sans-serif";
+      ctx.fillText("sampling instant", Math.min(xs + 6, w - 110), padT + 16);
+      // eye opening markers at sampling instant
+      const o = eyeOpening(p);
+      if (o > 0) {
+        ctx.strokeStyle = hp.color(3); ctx.lineWidth = 2.4;
+        ctx.beginPath(); ctx.moveTo(xs - 5, Y(o)); ctx.lineTo(xs + 5, Y(o)); ctx.stroke();
+        ctx.beginPath(); ctx.moveTo(xs - 5, Y(-o)); ctx.lineTo(xs + 5, Y(-o)); ctx.stroke();
+      }
+      ctx.fillStyle = ink; ctx.globalAlpha = 0.7;
+      ctx.fillText("+1", padL + 4, Y(1) - 4);
+      ctx.fillText("−1", padL + 4, Y(-1) - 4);
+      ctx.globalAlpha = 1;
+    }
+  });
+});
+</script>
+
+</article>
+</main>
+</div>
+</body>
+</html>

@@ -1,0 +1,1025 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>M14 · Control Engineering — EE Knowledge Base</title>
+<link rel="stylesheet" href="../../assets/vendor/katex/katex.min.css">
+<link rel="stylesheet" href="../../assets/css/style.css">
+<script src="../../assets/vendor/katex/katex.min.js" defer></script>
+<script src="../../assets/vendor/katex/auto-render.min.js" defer></script>
+<script src="../curriculum.js" defer></script>
+<script src="../../assets/js/app.js" defer></script>
+<script src="../../assets/js/widgets.js" defer></script>
+</head>
+<body data-module="m14">
+<div class="layout">
+<main class="content">
+<article class="article">
+
+<span class="eyebrow">🎛️ Signals, Control & Computing · Module 14</span>
+<h1>Control Engineering <span class="muted" style="font-weight:400;font-size:1.4rem">· <span class="de">Regelungstechnik</span></span></h1>
+<p class="lead">A drone hovers in gusty wind, a hard disk head lands on a track 50&nbsp;nm wide, a power grid holds 50.00&nbsp;Hz while millions of loads switch — none of these systems is precise by itself. They are made precise by <em>feedback</em>: measure, compare, correct, thousands of times per second. This module teaches you how to close a loop so it is fast, accurate and — the hard part — stable.</p>
+
+<div class="page-meta">
+  <span><b>Corresponds to:</b> Regelungstechnik (4th–5th semester)</span>
+  <span><b>Prerequisites:</b> Module 12 (transfer functions, poles, Bode plots)</span>
+  <span><b>Study time:</b> ≈ 7–9 h</span>
+</div>
+
+<h2 id="regeln-steuern">1. Steuern vs. Regeln — the distinction everything rests on</h2>
+
+<p>German makes a distinction that English blurs, and it is the perfect entry point. <strong>Steuern</strong> (open-loop control, <span class="de">Steuerung</span>) means acting on a system <em>without looking at the result</em>: a toaster runs a timer and hopes the bread is brown. <strong>Regeln</strong> (closed-loop control, <span class="de">Regelung</span>) means continuously <em>measuring</em> the result, comparing it with the target, and correcting: a thermostat oven measures its temperature and throttles the heater accordingly. The measurement path that closes the circle is the <strong>feedback</strong> (<span class="de">Rückführung</span>).</p>
+
+<div class="box intuition">
+  <div class="box-title"><span class="ic">💡</span>Intuition: the shower</div>
+  <p>You step into an unfamiliar shower. <b>Open loop:</b> you set the lever to where it was "about right" in your last hotel and step in — result: yelp. The lever position is a <em>guess</em> based on a model ("middle ≈ warm") that doesn't match this plant. <b>Closed loop:</b> you hold a hand in the water and nudge the lever until it feels right — you converge on the target even though you know <em>nothing</em> about this particular valve, water pressure, or boiler. That is the superpower of feedback: <b>accuracy without an accurate model</b>. And you also meet its dark side: because the pipe adds delay (dead time!), impatient over-correcting makes the temperature oscillate hot–cold–hot. Speed, accuracy, stability — the eternal triangle of this module.</p>
+</div>
+
+<div class="table-wrap">
+<table class="data">
+<thead><tr><th></th><th>Steuerung (open loop)</th><th>Regelung (closed loop)</th></tr></thead>
+<tbody>
+<tr><td>Acts on</td><td>a plan / model, feed-forward</td><td>the measured actual value</td></tr>
+<tr><td>Reacts to disturbances</td><td>no (unless measured separately)</td><td>yes — automatically, whatever their cause</td></tr>
+<tr><td>Needs a sensor</td><td>no</td><td>yes (Module 15)</td></tr>
+<tr><td>Can become unstable</td><td>no (if the plant is stable)</td><td><b>yes</b> — the price of feedback</td></tr>
+<tr><td>Examples</td><td>toaster, washing-machine program, stepper motor drive</td><td>thermostat, cruise control, drone attitude, voltage regulator</td></tr>
+</tbody>
+</table>
+</div>
+
+<p>Real systems often combine both: a good temperature controller feeds forward the known heat demand (Steuerung) and lets feedback (Regelung) clean up the rest. Feed-forward is fast but blind; feedback is all-seeing but must wait for an error to appear before it can act.</p>
+
+<div class="box history">
+  <div class="box-title"><span class="ic">📜</span>From flyball to Apollo</div>
+  <p>James Watt's centrifugal governor (1788) closed the first industrial loop — spinning balls throttled a steam engine's valve. When governors began to oscillate mysteriously, James Clerk Maxwell wrote <em>On Governors</em> (1868), the first stability analysis: control theory was born from a bug report. Nyquist (1932) and Bode (1940) developed the frequency-domain tools at Bell Labs — for telephone amplifiers, the same feedback story as Module 09. Kálmán's state-space revolution (1960) and his filter navigated Apollo to the Moon. Today the same mathematics balances your e-scooter.</p>
+</div>
+
+<h2 id="loop">2. The standard control loop — <span class="de">der Regelkreis</span></h2>
+
+<p>Control engineering compresses every application — ovens, drones, grids — into one diagram with standardized names. Learn these five signals once and every textbook (German ones especially) becomes readable:</p>
+
+<ul>
+  <li>\(w\) — <strong>setpoint / reference</strong> (<span class="de">Führungsgröße</span>): what you want.</li>
+  <li>\(y\) — <strong>controlled variable</strong> (<span class="de">Regelgröße</span>): what you get, as measured.</li>
+  <li>\(e = w - y\) — <strong>control error</strong> (<span class="de">Regelabweichung</span>): the discrepancy the controller works to kill.</li>
+  <li>\(u\) — <strong>actuating variable</strong> (<span class="de">Stellgröße</span>): the controller's output — valve position, PWM duty, motor voltage.</li>
+  <li>\(z\) — <strong>disturbance</strong> (<span class="de">Störgröße</span>): everything the world throws at the loop — wind, load changes, opened oven doors.</li>
+</ul>
+
+<p>The two blocks are the <strong>controller</strong> \(K(s)\) (<span class="de">Regler</span>, German texts write \(G_R\)) and the <strong>plant</strong> \(G(s)\) (<span class="de">Regelstrecke</span>, \(G_S\)) — the physical system being controlled, described by the transfer functions of Module 12.</p>
+
+<figure>
+  <div class="fig-frame">
+  <svg class="diagram" viewBox="0 0 660 230" role="img" aria-label="Standard control loop block diagram with German terms">
+    <defs><marker id="arrA" markerWidth="9" markerHeight="9" refX="7" refY="4.5" orient="auto"><path d="M0 0 L8 4.5 L0 9 z" fill="var(--accent)"/></marker></defs>
+    <!-- w input -->
+    <line x1="20" y1="95" x2="82" y2="95" stroke="var(--accent)" stroke-width="2" marker-end="url(#arrA)"/>
+    <text x="24" y="86" font-size="13" fill="var(--accent)">w</text>
+    <text x="20" y="120" font-size="11" fill="var(--text-faint)">Führungsgröße</text>
+    <!-- sum junction -->
+    <circle cx="100" cy="95" r="13" fill="none" stroke="var(--text-soft)" stroke-width="2"/>
+    <text x="90" y="90" font-size="12">+</text>
+    <text x="106" y="118" font-size="12">−</text>
+    <!-- e -->
+    <line x1="113" y1="95" x2="168" y2="95" stroke="var(--accent)" stroke-width="2" marker-end="url(#arrA)"/>
+    <text x="133" y="86" font-size="13" fill="var(--accent)">e</text>
+    <!-- controller -->
+    <rect x="170" y="70" width="112" height="50" fill="none" stroke="var(--text-soft)" stroke-width="2" rx="6"/>
+    <text x="226" y="90" text-anchor="middle" font-size="13" font-weight="600">Regler</text>
+    <text x="226" y="108" text-anchor="middle" font-size="13">K(s)</text>
+    <!-- u -->
+    <line x1="282" y1="95" x2="342" y2="95" stroke="var(--accent)" stroke-width="2" marker-end="url(#arrA)"/>
+    <text x="305" y="86" font-size="13" fill="var(--accent)">u</text>
+    <text x="270" y="140" font-size="11" fill="var(--text-faint)">Stellgröße</text>
+    <!-- disturbance sum -->
+    <circle cx="356" cy="95" r="13" fill="none" stroke="var(--text-soft)" stroke-width="2"/>
+    <text x="345" y="90" font-size="12">+</text>
+    <text x="362" y="82" font-size="12">+</text>
+    <line x1="356" y1="24" x2="356" y2="79" stroke="var(--accent-2)" stroke-width="2" marker-end="url(#arrA)"/>
+    <text x="366" y="34" font-size="13" fill="var(--accent-2)">z</text>
+    <text x="380" y="52" font-size="11" fill="var(--text-faint)">Störgröße</text>
+    <!-- plant -->
+    <line x1="369" y1="95" x2="408" y2="95" stroke="var(--accent)" stroke-width="2" marker-end="url(#arrA)"/>
+    <rect x="410" y="70" width="112" height="50" fill="none" stroke="var(--text-soft)" stroke-width="2" rx="6"/>
+    <text x="466" y="90" text-anchor="middle" font-size="13" font-weight="600">Strecke</text>
+    <text x="466" y="108" text-anchor="middle" font-size="13">G(s)</text>
+    <!-- y out -->
+    <line x1="522" y1="95" x2="630" y2="95" stroke="var(--accent)" stroke-width="2" marker-end="url(#arrA)"/>
+    <text x="600" y="86" font-size="13" fill="var(--accent)">y</text>
+    <text x="545" y="120" font-size="11" fill="var(--text-faint)">Regelgröße</text>
+    <!-- feedback path -->
+    <circle cx="570" cy="95" r="4" class="node"/>
+    <path class="wire" d="M570 95 V185 H100 V110" fill="none"/>
+    <line x1="100" y1="118" x2="100" y2="110" stroke="var(--text-soft)" stroke-width="2" marker-end="url(#arrA)"/>
+    <text x="300" y="202" text-anchor="middle" font-size="11" fill="var(--text-faint)">Rückführung (measurement path)</text>
+  </svg>
+  </div>
+  <figcaption><b>Fig. 2.1</b> — The standard loop (<span class="de">Standardregelkreis</span>). The sum junction subtracts the measured \(y\) from the setpoint \(w\); the controller converts the error into actuator action; the disturbance \(z\) enters the plant uninvited. Everything in this module is the analysis of this one picture.</figcaption>
+</figure>
+
+<h3 id="block-algebra">2.1 Block-diagram algebra</h3>
+<p>Because blocks are transfer functions, diagrams reduce by three rules (<span class="de">Blockschaltbild-Algebra</span>):</p>
+\[ \text{series: } G_1 G_2 \qquad \text{parallel: } G_1 + G_2 \qquad \text{feedback loop: } \frac{G_{\text{forward}}}{1 + G_{\text{forward}}\,G_{\text{feedback}}} \]
+<p>The third rule is the important one — let us derive it rather than memorize it.</p>
+
+<h3 id="closed-loop-tf">2.2 The closed-loop transfer function, derived</h3>
+<p>Follow the signals in Fig. 2.1 (set \(z=0\) for the moment). The plant output is \(y = G\,u\), the controller output is \(u = K\,e\), and the error is \(e = w - y\). Chain them:</p>
+\[ y = G K (w - y) \;\;\Rightarrow\;\; y\,(1 + GK) = GK\,w \]
+\[ \boxed{\;T(s) = \frac{y}{w} = \frac{G(s)K(s)}{1 + G(s)K(s)} = \frac{L}{1+L}\;} \]
+<p>where \(L(s) = G(s)K(s)\) is the <strong>open-loop transfer function</strong> (<span class="de">Kreisverstärkung, offener Kreis</span>) — the gain a signal experiences on one trip around the loop. \(T\) is called the <strong>complementary sensitivity</strong> or simply the closed-loop transfer function (<span class="de">Führungsübertragungsfunktion</span>).</p>
+<p>Now let a disturbance \(z\) add to the plant output: \(y = GK(w-y) + z\). Solving the same way:</p>
+\[ y = \underbrace{\frac{L}{1+L}}_{T}\,w \;+\; \underbrace{\frac{1}{1+L}}_{S}\,z, \qquad \boxed{\;S(s) = \frac{1}{1+L(s)},\quad S + T = 1\;} \]
+<p>\(S\) is the <strong>sensitivity function</strong> (<span class="de">Empfindlichkeitsfunktion</span>) — the fraction of a disturbance that survives feedback. The identity \(S+T=1\) is a genuine conservation law of control: you cannot make both small at the same frequency.</p>
+
+<h3 id="loop-gain-buys">2.3 What large loop gain buys you</h3>
+<p>Look at the two boxed formulas in the limit \(|L(j\omega)| \gg 1\):</p>
+<ul>
+  <li><b>Tracking:</b> \(T = L/(1+L) \to 1\) — the output follows the setpoint almost perfectly.</li>
+  <li><b>Disturbance rejection:</b> \(S = 1/(1+L) \to 0\) — a disturbance is suppressed by the factor \(1+|L|\). Loop gain 100 → disturbances shrink 101-fold.</li>
+  <li><b>Robustness against plant variation:</b> differentiate \(T\) with respect to \(L\): \(\mathrm{d}T/T = S \cdot \mathrm{d}L/L\). A 10&nbsp;% plant change causes only a \(10\,\%\times|S|\) change in closed-loop behavior. This is <em>exactly</em> the mechanism that makes op-amp circuits precise despite sloppy transistor gain (Module 09) — control theory and feedback amplifiers are the same subject wearing different clothes.</li>
+</ul>
+
+<div class="box key">
+  <div class="box-title"><span class="ic">🔑</span>Key idea: feedback trades gain for certainty</div>
+  <p>Raw gain is cheap and imprecise (a heater, a motor driver, a transistor). Feedback spends that surplus gain to buy accuracy, disturbance rejection and insensitivity to the plant's quirks. The catch, and the reason this module has ten more sections: pushing \(|L|\) up at frequencies where the loop's phase lag approaches 180° turns negative feedback into positive feedback — and the loop oscillates. Every design technique below is a way of getting gain <em>where it helps</em> without instability <em>where it hurts</em>.</p>
+</div>
+
+<div class="box german">
+  <div class="box-title"><span class="ic">🇩🇪</span>Vokabeln</div>
+  <p>control engineering = <span class="de">Regelungstechnik</span> · open-/closed-loop control = <span class="de">Steuerung / Regelung</span> · control loop = <span class="de">Regelkreis</span> · controller = <span class="de">Regler</span> · plant = <span class="de">Regelstrecke</span> · setpoint = <span class="de">Führungsgröße</span> · controlled variable = <span class="de">Regelgröße</span> · actuating variable = <span class="de">Stellgröße</span> · disturbance = <span class="de">Störgröße</span> · error = <span class="de">Regelabweichung</span> · steady-state error = <span class="de">bleibende Regelabweichung</span> · dead time = <span class="de">Totzeit</span> · overshoot = <span class="de">Überschwingweite</span> · settling time = <span class="de">Ausregelzeit</span> · gain/phase margin = <span class="de">Amplitudenreserve / Phasenreserve</span> · root locus = <span class="de">Wurzelortskurve</span> · integral / derivative time = <span class="de">Nachstellzeit \(T_n\) / Vorhaltzeit \(T_v\)</span> · state space = <span class="de">Zustandsraum</span> · observer = <span class="de">Beobachter</span> · sample time = <span class="de">Abtastzeit</span></p>
+</div>
+
+<h2 id="plants">3. Know your plant — the four standard models</h2>
+
+<p>Before choosing a controller you must know what you are controlling. Astonishingly, four elementary models (<span class="de">Übertragungsglieder</span>) cover most industrial plants, alone or in cascade.</p>
+
+<h3 id="pt1">3.1 First-order lag — PT1 (<span class="de">Verzögerungsglied 1. Ordnung</span>)</h3>
+\[ G(s) = \frac{K_S}{1 + T s}, \qquad h(t) = K_S\left(1 - e^{-t/T}\right) \]
+<p>One energy store. The step response rises exponentially and reaches 63&nbsp;% of its final value at \(t = T\) — that is how you <em>measure</em> \(T\) in the lab. Physical home: <b>thermal systems</b> (one thermal mass + one thermal resistance: soldering irons, ovens, CPU dies), RC circuits, gas pressure in a tank, a motor's current in its winding. \(K_S\) is the plant gain (<span class="de">Streckenverstärkung</span>): °C per % heater power, for instance.</p>
+
+<h3 id="pt2">3.2 Second-order lag — PT2 (<span class="de">Verzögerungsglied 2. Ordnung</span>)</h3>
+\[ G(s) = \frac{K_S\,\omega_n^2}{s^2 + 2\zeta\omega_n s + \omega_n^2} \]
+<p>Two energy stores that can exchange energy — hence, for damping ratio \(\zeta &lt; 1\), the step response <em>overshoots and rings</em> at \(\omega_d = \omega_n\sqrt{1-\zeta^2}\), with relative overshoot</p>
+\[ \ddot{u} = e^{-\pi\zeta/\sqrt{1-\zeta^2}} \qquad (\zeta = 0.5 \Rightarrow 16\,\%,\quad \zeta = 0.7 \Rightarrow 4.6\,\%). \]
+<p>Physical home: <b>mechanical systems</b> (mass + spring + damper: robot joints, drone frames, hard-disk arms, vehicle suspensions), RLC circuits, servo loops. You met this response in Module 12; here it becomes the plant we must tame.</p>
+
+<h3 id="integrator">3.3 The integrator — I element (<span class="de">I-Glied</span>)</h3>
+\[ G(s) = \frac{K_I}{s}, \qquad h(t) = K_I\, t \]
+<p>The step response is a <em>ramp</em>: the plant accumulates. Physical home: tank level (inflow accumulates into liters), position (velocity accumulates into meters), angle of a satellite, charge on a capacitor fed by a current. Integrating plants never settle on their own — stop filling only when the tank is <em>at</em> the mark, not when it is rising nicely. They also have a gift: they give the loop infinite DC gain for free (Section 5 of the error story).</p>
+
+<h3 id="deadtime">3.4 Dead time — Tt (<span class="de">Totzeit</span>)</h3>
+\[ G(s) = e^{-s T_t} \]
+<p>The output is the input, delayed: nothing happens for \(T_t\) seconds, then everything happens. Physical home: <b>transport</b> — a conveyor belt between actuator and sensor, hot water traveling down the shower pipe, gas flowing through a duct, a network round-trip in a remote-controlled system. Dead time is the <em>enemy</em>: its magnitude is 1 at all frequencies but its phase, \(\varphi = -\omega T_t\), grows without bound. A controller acting on dead-time-old information is always reacting to the past — the shower oscillation in Section 1 is precisely this.</p>
+
+<figure>
+  <div class="fig-frame">
+  <svg class="diagram" viewBox="0 0 640 310" role="img" aria-label="Step responses of PT1, PT2, integrator and dead-time elements">
+    <!-- PT1 panel -->
+    <g>
+      <text x="30" y="24" font-size="13" font-weight="600" fill="var(--accent)">PT1 — thermal</text>
+      <line x1="30" y1="130" x2="290" y2="130" class="wire"/>
+      <line x1="30" y1="130" x2="30" y2="35" class="wire"/>
+      <line x1="30" y1="52" x2="290" y2="52" stroke="var(--text-faint)" stroke-dasharray="5 4"/>
+      <text x="294" y="56" font-size="11" fill="var(--text-faint)">K·1</text>
+      <path d="M30 130 C 60 68, 90 56, 150 53 S 250 52, 288 52" fill="none" stroke="var(--accent)" stroke-width="2.2"/>
+      <line x1="82" y1="130" x2="82" y2="81" stroke="var(--text-faint)" stroke-dasharray="3 3"/>
+      <text x="82" y="145" text-anchor="middle" font-size="11" fill="var(--text-soft)">T (63 %)</text>
+    </g>
+    <!-- PT2 panel -->
+    <g>
+      <text x="360" y="24" font-size="13" font-weight="600" fill="var(--accent-2)">PT2 — mechanical, ζ &lt; 1</text>
+      <line x1="350" y1="130" x2="610" y2="130" class="wire"/>
+      <line x1="350" y1="130" x2="350" y2="35" class="wire"/>
+      <line x1="350" y1="72" x2="610" y2="72" stroke="var(--text-faint)" stroke-dasharray="5 4"/>
+      <path d="M350 130 C 368 128, 378 96, 390 66 C 398 46, 408 42, 418 52 C 430 65, 438 84, 450 82 C 462 80, 468 66, 480 68 C 494 71, 502 76, 520 73 S 590 72, 608 72" fill="none" stroke="var(--accent-2)" stroke-width="2.2"/>
+      <text x="412" y="38" font-size="11" fill="var(--text-soft)">overshoot ü</text>
+    </g>
+    <!-- Integrator panel -->
+    <g>
+      <text x="30" y="184" font-size="13" font-weight="600" fill="var(--accent)">I — tank level, position</text>
+      <line x1="30" y1="290" x2="290" y2="290" class="wire"/>
+      <line x1="30" y1="290" x2="30" y2="195" class="wire"/>
+      <path d="M30 290 L 270 210" fill="none" stroke="var(--accent)" stroke-width="2.2"/>
+      <text x="200" y="248" font-size="11" fill="var(--text-soft)">ramp — never settles</text>
+    </g>
+    <!-- Dead time panel -->
+    <g>
+      <text x="360" y="184" font-size="13" font-weight="600" fill="var(--accent-2)">T<tspan baseline-shift="sub" font-size="9">t</tspan> — conveyor, pipe</text>
+      <line x1="350" y1="290" x2="610" y2="290" class="wire"/>
+      <line x1="350" y1="290" x2="350" y2="195" class="wire"/>
+      <line x1="350" y1="212" x2="610" y2="212" stroke="var(--text-faint)" stroke-dasharray="5 4"/>
+      <path d="M350 290 L 440 290 C 465 236, 490 216, 540 213 S 595 212, 608 212" fill="none" stroke="var(--accent-2)" stroke-width="2.2"/>
+      <line x1="440" y1="290" x2="440" y2="270" stroke="var(--text-soft)"/>
+      <text x="400" y="262" text-anchor="middle" font-size="11" fill="var(--text-soft)">nothing happens…</text>
+      <text x="440" y="305" text-anchor="middle" font-size="11" fill="var(--text-soft)">t = T<tspan baseline-shift="sub" font-size="8">t</tspan></text>
+    </g>
+  </svg>
+  </div>
+  <figcaption><b>Fig. 3.1</b> — Step responses (<span class="de">Sprungantworten</span>) of the four standard plant elements. Identifying which of these your plant resembles — from one recorded step — is always the first task of a control project.</figcaption>
+</figure>
+
+<p>Real plants are combinations: an oven seen from its air-temperature sensor is roughly PT1 + a small \(T_t\) (heat must travel); a motor position loop is an integrator behind a PT1 (voltage → current → torque → speed → position); a chemical dosing line is PT1 + a long \(T_t\). German practice compresses the essentials of such step responses into two numbers, delay time \(T_u\) (<span class="de">Verzugszeit</span>) and rise time \(T_g\) (<span class="de">Ausgleichszeit</span>) — the ratio \(T_g/T_u\) tells you how hard the plant is to control (&gt;10: easy; &lt;3: hard).</p>
+
+<h2 id="steady-state">4. Steady-state accuracy — <span class="de">bleibende Regelabweichung</span></h2>
+
+<p>The first question a customer asks: "after everything settles, how far off is it?" The Laplace <strong>final value theorem</strong> (Module 12) answers it without solving any differential equation: if the limit exists,</p>
+\[ \lim_{t\to\infty} e(t) = \lim_{s\to 0} s\,E(s), \qquad E(s) = S(s)\,W(s) = \frac{W(s)}{1+L(s)}. \]
+
+<h3 id="type0">4.1 Step setpoint on a type-0 loop</h3>
+<p>For a step \(w(t) = w_0\) (so \(W = w_0/s\)) and a loop with finite DC gain \(K_0 = \lim_{s\to 0} L(s)\) (a "type-0" system — no integrator anywhere in the loop):</p>
+\[ e_\infty = \lim_{s\to 0} s\,\frac{1}{1+L(s)}\,\frac{w_0}{s} = \boxed{\;\frac{w_0}{1 + K_0}\;} \]
+<p>A pure P controller on a PT1 plant <em>always</em> leaves an offset: the plant needs a nonzero \(u\) to hold the output up, and a P controller can only produce nonzero \(u\) from nonzero \(e\). The offset shrinks with gain but never vanishes.</p>
+
+<h3 id="system-types">4.2 System types — integrators kill error</h3>
+<p>Now suppose \(L(s)\) contains \(\nu\) integrators: \(L(s) = \tilde{L}(s)/s^{\nu}\). As \(s \to 0\), \(|L| \to \infty\), so \(S \to 0\): the error to a step vanishes <em>exactly</em>, no matter the gain. \(\nu\) is called the <strong>system type</strong>. Each integrator buys exact tracking of one more input shape:</p>
+
+<div class="table-wrap">
+<table class="data">
+<thead><tr><th>Loop type \(\nu\)</th><th>Step \(w_0\) (<span class="de">Sprung</span>)</th><th>Ramp \(v_0 t\) (<span class="de">Rampe</span>)</th><th>Parabola \(\tfrac{a_0}{2}t^2\)</th></tr></thead>
+<tbody>
+<tr><td>0 (no integrator)</td><td>\( \dfrac{w_0}{1+K_0} \)</td><td>∞ (falls behind)</td><td>∞</td></tr>
+<tr><td>I (one integrator)</td><td><b>0</b></td><td>\( \dfrac{v_0}{K_v},\; K_v = \lim s L \)</td><td>∞</td></tr>
+<tr><td>II (two integrators)</td><td><b>0</b></td><td><b>0</b></td><td>\( \dfrac{a_0}{K_a} \)</td></tr>
+</tbody>
+</table>
+</div>
+
+<p>Cruise control tracking a constant speed needs type I (the I part of its PI controller). An antenna tracking a satellite moving at constant angular rate needs type I to follow with finite lag, type II to follow exactly. This is why "just add an integrator" is the most common controller upgrade in industry — and Section 8 shows what it costs.</p>
+
+<div class="example">
+  <div class="ex-head"><span class="ex-tag">Worked example</span> P control of a heater — closed-loop TF and offset</div>
+  <div class="ex-body">
+    <p>A lab heater is PT1 with \(K_S = 2\;\mathrm{°C/\%}\) (2 °C per % of heater power, measured around an operating point) and \(T = 4\,\mathrm{s}\): \(G(s) = \frac{2}{1+4s}\). We close the loop with a P controller \(K(s) = K_P = 3\). Find the closed-loop transfer function, the steady-state error for a setpoint step, and the closed-loop time constant.</p>
+    <div class="step"><span class="step-label">Step 1 — loop gain:</span> \( L(s) = K_P\,G(s) = \dfrac{6}{1+4s} \), so \(K_0 = L(0) = 6\).</div>
+    <div class="step"><span class="step-label">Step 2 — close the loop:</span>
+    \[ T(s) = \frac{L}{1+L} = \frac{6}{1+4s+6} = \frac{6}{7+4s} = \frac{6/7}{1 + \frac{4}{7}s}. \]
+    Still PT1 — but look at the numbers.</div>
+    <div class="step"><span class="step-label">Step 3 — read off the results:</span> DC gain \(6/7 \approx 0.857\), hence steady-state error \(e_\infty = \frac{1}{1+K_0} = \frac{1}{7} \approx 14.3\,\%\) of the step. Time constant \(T' = \frac{4}{7} \approx 0.57\,\mathrm{s}\) — <em>seven times faster</em> than the open plant.</div>
+    <div class="result-line">Feedback made the heater 7× faster but leaves a 14 % offset. Check the pattern: both improvements are the same factor \(1+K_0 = 7\) — gain is being traded for speed and accuracy simultaneously. To remove the last 14 %, add an integrator (PI) and the offset becomes exactly zero.</div>
+  </div>
+</div>
+
+<div class="widget">
+  <div class="w-head"><span class="ic">🧪</span>Interactive — P vs. PI: the offset that won't die <span class="w-tag">simulation</span></div>
+  <div class="w-body">
+    <p class="small mt0">Closed-loop step responses on a PT1 plant (\(T = 1\,\mathrm{s}\)), computed analytically. The P-only loop settles <em>below</em> the setpoint at \(\frac{K_PK_S}{1+K_PK_S}\) — crank \(K_P\) and watch the offset shrink but never vanish. The PI loop (integral time \(T_n = T\), pole cancellation) always ends at exactly 1. Notice PI is <em>slower</em> at low gain: the integrator has to wind up.</p>
+    <div id="w-pvspi"></div>
+  </div>
+</div>
+
+<div class="box pitfall">
+  <div class="box-title"><span class="ic">🚫</span>Classic pitfall: "the plant integrates, so I need an I controller"</div>
+  <p>Backwards! The error table counts integrators <em>anywhere in the loop</em> \(L = GK\). If the <b>plant</b> already integrates (tank level, position), a plain P controller already gives a type-I loop and zero steady-state error to a step — an extra I term in the controller often only destabilizes. Conversely a self-regulating plant (PT1 oven) needs the integrator to come from the <b>controller</b>. Count integrators in \(L\), not in \(K\).</p>
+</div>
+
+<h2 id="stability">5. Stability — the price tag of feedback</h2>
+
+<p>A system is <strong>BIBO-stable</strong> (<span class="de">stabil</span>) when every bounded input produces a bounded output. From Module 12 you know the criterion: <b>all poles strictly in the left half-plane</b> (\(\mathrm{Re}\,s_i &lt; 0\)), because every pole \(s_i\) contributes \(e^{s_i t}\) to the response. Poles on the imaginary axis ring forever (<span class="de">grenzstabil</span>); poles in the right half-plane grow exponentially.</p>
+
+<p>The new twist: the closed-loop poles are the roots of the <strong>characteristic equation</strong> (<span class="de">charakteristische Gleichung</span>)</p>
+\[ 1 + L(s) = 0 \quad\Longleftrightarrow\quad \text{denominator of } \frac{L}{1+L}, \]
+<p>and they <em>move as you change the controller</em>. A perfectly stable plant plus a perfectly reasonable controller can produce an unstable loop. Three tools tell you when: Routh–Hurwitz (algebra, this section), the root locus (geometry, Section 6), and Nyquist/Bode (frequency response, Section 7).</p>
+
+<h3 id="routh">5.1 Routh–Hurwitz: stability without solving for roots</h3>
+<p>For polynomials up to order 2, "all coefficients positive" is necessary <em>and</em> sufficient for stability. From order 3 it is only necessary. The <strong>Routh–Hurwitz criterion</strong> (<span class="de">Hurwitz-Kriterium</span>) closes the gap by pure arithmetic on the coefficients. For \(a_3 s^3 + a_2 s^2 + a_1 s + a_0\), build the table:</p>
+
+<div class="table-wrap">
+<table class="data">
+<thead><tr><th>Row</th><th>Column 1</th><th>Column 2</th></tr></thead>
+<tbody>
+<tr><td>\(s^3\)</td><td>\(a_3\)</td><td>\(a_1\)</td></tr>
+<tr><td>\(s^2\)</td><td>\(a_2\)</td><td>\(a_0\)</td></tr>
+<tr><td>\(s^1\)</td><td>\(\dfrac{a_2 a_1 - a_3 a_0}{a_2}\)</td><td>0</td></tr>
+<tr><td>\(s^0\)</td><td>\(a_0\)</td><td></td></tr>
+</tbody>
+</table>
+</div>
+
+<p>The system is stable iff <b>all first-column entries are positive</b>. Each sign change corresponds to one right-half-plane pole. The memorable third-order shortcut: all \(a_i &gt; 0\) <em>and</em> \(a_2 a_1 &gt; a_3 a_0\) — "the inner coefficients must beat the outer ones".</p>
+
+<div class="example">
+  <div class="ex-head"><span class="ex-tag">Worked example</span> Routh table with a gain range — how hard can we push K?</div>
+  <div class="ex-body">
+    <p>Plant \(G(s) = \dfrac{1}{(s+1)(s+2)(s+3)}\), P controller with gain \(K\). For which \(K\) is the closed loop stable, and what happens at the limit?</p>
+    <div class="step"><span class="step-label">Step 1 — characteristic equation:</span>
+    \[ 1 + \frac{K}{(s+1)(s+2)(s+3)} = 0 \;\Rightarrow\; s^3 + 6s^2 + 11s + (6 + K) = 0. \]</div>
+    <div class="step"><span class="step-label">Step 2 — Routh table:</span>
+      row \(s^3\): \(1,\; 11\); &nbsp; row \(s^2\): \(6,\; 6+K\); &nbsp;
+      row \(s^1\): \(\dfrac{6 \cdot 11 - 1\cdot(6+K)}{6} = \dfrac{60 - K}{6}\); &nbsp; row \(s^0\): \(6+K\).</div>
+    <div class="step"><span class="step-label">Step 3 — demand a positive first column:</span>
+      \(6+K &gt; 0\) and \(60-K &gt; 0\):
+      \[ \boxed{\,-6 &lt; K &lt; 60\,} \quad (\text{for a physical gain: } 0 &lt; K &lt; 60). \]</div>
+    <div class="step"><span class="step-label">Step 4 — the moment of instability:</span> at \(K = 60\) the \(s^1\) row is zero; the auxiliary equation from the \(s^2\) row, \(6s^2 + 66 = 0\), gives \(s = \pm j\sqrt{11}\): a pole pair <em>on</em> the imaginary axis. The loop oscillates steadily at \(\omega = \sqrt{11} \approx 3.32\,\mathrm{rad/s}\) — this is exactly the "ultimate gain" \(K_u = 60\) and period \(T_u = 2\pi/3.32 \approx 1.9\,\mathrm{s}\) that Ziegler–Nichols tuning (Section 8) asks you to find experimentally.</div>
+    <div class="result-line">Stable for \(0 &lt; K &lt; 60\); at \(K = 60\) sustained oscillation at \(3.32\) rad/s. Sanity check: more phase-laggy poles in the plant → smaller \(K\) range. A plant with a fourth lag would cap \(K\) far lower.</div>
+  </div>
+</div>
+
+<div class="box warn">
+  <div class="box-title"><span class="ic">⚠️</span>Instability is not "it breaks eventually" — it is exponential</div>
+  <p>An unstable loop does not drift gently off target; the error <em>doubles every fixed interval</em> until an actuator saturates or something mechanical gives up. In the lab you hear it: a servo that "sings" is sitting near the stability boundary. Treat the stable gain range from Routh as a hard cliff edge, not a soft recommendation — and design with margin (Section 7) because your plant model is never exact.</p>
+</div>
+
+<h2 id="rootlocus">6. The root locus — watching poles move</h2>
+
+<p>Routh gives a yes/no answer. The <strong>root locus</strong> (<span class="de">Wurzelortskurve</span>, Evans 1948) gives the whole movie: it plots the closed-loop pole positions in the s-plane as the gain \(K\) sweeps from \(0\) to \(\infty\). Since pole positions <em>are</em> the dynamics (decay rate = \(-\mathrm{Re}\,s\), ringing frequency = \(\mathrm{Im}\,s\), damping = angle from the negative real axis), the locus shows at a glance how the loop's character evolves with gain.</p>
+
+<p>The characteristic equation \(1 + K\,G(s) = 0\) rearranges to \(G(s) = -1/K\). Two facts follow immediately, and generate the classic construction rules:</p>
+<ul>
+  <li><b>Start and end:</b> at \(K \to 0\) the closed-loop poles sit on the <em>open-loop poles</em>; as \(K \to \infty\) they migrate to the open-loop <em>zeros</em> (or to infinity if there are none). \(n\) poles → \(n\) branches.</li>
+  <li><b>Real-axis rule:</b> a point on the real axis belongs to the locus iff an <em>odd</em> number of real poles+zeros lies to its right (that is what makes the phase of \(G\) equal 180°).</li>
+  <li><b>Asymptotes:</b> the \(n-m\) branches heading to infinity leave along asymptotes at angles \(\frac{(2k+1)\,180°}{n-m}\), radiating from the centroid \(\sigma_a = \frac{\sum \text{poles} - \sum \text{zeros}}{n-m}\).</li>
+  <li><b>Breakaway points</b> (<span class="de">Verzweigungspunkte</span>): where two real branches collide and split into a complex pair — the loop turns oscillatory.</li>
+  <li><b>Imaginary-axis crossing:</b> found with Routh (as in the worked example above) — the gain limit and oscillation frequency.</li>
+</ul>
+
+<p>For the workhorse case of a motor position loop, \(G(s) = \frac{1}{s(s+a)(s+b)}\) — integrator (position) plus two lags — three poles and no zeros give \(n-m=3\) asymptotes at ±60° and 180°. Read the story off the sketch: at low gain, three sluggish real poles; raise \(K\) and two of them collide, break away, and curve toward the imaginary axis (faster but ever more oscillatory); push further and they <em>cross</em> into the right half-plane at \(K^* = ab(a+b)\), \(\omega^* = \sqrt{ab}\). Gain is a throttle you can only open so far.</p>
+
+<div class="widget">
+  <div class="w-head"><span class="ic">🧪</span>Interactive — root locus of a 3-pole plant <span class="w-tag">simulation</span></div>
+  <div class="w-body">
+    <p class="small mt0">Closed-loop poles of \(L(s) = \frac{K}{s(s+a)(s+b)}\), computed numerically for ~130 gains (blue dots trace the locus, ✕ = open-loop poles). The orange dots are the three poles at <em>your</em> \(K\); the red rings mark the imaginary-axis crossing at \(K^{*} = ab(a+b)\). Try: raise \(K\) until the orange pair crosses into the right half-plane — then spread \(a\) and \(b\) apart and watch the stable region grow.</p>
+    <div id="w-locus"></div>
+  </div>
+</div>
+
+<div class="box key">
+  <div class="box-title"><span class="ic">🔑</span>What the root locus teaches about controller design</div>
+  <p>A P controller can only slide poles <em>along</em> the fixed locus — if the locus passes through bad territory, no gain value saves you. To move the <em>locus itself</em> you must add dynamics: a controller zero (the D part of PID, or a lead element) pulls the branches to the left — more damping at the same speed; a controller pole at the origin (the I part) adds a branch near \(s=0\) and pushes the others right — accuracy paid for with stability margin. PID tuning is exactly the art of placing one pole and up to two zeros so the locus runs through the sweet spot.</p>
+</div>
+
+<h2 id="freq">7. Frequency-domain design — Nyquist, Bode and the two margins</h2>
+
+<p>Routh and the root locus need a polynomial model. The frequency-domain view needs only the <em>measured</em> frequency response of the open loop — which is why it rules industrial practice: you can get \(L(j\omega)\) from a frequency sweep (Module 15) without ever fitting a model, and dead time fits in with no special treatment.</p>
+
+<h3 id="nyquist">7.1 The Nyquist idea and the −1 point</h3>
+<p>Imagine breaking the loop and injecting a sine. It returns after one trip multiplied by \(L(j\omega)\). The loop can sustain an oscillation on its own if the returned signal reproduces the injected one <em>with the sign flip of the summing junction already accounted for</em> — i.e. if at some frequency</p>
+\[ L(j\omega) = -1 \qquad (|L| = 1 \text{ and } \angle L = -180°). \]
+<p>The point \(-1\) in the complex plane is therefore the critical point (<span class="de">kritischer Punkt</span>). The <strong>Nyquist criterion</strong> makes this rigorous: plot the curve \(L(j\omega)\) for \(\omega: 0 \to \infty\); for an open loop that is itself stable, the closed loop is stable iff this curve <b>passes the point −1 on its right</b> without encircling it (<span class="de">vereinfachtes Nyquistkriterium / Linke-Hand-Regel</span>). Distance from the curve to −1 is literally distance from disaster — and the two standard "margins" measure it along the two natural directions:</p>
+
+<figure>
+  <div class="fig-frame">
+  <svg class="diagram" viewBox="0 0 620 300" role="img" aria-label="Nyquist plot of an open loop with gain and phase margin indicated">
+    <defs><marker id="arrB" markerWidth="8" markerHeight="8" refX="6" refY="4" orient="auto"><path d="M0 0 L7 4 L0 8 z" fill="var(--accent)"/></marker></defs>
+    <!-- axes -->
+    <line x1="40" y1="140" x2="590" y2="140" class="wire"/>
+    <line x1="300" y1="16" x2="300" y2="284" class="wire"/>
+    <text x="578" y="132" font-size="12" fill="var(--text-soft)">Re</text>
+    <text x="308" y="28" font-size="12" fill="var(--text-soft)">Im</text>
+    <!-- unit circle -->
+    <circle cx="300" cy="140" r="60" fill="none" stroke="var(--text-faint)" stroke-dasharray="5 4"/>
+    <text x="344" y="94" font-size="11" fill="var(--text-faint)">|L| = 1</text>
+    <!-- -1 point -->
+    <circle cx="240" cy="140" r="5" fill="var(--accent-2)"/>
+    <text x="228" y="126" font-size="13" font-weight="700" fill="var(--accent-2)">−1</text>
+    <!-- L curve: from (490,140) sweeping through -60,-90,-135,-180,-225 to origin -->
+    <path d="M490 140 C 480 205, 420 250, 355 244 C 310 240, 288 214, 273 182 C 262 158, 262 146, 267 140 C 273 132, 285 126, 300 140"
+          fill="none" stroke="var(--accent)" stroke-width="2.4"/>
+    <path d="M414 243 L 404 245" stroke="var(--accent)" stroke-width="2.4" marker-end="url(#arrB)"/>
+    <text x="452" y="266" font-size="12" fill="var(--accent)">L(jω), ω →</text>
+    <text x="497" y="160" font-size="11" fill="var(--text-soft)">ω = 0</text>
+    <!-- GM segment -->
+    <line x1="240" y1="140" x2="267" y2="140" stroke="var(--accent-2)" stroke-width="3"/>
+    <text x="100" y="114" font-size="11.5" fill="var(--accent-2)">gain margin:</text>
+    <text x="100" y="128" font-size="11.5" fill="var(--accent-2)">gap to −1</text>
+    <!-- PM angle: crossing of unit circle: find curve point at |L|=1: approx (273,182)? distance from center: sqrt(27^2+42^2)=50... use (268,192): dx=-32,dy=52 → 61 ok -->
+    <circle cx="268" cy="192" r="4.5" fill="var(--accent)"/>
+    <path d="M240 140 A 60 60 0 0 1 268 192" fill="none" stroke="var(--accent)" stroke-width="1.6" stroke-dasharray="4 3"/>
+    <text x="130" y="228" font-size="11.5" fill="var(--accent)">phase margin φ:</text>
+    <text x="130" y="242" font-size="11.5" fill="var(--accent)">angle above −180°</text>
+  </svg>
+  </div>
+  <figcaption><b>Fig. 7.1</b> — Nyquist plot (<span class="de">Ortskurve</span>) of a stable 3-lag open loop. The curve starts at \(L(0)=K_0\) on the real axis and spirals to the origin as phase accumulates. Stability: it passes to the <em>right</em> of −1. The gain margin is how much the curve could stretch before hitting −1; the phase margin is how much it could rotate.</figcaption>
+</figure>
+
+<h3 id="margins">7.2 Gain margin and phase margin on the Bode plot</h3>
+<p>In practice you read the margins from the open-loop Bode plot (Module 12), using two special frequencies:</p>
+<ul>
+  <li>The <b>gain crossover</b> \(\omega_c\) (<span class="de">Durchtrittsfrequenz</span>): where \(|L| = 1\) (0 dB). The <strong>phase margin</strong> \[ \varphi_R = 180° + \angle L(j\omega_c) \] is how much <em>additional phase lag</em> the loop tolerates before oscillating.</li>
+  <li>The <b>phase crossover</b> \(\omega_{180}\): where \(\angle L = -180°\). The <strong>gain margin</strong> \[ A_R = \frac{1}{|L(j\omega_{180})|} \quad\text{(in dB: } -|L|_{\mathrm{dB}}\text{ at } \omega_{180}) \] is the factor by which gain may still increase.</li>
+</ul>
+<p>Design targets that decades of practice have distilled: <b>phase margin ≈ 45–60°</b>, gain margin ≈ 6–12 dB (factor 2–4). The phase margin doubles as a damping predictor for typical loops: \(\zeta \approx \varphi_R/100°\), so 60° ≈ ζ 0.6 ≈ 10 % overshoot, while 20° means violent ringing even though the loop is technically "stable". Dead time eats phase margin linearly: \(\Delta\varphi = -\omega_c T_t \cdot 57.3°\) — a 50 ms delay in a loop with \(\omega_c = 10\) rad/s costs 29°, half your budget. This is the quantitative version of the shower story.</p>
+
+<div class="widget">
+  <div class="w-head"><span class="ic">🧪</span>Interactive — gain &amp; phase margin explorer <span class="w-tag">simulation</span></div>
+  <div class="w-body">
+    <p class="small mt0">Open-loop Bode plot of \(L(j\omega) = K\,G(j\omega)\) for a 3-lag plant (poles at 0.2, 1 and 4&nbsp;Hz). The gain slider moves the magnitude curve bodily up and down — the phase curve never moves. Watch the margins in the readouts: the loop goes unstable when the 0-dB crossing passes the −180° frequency (K ≈ 31 here). Find the K that gives a 45° phase margin.</p>
+    <div id="w-margins"></div>
+  </div>
+</div>
+
+<div class="box warn">
+  <div class="box-title"><span class="ic">⚠️</span>Margins are model insurance, not decoration</div>
+  <p>Why not design at 5° phase margin and enjoy maximum speed? Because your plant model is wrong: component tolerances, temperature drift, aging, the payload the customer adds later, the sensor filter somebody enables in firmware. Each nibbles phase or gain. A 50° margin is the engineering budget for everything you didn't model. Loops designed at the edge work brilliantly in the demo and oscillate in the field.</p>
+</div>
+
+<h2 id="pid">8. The PID controller — 90 % of all loops on Earth</h2>
+
+<p>The <strong>PID controller</strong> (<span class="de">PID-Regler</span>) acts on the error's present, past and future, and its parallel form is worth knowing by heart:</p>
+\[ \boxed{\;u(t) = K_P\,e(t) + K_I \int_0^t e(\tau)\,\mathrm{d}\tau + K_D\,\dot{e}(t)\;}
+\qquad K(s) = K_P + \frac{K_I}{s} + K_D\,s \]
+<p>German industry prefers the equivalent time-constant form \(K(s) = K_P\left(1 + \frac{1}{T_n s} + T_v s\right)\) with <b>integral (reset) time</b> \(T_n = K_P/K_I\) (<span class="de">Nachstellzeit</span>) and <b>derivative time</b> \(T_v = K_D/K_P\) (<span class="de">Vorhaltzeit</span>). Now dissect the three terms one at a time — each solves the previous one's problem and creates its own:</p>
+
+<h3 id="p-term">8.1 P — the present: speed, but offset</h3>
+<p>\(u = K_P e\) reacts instantly and proportionally. More \(K_P\) → faster response, smaller (but nonzero) steady-state error, as derived in Section 4 — and shrinking stability margins, as Sections 5–7 showed. P alone is fine where a small offset is acceptable: many flow and pressure loops run pure P.</p>
+
+<h3 id="i-term">8.2 I — the past: kills offset, but destabilizes</h3>
+<p>The integrator accumulates error until none remains: <em>any</em> persistent error keeps ratcheting \(u\) until the plant complies. It makes the loop type I — exact step tracking, exact rejection of constant disturbances (a headwind, a heat leak). The cost is structural: \(1/s\) contributes −90° of phase at <em>all</em> frequencies, a permanent withdrawal from the phase-margin account. Too much \(K_I\) (too short \(T_n\)) and the loop rings or runs away — the slow "hunting" oscillation of a badly tuned thermostat is textbook excess integral action.</p>
+
+<h3 id="d-term">8.3 D — the future: damping, but noise</h3>
+<p>\(u = K_D \dot e\) extrapolates the trend and brakes <em>before</em> overshooting — like easing off the accelerator as you approach the car ahead. In the frequency domain, \(K_D s\) adds phase <em>lead</em> (up to +90°), directly refilling the phase margin, which lets you raise \(K_P\); in root-locus language, its zero bends the branches leftward. The cost: differentiation amplifies high-frequency sensor noise with gain \(K_D\omega\) — raw D on a noisy signal makes the actuator chatter and heat. Hence two universal implementation fixes:</p>
+<ul>
+  <li><b>Filtered derivative:</b> implement \(K_D s\) as \(\frac{K_D s}{1 + s T_v/N}\) with \(N \approx 8\ldots 20\) — a genuine differentiator only up to a corner, a flat gain above it.</li>
+  <li><b>Derivative on measurement</b> (<span class="de">D-Anteil auf die Regelgröße</span>): differentiate \(-y\) instead of \(e = w - y\), so a setpoint <em>step</em> (whose derivative is an impulse!) doesn't kick the actuator. Disturbance behavior is unchanged.</li>
+</ul>
+
+<div class="widget">
+  <div class="w-head"><span class="ic">🧪</span>Interactive — PID playground on a PT2 plant <span class="w-tag">simulation</span></div>
+  <div class="w-body">
+    <p class="small mt0">A PT2 plant (\(T_1 = 1\,\mathrm{s},\ T_2 = 0.3\,\mathrm{s}\), think: motor + thermal lag) simulated step by step, with a setpoint step at \(t=0\). Solid curve: output \(y(t)\); dashed: control effort \(u(t)\), drawn ÷10 (scaled). Experiments to run: <b>(1)</b> P only (\(K_I = K_D = 0\)) — see the permanent offset shrink as \(K_P\) grows; <b>(2)</b> add \(K_I\) — offset dies, overshoot appears; push \(K_I\) to 10 with small \(K_P\) — instability; <b>(3)</b> add \(K_D\) — the ringing damps and you can afford more \(K_P\). Note how aggressive tunings buy speed with huge initial \(u\) — a real actuator would saturate.</p>
+    <div id="w-pid"></div>
+  </div>
+</div>
+
+<h3 id="zn">8.4 Ziegler–Nichols tuning — the classic recipe</h3>
+<p>Ziegler and Nichols (1942) gave the field its first systematic tuning rule, and it is still the standard starting point. The <b>oscillation (ultimate-gain) method</b>: set \(K_I = K_D = 0\), raise \(K_P\) until the loop oscillates with constant amplitude; record that <strong>ultimate gain</strong> \(K_u\) (<span class="de">kritische Verstärkung</span>) and <strong>oscillation period</strong> \(T_u\). Then:</p>
+
+<div class="table-wrap">
+<table class="data">
+<thead><tr><th>Controller</th><th>\(K_P\)</th><th>\(T_n\)</th><th>\(T_v\)</th></tr></thead>
+<tbody>
+<tr><td>P</td><td>\(0.5\,K_u\)</td><td>—</td><td>—</td></tr>
+<tr><td>PI</td><td>\(0.45\,K_u\)</td><td>\(T_u/1.2\)</td><td>—</td></tr>
+<tr><td>PID</td><td>\(0.6\,K_u\)</td><td>\(T_u/2\)</td><td>\(T_u/8\)</td></tr>
+</tbody>
+</table>
+</div>
+
+<p>Know its character: Z–N aims at <em>quarter-amplitude decay</em> (each overshoot ¼ of the previous), which means a punchy, <b>aggressive</b> loop with typically 25–50 % overshoot on setpoint steps — great disturbance rejection, poor gentleness. Common practice: take Z–N as the starting point, then halve \(K_P\) and lengthen \(T_n\) until the step response suits the application. Modern alternatives (relay auto-tuning, which measures \(K_u, T_u\) automatically with a bang-bang experiment; internal-model tuning) are refinements of the same idea.</p>
+
+<div class="example">
+  <div class="ex-head"><span class="ex-tag">Worked example</span> Ziegler–Nichols from a measured oscillation</div>
+  <div class="ex-body">
+    <p>On a temperature loop you disable I and D, raise the P gain, and at \(K_P = 8.0\) the temperature oscillates steadily with period \(2.0\,\mathrm{s}\). Design the Z–N PID controller and state its parallel-form gains.</p>
+    <div class="step"><span class="step-label">Step 1 — record the ultimate values:</span> \(K_u = 8.0\), \(T_u = 2.0\,\mathrm{s}\).</div>
+    <div class="step"><span class="step-label">Step 2 — apply the PID row:</span>
+      \( K_P = 0.6\,K_u = 4.8 \), \( T_n = T_u/2 = 1.0\,\mathrm{s} \), \( T_v = T_u/8 = 0.25\,\mathrm{s} \).</div>
+    <div class="step"><span class="step-label">Step 3 — convert to parallel gains:</span>
+      \( K_I = K_P/T_n = 4.8\,\mathrm{s^{-1}} \), \( K_D = K_P\,T_v = 1.2\,\mathrm{s} \).</div>
+    <div class="step"><span class="step-label">Step 4 — sanity checks:</span> the closed loop will now oscillate (if at all) near \(2\pi/T_u \approx 3.1\,\mathrm{rad/s}\) with good damping; \(K_P = 4.8\) is 60 % of the stability limit — consistent with a gain margin of \(1/0.6 \approx 4.4\) dB… tight, as Z–N always is. Expect ~30 % overshoot; soften if the application dislikes it.</div>
+    <div class="result-line">\(K_P = 4.8\), \(T_n = 1.0\) s, \(T_v = 0.25\) s (\(K_I = 4.8\ \mathrm{s^{-1}}\), \(K_D = 1.2\) s) — an aggressive but functional starting tune.</div>
+  </div>
+</div>
+
+<h3 id="windup">8.5 Integrator windup — and the clamping fix</h3>
+<p>Every real actuator saturates: a valve stops at 100 %, a motor driver at its current limit. During saturation the loop is effectively <em>open</em> — the plant gets \(u_{\max}\) no matter what the controller computes. But the naive integrator doesn't know that: while the (large) error persists, it keeps integrating, "winding up" to an absurd internal value. When the output finally reaches the setpoint, the controller <em>cannot react</em> — it must first "unwind" the accumulated integral, which the error can only discharge by swinging far to the other side. Result: a massive, slow overshoot that no gain tweak fixes. The oven that overshoots by 30 °C after a cold start is windup, not bad tuning.</p>
+<p><strong>Anti-windup</strong> (<span class="de">Anti-Windup</span>) fixes it with one line of logic — <b>clamping</b> (conditional integration): stop integrating whenever the actuator is saturated <em>and</em> the error would drive it further into saturation. The alternative, back-calculation, feeds the difference \(u_{\text{limited}} - u_{\text{computed}}\) back to drain the integrator smoothly. Every industrial PID implements one of these; every student PID forgets to.</p>
+
+<div class="box pitfall">
+  <div class="box-title"><span class="ic">🚫</span>Classic pitfall: tuning around a saturation you didn't notice</div>
+  <p>Symptoms of hidden actuator saturation: the loop behaves beautifully for small setpoint changes and horribly for large ones (linear analysis can't explain that — linear systems don't care about amplitude); overshoot grows with step size; the recorded \(u\) sits flat at a rail during transients. Before re-tuning, plot \(u(t)\). If it clips, you need anti-windup (and perhaps a bigger actuator), not different gains.</p>
+</div>
+
+<h3 id="cascade">8.6 Cascade control — loops inside loops</h3>
+<p>When the plant offers an intermediate measurable variable, nest two loops: a fast <b>inner loop</b> (<span class="de">Hilfsregelkreis</span>) around it, commanded by a slower <b>outer loop</b>. The classic: a motor drive cascades position → velocity → current, each loop 5–10× faster than the one outside it. Benefits: the inner loop flattens the inner plant's nonlinearities and rejects inner disturbances (torque ripple, supply sag) <em>before</em> they reach the outer variable, and each loop is low-order and easy to tune — innermost first, then outward.</p>
+
+<figure>
+  <div class="fig-frame">
+  <svg class="diagram" viewBox="0 0 660 210" role="img" aria-label="Cascade control structure with inner and outer loop">
+    <defs><marker id="arrC" markerWidth="8" markerHeight="8" refX="6" refY="4" orient="auto"><path d="M0 0 L7 4 L0 8 z" fill="var(--accent)"/></marker></defs>
+    <line x1="14" y1="80" x2="40" y2="80" stroke="var(--accent)" stroke-width="2" marker-end="url(#arrC)"/>
+    <text x="10" y="70" font-size="12" fill="var(--accent)">w</text>
+    <circle cx="52" cy="80" r="11" fill="none" stroke="var(--text-soft)" stroke-width="2"/>
+    <text x="44" y="76" font-size="11">+</text><text x="57" y="100" font-size="11">−</text>
+    <line x1="63" y1="80" x2="88" y2="80" stroke="var(--accent)" stroke-width="2" marker-end="url(#arrC)"/>
+    <rect x="90" y="58" width="102" height="44" fill="none" stroke="var(--text-soft)" stroke-width="2" rx="6"/>
+    <text x="141" y="76" text-anchor="middle" font-size="12" font-weight="600">outer ctrl</text>
+    <text x="141" y="93" text-anchor="middle" font-size="11.5">(position)</text>
+    <line x1="192" y1="80" x2="218" y2="80" stroke="var(--accent)" stroke-width="2" marker-end="url(#arrC)"/>
+    <circle cx="230" cy="80" r="11" fill="none" stroke="var(--text-soft)" stroke-width="2"/>
+    <text x="222" y="76" font-size="11">+</text><text x="235" y="100" font-size="11">−</text>
+    <line x1="241" y1="80" x2="266" y2="80" stroke="var(--accent)" stroke-width="2" marker-end="url(#arrC)"/>
+    <rect x="268" y="58" width="98" height="44" fill="none" stroke="var(--text-soft)" stroke-width="2" rx="6"/>
+    <text x="317" y="76" text-anchor="middle" font-size="12" font-weight="600">inner ctrl</text>
+    <text x="317" y="93" text-anchor="middle" font-size="11.5">(current)</text>
+    <line x1="366" y1="80" x2="392" y2="80" stroke="var(--accent)" stroke-width="2" marker-end="url(#arrC)"/>
+    <rect x="394" y="58" width="86" height="44" fill="none" stroke="var(--text-soft)" stroke-width="2" rx="6"/>
+    <text x="437" y="84" text-anchor="middle" font-size="12">G₁ fast</text>
+    <line x1="480" y1="80" x2="506" y2="80" stroke="var(--accent)" stroke-width="2" marker-end="url(#arrC)"/>
+    <circle cx="497" cy="80" r="4" class="node"/>
+    <rect x="508" y="58" width="86" height="44" fill="none" stroke="var(--text-soft)" stroke-width="2" rx="6"/>
+    <text x="551" y="84" text-anchor="middle" font-size="12">G₂ slow</text>
+    <line x1="594" y1="80" x2="646" y2="80" stroke="var(--accent)" stroke-width="2" marker-end="url(#arrC)"/>
+    <text x="634" y="70" font-size="12" fill="var(--accent)">y</text>
+    <!-- inner feedback -->
+    <path class="wire" d="M497 84 V138 H230 V92" fill="none"/>
+    <line x1="230" y1="97" x2="230" y2="91" stroke="var(--text-soft)" stroke-width="2" marker-end="url(#arrC)"/>
+    <text x="360" y="132" text-anchor="middle" font-size="11" fill="var(--text-faint)">inner loop: fast, tames G₁</text>
+    <!-- outer feedback -->
+    <circle cx="620" cy="80" r="4" class="node"/>
+    <path class="wire" d="M620 84 V176 H52 V92" fill="none"/>
+    <line x1="52" y1="97" x2="52" y2="91" stroke="var(--text-soft)" stroke-width="2" marker-end="url(#arrC)"/>
+    <text x="336" y="170" text-anchor="middle" font-size="11" fill="var(--text-faint)">outer loop: slow, delivers accuracy</text>
+  </svg>
+  </div>
+  <figcaption><b>Fig. 8.1</b> — Cascade control (<span class="de">Kaskadenregelung</span>): the outer controller's output is the <em>setpoint</em> of the inner loop. Tune from the inside out; make the inner loop 5–10× faster.</figcaption>
+</figure>
+
+<h2 id="statespace">9. State space — control grows up</h2>
+
+<p>Transfer functions describe input–output behavior; the <strong>state-space representation</strong> (<span class="de">Zustandsraumdarstellung</span>) opens the box. A system's <b>state</b> \(\mathbf{x}\) is the minimal set of variables that, together with future inputs, determines all future behavior — physically, one variable per independent energy store: capacitor voltages, inductor currents, positions, velocities, temperatures. Any lumped linear system becomes two first-order matrix equations:</p>
+\[ \boxed{\;\dot{\mathbf{x}} = \mathbf{A}\,\mathbf{x} + \mathbf{B}\,u, \qquad y = \mathbf{C}\,\mathbf{x} + D\,u\;} \]
+<p>\(\mathbf{A}\) (system matrix, <span class="de">Systemmatrix</span>) encodes the internal dynamics, \(\mathbf{B}\) how the input pushes on the states, \(\mathbf{C}\) what the sensor sees. The payoffs: multiple inputs and outputs fit naturally (a drone: 4 motors in, 6 degrees of freedom out), computers integrate first-order systems effortlessly, and the geometry of the state vector gives concepts that transfer functions hide.</p>
+
+<h3 id="eigenvalues">9.1 Eigenvalues are poles</h3>
+<p>Laplace-transform \(\dot{\mathbf x} = \mathbf{Ax} + \mathbf{B}u\): \((s\mathbf{I} - \mathbf{A})\mathbf{X} = \mathbf{B}U\), so \(G(s) = \mathbf{C}(s\mathbf{I}-\mathbf{A})^{-1}\mathbf{B} + D\), whose denominator is \(\det(s\mathbf{I}-\mathbf{A})\). Therefore:</p>
+\[ \text{poles of } G(s) \;=\; \text{eigenvalues of } \mathbf{A}. \]
+<p>Stability = all eigenvalues in the left half-plane. Everything from Sections 5–7 carries over intact; only the bookkeeping changed.</p>
+
+<h3 id="controllability">9.2 Controllability and pole placement</h3>
+<p>New question, invisible to transfer functions: can the input steer <em>every</em> state? A system is <strong>controllable</strong> (<span class="de">steuerbar</span>) if the input can drive \(\mathbf{x}\) from anywhere to anywhere in finite time — Kálmán's test: the matrix \(\mathbf{Q}_c = [\,\mathbf{B}\;\; \mathbf{AB}\;\; \cdots\; \mathbf{A}^{n-1}\mathbf{B}\,]\) must have full rank \(n\). If it does, <strong>state feedback</strong></p>
+\[ u = -\mathbf{k}^{\mathsf T}\mathbf{x} \quad\Rightarrow\quad \dot{\mathbf x} = (\mathbf{A} - \mathbf{B}\mathbf{k}^{\mathsf T})\,\mathbf{x} \]
+<p>lets you place the closed-loop eigenvalues <b>anywhere you like</b> (<span class="de">Polvorgabe</span>) — no root locus to be a prisoner of, because feeding back <em>all</em> states is a richer controller than feeding back one output. The inverted pendulum — a Segway, a rocket on its tail — is the icon of this method: unstable plant, and PID on the tilt angle alone struggles because staying upright requires coordinating angle, angular rate, position and speed; state feedback handles all four in one \(\mathbf{k}\).</p>
+
+<div class="example">
+  <div class="ex-head"><span class="ex-tag">Worked example</span> Pole placement on a double integrator</div>
+  <div class="ex-body">
+    <p>A frictionless positioning stage: \(\ddot{p} = u\) (force per unit mass in, position out). States \(x_1 = p\), \(x_2 = \dot p\). Design state feedback for closed-loop poles at \(s = -2 \pm j2\) (\(\omega_n = 2\sqrt2\), \(\zeta = 0.707\)).</p>
+    <div class="step"><span class="step-label">Step 1 — state-space model:</span>
+      \[ \mathbf{A} = \begin{pmatrix} 0 & 1 \\ 0 & 0 \end{pmatrix},\quad \mathbf{B} = \begin{pmatrix} 0 \\ 1 \end{pmatrix}. \]
+      Open-loop poles: \(\det(s\mathbf I - \mathbf A) = s^2 = 0\) — a double pole at the origin, marginally unstable (it drifts forever).</div>
+    <div class="step"><span class="step-label">Step 2 — controllability:</span> \(\mathbf{Q}_c = [\mathbf{B}\;\;\mathbf{AB}] = \begin{pmatrix} 0 & 1 \\ 1 & 0 \end{pmatrix}\), rank 2 ✓ — poles can go anywhere.</div>
+    <div class="step"><span class="step-label">Step 3 — close the loop:</span> with \(u = -k_1 x_1 - k_2 x_2\): \(\ddot p = -k_1 p - k_2 \dot p\), characteristic polynomial \(s^2 + k_2 s + k_1\).</div>
+    <div class="step"><span class="step-label">Step 4 — match the target:</span> desired \((s+2-j2)(s+2+j2) = s^2 + 4s + 8\). Compare: \(k_2 = 4\), \(k_1 = 8\).</div>
+    <div class="result-line">\(u = -8p - 4\dot p\) — a "PD controller" in state-feedback clothing: \(k_1\) is a synthetic spring, \(k_2\) a synthetic damper. Sanity check: stiffer spring (\(k_1\uparrow\)) → faster and springier; more damper (\(k_2\uparrow\)) → calmer. Physical intuition preserved.</div>
+  </div>
+</div>
+
+<h3 id="observers">9.3 Observers, Kalman, LQR — the one-paragraph tour</h3>
+<p>State feedback needs all states, but you rarely afford a sensor for each. An <strong>observer</strong> (<span class="de">Beobachter</span>, Luenberger) runs a real-time simulation of the plant alongside the real thing and continuously corrects it with the mismatch between predicted and measured output — its estimate \(\hat{\mathbf x}\) converges and feeds the controller: measure one thing, know everything (if the system is <em>observable</em>, the dual of controllable). The <strong>Kalman filter</strong> is the statistically optimal observer when model and sensor noise are quantified — it is how a drone fuses gyro, accelerometer and GPS into one clean state estimate. And instead of hand-picking pole locations, <strong>LQR</strong> (linear-quadratic regulator) computes the \(\mathbf{k}\) minimizing a cost \(\int (\mathbf{x}^{\mathsf T}\mathbf{Q}\mathbf{x} + R\,u^2)\,\mathrm dt\) — you state the trade-off between state error and actuator effort; the mathematics returns the gains. LQR + Kalman filter is the classic "modern control" stack, standard in aerospace since Apollo.</p>
+
+<h2 id="digital">10. Digital control — the loop in firmware</h2>
+
+<p>Almost every controller today is a loop in a microcontroller (Module 16): every \(T_s\) seconds, the ADC samples \(y\), software computes \(u\), the DAC/PWM applies it, held constant until the next tick (zero-order hold). The discretized PID is four lines:</p>
+<pre class="code"><code>e = w - y;
+I = I + Ki*Ts*e;            // + anti-windup clamp
+D = (e - e_prev)/Ts;        // + low-pass filter, on -y in practice
+u = Kp*e + I + Kd*D;  e_prev = e;</code></pre>
+<p>Two continuous-domain intuitions carry the design safely into discrete time:</p>
+<ul>
+  <li><b>Sampling costs phase.</b> The hold makes \(u\) on average half a sample old — the loop sees an extra dead time \(\approx T_s/2\), losing \(\omega_c \cdot T_s/2 \cdot 57.3°\) of phase margin at crossover. Sampling too slowly destabilizes a design that was fine on paper.</li>
+  <li><b>Rule of thumb for the sample time</b> (<span class="de">Abtastzeit</span>): sample <b>10–30× faster than the closed-loop bandwidth</b>, equivalently \(T_s \lesssim T_{\text{rise}}/10\). A 100 Hz loop bandwidth → run the controller at 1–3 kHz. Far above Shannon's factor 2 (Module 13) — control needs low <em>delay</em>, not merely reconstructable signals.</li>
+</ul>
+<p>Fast loops (motor current at 10–20 kHz) run in interrupts or dedicated hardware; slow ones (building temperature, \(T_s\) in seconds) share a CPU with everything else. The z-transform of Module 13 gives digital control its own exact theory (poles inside the unit circle instead of the left half-plane), which a Regelungstechnik II course develops fully.</p>
+
+<div class="box key">
+  <div class="box-title"><span class="ic">🔑</span>The whole module in one paragraph</div>
+  <p>Model the plant (Section 3). Close the loop and buy accuracy and robustness with loop gain (Sections 2, 4) — but gain is capped by stability (Section 5), and the cap is visible either as the root locus crossing the imaginary axis (Section 6) or as vanishing gain/phase margins on the Bode plot (Section 7). Spend your margin budget wisely with PID: P for speed, I for exactness, D for damping, anti-windup for reality (Section 8). When one loop and one sensor aren't enough, go state space (Section 9) — and implement it all in firmware sampled 10–30× above the bandwidth (Section 10).</p>
+</div>
+
+<h2 id="summary">11. Formula summary — <span class="de">Formelsammlung</span></h2>
+
+<div class="table-wrap">
+<table class="data">
+<thead><tr><th>Concept</th><th>Formula</th><th>Remember as</th></tr></thead>
+<tbody>
+<tr><td>Closed loop (tracking)</td><td>\( T = \dfrac{L}{1+L},\; L = GK \)</td><td>forward gain over one-plus-loop-gain</td></tr>
+<tr><td>Sensitivity</td><td>\( S = \dfrac{1}{1+L},\; S+T = 1 \)</td><td>disturbance survival factor; can't kill both</td></tr>
+<tr><td>Robustness</td><td>\( \mathrm{d}T/T = S\,\cdot\mathrm{d}L/L \)</td><td>feedback divides plant variation by \(1+L\)</td></tr>
+<tr><td>PT1</td><td>\( \dfrac{K_S}{1+Ts},\; h(t) = K_S(1-e^{-t/T}) \)</td><td>63 % at \(t = T\); thermal systems</td></tr>
+<tr><td>PT2 overshoot</td><td>\( \ddot u = e^{-\pi\zeta/\sqrt{1-\zeta^2}} \)</td><td>ζ = 0.7 → ~5 %; mechanics</td></tr>
+<tr><td>Dead time</td><td>\( e^{-sT_t},\; \varphi = -\omega T_t \)</td><td>unit gain, unbounded phase lag — poison</td></tr>
+<tr><td>Steady-state error (step, type 0)</td><td>\( e_\infty = \dfrac{w_0}{1+K_0} \)</td><td>P control always leaves offset</td></tr>
+<tr><td>System type</td><td>ν integrators in \(L\) → tracks \(t^{\nu-1}\)-inputs exactly</td><td>count integrators in the whole loop</td></tr>
+<tr><td>Routh, 3rd order</td><td>all \(a_i &gt; 0\) and \( a_2 a_1 &gt; a_3 a_0 \)</td><td>inner coefficients beat outer</td></tr>
+<tr><td>Phase margin</td><td>\( \varphi_R = 180° + \angle L(j\omega_c) \) at \(|L|=1\)</td><td>target 45–60°; \(\zeta \approx \varphi_R/100°\)</td></tr>
+<tr><td>Gain margin</td><td>\( A_R = 1/|L(j\omega_{180})| \)</td><td>target 6–12 dB</td></tr>
+<tr><td>PID (parallel)</td><td>\( K_P + \dfrac{K_I}{s} + K_D s = K_P\!\left(1 + \dfrac{1}{T_n s} + T_v s\right) \)</td><td>\(T_n = K_P/K_I\), \(T_v = K_D/K_P\)</td></tr>
+<tr><td>Ziegler–Nichols PID</td><td>\( K_P = 0.6K_u,\; T_n = T_u/2,\; T_v = T_u/8 \)</td><td>aggressive quarter-amplitude tune</td></tr>
+<tr><td>State space</td><td>\( \dot{\mathbf x} = \mathbf{Ax} + \mathbf{B}u,\; y = \mathbf{Cx} \)</td><td>eig(A) = poles; \(\mathbf{Q}_c\) full rank → place poles</td></tr>
+<tr><td>Sample time</td><td>\( T_s \lesssim T_{\text{rise}}/10 \), delay \(\approx T_s/2\)</td><td>10–30× bandwidth, else phase bleeds away</td></tr>
+</tbody>
+</table>
+</div>
+
+<h2 id="exercises">12. Exercises</h2>
+<p>Sketch before you calculate — a control engineer who can't draw the expected step response shouldn't trust the algebra.</p>
+
+<div class="exercise">
+  <p class="ex-q"><span class="ex-num">E1</span>Steuern oder Regeln? Classify: (a) a toaster's browning knob, (b) an oven with thermostat, (c) cruise control on a hill, (d) a washing machine's program drum, (e) a cyclist keeping balance. Name each system's controlled variable where feedback exists. <span class="diff easy">easy</span></p>
+  <details><summary>Show solution</summary>
+    <div class="solution">
+      (a) <b>Steuerung</b> — timer, no measurement of brownness. (b) <b>Regelung</b> — controlled variable: air temperature; the thermostat measures and switches. (c) <b>Regelung</b> — controlled variable: speed; the hill is the disturbance \(z\), and rejecting it is the whole point. (d) <b>Steuerung</b> — a fixed program sequence; it doesn't measure cleanliness. (e) <b>Regelung</b> — controlled variable: lean angle, sensed by the inner ear and vision, actuated by steering. Note (e) is the inverted-pendulum problem of Section 9: an unstable plant that feedback stabilizes — remove the feedback (close your eyes on ice) and it falls.
+    </div>
+  </details>
+</div>
+
+<div class="exercise">
+  <p class="ex-q"><span class="ex-num">E2</span>A plant \(G(s) = \frac{5}{1+2s}\) is P-controlled with \(K_P = 1.6\). Compute the closed-loop transfer function, the steady-state error to a unit step, and the closed-loop time constant. <span class="diff easy">easy</span></p>
+  <details><summary>Show solution</summary>
+    <div class="solution">
+      \(L = \frac{8}{1+2s}\), \(K_0 = 8\).
+      \[ T(s) = \frac{L}{1+L} = \frac{8}{9+2s} = \frac{8/9}{1+\frac{2}{9}s}. \]
+      Steady-state error \(e_\infty = \frac{1}{1+8} = 11.1\,\%\); time constant \(2/9 \approx 0.22\) s, nine times faster than the plant. Same factor \(1+K_0\) improves both — the Section 4 pattern. Sanity check: DC gain \(8/9 = 1 - e_\infty\) ✓.
+    </div>
+  </details>
+</div>
+
+<div class="exercise">
+  <p class="ex-q"><span class="ex-num">E3</span>You step a heater from 20 % to 30 % power. The sensor settles from 60 °C to 100 °C, passing 85.2 °C at \(t = 40\) s after the step. (a) Identify the PT1 model. (b) Design a PI controller by pole cancellation (\(T_n = T\)) so the closed loop has time constant 10 s. <span class="diff med">medium</span></p>
+  <details><summary>Show solution</summary>
+    <div class="solution">
+      (a) Gain: \(K_S = \Delta y/\Delta u = 40\,\mathrm{°C}/10\,\% = 4\;\mathrm{°C/\%}\). The 63 % point: \(60 + 0.63\cdot40 = 85.2\) °C — so \(T = 40\) s. Model: \(G = \frac{4}{1+40s}\).<br>
+      (b) PI with \(T_n = T = 40\) s cancels the plant pole: \(L = K_P\left(\frac{1+T_n s}{T_n s}\right)\frac{K_S}{1+Ts} = \frac{K_P K_S}{T s}\). Closed loop: \(T(s) = \frac{1}{1 + s\,T/(K_P K_S)}\) — a clean PT1 with \(\tau_{cl} = \frac{T}{K_P K_S}\). Demand 10 s: \(K_P = \frac{T}{K_S\,\tau_{cl}} = \frac{40}{4 \cdot 10} = 1.0\;\%/\mathrm{°C}\).<br>
+      Result: \(K_P = 1.0\), \(T_n = 40\) s — zero steady-state error, no overshoot (first-order!), 4× faster than the plant. Real-world remark: pole cancellation is beloved for thermal plants precisely because their poles are slow but well-known; it is risky when the plant pole drifts.
+    </div>
+  </details>
+</div>
+
+<div class="exercise">
+  <p class="ex-q"><span class="ex-num">E4</span>A motor position loop has \(L(s) = \frac{K}{s(s+2)(s+5)}\). Use Routh–Hurwitz to find the stable range of \(K\) and the oscillation frequency at the boundary. Cross-check the frequency with the root-locus crossing rule. <span class="diff med">medium</span></p>
+  <details><summary>Show solution</summary>
+    <div class="solution">
+      Characteristic equation: \(s(s+2)(s+5) + K = s^3 + 7s^2 + 10s + K = 0\).
+      Routh: \(s^3\): 1, 10; \(s^2\): 7, K; \(s^1\): \((70-K)/7\); \(s^0\): K.
+      Positive first column → \(\boxed{0 &lt; K &lt; 70}\).
+      At \(K = 70\): auxiliary equation \(7s^2 + 70 = 0 \Rightarrow s = \pm j\sqrt{10}\), so \(\omega = 3.16\) rad/s.
+      Root-locus rule for \(\frac{K}{s(s+a)(s+b)}\): crossing at \(\omega = \sqrt{ab} = \sqrt{2\cdot5} = \sqrt{10}\) ✓ and \(K^* = ab(a+b) = 10\cdot 7 = 70\) ✓. Two methods, one answer — as it must be.
+    </div>
+  </details>
+</div>
+
+<div class="exercise">
+  <p class="ex-q"><span class="ex-num">E5</span>For \(L(s) = \frac{K}{s(1+s)}\), find \(K\) such that the phase margin is exactly 45°. <span class="diff med">medium</span></p>
+  <details><summary>Show solution</summary>
+    <div class="solution">
+      Phase: \(\angle L = -90° - \arctan\omega\). Demand \(\varphi_R = 45°\): \(\angle L(j\omega_c) = -135°\), so \(\arctan\omega_c = 45° \Rightarrow \omega_c = 1\) rad/s.
+      Magnitude condition \(|L(j\omega_c)| = 1\):
+      \[ \frac{K}{\omega_c\sqrt{1+\omega_c^2}} = \frac{K}{1\cdot\sqrt2} = 1 \;\Rightarrow\; K = \sqrt2 \approx 1.41. \]
+      Sanity check: this loop is stable for <em>every</em> K (phase never reaches −180°: gain margin ∞), but at large K the phase margin → 0° and the response rings violently — "stable" and "usable" are different things.
+    </div>
+  </details>
+</div>
+
+<div class="exercise">
+  <p class="ex-q"><span class="ex-num">E6</span>A dosing pipeline is an integrator with dead time: \(L(s) = \frac{K}{s}e^{-sT_t}\), \(T_t = 0.5\) s. Find (a) the largest \(K\) for stability, (b) the \(K\) for a 45° phase margin. <span class="diff hard">challenge</span></p>
+  <details><summary>Show solution</summary>
+    <div class="solution">
+      Magnitude: \(|L| = K/\omega\) (dead time has unit magnitude!) → gain crossover at \(\omega_c = K\). Phase: \(\angle L = -90° - \omega T_t \cdot \frac{180°}{\pi}\).<br>
+      (a) Stability boundary: phase = −180° at \(\omega_c\): \(\omega_c T_t = \frac{\pi}{2} \Rightarrow K_{\max} = \frac{\pi}{2T_t} = \pi \approx 3.14\ \mathrm{s^{-1}}\).<br>
+      (b) 45° margin: \(\angle L(j\omega_c) = -135°\) → \(\omega_c T_t = \frac{\pi}{4}\) → \(K = \frac{\pi}{4\cdot 0.5} \approx 1.57\ \mathrm{s^{-1}}\) — exactly half of \(K_{\max}\).<br>
+      Moral: with dead time, the achievable bandwidth is capped at \(\omega_c \sim 1/T_t\) <em>regardless of controller cleverness</em> (with one loophole: a Smith predictor, which embeds a plant model to "see past" the delay). Halve the delay, double the possible speed — often the cheapest fix is moving the sensor closer to the actuator.
+    </div>
+  </details>
+</div>
+
+<div class="exercise">
+  <p class="ex-q"><span class="ex-num">E7</span>A linearized inverted pendulum (Segway) obeys \(\ddot\theta = 4\theta + u\). (a) Write the state-space model and show the plant is unstable. (b) Check controllability. (c) Design \(u = -k_1\theta - k_2\dot\theta\) for closed-loop poles at \(s = -3 \pm j1\). <span class="diff hard">challenge</span></p>
+  <details><summary>Show solution</summary>
+    <div class="solution">
+      (a) \(x_1 = \theta,\ x_2 = \dot\theta\):
+      \[ \mathbf A = \begin{pmatrix} 0 & 1 \\ 4 & 0 \end{pmatrix},\ \mathbf B = \begin{pmatrix} 0 \\ 1 \end{pmatrix}; \quad \det(s\mathbf I - \mathbf A) = s^2 - 4 = 0 \Rightarrow s = \pm 2. \]
+      A pole at +2: falls over with time constant 0.5 s unless controlled.<br>
+      (b) \(\mathbf Q_c = [\mathbf B\ \ \mathbf{AB}] = \begin{pmatrix} 0 & 1 \\ 1 & 0 \end{pmatrix}\), rank 2 → controllable ✓.<br>
+      (c) Closed loop: \(\ddot\theta = 4\theta - k_1\theta - k_2\dot\theta\) → \(s^2 + k_2 s + (k_1 - 4)\). Target: \((s+3)^2 + 1 = s^2 + 6s + 10\). Match: \(k_2 = 6\), \(k_1 = 14\).<br>
+      Sanity check: \(k_1 = 14 &gt; 4\) — the feedback "spring" must overpower the destabilizing gravity term before any stabilization happens; the remainder (14 − 4 = 10) sets the speed. A real Segway adds two more states (wheel position and speed) and estimates \(\dot\theta\) with a Kalman-filtered gyro — Section 9.3 in the flesh.
+    </div>
+  </details>
+</div>
+
+<h2 id="quiz">13. Self-assessment</h2>
+
+<div class="quiz" data-quiz-title="Module 14 — Self-test">
+<script type="application/json">
+[
+ {"q":"What distinguishes Regelung from Steuerung?",
+  "opts":["Regelung is digital, Steuerung is analog","Regelung feeds the measured output back and acts on the error; Steuerung acts without measuring the result","Steuerung is used for temperature, Regelung for speed","Regelung is always slower than Steuerung"],"a":1,
+  "explain":"Regeln = closed loop: measure, compare with the setpoint, correct. Steuern = open loop: act according to a plan or model, blind to the actual result. Only the closed loop rejects unmeasured disturbances — and only the closed loop can become unstable."},
+ {"q":"With negative feedback, plant \\(G\\) and controller \\(K\\), the closed-loop transfer function from \\(w\\) to \\(y\\) is…",
+  "opts":["\\(GK\\)","\\(\\dfrac{GK}{1-GK}\\)","\\(\\dfrac{GK}{1+GK}\\)","\\(\\dfrac{1}{1+GK}\\)"],"a":2,
+  "explain":"From \\(y = GK(w-y)\\): \\(T = \\frac{GK}{1+GK}\\). The last option, \\(S = \\frac{1}{1+GK}\\), is the sensitivity — the disturbance-to-output path. Note \\(S + T = 1\\)."},
+ {"q":"A PT1 plant with gain \\(K_S = 2\\) is P-controlled with \\(K_P = 4\\). The steady-state error for a setpoint step is…",
+  "opts":["0 %","11.1 %","12.5 %","25 %"],"a":1,
+  "explain":"Type-0 loop: \\(e_\\infty = \\frac{1}{1+K_0}\\) with \\(K_0 = K_PK_S = 8\\), so \\(e_\\infty = 1/9 \\approx 11.1\\,\\%\\). Only an integrator in the loop drives it to exactly zero."},
+ {"q":"Which controller term eliminates the steady-state error to a constant setpoint on a PT1 plant?",
+  "opts":["P — if the gain is high enough","I — it integrates any persistent error until it vanishes","D — it anticipates the error","None; the offset is physically unavoidable"],"a":1,
+  "explain":"The integrator keeps ramping \\(u\\) as long as any error persists, so the only possible equilibrium is \\(e = 0\\). High P gain shrinks the offset (\\(e_\\infty = \\frac{1}{1+K_0}\\)) but never zeroes it; D reacts only to change."},
+ {"q":"The characteristic equation of a loop is \\(s^3 + 4s^2 + 8s + K = 0\\). Routh–Hurwitz gives stability for…",
+  "opts":["\\(0 < K < 32\\)","\\(0 < K < 12\\)","\\(K > 32\\)","all \\(K > 0\\)"],"a":0,
+  "explain":"Third-order shortcut: all coefficients positive and \\(a_2 a_1 > a_3 a_0\\): \\(4 \\cdot 8 > 1 \\cdot K\\), i.e. \\(K < 32\\) (and \\(K > 0\\)). At \\(K = 32\\) the loop oscillates at \\(\\omega = \\sqrt{8} \\approx 2.83\\) rad/s from the auxiliary equation \\(4s^2 + 32 = 0\\)."},
+ {"q":"On the root locus, the closed-loop poles at very small gain \\(K \\to 0\\) sit…",
+  "opts":["at the origin","on the open-loop zeros","on the open-loop poles","on the imaginary axis"],"a":2,
+  "explain":"\\(1 + KG = 0\\) with \\(K \\to 0\\) forces \\(G \\to \\infty\\), i.e. the open-loop poles. As \\(K \\to \\infty\\) the branches migrate to the open-loop zeros or to infinity along the asymptotes."},
+ {"q":"The phase margin is…",
+  "opts":["the phase of the plant at DC","180° minus the phase at the frequency where the phase is steepest","the distance of \\(\\angle L\\) above −180° at the gain-crossover frequency where \\(|L| = 1\\)","the frequency range over which the loop is stable"],"a":2,
+  "explain":"\\(\\varphi_R = 180° + \\angle L(j\\omega_c)\\), read at the 0-dB crossing. It measures how much extra phase lag (e.g. from unmodeled delay) the loop tolerates before \\(L = -1\\). Design target: 45–60°."},
+ {"q":"\"If the loop is stable, increasing the controller gain always improves performance.\" What's wrong with this?",
+  "opts":["Nothing — more gain means more accuracy and speed","Higher gain shrinks the stability margins: overshoot and ringing grow, and eventually the loop oscillates","Higher gain only wastes energy but cannot change the dynamics","Gain has no effect on steady-state error, so nothing improves"],"a":1,
+  "explain":"Accuracy and disturbance rejection do improve with gain — but the closed-loop poles move (root locus!) toward and eventually across the imaginary axis. Long before instability, the vanishing phase margin shows up as ringing. Design is the art of buying gain without spending all the margin."},
+ {"q":"In the Ziegler–Nichols oscillation method you experimentally determine…",
+  "opts":["the plant's time constant and gain from a step response","the ultimate P gain \\(K_u\\) and oscillation period \\(T_u\\) at the stability boundary","the maximum actuator amplitude","gain and phase margin from a Bode measurement"],"a":1,
+  "explain":"With I and D off, raise \\(K_P\\) until sustained oscillation: that gain is \\(K_u\\), the period is \\(T_u\\). The table then gives e.g. PID: \\(K_P = 0.6K_u\\), \\(T_n = T_u/2\\), \\(T_v = T_u/8\\) — deliberately aggressive (quarter-amplitude decay)."},
+ {"q":"A digital controller for a loop with 25 ms closed-loop rise time should sample about every…",
+  "opts":["25 ms — one sample per rise time","2.5 ms — roughly rise time / 10","0.1 µs — as fast as possible, always","50 ms — Shannon allows half the dynamics"],"a":1,
+  "explain":"Rule of thumb: \\(T_s \\lesssim T_{rise}/10\\) (sampling 10–30× above the bandwidth), because the zero-order hold adds a dead time of about \\(T_s/2\\) that eats phase margin. Shannon's factor 2 guarantees reconstructability, not enough phase for control; 'as fast as possible' wastes CPU and aggravates derivative noise."}
+]
+</script>
+</div>
+
+<script>
+document.addEventListener("ee-ready", () => {
+
+  /* ============ Widget 1 (Section 4): P vs PI on a PT1 plant ============ */
+  EE.functionPlot({
+    mount: "#w-pvspi", height: 300,
+    x: { min: 0, max: 8, label: "t in s" },
+    y: { min: 0, max: 1.35, label: "y(t)" },
+    params: [
+      { key: "Kp", label: "Controller gain K_P", min: 0.2, max: 15, step: 0.1, value: 2, fmt: v => v.toFixed(1) },
+      { key: "Ks", label: "Plant gain K_S", min: 0.5, max: 3, step: 0.1, value: 1, fmt: v => v.toFixed(1) }
+    ],
+    curves: [
+      { label: "P only", color: 5, fn: (t, p) => { const L = p.Kp * p.Ks; return L / (1 + L) * (1 - Math.exp(-t * (1 + L))); } },
+      { label: "PI (T_n = T)", color: 0, fn: (t, p) => 1 - Math.exp(-t * p.Kp * p.Ks) }
+    ],
+    annotations: p => {
+      const L = p.Kp * p.Ks, yf = L / (1 + L);
+      const a = [{ type: "hline", y: 1, label: "w = 1 (setpoint)" }];
+      if (yf < 0.93) a.push({ type: "hline", y: yf, label: "P final value" });
+      return a;
+    },
+    readouts: [
+      { label: "P steady-state error", fn: p => (100 / (1 + p.Kp * p.Ks)).toFixed(1) + " %" },
+      { label: "PI steady-state error", fn: () => "0 % (integrator!)" },
+      { label: "DC loop gain K₀ = K_P·K_S", fn: p => (p.Kp * p.Ks).toFixed(1) }
+    ]
+  });
+
+  /* ============ Widget 2 (Section 6): root locus of K/(s(s+a)(s+b)) ============ */
+  (function () {
+    /* complex numbers as [re, im] */
+    const cadd = (a, b) => [a[0] + b[0], a[1] + b[1]];
+    const csub = (a, b) => [a[0] - b[0], a[1] - b[1]];
+    const cmul = (a, b) => [a[0] * b[0] - a[1] * b[1], a[0] * b[1] + a[1] * b[0]];
+    const cdiv = (a, b) => { const d = b[0] * b[0] + b[1] * b[1]; return [(a[0] * b[0] + a[1] * b[1]) / d, (a[1] * b[0] - a[0] * b[1]) / d]; };
+
+    /* Durand–Kerner roots of s^3 + c2 s^2 + c1 s + c0, deterministic init */
+    function cubicRoots(c2, c1, c0) {
+      const P = s => {
+        const s2 = cmul(s, s);
+        return cadd(cadd(cmul(s2, s), cmul([c2, 0], s2)), cadd(cmul([c1, 0], s), [c0, 0]));
+      };
+      let r = [[0.4, 0.9]];
+      r.push(cmul(r[0], r[0]));
+      r.push(cmul(r[1], r[0]));
+      for (let it = 0; it < 80; it++) {
+        r = r.map((ri, i) => {
+          let den = [1, 0];
+          for (let j = 0; j < 3; j++) if (j !== i) den = cmul(den, csub(ri, r[j]));
+          const corr = cdiv(P(ri), den);
+          return csub(ri, corr);
+        });
+      }
+      return r;
+    }
+
+    EE.custom({
+      mount: "#w-locus", height: 340,
+      params: [
+        { key: "a", label: "Pole −a", min: 0.5, max: 4, step: 0.1, value: 1, unit: "1/s", fmt: v => v.toFixed(1) },
+        { key: "b", label: "Pole −b", min: 0.5, max: 8, step: 0.1, value: 3, unit: "1/s", fmt: v => v.toFixed(1) },
+        { key: "K", label: "Your gain K", min: 0.1, max: 120, step: 0.1, value: 2, fmt: v => v.toFixed(1) }
+      ],
+      readouts: [
+        { label: "Critical gain K* = ab(a+b)", fn: p => (p.a * p.b * (p.a + p.b)).toFixed(1) },
+        { label: "Crossing frequency √(ab)", fn: p => Math.sqrt(p.a * p.b).toFixed(2) + " rad/s" },
+        { label: "Loop at your K", fn: p => {
+            const r = cubicRoots(p.a + p.b, p.a * p.b, p.K);
+            const mx = Math.max(...r.map(z => z[0]));
+            return mx < -1e-4 ? "stable" : (mx > 1e-4 ? "UNSTABLE" : "marginal");
+          } }
+      ],
+      draw: (ctx, w, h, p, H) => {
+        const k = H.ink();
+        const sum = p.a + p.b;
+        const xmin = -sum * 1.12 - 0.4, xmax = 0.38 * sum + 0.4;
+        const ymax = Math.max(2.4 * Math.sqrt(p.a * p.b), 0.9 * sum);
+        const v = H.makeView({ min: xmin, max: xmax, label: "σ = Re(s) in 1/s" },
+                             { min: -ymax, max: ymax, label: "jω = Im(s) in 1/s" });
+        H.drawFrame(v);
+
+        ctx.save();
+        ctx.beginPath(); ctx.rect(v.padL, v.padT, v.iw, v.ih); ctx.clip();
+
+        /* jω axis emphasized */
+        ctx.strokeStyle = k.axis; ctx.lineWidth = 1.6;
+        ctx.beginPath(); ctx.moveTo(v.X(0), v.padT); ctx.lineTo(v.X(0), v.padT + v.ih); ctx.stroke();
+        ctx.fillStyle = k.muted; ctx.font = "600 11px system-ui, sans-serif";
+        ctx.textAlign = "left"; ctx.textBaseline = "top";
+        ctx.fillText("jω axis", v.X(0) + 5, v.padT + 4);
+        ctx.fillText("unstable →", v.X(0) + 5, v.padT + 20);
+
+        /* asymptotes from centroid, ±60° and 180° */
+        const sa = -sum / 3;
+        ctx.strokeStyle = k.grid; ctx.lineWidth = 1.2; ctx.setLineDash([5, 5]);
+        const L = sum * 3 + 5;
+        [[Math.cos(Math.PI / 3), Math.sin(Math.PI / 3)], [Math.cos(Math.PI / 3), -Math.sin(Math.PI / 3)], [-1, 0]].forEach(d => {
+          ctx.beginPath(); ctx.moveTo(v.X(sa), v.Y(0)); ctx.lineTo(v.X(sa + d[0] * L), v.Y(d[1] * L)); ctx.stroke();
+        });
+        ctx.setLineDash([]);
+
+        /* locus dots: sweep K geometrically around K* */
+        const Kc = p.a * p.b * sum;
+        ctx.fillStyle = H.color(0); ctx.globalAlpha = 0.55;
+        for (let i = 0; i <= 130; i++) {
+          const Ki = Kc * Math.pow(10, -2.5 + 4.0 * i / 130);
+          const roots = cubicRoots(sum, p.a * p.b, Ki);
+          for (const z of roots) {
+            if (!isFinite(z[0]) || !isFinite(z[1])) continue;
+            if (z[0] < xmin || z[0] > xmax || Math.abs(z[1]) > ymax) continue;
+            ctx.beginPath(); ctx.arc(v.X(z[0]), v.Y(z[1]), 2, 0, 7); ctx.fill();
+          }
+        }
+        ctx.globalAlpha = 1;
+
+        /* open-loop poles as crosses */
+        ctx.strokeStyle = H.color(4); ctx.lineWidth = 2.2;
+        [0, -p.a, -p.b].forEach(x0 => {
+          const px = v.X(x0), py = v.Y(0);
+          ctx.beginPath();
+          ctx.moveTo(px - 6, py - 6); ctx.lineTo(px + 6, py + 6);
+          ctx.moveTo(px - 6, py + 6); ctx.lineTo(px + 6, py - 6);
+          ctx.stroke();
+        });
+
+        /* jω crossing rings at ±j√(ab) */
+        const wc = Math.sqrt(p.a * p.b);
+        ctx.strokeStyle = H.color(5); ctx.lineWidth = 2.2;
+        [wc, -wc].forEach(om => {
+          ctx.beginPath(); ctx.arc(v.X(0), v.Y(om), 6, 0, 7); ctx.stroke();
+        });
+        ctx.fillStyle = H.color(5); ctx.font = "600 11px system-ui, sans-serif";
+        ctx.textAlign = "left"; ctx.textBaseline = "bottom";
+        ctx.fillText("K = K*", v.X(0) + 9, v.Y(wc) - 4);
+
+        /* closed-loop poles at the user's K */
+        const cur = cubicRoots(sum, p.a * p.b, p.K);
+        ctx.fillStyle = H.color(2);
+        for (const z of cur) {
+          if (!isFinite(z[0]) || !isFinite(z[1])) continue;
+          ctx.beginPath(); ctx.arc(v.X(z[0]), v.Y(z[1]), 5.5, 0, 7); ctx.fill();
+          ctx.strokeStyle = k.surface; ctx.lineWidth = 2; ctx.stroke();
+        }
+        ctx.fillStyle = H.color(2); ctx.textBaseline = "top";
+        ctx.fillText("● poles at your K", v.padL + 10, v.padT + v.ih - 20);
+        ctx.restore();
+      }
+    });
+  })();
+
+  /* ============ Widget 3 (Section 7): gain & phase margin explorer ============ */
+  (function () {
+    const F1 = 0.2, F2 = 1, F3 = 4, FMIN = 0.02, FMAX = 20;
+    const magL = (f, K) => 20 * Math.log10(K)
+      - 10 * Math.log10(1 + (f / F1) * (f / F1))
+      - 10 * Math.log10(1 + (f / F2) * (f / F2))
+      - 10 * Math.log10(1 + (f / F3) * (f / F3));
+    const phL = f => -(Math.atan(f / F1) + Math.atan(f / F2) + Math.atan(f / F3)) * 180 / Math.PI;
+    /* bisection on log-f for a decreasing function fn (positive → negative) */
+    function bisect(fn, lo, hi) {
+      for (let i = 0; i < 70; i++) {
+        const m = Math.sqrt(lo * hi);
+        if (fn(m) > 0) lo = m; else hi = m;
+      }
+      return Math.sqrt(lo * hi);
+    }
+    const F180 = bisect(f => phL(f) + 180, FMIN, FMAX);
+    const fc = K => (magL(FMIN, K) <= 0) ? null : bisect(f => magL(f, K), FMIN, FMAX);
+    const PM = K => { const f = fc(K); return f == null ? null : 180 + phL(f); };
+    const GM = K => -magL(F180, K);
+
+    EE.bodePlot({
+      mount: "#w-margins", fmin: FMIN, fmax: FMAX,
+      magRange: { min: -60, max: 40 }, phaseRange: { min: -270, max: 0 },
+      mag: (f, p) => magL(f, p.K),
+      phase: f => phL(f),
+      params: [
+        { key: "K", label: "Loop gain K", min: 0.5, max: 60, step: 0.5, value: 4, fmt: v => v.toFixed(1) }
+      ],
+      annotations: (p, which) => {
+        const f0 = fc(p.K), anns = [];
+        if (which === "mag") {
+          anns.push({ type: "hline", y: 0, label: "0 dB" });
+          if (f0) anns.push({ type: "vline", x: f0, label: "gain crossover" });
+          anns.push({ type: "point", x: F180, y: magL(F180, p.K), label: "−GM" });
+        } else {
+          anns.push({ type: "hline", y: -180, label: "−180°" });
+          anns.push({ type: "vline", x: F180, label: "phase crossover" });
+          if (f0) anns.push({ type: "point", x: f0, y: phL(f0), label: "PM above −180°" });
+        }
+        return anns;
+      },
+      readouts: [
+        { label: "Phase margin", fn: p => { const m = PM(p.K); return m == null ? "∞ (|L| < 0 dB everywhere)" : m.toFixed(1) + "°"; } },
+        { label: "Gain margin", fn: p => GM(p.K).toFixed(1) + " dB (K can grow ×" + Math.pow(10, GM(p.K) / 20).toFixed(2) + ")" },
+        { label: "Verdict", fn: p => GM(p.K) > 0 ? (PM(p.K) == null || PM(p.K) > 40 ? "stable, comfortable" : "stable, but ringing") : "UNSTABLE" }
+      ]
+    });
+  })();
+
+  /* ============ Widget 4 (Section 8): PID playground on a PT2 plant ============ */
+  (function () {
+    const T1 = 1.0, T2 = 0.3;          /* plant time constants */
+    const DT = 0.01, N = 1200;          /* 12 s of fixed-step Euler — deterministic */
+    const TF = 0.05;                    /* derivative low-pass */
+    let cacheKey = "", cacheRes = null;
+
+    function simulate(p) {
+      const key = p.Kp + "|" + p.Ki + "|" + p.Kd;
+      if (key === cacheKey) return cacheRes;
+      let y = 0, yd = 0, integ = 0, dF = 0, yPrev = 0;
+      const ys = new Array(N + 1), us = new Array(N + 1);
+      for (let i = 0; i <= N; i++) {
+        const e = 1 - y;                                  /* unit setpoint step at t = 0 */
+        const dRaw = i === 0 ? 0 : -(y - yPrev) / DT;     /* derivative on measurement */
+        dF += DT / TF * (dRaw - dF);
+        const u = p.Kp * e + p.Ki * integ + p.Kd * dF;
+        integ += e * DT;
+        const ydd = (u - y - (T1 + T2) * yd) / (T1 * T2); /* T1T2·y'' + (T1+T2)·y' + y = u */
+        yPrev = y;
+        yd += ydd * DT;                                   /* semi-implicit Euler */
+        y += yd * DT;
+        ys[i] = y; us[i] = u;
+      }
+      let ymax = -Infinity;
+      for (const v of ys) if (v > ymax) ymax = v;
+      const yEnd = ys[N];
+      let tSet = null;
+      if (isFinite(yEnd) && Math.abs(yEnd - 1) <= 0.02) {
+        tSet = 0;
+        for (let i = N; i >= 0; i--) if (Math.abs(ys[i] - 1) > 0.02) { tSet = (i + 1) * DT; break; }
+      }
+      cacheKey = key; cacheRes = { ys, us, ymax, yEnd, tSet };
+      return cacheRes;
+    }
+
+    EE.custom({
+      mount: "#w-pid", height: 330,
+      params: [
+        { key: "Kp", label: "K_P — proportional", min: 0, max: 20, step: 0.1, value: 4, fmt: v => v.toFixed(1) },
+        { key: "Ki", label: "K_I — integral", min: 0, max: 10, step: 0.1, value: 2, unit: "1/s", fmt: v => v.toFixed(1) },
+        { key: "Kd", label: "K_D — derivative", min: 0, max: 5, step: 0.05, value: 0.8, unit: "s", fmt: v => v.toFixed(2) }
+      ],
+      readouts: [
+        { label: "Overshoot", fn: p => { const r = simulate(p); return (isFinite(r.ymax) && r.ymax < 50) ? Math.max(0, (r.ymax - 1) * 100).toFixed(1) + " %" : "—"; } },
+        { label: "Settling time (±2 %)", fn: p => { const r = simulate(p); return r.tSet == null ? "not settled in 12 s" : r.tSet.toFixed(2) + " s"; } },
+        { label: "Error at t = 12 s", fn: p => { const r = simulate(p); return (isFinite(r.yEnd) && Math.abs(r.yEnd) < 50) ? ((1 - r.yEnd) * 100).toFixed(1) + " %" : "unstable — error growing"; } }
+      ],
+      draw: (ctx, w, h, p, H) => {
+        const r = simulate(p);
+        const k = H.ink();
+        const v = H.makeView({ min: 0, max: 12, label: "t in s" }, { min: -0.5, max: 2.2, label: "y, w, u÷10 (scaled)" });
+        H.drawFrame(v);
+        /* ±2 % settling band */
+        ctx.fillStyle = k.accentSoft;
+        ctx.fillRect(v.padL, v.Y(1.02), v.iw, v.Y(0.98) - v.Y(1.02));
+        H.drawAnnotations(v, [{ type: "hline", y: 1, label: "w = 1 (setpoint)" }]);
+
+        function trace(arr, scale, color, width, dash) {
+          ctx.save();
+          ctx.beginPath(); ctx.rect(v.padL, v.padT, v.iw, v.ih); ctx.clip();
+          ctx.strokeStyle = color; ctx.lineWidth = width;
+          if (dash) ctx.setLineDash(dash);
+          ctx.beginPath();
+          let pen = false;
+          for (let i = 0; i <= N; i += 2) {
+            const val = arr[i] * scale;
+            if (!isFinite(val)) { pen = false; continue; }
+            const px = v.X(i * DT), py = v.Y(Math.max(-60, Math.min(60, val)));
+            if (!pen) { ctx.moveTo(px, py); pen = true; } else ctx.lineTo(px, py);
+          }
+          ctx.stroke(); ctx.restore();
+        }
+        trace(r.us, 0.1, H.color(2), 1.8, [6, 4]);
+        trace(r.ys, 1, H.color(0), 2.4, null);
+
+        /* direct labels */
+        ctx.font = "600 11.5px system-ui, sans-serif"; ctx.textAlign = "right"; ctx.textBaseline = "bottom";
+        const yl = isFinite(r.yEnd) ? Math.max(-0.4, Math.min(2.1, r.yEnd)) : 2.1;
+        const ul = isFinite(r.us[N]) ? Math.max(-0.4, Math.min(2.1, r.us[N] * 0.1)) : -0.4;
+        ctx.fillStyle = H.color(0); ctx.fillText("y(t)", v.padL + v.iw - 8, v.Y(yl) - 4);
+        ctx.fillStyle = H.color(2); ctx.fillText("u(t) ÷ 10 (scaled)", v.padL + v.iw - 8, v.Y(ul) + 16);
+      }
+    });
+  })();
+
+});
+</script>
+
+
+</article>
+</main>
+</div>
+</body>
+</html>

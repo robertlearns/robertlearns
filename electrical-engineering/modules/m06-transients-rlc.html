@@ -1,0 +1,874 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>M06 · Transients &amp; RLC Networks — EE Knowledge Base</title>
+<link rel="stylesheet" href="../../assets/vendor/katex/katex.min.css">
+<link rel="stylesheet" href="../../assets/css/style.css">
+<script src="../../assets/vendor/katex/katex.min.js" defer></script>
+<script src="../../assets/vendor/katex/auto-render.min.js" defer></script>
+<script src="../curriculum.js" defer></script>
+<script src="../../assets/js/app.js" defer></script>
+<script src="../../assets/js/widgets.js" defer></script>
+</head>
+<body data-module="m06">
+<div class="layout">
+<main class="content">
+<article class="article">
+
+<span class="eyebrow">⚡ Fundamentals of Electrical Engineering · Module 06</span>
+<h1>Transients &amp; RLC Networks <span class="muted" style="font-weight:400;font-size:1.4rem">· <span class="de">Ausgleichsvorgänge &amp; Schwingkreise</span></span></h1>
+<p class="lead">Flip any switch and, for a few microseconds or milliseconds, the circuit is neither in its old state nor its new one — it is <em>in between</em>, and that in-between is where camera flashes fire, ignition coils make 30&nbsp;kV from a 12&nbsp;V battery, and radios pick one station out of thousands. This module is about what circuits do <em>in time</em>: exponential settling, the violent revenge of interrupted inductors, and the beautiful, sometimes dangerous phenomenon of resonance.</p>
+
+<div class="page-meta">
+  <span><b>Corresponds to:</b> Grundlagen der Elektrotechnik II/III (2nd–3rd semester)</span>
+  <span><b>Prerequisites:</b> Modules 02, 04, 05</span>
+  <span><b>Study time:</b> ≈ 5–7 h</span>
+</div>
+
+<h2 id="what-transient">1. What is a transient?</h2>
+
+<p>In Module 04 every circuit sat calmly in a <strong>steady state</strong> (<span class="de">eingeschwungener Zustand</span>): all voltages and currents constant (DC) or, as in Module 05, settled into fixed-amplitude sinusoids. But circuits do not live in steady state forever — switches close, loads connect, lightning strikes. A <strong>transient</strong> (<span class="de">Ausgleichsvorgang</span>, literally "equalization process") is the finite-time journey <em>between two steady states</em>, triggered by a <strong>switching event</strong> (<span class="de">Schaltvorgang</span>) at some instant we conventionally call \(t = 0\).</p>
+
+<p>Why is the journey not instantaneous? Because two of our components <em>store energy</em>: the capacitor (<span class="de">Kondensator</span>) stores it in its electric field, the inductor (<span class="de">Spule</span>) in its magnetic field. Energy cannot teleport — it must flow in or out through finite power, and that takes time. Resistor-only circuits have no storage, hence no transients: they jump to the new state instantly. Add one storage element and you get first-order exponential behavior; add two and the circuit can <em>oscillate</em> — energy sloshing back and forth between \(C\) and \(L\) like water between two connected tanks.</p>
+
+<div class="box key">
+  <div class="box-title"><span class="ic">🔑</span>Key idea: transients = energy bookkeeping in time</div>
+  <p>The <em>number of independent energy-storage elements</em> equals the order of the differential equation that governs the circuit. One \(C\) or one \(L\): first order, pure exponential decay, characterized entirely by one number — the <b>time constant</b> \(\tau\) (<span class="de">Zeitkonstante</span>). One \(C\) <em>and</em> one \(L\): second order, and a brand-new possibility appears — oscillation.</p>
+</div>
+
+<h2 id="continuity">2. The two continuity rules and stored energy</h2>
+
+<p>Everything in this module rests on two facts, each forced by an energy argument.</p>
+
+<h3 id="cap-continuity">2.1 Capacitor voltage cannot jump</h3>
+<p>The capacitor's stored energy is</p>
+\[ W_C = \tfrac{1}{2}\,C\,u_C^2 . \]
+<p>If \(u_C\) jumped discontinuously, \(W_C\) would change by a finite amount in zero time — infinite power. Equivalently, from \(i_C = C\,\mathrm{d}u_C/\mathrm{d}t\): a voltage jump would require an infinite current. Neither exists in nature, so:</p>
+\[ \boxed{\,u_C(0^+) = u_C(0^-)\,} \]
+<p>The capacitor voltage <em>immediately after</em> switching equals the voltage <em>immediately before</em>. The capacitor <em>current</em>, by contrast, may jump freely — and usually does.</p>
+
+<h3 id="ind-continuity">2.2 Inductor current cannot jump</h3>
+<p>Dually, the inductor stores</p>
+\[ W_L = \tfrac{1}{2}\,L\,i_L^2 , \]
+<p>and \(u_L = L\,\mathrm{d}i_L/\mathrm{d}t\) says a current jump would demand an infinite voltage. Hence:</p>
+\[ \boxed{\,i_L(0^+) = i_L(0^-)\,} \]
+<p>The inductor current is continuous; the inductor <em>voltage</em> may jump — and when you try to force the current to jump anyway (opening a switch on a live coil), the inductor generates whatever voltage it takes to keep its current flowing. That single sentence explains sparking switches, ignition coils and destroyed transistors; we will quantify it in Section 5.</p>
+
+<div class="box intuition">
+  <div class="box-title"><span class="ic">💡</span>Intuition: the flywheel and the water tower</div>
+  <p>Think of a capacitor as a <b>water tower</b>: its water level (voltage) changes only as fast as pipes can fill or drain it — you cannot teleport water in. Think of an inductor as a <b>flywheel</b>: its rotation speed (current) has inertia. You can throttle a flywheel gently, but try to stop it dead with your hand and it will tear your hand off — that violent reaction is the inductive voltage spike.</p>
+</div>
+
+<div class="box pitfall">
+  <div class="box-title"><span class="ic">🚫</span>Classic pitfall: continuity of the wrong quantity</div>
+  <p>Exam scripts are littered with "\(i_C(0^+) = i_C(0^-)\)" and "\(u_L(0^+) = u_L(0^-)\)". Both are <em>false in general</em>. Only the <b>state variables</b> — capacitor <em>voltage</em> and inductor <em>current</em>, the quantities carrying the stored energy — are continuous. Everything else (resistor voltages, capacitor currents, inductor voltages) is allowed to jump at \(t=0\), and you must recompute them from the circuit at \(t = 0^+\).</p>
+</div>
+
+<div class="widget">
+  <div class="w-head"><span class="ic">🧪</span>Interactive — energy sloshing in an LC circuit <span class="w-tag">animation</span></div>
+  <div class="w-body">
+    <p class="small mt0">A charged capacitor connected to an ideal inductor: watch \(W_C = \frac12 C u^2\) and \(W_L = \frac12 L i^2\) trade places twice per cycle while their sum stays constant — a lossless electrical pendulum. Then raise the damping slider (adding series resistance) and watch the total energy leak away as heat while the oscillation decays.</p>
+    <div id="w-lcslosh"></div>
+  </div>
+</div>
+
+<h2 id="rc-step">3. First order: the RC circuit, derived properly</h2>
+
+<p>The drosophila of transients: a source \(U_0\), a switch closing at \(t=0\), a resistor \(R\), a capacitor \(C\), initially uncharged (Fig. 3.1).</p>
+
+<figure>
+  <div class="fig-frame">
+  <svg class="diagram" viewBox="0 0 620 240" role="img" aria-label="RC charging circuit with switch">
+    <!-- source -->
+    <circle cx="70" cy="120" r="26" fill="none" stroke="var(--text-soft)" stroke-width="2"/>
+    <line x1="70" y1="94" x2="70" y2="146" class="wire"/>
+    <text x="36" y="126" text-anchor="end" font-size="15">U₀</text>
+    <path class="wire" d="M70 94 V50 H130"/>
+    <!-- switch -->
+    <circle cx="130" cy="50" r="4" class="node"/>
+    <circle cx="200" cy="50" r="4" class="node"/>
+    <line x1="134" y1="48" x2="194" y2="24" class="wire"/>
+    <text x="165" y="14" text-anchor="middle" font-size="13" fill="var(--accent-2)">t = 0</text>
+    <path class="wire" d="M204 50 H260"/>
+    <!-- R -->
+    <rect x="260" y="38" width="80" height="24" fill="none" stroke="var(--text-soft)" stroke-width="2"/>
+    <text x="300" y="28" text-anchor="middle" font-size="14">R</text>
+    <path class="wire" d="M340 50 H520 V96"/>
+    <!-- current arrow -->
+    <line x1="400" y1="50" x2="450" y2="50" stroke="var(--accent)" stroke-width="2.2" marker-end="url(#m6arr1)"/>
+    <text x="425" y="38" text-anchor="middle" font-size="13" fill="var(--accent)">i(t)</text>
+    <!-- capacitor plates -->
+    <line x1="492" y1="96" x2="548" y2="96" stroke="var(--text-soft)" stroke-width="3"/>
+    <line x1="492" y1="118" x2="548" y2="118" stroke="var(--text-soft)" stroke-width="3"/>
+    <text x="478" y="112" text-anchor="end" font-size="14">C</text>
+    <path class="wire" d="M520 118 V190 H70 V146"/>
+    <!-- uC arrow -->
+    <line x1="575" y1="88" x2="575" y2="132" stroke="var(--accent)" stroke-width="2" marker-end="url(#m6arr1)"/>
+    <text x="588" y="114" font-size="14" fill="var(--accent)">u_C</text>
+    <defs><marker id="m6arr1" markerWidth="9" markerHeight="9" refX="7" refY="4.5" orient="auto">
+      <path d="M0 0 L8 4.5 L0 9 z" fill="var(--accent)"/></marker></defs>
+  </svg>
+  </div>
+  <figcaption><b>Fig. 3.1</b> — The RC charging circuit. At \(t=0\) the switch closes; the capacitor charges through \(R\). All symbols IEC style.</figcaption>
+</figure>
+
+<h3 id="rc-ode">3.1 Setting up and solving the ODE</h3>
+<p>KVL around the loop for \(t > 0\), with \(i = C\,\mathrm{d}u_C/\mathrm{d}t\):</p>
+\[ U_0 = R\,i + u_C = RC\,\frac{\mathrm{d}u_C}{\mathrm{d}t} + u_C . \]
+<p>This is exactly the first-order linear ODE with constant coefficients you solved in Module 02: general solution = particular (steady-state) solution + homogeneous (decaying) solution. The particular solution is the new steady state \(u_{C,p} = U_0\) (in DC steady state no current flows into \(C\), so no drop across \(R\)). The homogeneous equation \(RC\,\dot u + u = 0\) has the solution \(K e^{-t/RC}\). Fitting the initial condition \(u_C(0)=0\) (continuity rule!) gives \(K = -U_0\):</p>
+\[ \boxed{\;u_C(t) = U_0\left(1 - e^{-t/\tau}\right), \qquad \tau = RC\;} \]
+<p>and the current, which <em>does</em> jump at \(t=0\):</p>
+\[ i(t) = C\,\frac{\mathrm{d}u_C}{\mathrm{d}t} = \frac{U_0}{R}\,e^{-t/\tau}. \]
+<p>At \(t=0^+\) the uncharged capacitor looks like a <em>short circuit</em> (it holds its voltage, 0 V) and the current leaps to \(U_0/R\); as \(t \to \infty\) the capacitor looks like an <em>open circuit</em> and the current dies to zero.</p>
+
+<h3 id="tau">3.2 The time constant τ — <span class="de">Zeitkonstante</span></h3>
+<p>Check the units: \([\tau] = \Omega \cdot \mathrm{F} = \frac{\mathrm{V}}{\mathrm{A}}\cdot\frac{\mathrm{A\,s}}{\mathrm{V}} = \mathrm{s}\). One time constant is how long the circuit <em>would</em> take to finish if it kept its initial pace — geometrically, the initial tangent of \(u_C(t)\) hits \(U_0\) exactly at \(t=\tau\). Because the pace itself decays, after one \(\tau\) the transition is only</p>
+\[ 1 - e^{-1} \approx 0.632 = 63.2\,\% \]
+<p>complete. Memorize the ladder:</p>
+
+<div class="table-wrap">
+<table class="data">
+<thead><tr><th>elapsed time</th><th>\(1\tau\)</th><th>\(2\tau\)</th><th>\(3\tau\)</th><th>\(4\tau\)</th><th>\(5\tau\)</th></tr></thead>
+<tbody>
+<tr><td>fraction of transition completed</td><td>63.2 %</td><td>86.5 %</td><td>95.0 %</td><td>98.2 %</td><td>99.3 %</td></tr>
+<tr><td>remaining</td><td>36.8 %</td><td>13.5 %</td><td>5.0 %</td><td>1.8 %</td><td>0.7 %</td></tr>
+</tbody>
+</table>
+</div>
+
+<p>The exponential mathematically never finishes, but engineering practice declares the transient over after <strong>five time constants</strong> (&lt; 1 % remaining). "Settled to \(5\tau\)" is the standard rule of thumb (<span class="de">Faustregel</span>) in datasheets and lab work.</p>
+
+<h3 id="discharge">3.3 Discharge</h3>
+<p>Now charge the capacitor to \(U_0\) and at \(t = 0\) connect it to a plain resistor. The same ODE with \(U_0\) replaced by the new steady state (zero) gives pure decay:</p>
+\[ u_C(t) = U_0\,e^{-t/\tau}, \qquad i(t) = -\frac{U_0}{R}\,e^{-t/\tau}, \]
+<p>the minus sign flagging that current now flows <em>out</em> of the capacitor. After one \(\tau\), 36.8 % of the voltage remains; the stored energy — going as \(u^2\) — is already down to \(e^{-2} \approx 13.5\,\%\).</p>
+
+<div class="widget">
+  <div class="w-head"><span class="ic">🧪</span>Interactive — RC charge &amp; discharge <span class="w-tag">simulation</span></div>
+  <div class="w-body">
+    <p class="small mt0">Both loop voltages at once: \(u_C\) and the resistor voltage \(u_R = iR\) (same volt axis, and their sum is \(U_0\) while charging — KVL live). Change \(R\) or \(C\) and watch \(\tau\) stretch the whole picture; switch to discharge and note \(u_R\) flips negative because the current reverses. The marked point is the 63.2 % / 36.8 % landmark at \(t=\tau\).</p>
+    <div id="w-rc"></div>
+  </div>
+</div>
+
+<div class="example">
+  <div class="ex-head"><span class="ex-tag">Worked example</span> Camera flash: seconds to charge, kilowatts to fire</div>
+  <div class="ex-body">
+    <p>A compact-camera flash stores energy in an electrolytic capacitor \(C = 1000\,\mathrm{\mu F}\) charged to \(U_0 = 330\,\mathrm{V}\) (via a boost converter whose output behaves like a source with \(R \approx 500\,\Omega\)). The xenon tube, once triggered, behaves like \(R_{tube} \approx 0.6\,\Omega\). Find the stored energy, the recycle time, the flash duration, and the average power during the flash.</p>
+    <div class="step"><span class="step-label">Step 1 — stored energy:</span>
+      \( W = \tfrac12 C U_0^2 = \tfrac12 \cdot 10^{-3} \cdot 330^2 \approx 54\,\mathrm{J} \). (Enough to be genuinely dangerous — flash caps bite hours after the battery is removed.)</div>
+    <div class="step"><span class="step-label">Step 2 — recycle (charge) time:</span>
+      \( \tau_{ch} = RC = 500 \cdot 10^{-3} = 0.5\,\mathrm{s} \) → practically full at \(5\tau = 2.5\,\mathrm{s}\). That is exactly the familiar wait between flashes.</div>
+    <div class="step"><span class="step-label">Step 3 — flash duration:</span>
+      \( \tau_{dis} = R_{tube}\,C = 0.6 \cdot 10^{-3} = 0.6\,\mathrm{ms} \) → the flash is essentially over after \(5\tau \approx 3\,\mathrm{ms}\).</div>
+    <div class="step"><span class="step-label">Step 4 — average power:</span>
+      \( P \approx 54\,\mathrm{J} / 3\,\mathrm{ms} \approx 18\,\mathrm{kW} \) — nine kettles' worth, from two AA batteries, because the capacitor decouples <em>energy delivery rate</em> from <em>energy collection rate</em>.</div>
+    <div class="result-line">\(W \approx 54\) J, recycle ≈ 2.5 s, flash ≈ 3 ms, peak-ish power ≈ 18 kW. Same energy, four orders of magnitude apart in power — that asymmetry is the whole business model of the capacitor.</div>
+  </div>
+</div>
+
+<h2 id="recipe">4. The universal first-order recipe</h2>
+
+<p>Look again at charging, \(u_C = U_0(1-e^{-t/\tau})\), and discharging, \(u_C = U_0 e^{-t/\tau}\). Both are special cases of one formula. In <em>any</em> circuit with a single storage element, every voltage and every current moves from its initial value to its final value along the same exponential:</p>
+\[ \boxed{\;x(t) = x_\infty + \left(x_0 - x_\infty\right)e^{-t/\tau}\;} \]
+<p>where \(x_0 = x(0^+)\) is the initial value just after switching, \(x_\infty\) is the value in the new steady state, and \(\tau\) is the circuit's one time constant. Read it as: "final value, plus the initial surplus, decaying away."</p>
+
+<div class="box key">
+  <div class="box-title"><span class="ic">🔑</span>Key idea: three numbers solve every first-order switching problem</div>
+  <p>You never need to set up the ODE again. Any first-order switching problem — any topology, any element voltage or current you are asked for — is fully determined by three numbers: \(x_0\), \(x_\infty\), \(\tau\). Find them from three <em>DC</em> circuit analyses (Module 04 skills!) and write the answer down. The recipe is the single highest-leverage formula of this module; Section 6 turns it into a checklist.</p>
+</div>
+
+<p>Solving the recipe for time also answers "how long until \(x\) reaches a threshold \(x_1\)?":</p>
+\[ t_1 = \tau \,\ln\!\frac{x_0 - x_\infty}{x_1 - x_\infty}. \]
+<p>This little formula is the working heart of RC timers (the classic 555 chip), of <strong>switch debouncing</strong> (<span class="de">Entprellen</span>) — where an RC low-pass with \(\tau \approx 10\,\mathrm{ms}\) rides out the mechanical chatter of a pressed button before a logic gate looks at the level — and of every "press and hold for 2 seconds" feature ever built.</p>
+
+<h2 id="rl">5. RL circuits and the inductive kick</h2>
+
+<h3 id="rl-tau">5.1 The RL time constant</h3>
+<p>Swap the capacitor for an inductor: source \(U_0\), resistor \(R\), inductor \(L\), switch closes at \(t=0\), \(i_L(0)=0\). KVL: \(U_0 = Ri + L\,\mathrm{d}i/\mathrm{d}t\). Same mathematics, new state variable — the current:</p>
+\[ i(t) = \frac{U_0}{R}\left(1 - e^{-t/\tau}\right), \qquad \boxed{\;\tau = \frac{L}{R}\;} \]
+<p>Note the duality throughout: the inductor at \(t=0^+\) looks like an <em>open circuit</em> (it insists on its old current, zero) and in DC steady state like a <em>short circuit</em> (constant current → no voltage). Larger \(L\) means more inertia → longer \(\tau\); larger \(R\) here means <em>faster</em> settling, the opposite of RC.</p>
+
+<h3 id="kick">5.2 Interrupting an inductor: the kick — <span class="de">Abschaltüberspannung</span></h3>
+<p>Now the dangerous half. Let the current reach \(I_0 = U_0/R\), then <em>open</em> the switch. The current path is gone, but the continuity rule says \(i_L(0^+) = I_0\) — the flywheel will not stop. The inductor drives its current into whatever is available. If that is only the tiny stray capacitance \(C_s\) of the wiring (picofarads), the magnetic energy converts to electric energy in that minuscule capacitor:</p>
+\[ \tfrac12 L I_0^2 = \tfrac12 C_s \hat u^2 \quad\Rightarrow\quad \hat u = I_0 \sqrt{\frac{L}{C_s}} . \]
+<p>With \(C_s\) tiny, \(\hat u\) is huge — kilovolts from a 12 V circuit. In practice the voltage rises until something conducts: the air in the switch gap breaks down and you see a <strong>spark</strong>. That is why mechanical switches on inductive loads (motors, relays, transformers) spark and erode, and why a transistor switching a relay coil without protection dies on the first turn-off.</p>
+
+<p>The standard cure is the <strong>flyback diode</strong> (<span class="de">Freilaufdiode</span>, "free-wheeling diode") in parallel with the coil, oriented so it is blocking during normal operation. The instant the switch opens, the coil's voltage reverses, the diode conducts, and the current circulates harmlessly through the coil–diode loop, decaying with \(\tau = L/R_{coil}\) while the energy burns off in the coil's own resistance. The voltage across the switch is clamped to \(U_0 + 0.7\,\mathrm{V}\).</p>
+
+<figure>
+  <div class="fig-frame">
+  <svg class="diagram" viewBox="0 0 640 260" role="img" aria-label="Relay coil with flyback diode and opening switch">
+    <!-- source -->
+    <circle cx="70" cy="130" r="26" fill="none" stroke="var(--text-soft)" stroke-width="2"/>
+    <line x1="70" y1="104" x2="70" y2="156" class="wire"/>
+    <text x="36" y="136" text-anchor="end" font-size="15">U₀</text>
+    <path class="wire" d="M70 104 V55 H140"/>
+    <!-- switch opening -->
+    <circle cx="140" cy="55" r="4" class="node"/>
+    <circle cx="210" cy="55" r="4" class="node"/>
+    <line x1="144" y1="53" x2="202" y2="28" class="wire"/>
+    <text x="173" y="18" text-anchor="middle" font-size="13" fill="var(--accent-2)">opens at t = 0</text>
+    <path class="wire" d="M214 55 H420"/>
+    <circle cx="420" cy="55" r="4" class="node"/>
+    <path class="wire" d="M420 55 H560 V85"/>
+    <!-- coil branch: L (IEC filled rect) + Rcoil -->
+    <rect x="548" y="85" width="24" height="52" fill="var(--text-soft)" stroke="var(--text-soft)"/>
+    <text x="580" y="115" font-size="14">L</text>
+    <path class="wire" d="M560 137 V160"/>
+    <rect x="548" y="160" width="24" height="44" fill="none" stroke="var(--text-soft)" stroke-width="2"/>
+    <text x="580" y="186" font-size="13">R_coil</text>
+    <path class="wire" d="M560 204 V225 H70 V156"/>
+    <!-- dashed real-coil box -->
+    <rect x="528" y="72" width="100" height="142" fill="none" stroke="var(--text-faint)" stroke-dasharray="6 5" rx="8"/>
+    <text x="578" y="246" text-anchor="middle" font-size="11" fill="var(--text-faint)">relay coil</text>
+    <!-- flyback diode branch -->
+    <path class="wire" d="M420 55 V95"/>
+    <!-- diode: triangle pointing up (conducts upward), cathode bar on top -->
+    <line x1="402" y1="95" x2="438" y2="95" stroke="var(--text-soft)" stroke-width="3"/>
+    <path d="M420 95 L402 130 L438 130 Z" fill="none" stroke="var(--text-soft)" stroke-width="2"/>
+    <path class="wire" d="M420 130 V225"/>
+    <text x="368" y="118" text-anchor="end" font-size="13">flyback diode</text>
+    <!-- freewheel current loop arrow -->
+    <path d="M480 148 a30 30 0 1 1 -0.1 0" fill="none" stroke="var(--accent-2)" stroke-width="2" stroke-dasharray="5 4" marker-end="url(#m6arr2)"/>
+    <text x="480" y="183" text-anchor="middle" font-size="13" fill="var(--accent-2)">i</text>
+    <defs><marker id="m6arr2" markerWidth="8" markerHeight="8" refX="6" refY="4" orient="auto">
+      <path d="M0 0 L7 4 L0 8 z" fill="var(--accent-2)"/></marker></defs>
+  </svg>
+  </div>
+  <figcaption><b>Fig. 5.1</b> — Relay coil with flyback diode. While the switch conducts, the diode blocks. When the switch opens, the coil voltage reverses, the diode conducts, and \(i_L\) decays gently around the coil–diode loop instead of arcing across the switch.</figcaption>
+</figure>
+
+<div class="example">
+  <div class="ex-head"><span class="ex-tag">Worked example</span> How big is the kick? A relay without its diode</div>
+  <div class="ex-body">
+    <p>A 12 V relay coil: \(L = 100\,\mathrm{mH}\), \(R_{coil} = 100\,\Omega\), driven from 12 V. The wiring's stray capacitance is \(C_s \approx 100\,\mathrm{pF}\). Estimate the turn-off voltage spike without a flyback diode, and the current-decay time constant with one.</p>
+    <div class="step"><span class="step-label">Step 1 — steady current before switching:</span>
+      \( I_0 = 12/100 = 120\,\mathrm{mA} \); stored energy \( W = \tfrac12 \cdot 0.1 \cdot 0.12^2 = 0.72\,\mathrm{mJ} \).</div>
+    <div class="step"><span class="step-label">Step 2 — energy transfer estimate:</span>
+      \( \hat u = I_0\sqrt{L/C_s} = 0.12\sqrt{0.1/10^{-10}} = 0.12 \cdot 31\,600 \approx 3.8\,\mathrm{kV}. \)</div>
+    <div class="step"><span class="step-label">Step 3 — reality check:</span> air breaks down at ~3 kV/mm, so the switch gap arcs long before 3.8 kV is reached — the "spike" is clamped by the spark itself. A transistor, however, has no merciful arc: it simply avalanches and dies. (An ignition coil is this exact circuit <em>on purpose</em>, with a transformer to multiply the kick to ~30 kV for the spark plug.)</div>
+    <div class="step"><span class="step-label">Step 4 — with flyback diode:</span>
+      the current free-wheels with \( \tau = L/R_{coil} = 0.1/100 = 1\,\mathrm{ms} \), gone after ~5 ms. The switch never sees more than \(12 + 0.7 \approx 12.7\,\mathrm{V}\).</div>
+    <div class="result-line">Unprotected: multi-kilovolt spike (arc). Protected: 12.7 V and a gentle 1 ms decay. One 5-cent diode.</div>
+  </div>
+</div>
+
+<div class="box history">
+  <div class="box-title"><span class="ic">📜</span>The kick, put to work</div>
+  <p>The inductive kick is a nuisance turned into an industry: car <b>ignition systems</b> (Kettering, 1910) interrupt a coil current to fire spark plugs; <b>boost converters</b> (Module 14) interrupt an inductor thousands of times per second to step voltages <em>up</em>; electric <b>fence energizers</b> and xenon-flash trigger transformers do the same. And every relay driver, motor bridge and solenoid valve you will ever design needs its freewheeling path — look at any motor-driver IC datasheet and you will find the diodes built in.</p>
+</div>
+
+<h2 id="method">6. The systematic switching-problem method</h2>
+
+<p>Here is the checklist that, combined with the recipe of Section 4, mechanically solves every first-order switching problem (<span class="de">Schaltaufgabe</span>):</p>
+<ol>
+  <li><b>Analyze \(t = 0^-\)</b> (old steady state): replace \(C\) by an open circuit, \(L\) by a short circuit; do DC analysis (Module 04). Extract the state variables \(u_C(0^-)\), \(i_L(0^-)\).</li>
+  <li><b>Apply continuity:</b> \(u_C(0^+) = u_C(0^-)\), \(i_L(0^+) = i_L(0^-)\). If you need a <em>non</em>-state quantity at \(0^+\), analyze the switched circuit with the storage element replaced by a source of its initial value.</li>
+  <li><b>Analyze \(t \to \infty\)</b> (new steady state): again \(C\) → open, \(L\) → short, but now with the <em>switched</em> topology. Read off \(x_\infty\).</li>
+  <li><b>Find \(\tau\):</b> deactivate all sources and compute the Thévenin resistance \(R_{Th}\) seen from the storage element's terminals (Module 04, Section 8). Then \(\tau = R_{Th}\,C\) or \(\tau = L/R_{Th}\).</li>
+  <li><b>Write the answer:</b> \(x(t) = x_\infty + (x_0 - x_\infty)\,e^{-t/\tau}\). Sketch it. Sanity-check both endpoints.</li>
+</ol>
+
+<div class="box warn">
+  <div class="box-title"><span class="ic">⚠️</span>τ belongs to the circuit, not to the component</div>
+  <p>The most common error in step 4: using whatever resistor happens to be drawn next to the capacitor. \(\tau\) is set by the <b>total Thévenin resistance seen from the storage element</b> in the <em>post-switching</em> circuit — often a series/parallel combination, and it changes if the switching changed the topology. One circuit can even have different \(\tau\) values before and after switching.</p>
+</div>
+
+<div class="example">
+  <div class="ex-head"><span class="ex-tag">Worked example</span> The full method on a two-resistor circuit</div>
+  <div class="ex-body">
+    <p>A 10 V source feeds node A through \(R_1 = 4\,\mathrm{k\Omega}\). From A, a capacitor \(C = 10\,\mathrm{\mu F}\) goes to ground. A resistor \(R_2 = 6\,\mathrm{k\Omega}\) from A to ground is connected through a switch that <em>closes at</em> \(t=0\) (open before). Find \(u_C(t)\) and the time at which \(u_C = 7\,\mathrm{V}\).</p>
+    <div class="step"><span class="step-label">Step 1 — \(t=0^-\):</span> switch open, steady state: no current flows (C is open, R₂ disconnected) → no drop across \(R_1\) → \(u_C(0^-) = 10\,\mathrm{V}\).</div>
+    <div class="step"><span class="step-label">Step 2 — continuity:</span> \(u_C(0^+) = 10\,\mathrm{V}\).</div>
+    <div class="step"><span class="step-label">Step 3 — \(t\to\infty\):</span> C open, switch closed: plain voltage divider, \(u_\infty = 10 \cdot \frac{6}{4+6} = 6\,\mathrm{V}\).</div>
+    <div class="step"><span class="step-label">Step 4 — τ:</span> kill the source (short it). From the capacitor's terminals you see \(R_1 \parallel R_2 = \frac{4\cdot 6}{10} = 2.4\,\mathrm{k\Omega}\), so \(\tau = 2.4\,\mathrm{k\Omega}\cdot 10\,\mathrm{\mu F} = 24\,\mathrm{ms}\).</div>
+    <div class="step"><span class="step-label">Step 5 — recipe:</span>
+      \[ u_C(t) = 6 + (10-6)\,e^{-t/24\,\mathrm{ms}} = 6 + 4\,e^{-t/24\,\mathrm{ms}}\ \mathrm{V}. \]
+      Threshold: \(7 = 6 + 4e^{-t/\tau} \Rightarrow e^{-t/\tau} = \tfrac14 \Rightarrow t = 24\,\mathrm{ms}\cdot\ln 4 \approx 33\,\mathrm{ms}\).</div>
+    <div class="result-line">\(u_C\) sags exponentially from 10 V to 6 V with \(\tau = 24\) ms, crossing 7 V at ≈ 33 ms. Endpoint check: \(t=0\): 10 V ✓, \(t\to\infty\): 6 V ✓.</div>
+  </div>
+</div>
+
+<h2 id="rlc">7. Second order: the series RLC circuit</h2>
+
+<p>Now put both storage elements in one loop (Fig. 7.1): a step source \(U_0\), resistor \(R\), inductor \(L\), capacitor \(C\) in series. Two energy stores → second-order dynamics → the possibility of <strong>oscillation</strong>: the capacitor discharges into the inductor, the inductor's inertia overshoots and recharges the capacitor the other way, and so on — Section 2's sloshing animation, now with friction \(R\).</p>
+
+<figure>
+  <div class="fig-frame">
+  <svg class="diagram" viewBox="0 0 640 240" role="img" aria-label="Series RLC circuit with step source">
+    <!-- source -->
+    <circle cx="70" cy="120" r="26" fill="none" stroke="var(--text-soft)" stroke-width="2"/>
+    <line x1="70" y1="94" x2="70" y2="146" class="wire"/>
+    <text x="36" y="126" text-anchor="end" font-size="15">U₀</text>
+    <path class="wire" d="M70 94 V50 H120"/>
+    <!-- switch -->
+    <circle cx="120" cy="50" r="4" class="node"/>
+    <circle cx="180" cy="50" r="4" class="node"/>
+    <line x1="124" y1="48" x2="174" y2="26" class="wire"/>
+    <text x="150" y="16" text-anchor="middle" font-size="13" fill="var(--accent-2)">t = 0</text>
+    <path class="wire" d="M184 50 H220"/>
+    <!-- R -->
+    <rect x="220" y="38" width="72" height="24" fill="none" stroke="var(--text-soft)" stroke-width="2"/>
+    <text x="256" y="28" text-anchor="middle" font-size="14">R</text>
+    <path class="wire" d="M292 50 H340"/>
+    <!-- L (IEC filled rect) -->
+    <rect x="340" y="42" width="80" height="16" fill="var(--text-soft)" stroke="var(--text-soft)"/>
+    <text x="380" y="30" text-anchor="middle" font-size="14">L</text>
+    <path class="wire" d="M420 50 H560 V96"/>
+    <!-- current arrow -->
+    <line x1="460" y1="50" x2="510" y2="50" stroke="var(--accent)" stroke-width="2.2" marker-end="url(#m6arr3)"/>
+    <text x="485" y="38" text-anchor="middle" font-size="13" fill="var(--accent)">i(t)</text>
+    <!-- C -->
+    <line x1="532" y1="96" x2="588" y2="96" stroke="var(--text-soft)" stroke-width="3"/>
+    <line x1="532" y1="118" x2="588" y2="118" stroke="var(--text-soft)" stroke-width="3"/>
+    <text x="518" y="112" text-anchor="end" font-size="14">C</text>
+    <path class="wire" d="M560 118 V190 H70 V146"/>
+    <!-- uC arrow -->
+    <line x1="612" y1="88" x2="612" y2="132" stroke="var(--accent)" stroke-width="2" marker-end="url(#m6arr3)"/>
+    <text x="622" y="114" font-size="14" fill="var(--accent)">u_C</text>
+    <defs><marker id="m6arr3" markerWidth="9" markerHeight="9" refX="7" refY="4.5" orient="auto">
+      <path d="M0 0 L8 4.5 L0 9 z" fill="var(--accent)"/></marker></defs>
+  </svg>
+  </div>
+  <figcaption><b>Fig. 7.1</b> — The series RLC circuit driven by a voltage step. Two energy stores in one loop: the canonical second-order system.</figcaption>
+</figure>
+
+<h3 id="rlc-ode">7.1 The ODE and its characteristic equation</h3>
+<p>KVL with \(i = C\,\dot u_C\):</p>
+\[ U_0 = L\,\frac{\mathrm{d}i}{\mathrm{d}t} + R\,i + u_C
+   \;\Rightarrow\;
+   LC\,\frac{\mathrm{d}^2 u_C}{\mathrm{d}t^2} + RC\,\frac{\mathrm{d}u_C}{\mathrm{d}t} + u_C = U_0 . \]
+<p>The exponential ansatz \(u_h = K e^{st}\) (Module 02) turns the homogeneous equation into the <strong>characteristic equation</strong> (<span class="de">charakteristische Gleichung</span>):</p>
+\[ s^2 + \frac{R}{L}\,s + \frac{1}{LC} = 0
+   \qquad\Rightarrow\qquad
+   s_{1,2} = -\alpha \pm \sqrt{\alpha^2 - \omega_0^2}, \]
+<p>with two parameters that deserve names and a permanent place in your head — the undamped natural frequency (<span class="de">Kennkreisfrequenz</span>) and the decay rate:</p>
+\[ \boxed{\;\omega_0 = \frac{1}{\sqrt{LC}}\;}, \qquad \alpha = \frac{R}{2L}. \]
+<p>Their ratio is the dimensionless <strong>damping ratio</strong> (<span class="de">Dämpfungsgrad</span>, in German texts often \(d\) or \(\vartheta\)):</p>
+\[ \boxed{\;\zeta = \frac{\alpha}{\omega_0} = \frac{R}{2}\sqrt{\frac{C}{L}}\;} \]
+
+<h3 id="trichotomy">7.2 The trichotomy: over-, critically, underdamped</h3>
+<p>Everything hinges on the sign of \(\alpha^2 - \omega_0^2\), i.e. on whether \(\zeta \gtrless 1\). For the step response with \(u_C(0)=0\), \(i(0)=0\):</p>
+
+<div class="table-wrap">
+<table class="data">
+<thead><tr><th>case</th><th>roots \(s_{1,2}\)</th><th>step response \(u_C(t)\)</th><th>character</th></tr></thead>
+<tbody>
+<tr><td>\(\zeta &gt; 1\) <b>overdamped</b><br><span class="de">Kriechfall</span></td><td>two real, negative<br>\(s_{1,2} = -\alpha \pm \sqrt{\alpha^2 - \omega_0^2}\)</td><td>\( U_0\!\left[1 - \dfrac{s_2 e^{s_1 t} - s_1 e^{s_2 t}}{s_2 - s_1}\right] \)</td><td>sluggish creep, no overshoot; the slow root dominates</td></tr>
+<tr><td>\(\zeta = 1\) <b>critically damped</b><br><span class="de">aperiodischer Grenzfall</span></td><td>double real root<br>\(s_{1,2} = -\omega_0\)</td><td>\( U_0\!\left[1 - (1 + \omega_0 t)\,e^{-\omega_0 t}\right] \)</td><td><b>fastest settling without overshoot</b></td></tr>
+<tr><td>\(\zeta &lt; 1\) <b>underdamped</b><br><span class="de">Schwingfall</span></td><td>complex pair<br>\(s_{1,2} = -\alpha \pm j\omega_d\)</td><td>\( U_0\!\left[1 - e^{-\alpha t}\!\left(\cos\omega_d t + \tfrac{\alpha}{\omega_d}\sin\omega_d t\right)\right] \)</td><td>decaying oscillation, overshoot and ringing</td></tr>
+</tbody>
+</table>
+</div>
+
+<p>The boundary sits at \(\zeta = 1\), i.e. at the <strong>critical resistance</strong></p>
+\[ R_{crit} = 2\sqrt{\frac{L}{C}} . \]
+
+<div class="box key">
+  <div class="box-title"><span class="ic">🔑</span>Key idea: which damping do you <em>want</em>?</div>
+  <p>Each case is somebody's design goal. <b>Critically damped</b> (or slightly under, \(\zeta \approx 0.7\)): measurement instruments, car suspensions, oscilloscope probes, defibrillator discharge pulses — you want to arrive at the new value fast <em>without</em> overshooting it. <b>Overdamped</b>: when overshoot is unacceptable at any price (some precision analog steps). <b>Strongly underdamped</b> (\(\zeta \ll 1\)): oscillators, radio tuners, MRI coils — there the "defect" of ringing <em>is</em> the product, and you fight to make \(\zeta\) as small as possible. Note \(\zeta \approx 0.7\) (not 1) is the usual sweet spot in practice: ~4 % overshoot buys distinctly faster settling into a tolerance band.</p>
+</div>
+
+<div class="widget">
+  <div class="w-head"><span class="ic">🧪</span>Interactive — RLC step response across the trichotomy <span class="w-tag">simulation</span></div>
+  <div class="w-body">
+    <p class="small mt0">Step response of \(u_C\) for a 10 V step. Sweep \(R\) slowly from low to high and watch the three regimes morph into each other: ringing → the critical boundary at \(R_{crit} = 2\sqrt{L/C}\) (see readout) → sluggish creep. Notice that underdamped responses overshoot the 10 V line — the marked first peak — while over- and critically damped ones never cross it.</p>
+    <div id="w-rlcstep"></div>
+  </div>
+</div>
+
+<div class="example">
+  <div class="ex-head"><span class="ex-tag">Worked example</span> A complete second-order solve, no steps skipped</div>
+  <div class="ex-body">
+    <p>Series RLC: \(R = 40\,\Omega\), \(L = 10\,\mathrm{mH}\), \(C = 10\,\mathrm{\mu F}\), step \(U_0 = 10\,\mathrm{V}\) at \(t=0\), initially at rest. Classify the response, find \(u_C(t)\), and compute the first-peak overshoot.</p>
+    <div class="step"><span class="step-label">Step 1 — parameters:</span>
+      \( \omega_0 = 1/\sqrt{LC} = 1/\sqrt{10^{-2}\cdot 10^{-5}} = 3162\,\mathrm{s^{-1}} \);
+      \( \alpha = R/2L = 40/0.02 = 2000\,\mathrm{s^{-1}} \);
+      \( \zeta = 2000/3162 = 0.632 \lt 1 \) → <b>underdamped</b>. (Check: \(R_{crit} = 2\sqrt{10^{-2}/10^{-5}} = 63.2\,\Omega \gt 40\,\Omega\) ✓)</div>
+    <div class="step"><span class="step-label">Step 2 — damped frequency:</span>
+      \( \omega_d = \sqrt{\omega_0^2 - \alpha^2} = \sqrt{10^7 - 4\cdot 10^6} = 2449\,\mathrm{s^{-1}} \) → \(f_d \approx 390\,\mathrm{Hz}\).</div>
+    <div class="step"><span class="step-label">Step 3 — solution (initial conditions \(u_C(0)=0\), \(\dot u_C(0) = i(0)/C = 0\)):</span>
+      \[ u_C(t) = 10\left[1 - e^{-2000t}\left(\cos 2449t + \tfrac{2000}{2449}\sin 2449t\right)\right]\,\mathrm{V}. \]</div>
+    <div class="step"><span class="step-label">Step 4 — first peak:</span> it occurs half a damped period in, \(t_p = \pi/\omega_d = 1.28\,\mathrm{ms}\), and the overshoot is
+      \( e^{-\alpha t_p} = e^{-2000\cdot 0.00128} = e^{-2.57} \approx 0.077 \), so
+      \( \hat u_C = 10\,(1 + 0.077) \approx 10.8\,\mathrm{V} \).</div>
+    <div class="result-line">Underdamped, \(f_d \approx 390\) Hz, peaks at ≈ 10.8 V (7.7 % overshoot) after 1.28 ms, settled after ≈ \(5/\alpha = 2.5\) ms. Sanity: \(\zeta = 0.63\) is near the practical sweet spot — mild ringing, quick settling.</div>
+  </div>
+</div>
+
+<h2 id="underdamped">8. The underdamped case up close</h2>
+
+<p>For \(\zeta &lt; 1\) the roots are \(s_{1,2} = -\alpha \pm j\omega_d\) with the <strong>damped natural frequency</strong> (<span class="de">Eigenkreisfrequenz</span>)</p>
+\[ \boxed{\;\omega_d = \omega_0\sqrt{1 - \zeta^2}\;} \]
+<p>— always a bit <em>below</em> \(\omega_0\): friction slows the pendulum. The free response is a sinusoid trapped inside a decaying <strong>envelope</strong> (<span class="de">Hüllkurve</span>) \(\pm A\,e^{-\alpha t}\): the oscillation's amplitude shrinks by the factor \(e^{-\alpha T_d}\) every damped period \(T_d = 2\pi/\omega_d\).</p>
+
+<p>That per-period shrink factor is worth a name. The <strong>logarithmic decrement</strong> (<span class="de">logarithmisches Dekrement</span>) is the log of the ratio of successive same-side peaks:</p>
+\[ \Lambda = \ln\frac{x_n}{x_{n+1}} = \alpha\,T_d = \frac{2\pi\zeta}{\sqrt{1-\zeta^2}} . \]
+<p>Its practical value: measure two successive peak heights on an oscilloscope, take the log of their ratio, and you have determined \(\zeta\) of a physical system <em>without knowing R, L or C at all</em>. This trick works on circuits, buildings and aircraft wings alike, and it is the standard lab method for extracting damping from a ring-down trace.</p>
+
+<div class="box warn">
+  <div class="box-title"><span class="ic">⚠️</span>Three frequencies, keep them apart</div>
+  <p>\(\omega_0 = 1/\sqrt{LC}\) is the <em>undamped</em> natural frequency (and, as we will see, the resonance frequency of the series circuit). \(\omega_d = \omega_0\sqrt{1-\zeta^2}\) is the frequency the damped circuit <em>actually rings at</em>. And the excitation frequency \(\omega\) of a driving source is a third, independent thing. For high-\(Q\) circuits (\(\zeta \lesssim 0.05\)) they are numerically almost identical — which is exactly why students merge them into one concept and then lose points when \(\zeta\) is not small.</p>
+</div>
+
+<h2 id="resonance">9. Resonance — <span class="de">Resonanz</span></h2>
+
+<p>So far the source was a step. Now drive the series RLC with a <em>sinusoid</em> of adjustable frequency and use Module 05's phasor impedance:</p>
+\[ \underline{Z}(\omega) = R + j\left(\omega L - \frac{1}{\omega C}\right). \]
+<p>The inductive and capacitive reactances have opposite signs — and at exactly one frequency they cancel:</p>
+\[ \omega_0 L = \frac{1}{\omega_0 C} \quad\Rightarrow\quad \boxed{\;\omega_0 = \frac{1}{\sqrt{LC}}, \qquad f_0 = \frac{1}{2\pi\sqrt{LC}}\;} \]
+<p>(the same \(\omega_0\) as in Section 7 — the Thomson formula, <span class="de">Thomsonsche Schwingungsgleichung</span>). At <strong>series resonance</strong>:</p>
+<ul>
+  <li>\(|\underline{Z}|\) is at its <b>minimum</b>, equal to plain \(R\); the circuit looks purely resistive;</li>
+  <li>the current is maximal, \(I_{max} = U/R\), and in phase with the source;</li>
+  <li>\(\underline{U}_L\) and \(\underline{U}_C\) are individually huge, equal in magnitude and opposite in phase — they cancel in the loop sum but each one is very real across its component.</li>
+</ul>
+
+<h3 id="magnification">9.1 Voltage magnification: the surprising overvoltage</h3>
+<p>How huge? At resonance \(I = U/R\), so the capacitor voltage is</p>
+\[ U_C = \frac{I}{\omega_0 C} = \frac{U}{\omega_0 C R} = Q\,U, \qquad U_L = \omega_0 L\, I = \frac{\omega_0 L}{R}\,U = Q\,U, \]
+<p>where \(Q\) is the <strong>quality factor</strong> defined next section. A resonant circuit with \(Q = 100\) driven by 1 V develops <strong>100 V across its capacitor</strong> — from a 1 V source. This is not a paradox: over many cycles, the source keeps topping up the sloshing energy, and the stored amplitude builds until losses balance input, exactly like pushing a playground swing a little every period (<span class="de">Resonanzüberhöhung</span>). It is also a genuine hazard: series resonances in power grids and in carelessly designed filters produce insulation-destroying overvoltages. And it is a genuine tool: MRI receive coils and antenna matching networks use precisely this magnification to lift microvolt signals above the noise before any amplifier touches them.</p>
+
+<h3 id="parallel">9.2 Parallel resonance — the dual</h3>
+<p>Swap the topology: \(R\), \(L\), \(C\) in parallel, driven by a current source. Everything dualizes. The admittance \( \underline{Y} = \frac1R + j(\omega C - \frac{1}{\omega L}) \) is minimal at the same \(\omega_0\), hence \(|\underline{Z}|\) is at a <b>maximum</b>: the parallel circuit <em>rejects</em> current at resonance (<span class="de">Sperrkreis</span>, "blocking circuit"), while internally a magnified circulating current \(I_L = I_C = Q\,I\) sloshes between \(L\) and \(C\) — <strong>current magnification</strong>. Series circuit: voltage magnification, impedance minimum (<span class="de">Saugkreis</span>, "suction circuit" — it sucks in its resonance frequency, used to trap specific harmonics in power systems). Parallel circuit: current magnification, impedance maximum — the standard frequency-selective load in radio-frequency amplifiers and oscillators (Module 13).</p>
+
+<h2 id="quality">10. Quality factor and bandwidth</h2>
+
+<h3 id="q-defs">10.1 Q — <span class="de">Güte</span></h3>
+<p>The quality factor measures how underdamped, how "ringy", a resonator is. The <em>fundamental</em>, technology-independent definition is energetic:</p>
+\[ \boxed{\;Q = 2\pi\,\frac{\text{energy stored}}{\text{energy dissipated per cycle}}\;} \]
+<p>For the series RLC this evaluates to the circuit forms you will actually compute with:</p>
+\[ Q = \frac{\omega_0 L}{R} = \frac{1}{\omega_0 C R} = \frac{1}{R}\sqrt{\frac{L}{C}}, \qquad Q = \frac{1}{2\zeta}. \]
+<p>The last identity ties Sections 7–8 to this one: high \(Q\) ⇔ low damping ⇔ many ring-down cycles (a resonator rings for roughly \(Q/\pi\) periods before decaying to 4 %). Typical values: an RC filter has no resonance at all; a decent LC tank \(Q \sim 100\); a quartz crystal \(Q \sim 10^4\)–\(10^6\) (why your watch keeps time); a superconducting cavity \(Q \sim 10^{10}\).</p>
+
+<h3 id="bandwidth">10.2 Bandwidth — <span class="de">Bandbreite</span></h3>
+<p>Drive the series circuit off-resonance and the current falls. The two frequencies \(f_1, f_2\) where the current has dropped to \(I_{max}/\sqrt{2}\) — i.e. where the dissipated <em>power</em> has halved (the −3 dB points, Module 07) — bracket the <strong>bandwidth</strong>:</p>
+\[ \boxed{\;B = f_2 - f_1 = \frac{f_0}{Q}\;} \]
+<p>High \(Q\) means a needle-sharp resonance: enormous response at \(f_0\), nothing next door. That trade — magnification versus selectivity versus bandwidth, all set by one number — is <em>the</em> design equation of every tuned system. (At \(f_1\) and \(f_2\) the reactive term equals \(\pm R\), so the current phase is \(\mp 45^\circ\) there — a useful lab signature.)</p>
+
+<div class="widget">
+  <div class="w-head"><span class="ic">🧪</span>Interactive — the resonance curve <span class="w-tag">simulation</span></div>
+  <div class="w-body">
+    <p class="small mt0">Current versus frequency for a series RLC driven by 1 V. Lower \(R\) and watch the peak grow taller <em>and</em> narrower simultaneously — \(Q\) rises, bandwidth \(B = f_0/Q\) shrinks (dashed −3 dB level, marked \(f_1, f_2\)). Then nudge \(C\): the whole peak slides in frequency without changing shape much — that is literally what turning an old radio's tuning knob did.</p>
+    <div id="w-resonance"></div>
+  </div>
+</div>
+
+<div class="example">
+  <div class="ex-head"><span class="ex-tag">Worked example</span> Designing an AM radio tuner</div>
+  <div class="ex-body">
+    <p>An AM tuner must select the station at \(f_0 = 1.0\,\mathrm{MHz}\) while rejecting the neighbors 10 kHz away (AM channel spacing), so we need \(B \le 10\,\mathrm{kHz}\). The coil is fixed at \(L = 100\,\mathrm{\mu H}\). Find \(C\), the required \(Q\), the maximum tolerable series resistance, and the voltage across \(C\) for a 10 µV antenna signal.</p>
+    <div class="step"><span class="step-label">Step 1 — tuning capacitor (Thomson):</span>
+      \( C = \frac{1}{\omega_0^2 L} = \frac{1}{(2\pi\cdot 10^6)^2 \cdot 10^{-4}} \approx 253\,\mathrm{pF} \) — right in the range of a classic variable air capacitor (~10–350 pF), which is why those values were standard.</div>
+    <div class="step"><span class="step-label">Step 2 — required Q:</span>
+      \( Q = f_0/B = 10^6 / 10^4 = 100 \).</div>
+    <div class="step"><span class="step-label">Step 3 — resistance budget:</span>
+      \( R \le \frac{\omega_0 L}{Q} = \frac{2\pi\cdot 10^6\cdot 10^{-4}}{100} \approx 6.3\,\Omega \). The coil's wire and losses must stay under ~6 Ω at 1 MHz — this, not the capacitor, is the hard part (skin effect, Module 05, raises wire resistance at RF).</div>
+    <div class="step"><span class="step-label">Step 4 — magnification:</span>
+      \( U_C = Q\,U = 100 \cdot 10\,\mathrm{\mu V} = 1\,\mathrm{mV} \) — a free, noiseless ×100 "amplifier" before the first transistor. This is why every classic receiver starts with a tuned circuit.</div>
+    <div class="result-line">\(C \approx 253\) pF, \(Q = 100\), \(R \le 6.3\,\Omega\), and the tuner hands the detector 1 mV from a 10 µV antenna. Sanity: \(\zeta = 1/2Q = 0.005\) — extremely underdamped, exactly as a tuner should be.</div>
+  </div>
+</div>
+
+<div class="box german">
+  <div class="box-title"><span class="ic">🇩🇪</span>Vokabeln</div>
+  <p>transient = <span class="de">Ausgleichsvorgang</span> · switching event = <span class="de">Schaltvorgang</span> · steady state = <span class="de">eingeschwungener Zustand</span> · time constant = <span class="de">Zeitkonstante</span> · initial condition = <span class="de">Anfangsbedingung</span> · flyback diode = <span class="de">Freilaufdiode</span> · turn-off overvoltage = <span class="de">Abschaltüberspannung</span> · damping = <span class="de">Dämpfung</span> · overdamped = <span class="de">Kriechfall</span> · critically damped = <span class="de">aperiodischer Grenzfall</span> · underdamped = <span class="de">Schwingfall</span> · envelope = <span class="de">Hüllkurve</span> · resonant circuit = <span class="de">Schwingkreis</span> · resonance = <span class="de">Resonanz</span> · quality factor = <span class="de">Güte</span> · bandwidth = <span class="de">Bandbreite</span> · series/parallel resonant circuit = <span class="de">Reihen-/Parallelschwingkreis</span> (a.k.a. <span class="de">Saugkreis/Sperrkreis</span>)</p>
+</div>
+
+<div class="box history">
+  <div class="box-title"><span class="ic">📜</span>Where you'll meet all this again</div>
+  <p>Resonant circuits were radio's founding technology — Hertz's 1887 spark experiments <em>were</em> underdamped RLC transients, and Tesla's coils pushed \(Q\)-magnification to spectacular extremes. Today: every filter you design in Module 07 is shaped RLC behavior; switch-mode power supplies (Module 14) are deliberately managed inductor transients, millions per second; digital signal integrity (Module 16) is the fight against underdamped ringing on every PCB trace; control theory (Module 17) reuses \(\zeta\), \(\omega_0\) and overshoot verbatim for <em>any</em> second-order system; and an MRI scanner is a superb resonator at the proton's 64–300 MHz Larmor frequency — the received signal exists only because a high-\(Q\) coil magnifies it out of the noise.</p>
+</div>
+
+<h2 id="summary">11. Formula summary — <span class="de">Formelsammlung</span></h2>
+
+<div class="table-wrap">
+<table class="data">
+<thead><tr><th>Concept</th><th>Formula</th><th>Remember as</th></tr></thead>
+<tbody>
+<tr><td>Continuity rules</td><td>\( u_C(0^+) = u_C(0^-), \quad i_L(0^+) = i_L(0^-) \)</td><td>state variables carry the energy — no jumps</td></tr>
+<tr><td>Stored energy</td><td>\( W_C = \tfrac12 C u^2, \quad W_L = \tfrac12 L i^2 \)</td><td>the ½ from integrating a ramp</td></tr>
+<tr><td>Time constants</td><td>\( \tau_{RC} = R_{Th} C, \quad \tau_{RL} = L / R_{Th} \)</td><td>Thévenin R seen by the storage element!</td></tr>
+<tr><td>Universal recipe</td><td>\( x(t) = x_\infty + (x_0 - x_\infty)\,e^{-t/\tau} \)</td><td>solves every 1st-order switching problem</td></tr>
+<tr><td>Settling ladder</td><td>\(1\tau\): 63 % · \(3\tau\): 95 % · \(5\tau\): 99.3 %</td><td>"done" after 5τ</td></tr>
+<tr><td>Inductive kick</td><td>\( \hat u \approx I_0\sqrt{L/C_s} \)</td><td>why switches spark → flyback diode</td></tr>
+<tr><td>RLC characteristic eq.</td><td>\( s^2 + \tfrac{R}{L}s + \tfrac{1}{LC} = 0 \)</td><td>roots \(s_{1,2} = -\alpha \pm \sqrt{\alpha^2 - \omega_0^2}\)</td></tr>
+<tr><td>Natural frequency</td><td>\( \omega_0 = 1/\sqrt{LC} \)</td><td>Thomson formula; also the resonance frequency</td></tr>
+<tr><td>Damping ratio</td><td>\( \zeta = \tfrac{R}{2}\sqrt{C/L} = \tfrac{1}{2Q} \)</td><td>&lt;1 rings, =1 critical (\(R_{crit}=2\sqrt{L/C}\)), &gt;1 creeps</td></tr>
+<tr><td>Damped frequency</td><td>\( \omega_d = \omega_0\sqrt{1-\zeta^2} \)</td><td>what the circuit actually rings at</td></tr>
+<tr><td>Log. decrement</td><td>\( \Lambda = \ln(x_n/x_{n+1}) = 2\pi\zeta/\sqrt{1-\zeta^2} \)</td><td>measure ζ from two scope peaks</td></tr>
+<tr><td>Series resonance</td><td>\( |\underline{Z}|_{min} = R, \quad U_L = U_C = Q\,U \)</td><td>voltage magnification — overvoltage!</td></tr>
+<tr><td>Quality factor</td><td>\( Q = \tfrac{\omega_0 L}{R} = \tfrac{1}{\omega_0 C R} = 2\pi\tfrac{W_{stored}}{W_{loss/cycle}} \)</td><td>ringiness; parallel dual: \(I_{L,C} = Q\,I\)</td></tr>
+<tr><td>Bandwidth</td><td>\( B = f_0 / Q \)</td><td>tall and narrow or short and wide — pick one</td></tr>
+</tbody>
+</table>
+</div>
+
+<h2 id="exercises">12. Exercises</h2>
+<p>Work these on paper before opening the solutions — sketch every response before computing it.</p>
+
+<div class="exercise">
+  <p class="ex-q"><span class="ex-num">E1</span>An RC circuit has \(R = 10\,\mathrm{k\Omega}\) and \(C = 100\,\mathrm{\mu F}\). Find \(\tau\), the time to reach 95 % of the final voltage when charging, and the initial charging current from a 24 V source. <span class="diff easy">easy</span></p>
+  <details><summary>Show solution</summary>
+    <div class="solution">
+      \( \tau = RC = 10^4 \cdot 10^{-4} = 1\,\mathrm{s} \). 95 % is the \(3\tau\) landmark: \(t \approx 3\,\mathrm{s}\) (exactly \(\tau\ln 20 = 3.0\,\mathrm{s}\)). At \(t=0^+\) the empty capacitor is a short, so \(i(0^+) = 24\,\mathrm{V}/10\,\mathrm{k\Omega} = 2.4\,\mathrm{mA}\). Real-world remark: 1 s is a <em>long</em> electrical time constant — RC pairs like this build power-on-reset delays.
+    </div>
+  </details>
+</div>
+
+<div class="exercise">
+  <p class="ex-q"><span class="ex-num">E2</span>A coil with \(L = 50\,\mathrm{mH}\) and winding resistance \(25\,\Omega\) is connected to 12 V. Find \(\tau\), the final current, and the current after one time constant. <span class="diff easy">easy</span></p>
+  <details><summary>Show solution</summary>
+    <div class="solution">
+      \( \tau = L/R = 0.05/25 = 2\,\mathrm{ms} \). Final current (inductor → short in steady state): \(I_\infty = 12/25 = 480\,\mathrm{mA}\). After one \(\tau\): \(i = 0.632 \cdot 480 \approx 303\,\mathrm{mA}\). Sanity check: recipe with \(x_0 = 0\): \(i(\tau) = 480(1 - e^{-1})\) ✓. This 2 ms rise is why relays have a specified "operate time" — the contacts can't move until the current (hence force) has built up.
+    </div>
+  </details>
+</div>
+
+<div class="exercise">
+  <p class="ex-q"><span class="ex-num">E3</span>A 24 V source feeds node A through \(R_1 = 3\,\mathrm{k\Omega}\); \(C = 5\,\mathrm{\mu F}\) connects A to ground. At \(t=0\) a switch connects \(R_2 = 6\,\mathrm{k\Omega}\) from A to ground (previously disconnected; the circuit was in steady state). Find \(u_C(t)\) and the time to reach 18 V. <span class="diff med">medium</span></p>
+  <details><summary>Show solution</summary>
+    <div class="solution">
+      Method of Section 6. \(t=0^-\): C open, no current → \(u_C(0^-) = 24\,\mathrm{V}\); continuity → \(u_C(0^+)=24\,\mathrm{V}\). \(t\to\infty\): divider, \(u_\infty = 24\cdot\frac{6}{9} = 16\,\mathrm{V}\). \(\tau\): source shorted → \(R_{Th} = 3\,\mathrm{k}\parallel 6\,\mathrm{k} = 2\,\mathrm{k\Omega}\), \(\tau = 2\,\mathrm{k}\cdot 5\,\mathrm{\mu} = 10\,\mathrm{ms}\).
+      \[ u_C(t) = 16 + 8\,e^{-t/10\,\mathrm{ms}}\ \mathrm{V}. \]
+      Threshold: \(18 = 16 + 8e^{-t/\tau} \Rightarrow e^{-t/\tau} = 1/4 \Rightarrow t = 10\ln 4 \approx 13.9\,\mathrm{ms}\). Endpoint check: 24 V at \(t=0\), 16 V at \(\infty\) ✓ — and note \(\tau\) used the <em>parallel</em> combination, not \(R_1\) or \(R_2\) alone.
+    </div>
+  </details>
+</div>
+
+<div class="exercise">
+  <p class="ex-q"><span class="ex-num">E4</span>A solenoid valve (\(L = 0.5\,\mathrm{H}\), operating current 2 A) is switched off by a transistor; the stray capacitance at the node is ≈ 200 pF. Estimate the theoretical voltage peak without protection, the stored energy, and state what a flyback diode limits the voltage to on a 24 V supply. <span class="diff med">medium</span></p>
+  <details><summary>Show solution</summary>
+    <div class="solution">
+      Energy: \(W = \tfrac12 \cdot 0.5 \cdot 4 = 1\,\mathrm{J}\) (a lot!). Peak: \( \hat u = I_0\sqrt{L/C_s} = 2\sqrt{0.5/(2\cdot 10^{-10})} = 2\cdot 50\,000 = 100\,\mathrm{kV} \) — theoretical, ignition-coil territory; in reality the transistor avalanches or an arc forms at a few hundred volts and clamps it, usually destroying the transistor in the process. With a flyback diode the node is clamped to \(24 + 0.7 \approx 24.7\,\mathrm{V}\) and the 1 J dissipates gently in the coil resistance. Moral: the estimate being wildly "wrong" (100 kV never appears) is exactly the point — <em>something</em> must absorb that joule, and you choose what.
+    </div>
+  </details>
+</div>
+
+<div class="exercise">
+  <p class="ex-q"><span class="ex-num">E5</span>Series RLC: \(R = 500\,\Omega\), \(L = 2\,\mathrm{mH}\), \(C = 8\,\mathrm{nF}\). Classify the damping, and find \(\omega_0\), \(\zeta\), and (if it exists) \(f_d\). What R would give critical damping? <span class="diff med">medium</span></p>
+  <details><summary>Show solution</summary>
+    <div class="solution">
+      \( \omega_0 = 1/\sqrt{2\cdot 10^{-3}\cdot 8\cdot 10^{-9}} = 1/\sqrt{1.6\cdot 10^{-11}} = 2.5\cdot 10^5\,\mathrm{s^{-1}} \) (\(f_0 \approx 39.8\,\mathrm{kHz}\)).
+      \( R_{crit} = 2\sqrt{L/C} = 2\sqrt{2.5\cdot 10^5} = 1000\,\Omega \), so \( \zeta = R/R_{crit} = 0.5 \) → <b>underdamped</b>.
+      \( \omega_d = \omega_0\sqrt{1 - 0.25} = 2.165\cdot 10^5\,\mathrm{s^{-1}} \) → \( f_d \approx 34.5\,\mathrm{kHz} \).
+      Critical damping needs \(R = 1\,\mathrm{k\Omega}\). Check: \(\zeta = 0.5\) → overshoot \(e^{-\pi\zeta/\sqrt{1-\zeta^2}} = e^{-1.814} \approx 16\,\%\) — visible ringing, as expected for ζ well below 0.7.
+    </div>
+  </details>
+</div>
+
+<div class="exercise">
+  <p class="ex-q"><span class="ex-num">E6</span>A series resonant circuit: \(L = 100\,\mathrm{\mu H}\), \(C = 250\,\mathrm{pF}\), \(R = 8\,\Omega\), driven by 5 mV. Find \(f_0\), \(Q\), \(B\), and the capacitor voltage at resonance. <span class="diff hard">challenge</span></p>
+  <details><summary>Show solution</summary>
+    <div class="solution">
+      \( f_0 = \frac{1}{2\pi\sqrt{LC}} = \frac{1}{2\pi\sqrt{2.5\cdot 10^{-14}}} = \frac{1}{2\pi\cdot 1.581\cdot 10^{-7}} \approx 1.007\,\mathrm{MHz} \).
+      \( Q = \frac{\omega_0 L}{R} = \frac{6.33\cdot 10^6 \cdot 10^{-4}}{8} \approx 79 \).
+      \( B = f_0/Q \approx 12.7\,\mathrm{kHz} \).
+      \( U_C = Q\,U = 79 \cdot 5\,\mathrm{mV} \approx 0.40\,\mathrm{V} \) — an 80-fold passive voltage gain. Sanity: current at resonance \(I = 5\,\mathrm{mV}/8\,\Omega = 625\,\mathrm{\mu A}\), and \(U_C = I/(\omega_0 C) = 625\,\mathrm{\mu A}/(6.33\cdot 10^6 \cdot 2.5\cdot 10^{-10}) \approx 0.40\,\mathrm{V}\) ✓ — both routes agree.
+    </div>
+  </details>
+</div>
+
+<div class="exercise">
+  <p class="ex-q"><span class="ex-num">E7</span>The two-capacitor paradox: a capacitor \(C\) charged to \(U_0\) is connected (through a wire of resistance \(R\)) to an identical uncharged capacitor. Find the final voltage, the initial and final stored energy, and show that exactly half the energy is lost — <em>independent of R</em>. Where did it go, and what happens as \(R \to 0\)? <span class="diff hard">challenge</span></p>
+  <details><summary>Show solution</summary>
+    <div class="solution">
+      Charge is conserved: \(Q_0 = C U_0\) redistributes over \(2C\) → \(U_\infty = U_0/2\).
+      Energy before: \(W_0 = \tfrac12 C U_0^2\). After: \(W_\infty = \tfrac12 (2C)(U_0/2)^2 = \tfrac14 C U_0^2 = \tfrac12 W_0\). Half is gone.
+      Where: the equalizing current is \(i(t) = \frac{U_0}{R} e^{-t/\tau}\) with \(\tau = R\cdot\frac{C}{2}\) (the two capacitors in series as seen by R). Dissipation: \( \int_0^\infty i^2R\,\mathrm{d}t = \frac{U_0^2}{R}\cdot\frac{\tau}{2} = \tfrac14 C U_0^2 \) — exactly the missing half, <em>for every R</em>. Smaller R just loses it faster (bigger current spike, shorter time; the \(R\) cancels).
+      As \(R \to 0\) the lumped model breaks down: with real wiring the loop is an underdamped RLC (wire inductance!) and the "lost" energy partly radiates as a burst of electromagnetic waves — you can hear it as a click on an AM radio. Moral: energy bookkeeping exposes physics that idealized schematics hide.
+    </div>
+  </details>
+</div>
+
+<h2 id="quiz">13. Self-assessment</h2>
+
+<div class="quiz" data-quiz-title="Module 06 — Self-test">
+<script type="application/json">
+[
+ {"q":"Which two quantities can never jump at a switching instant?",
+  "opts":["Capacitor current and inductor voltage","Capacitor voltage and inductor current","All voltages","All currents"],"a":1,
+  "explain":"The state variables \\(u_C\\) and \\(i_L\\) carry the stored energies \\(\\tfrac12 Cu^2\\) and \\(\\tfrac12 Li^2\\); a jump would mean infinite power. Everything else — including \\(i_C\\) and \\(u_L\\) — may and usually does jump."},
+ {"q":"An RC circuit with R = 1 kΩ and C = 100 µF has a time constant of…",
+  "opts":["10 ms","1 s","0.1 s","100 s"],"a":2,
+  "explain":"\\(\\tau = RC = 10^3 \\cdot 10^{-4} = 0.1\\,\\mathrm{s}\\). Watch the prefixes: kΩ · µF conveniently gives ms×1000... safest is base units."},
+ {"q":"One time constant after a step, a first-order transition is complete to…",
+  "opts":["50 %","63.2 %","95 %","99.3 %"],"a":1,
+  "explain":"\\(1 - e^{-1} \\approx 0.632\\). The 95 % and 99.3 % landmarks belong to \\(3\\tau\\) and \\(5\\tau\\) — the '5τ = done' rule."},
+ {"q":"A capacitor charged to 8 V discharges toward a new steady state of 2 V with τ = 10 ms. Using the universal recipe, u_C after 10 ms is about…",
+  "opts":["4.2 V","2.9 V","6.0 V","3.0 V"],"a":0,
+  "explain":"\\(u(t) = u_\\infty + (u_0 - u_\\infty)e^{-t/\\tau} = 2 + 6\\,e^{-1} \\approx 2 + 2.21 = 4.2\\,\\mathrm{V}\\). Three numbers — \\(u_0, u_\\infty, \\tau\\) — and the recipe does the rest."},
+ {"q":"Opening a switch on a current-carrying inductor without protection causes…",
+  "opts":["the current to stop instantly and nothing more","a large voltage spike as the inductor forces its current to continue","the inductor to lose its energy silently","a large current spike through the switch"],"a":1,
+  "explain":"\\(i_L\\) cannot jump, so the inductor generates whatever voltage keeps it flowing — kilovolts into stray capacitance, hence arcing switches. The flyback diode (Freilaufdiode) provides a safe path."},
+ {"q":"In a first-order switching circuit, τ is computed with…",
+  "opts":["the resistor drawn closest to C or L","the sum of all resistances","the Thévenin resistance seen from the storage element after switching","the smallest resistance in the circuit"],"a":2,
+  "explain":"\\(\\tau = R_{Th}C\\) or \\(L/R_{Th}\\), where \\(R_{Th}\\) is seen from the element's terminals with sources deactivated, in the post-switching topology. Using the 'nearest' resistor is the classic exam error."},
+ {"q":"A series RLC with L = 1 mH and C = 1 µF is critically damped when R equals…",
+  "opts":["31.6 Ω","1000 Ω","63.2 Ω","2000 Ω"],"a":2,
+  "explain":"\\(R_{crit} = 2\\sqrt{L/C} = 2\\sqrt{10^{-3}/10^{-6}} = 2\\sqrt{1000} \\approx 63.2\\,\\Omega\\). Below this the circuit rings; above it, it creeps."},
+ {"q":"Critical damping (ζ = 1) is prized in instruments because it gives…",
+  "opts":["the largest overshoot","oscillation at exactly ω₀","the fastest settling without any overshoot","the lowest power dissipation"],"a":2,
+  "explain":"The aperiodischer Grenzfall reaches the final value fastest among all non-overshooting responses. In practice ζ ≈ 0.7 is often preferred: a few % overshoot buys even faster settling into a tolerance band."},
+ {"q":"A series resonant circuit with Q = 50 is driven at resonance by 2 V. The voltage across the capacitor is about…",
+  "opts":["2 V — it can never exceed the source","0.04 V","100 V","50 V"],"a":2,
+  "explain":"\\(U_C = Q\\,U = 50 \\cdot 2 = 100\\,\\mathrm{V}\\)! Resonant magnification: \\(U_L\\) and \\(U_C\\) cancel in the loop sum but are individually huge. 'Component voltages can't exceed the source' is the misconception this module exists to kill."},
+ {"q":"A resonant circuit has f₀ = 455 kHz and bandwidth B = 10 kHz. Its quality factor is…",
+  "opts":["45.5","4550","0.022","455"],"a":0,
+  "explain":"\\(Q = f_0/B = 455/10 = 45.5\\). (455 kHz is the classic AM intermediate frequency — this exact calculation sized millions of IF transformers.)"}
+]
+</script>
+</div>
+
+<script>
+document.addEventListener("ee-ready", () => {
+
+  /* ---------- Widget 1: LC energy sloshing (custom animation) ---------- */
+  EE.custom({
+    mount: "#w-lcslosh", height: 260, animate: true,
+    params: [
+      { key: "damp", label: "Damping (series R)", min: 0, max: 0.25, step: 0.01, value: 0, unit: "", fmt: v => v.toFixed(2) }
+    ],
+    readouts: [
+      { label: "Total energy", fn: p => p.damp === 0 ? "constant — lossless exchange" : "decaying — R turns it into heat" },
+      { label: "Exchange rate", fn: p => "twice per oscillation period" }
+    ],
+    draw: (ctx, w, h, p, H) => {
+      const cycles = 6;
+      const ph = (H.t * 0.9) % cycles;            // position within the window, in periods
+      const th = 2 * Math.PI * ph;
+      const env = Math.exp(-p.damp * th);
+      const u = env * Math.cos(th);               // ~ u_C
+      const iL = env * Math.sin(th);              // ~ i_L
+      const ink = H.ink.primary, inkSoft = H.ink.axis;
+      const cU = H.color(0), cI = H.color(1);
+
+      /* left: energy bars */
+      const barW = 34, base = h - 42, topY = 26, span = base - topY;
+      const bx1 = 34, bx2 = 104;
+      ctx.font = "12px system-ui, sans-serif";
+      ctx.lineWidth = 1;
+      ctx.strokeStyle = inkSoft;
+      ctx.strokeRect(bx1, topY, barW, span);
+      ctx.strokeRect(bx2, topY, barW, span);
+      const wc = u * u, wl = iL * iL;             // normalized energies
+      ctx.fillStyle = cU;
+      ctx.fillRect(bx1, base - span * wc, barW, span * wc);
+      ctx.fillStyle = cI;
+      ctx.fillRect(bx2, base - span * wl, barW, span * wl);
+      ctx.fillStyle = ink;
+      ctx.textAlign = "center";
+      ctx.fillText("W_C", bx1 + barW / 2, base + 16);
+      ctx.fillText("W_L", bx2 + barW / 2, base + 16);
+      /* total-energy tick */
+      const tot = env * env;
+      ctx.strokeStyle = H.ink.muted;
+      ctx.setLineDash([4, 3]);
+      ctx.beginPath();
+      ctx.moveTo(bx1 - 8, base - span * tot);
+      ctx.lineTo(bx2 + barW + 8, base - span * tot);
+      ctx.stroke();
+      ctx.setLineDash([]);
+      ctx.fillText("W_C + W_L", (bx1 + bx2 + barW) / 2, base - span * tot - 6);
+
+      /* right: waveforms over the window */
+      const px0 = 210, px1 = w - 16;
+      const mid = (topY + base) / 2, amp = span * 0.42;
+      ctx.strokeStyle = inkSoft;
+      ctx.beginPath(); ctx.moveTo(px0, mid); ctx.lineTo(px1, mid); ctx.stroke();
+      const N = 160;
+      const trace = (fn, color, dash) => {
+        ctx.strokeStyle = color; ctx.lineWidth = 2;
+        if (dash) ctx.setLineDash(dash);
+        ctx.beginPath();
+        for (let k = 0; k <= N; k++) {
+          const c = cycles * k / N, t2 = 2 * Math.PI * c;
+          const y = mid - amp * Math.exp(-p.damp * t2) * fn(t2);
+          const x = px0 + (px1 - px0) * k / N;
+          if (k === 0) ctx.moveTo(x, y); else ctx.lineTo(x, y);
+        }
+        ctx.stroke(); ctx.setLineDash([]); ctx.lineWidth = 1;
+      };
+      trace(Math.cos, cU);
+      trace(Math.sin, cI, [5, 4]);
+      /* moving dot on u_C */
+      const dx = px0 + (px1 - px0) * ph / cycles;
+      ctx.fillStyle = cU;
+      ctx.beginPath(); ctx.arc(dx, mid - amp * u, 4.5, 0, 7); ctx.fill();
+      ctx.fillStyle = ink;
+      ctx.textAlign = "left";
+      ctx.fillText("u_C (solid) · i_L (dashed)", px0, topY - 8);
+    }
+  });
+
+  /* ---------- Widget 2: RC charge / discharge ---------- */
+  EE.functionPlot({
+    mount: "#w-rc", height: 300,
+    x: p => ({ min: 0, max: 5 * p.R * p.C, label: "t in ms" }),
+    y: p => (p.mode === "charge"
+      ? { min: 0, max: p.U0 * 1.1, label: "voltage in V" }
+      : { min: -p.U0 * 1.1, max: p.U0 * 1.1, label: "voltage in V" }),
+    params: [
+      { key: "mode", label: "Mode", type: "select", value: "charge",
+        options: [{ label: "Charge (switch to U₀)", value: "charge" },
+                  { label: "Discharge (switch to short)", value: "discharge" }] },
+      { key: "U0", label: "Voltage U₀", min: 1, max: 24, step: 0.5, value: 10, unit: "V", fmt: v => v.toFixed(1) },
+      { key: "R", label: "Resistance R", min: 1, max: 100, step: 1, value: 10, unit: "kΩ", fmt: v => v.toFixed(0) },
+      { key: "C", label: "Capacitance C", min: 10, max: 470, step: 1, value: 47, unit: "µF", fmt: v => v.toFixed(0) }
+    ],
+    curves: [
+      { label: "u_C", color: 0,
+        fn: (t, p) => p.mode === "charge"
+          ? p.U0 * (1 - Math.exp(-t / (p.R * p.C)))
+          : p.U0 * Math.exp(-t / (p.R * p.C)) },
+      { label: "u_R = iR", color: 2, dash: [6, 4],
+        fn: (t, p) => p.mode === "charge"
+          ? p.U0 * Math.exp(-t / (p.R * p.C))
+          : -p.U0 * Math.exp(-t / (p.R * p.C)) }
+    ],
+    annotations: p => {
+      const tau = p.R * p.C;
+      const y = p.mode === "charge" ? p.U0 * (1 - Math.exp(-1)) : p.U0 * Math.exp(-1);
+      return [
+        { type: "vline", x: tau, label: "t = τ" },
+        { type: "point", x: tau, y: y, label: (p.mode === "charge" ? "63.2 %" : "36.8 %") }
+      ];
+    },
+    readouts: [
+      { label: "τ = RC", fn: p => EE.si(p.R * p.C / 1000, "s") },
+      { label: "Initial current", fn: p => EE.si(p.U0 / (p.R * 1000), "A") },
+      { label: "Settled (5τ)", fn: p => EE.si(5 * p.R * p.C / 1000, "s") },
+      { label: "Stored energy at U₀", fn: p => EE.si(0.5 * p.C * 1e-6 * p.U0 * p.U0, "J") }
+    ]
+  });
+
+  /* ---------- Widget 3: RLC step response ---------- */
+  const rlcDerived = p => {
+    const L = p.L * 1e-3, C = p.C * 1e-6;
+    const w0 = 1 / Math.sqrt(L * C);
+    const alpha = p.R / (2 * L);
+    const zeta = alpha / w0;
+    return { L, C, w0, alpha, zeta, disc: alpha * alpha - w0 * w0 };
+  };
+  const rlcStep = (tms, p) => {
+    const t = Math.max(tms, 0) / 1000;
+    const d = rlcDerived(p);
+    const U0 = 10;
+    if (Math.abs(d.disc) < 1e-4 * d.w0 * d.w0) {              // critically damped
+      return U0 * (1 - (1 + d.w0 * t) * Math.exp(-d.w0 * t));
+    }
+    if (d.disc < 0) {                                          // underdamped
+      const wd = Math.sqrt(-d.disc);
+      return U0 * (1 - Math.exp(-d.alpha * t) * (Math.cos(wd * t) + (d.alpha / wd) * Math.sin(wd * t)));
+    }
+    const rt = Math.sqrt(d.disc);                              // overdamped
+    const s1 = -d.alpha + rt, s2 = -d.alpha - rt;
+    return U0 * (1 - (s2 * Math.exp(s1 * t) - s1 * Math.exp(s2 * t)) / (s2 - s1));
+  };
+  EE.functionPlot({
+    mount: "#w-rlcstep", height: 320,
+    x: p => {
+      const d = rlcDerived(p);
+      const rate = d.disc < 0 ? d.alpha : (d.alpha - Math.sqrt(d.disc));
+      const T0 = 2 * Math.PI / d.w0;
+      const tmax = Math.min(Math.max(6 / rate, 3 * T0), 15 * T0);
+      return { min: 0, max: tmax * 1000, label: "t in ms" };
+    },
+    y: { min: 0, max: 21, label: "u_C in V (step U₀ = 10 V)" },
+    params: [
+      { key: "R", label: "Resistance R", min: 10, max: 1000, step: 5, value: 100, unit: "Ω", fmt: v => v.toFixed(0) },
+      { key: "L", label: "Inductance L", min: 1, max: 100, step: 1, value: 10, unit: "mH", fmt: v => v.toFixed(0) },
+      { key: "C", label: "Capacitance C", min: 0.1, max: 10, step: 0.1, value: 1, unit: "µF", fmt: v => v.toFixed(1) }
+    ],
+    curves: [
+      { label: "u_C(t)", color: 0, fn: rlcStep }
+    ],
+    annotations: p => {
+      const d = rlcDerived(p);
+      const a = [{ type: "hline", y: 10, label: "final value U₀" }];
+      if (d.disc < -1e-4 * d.w0 * d.w0) {
+        const wd = Math.sqrt(-d.disc);
+        const tp = Math.PI / wd;
+        a.push({ type: "point", x: tp * 1000, y: 10 * (1 + Math.exp(-d.alpha * tp)), label: "first peak (overshoot)" });
+      }
+      return a;
+    },
+    readouts: [
+      { label: "ζ (damping ratio)", fn: p => {
+          const z = rlcDerived(p).zeta;
+          return z.toFixed(3) + (z < 0.999 ? " — underdamped" : z > 1.001 ? " — overdamped" : " — critical");
+        } },
+      { label: "f₀ = ω₀/2π", fn: p => EE.si(rlcDerived(p).w0 / (2 * Math.PI), "Hz") },
+      { label: "f_d (ringing)", fn: p => {
+          const d = rlcDerived(p);
+          return d.disc < 0 ? EE.si(Math.sqrt(-d.disc) / (2 * Math.PI), "Hz") : "— (no oscillation)";
+        } },
+      { label: "R_crit = 2√(L/C)", fn: p => {
+          const d = rlcDerived(p);
+          return EE.si(2 * Math.sqrt(d.L / d.C), "Ω");
+        } }
+    ]
+  });
+
+  /* ---------- Widget 4: series resonance curve ---------- */
+  const resDerived = p => {
+    const L = p.L * 1e-6, C = p.C * 1e-12;
+    const w0 = 1 / Math.sqrt(L * C);
+    const f0 = w0 / (2 * Math.PI);
+    const Q = w0 * L / p.R;
+    const B = f0 / Q;
+    return { L, C, w0, f0, Q, B };
+  };
+  EE.functionPlot({
+    mount: "#w-resonance", height: 320,
+    x: p => {
+      const d = resDerived(p);
+      const half = Math.min(0.85 * d.f0, Math.max(5 * d.B, 0.06 * d.f0));
+      return { min: (d.f0 - half) / 1000, max: (d.f0 + half) / 1000, label: "f in kHz" };
+    },
+    y: p => ({ min: 0, max: 1.12 * 1000 / p.R, label: "I in mA (U = 1 V)" }),
+    params: [
+      { key: "R", label: "Loss resistance R", min: 2, max: 100, step: 1, value: 10, unit: "Ω", fmt: v => v.toFixed(0) },
+      { key: "L", label: "Inductance L", min: 50, max: 400, step: 10, value: 100, unit: "µH", fmt: v => v.toFixed(0) },
+      { key: "C", label: "Capacitance C", min: 50, max: 1000, step: 10, value: 250, unit: "pF", fmt: v => v.toFixed(0) }
+    ],
+    curves: [
+      { label: "I(f)", color: 0,
+        fn: (fk, p) => {
+          const d = resDerived(p);
+          const w = 2 * Math.PI * fk * 1000;
+          if (w <= 0) return 0;
+          const X = w * d.L - 1 / (w * d.C);
+          return 1000 / Math.sqrt(p.R * p.R + X * X);
+        } }
+    ],
+    annotations: p => {
+      const d = resDerived(p);
+      const s = Math.sqrt(1 + 1 / (4 * d.Q * d.Q));
+      const f1 = d.f0 * (s - 1 / (2 * d.Q));
+      const f2 = d.f0 * (s + 1 / (2 * d.Q));
+      return [
+        { type: "vline", x: d.f0 / 1000, label: "f₀" },
+        { type: "vline", x: f1 / 1000, label: "f₁" },
+        { type: "vline", x: f2 / 1000, label: "f₂" },
+        { type: "hline", y: (1000 / p.R) / Math.SQRT2, label: "I_max/√2 (−3 dB)" }
+      ];
+    },
+    readouts: [
+      { label: "f₀", fn: p => EE.si(resDerived(p).f0, "Hz") },
+      { label: "Q = ω₀L/R", fn: p => resDerived(p).Q.toFixed(1) },
+      { label: "B = f₀/Q", fn: p => EE.si(resDerived(p).B, "Hz") },
+      { label: "U_C at resonance (U = 1 V)", fn: p => EE.si(resDerived(p).Q, "V") }
+    ]
+  });
+});
+</script>
+
+</article>
+</main>
+</div>
+</body>
+</html>

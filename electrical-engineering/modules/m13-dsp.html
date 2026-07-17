@@ -1,0 +1,857 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>M13 · Digital Signal Processing — EE Knowledge Base</title>
+<link rel="stylesheet" href="../../assets/vendor/katex/katex.min.css">
+<link rel="stylesheet" href="../../assets/css/style.css">
+<script src="../../assets/vendor/katex/katex.min.js" defer></script>
+<script src="../../assets/vendor/katex/auto-render.min.js" defer></script>
+<script src="../curriculum.js" defer></script>
+<script src="../../assets/js/app.js" defer></script>
+<script src="../../assets/js/widgets.js" defer></script>
+</head>
+<body data-module="m13">
+<div class="layout">
+<main class="content">
+<article class="article">
+
+<span class="eyebrow">🎛️ Signals, Control &amp; Computing · Module 13</span>
+<h1>Digital Signal Processing <span class="muted" style="font-weight:400;font-size:1.4rem">· <span class="de">Digitale Signalverarbeitung</span></span></h1>
+<p class="lead">Every phone call you make, every song you stream, every photo you take is a stream of numbers being multiplied and added — billions of times per second. This module is about that arithmetic: how to filter, analyze and transform signals <em>after</em> they have become numbers, and why the FFT — arguably the most important algorithm of the 20th century — makes it all affordable.</p>
+
+<div class="page-meta">
+  <span><b>Corresponds to:</b> Digitale Signalverarbeitung (Master / late Bachelor)</span>
+  <span><b>Prerequisites:</b> Module 12</span>
+  <span><b>Study time:</b> ≈ 6–8 h</span>
+</div>
+
+<h2 id="why-digital">1. Why process digitally? The software-defined world</h2>
+
+<p>Module 12 built the continuous-time theory: Fourier, Laplace, filters made of R, L and C. So why does virtually every modern system — audio, radio, radar, medical imaging — convert its signals to numbers as early as possible and back to analog as late as possible? Three reasons, each decisive on its own:</p>
+
+<ul>
+  <li><strong>Perfect reproducibility.</strong> An analog filter is made of components with ±1 % tolerance that drift with temperature and age. A digital filter is a list of coefficients: every unit built behaves <em>identically</em>, forever, on every continent. Copying a digital signal is lossless — the millionth copy of a file equals the first, something no tape or vinyl ever achieved.</li>
+  <li><strong>Flexibility.</strong> Changing an analog filter means a soldering iron. Changing a digital filter means writing new numbers into memory — a firmware update. The same hardware can be an FM demodulator today and a 5G receiver tomorrow. This is the meaning of <em>software-defined</em>: the product is code.</li>
+  <li><strong>Cost and capability.</strong> Riding on 60 years of Moore's law, a 1 € microcontroller today performs hundreds of millions of multiply-accumulate operations per second — the workload of a room full of 1970s analog gear. And some operations are <em>only</em> possible digitally: exactly linear-phase filters (Section 7), adaptive filters that redesign themselves in milliseconds, and spectral analysis via the FFT.</li>
+</ul>
+
+<div class="box history">
+  <div class="box-title"><span class="ic">📜</span>The algorithm that started it all</div>
+  <p>In 1965 James Cooley and John Tukey published a way to compute the discrete Fourier transform in \(N\log N\) instead of \(N^2\) operations — motivated, it later emerged, by the need to detect Soviet nuclear tests from seismometer data. (Gauss had found the trick in 1805 and left it in an unpublished notebook.) The <em>Fast Fourier Transform</em> turned spectral analysis from an overnight batch job into a real-time operation and effectively founded the discipline of DSP. Today FFTs run inside every Wi-Fi and LTE modem — OFDM (Module 21) literally transmits data <em>as</em> an inverse FFT.</p>
+</div>
+
+<h2 id="discrete-signals">2. Discrete-time signals and the processing chain</h2>
+
+<p>A <strong>discrete-time signal</strong> (<span class="de">zeitdiskretes Signal</span>) is a sequence of numbers \(x[n]\), \(n \in \mathbb{Z}\), usually obtained by <strong>sampling</strong> (<span class="de">Abtastung</span>) an analog signal every \(T = 1/f_s\) seconds, where \(f_s\) is the sampling rate (<span class="de">Abtastrate</span>):</p>
+\[ x[n] = x(nT), \qquad n \in \mathbb{Z}. \]
+<p>Square brackets signal "integer index"; the sequence knows nothing about seconds anymore. That has a profound consequence: a sampled sinusoid \(\cos(2\pi f\, n T)\) depends only on the <em>ratio</em> \(f/f_s\). We therefore work with the <strong>normalized angular frequency</strong> (<span class="de">normierte Kreisfrequenz</span>)</p>
+\[ \boxed{\;\Omega = \omega T = 2\pi \frac{f}{f_s}\;} \qquad \Omega \in (-\pi, \pi] \;\;\Leftrightarrow\;\; f \in \left(-\tfrac{f_s}{2}, \tfrac{f_s}{2}\right]. \]
+<p>\(\Omega = \pi\) is the Nyquist frequency \(f_s/2\) — the highest frequency a sampled system can represent (Module 12). Discrete-time spectra are always <strong>periodic in \(\Omega\) with period \(2\pi\)</strong>: adding \(2\pi\) to \(\Omega\) changes nothing, because \(e^{j(\Omega + 2\pi)n} = e^{j\Omega n}\) for integer \(n\). Aliasing is this periodicity seen from the analog side.</p>
+
+<p>The standard real-time DSP system is a sandwich:</p>
+
+<figure>
+  <div class="fig-frame">
+  <svg class="diagram" viewBox="0 0 740 150" role="img" aria-label="ADC-DSP-DAC processing chain">
+    <defs><marker id="arrA" markerWidth="9" markerHeight="9" refX="7" refY="4.5" orient="auto">
+      <path d="M0 0 L8 4.5 L0 9 z" fill="var(--text-soft)"/></marker></defs>
+    <!-- input -->
+    <text x="18" y="66" font-size="14">x(t)</text>
+    <line x1="48" y1="62" x2="80" y2="62" class="wire" marker-end="url(#arrA)"/>
+    <!-- anti-alias filter -->
+    <rect x="84" y="38" width="104" height="48" rx="8" fill="none" stroke="var(--text-soft)" stroke-width="2"/>
+    <text x="136" y="58" text-anchor="middle" font-size="12">anti-alias</text>
+    <text x="136" y="74" text-anchor="middle" font-size="12">filter (analog)</text>
+    <line x1="188" y1="62" x2="220" y2="62" class="wire" marker-end="url(#arrA)"/>
+    <!-- ADC -->
+    <rect x="224" y="38" width="76" height="48" rx="8" fill="none" stroke="var(--accent)" stroke-width="2"/>
+    <text x="262" y="66" text-anchor="middle" font-size="14" fill="var(--accent)">ADC</text>
+    <text x="262" y="112" text-anchor="middle" font-size="11" fill="var(--text-faint)">f_s, b bits</text>
+    <line x1="300" y1="62" x2="332" y2="62" class="wire" marker-end="url(#arrA)"/>
+    <text x="316" y="50" text-anchor="middle" font-size="12">x[n]</text>
+    <!-- DSP -->
+    <rect x="336" y="30" width="110" height="64" rx="8" fill="none" stroke="var(--accent-2)" stroke-width="2.4"/>
+    <text x="391" y="56" text-anchor="middle" font-size="14" fill="var(--accent-2)">DSP</text>
+    <text x="391" y="76" text-anchor="middle" font-size="11" fill="var(--accent-2)">software</text>
+    <line x1="446" y1="62" x2="478" y2="62" class="wire" marker-end="url(#arrA)"/>
+    <text x="462" y="50" text-anchor="middle" font-size="12">y[n]</text>
+    <!-- DAC -->
+    <rect x="482" y="38" width="76" height="48" rx="8" fill="none" stroke="var(--accent)" stroke-width="2"/>
+    <text x="520" y="66" text-anchor="middle" font-size="14" fill="var(--accent)">DAC</text>
+    <line x1="558" y1="62" x2="590" y2="62" class="wire" marker-end="url(#arrA)"/>
+    <!-- reconstruction -->
+    <rect x="594" y="38" width="104" height="48" rx="8" fill="none" stroke="var(--text-soft)" stroke-width="2"/>
+    <text x="646" y="58" text-anchor="middle" font-size="12">reconstruction</text>
+    <text x="646" y="74" text-anchor="middle" font-size="12">filter (analog)</text>
+    <line x1="698" y1="62" x2="726" y2="62" class="wire" marker-end="url(#arrA)"/>
+    <text x="712" y="112" text-anchor="middle" font-size="14">y(t)</text>
+  </svg>
+  </div>
+  <figcaption><b>Fig. 2.1</b> — The ADC–DSP–DAC chain. The two analog filters are the non-negotiable guardians of the sampling theorem: the anti-alias filter limits the input to below \(f_s/2\) <em>before</em> sampling; the reconstruction filter removes the spectral images after the DAC. Everything between them is arithmetic.</figcaption>
+</figure>
+
+<div class="box key">
+  <div class="box-title"><span class="ic">🔑</span>Key idea: the sample index is the only clock</div>
+  <p>Inside the DSP block there are no seconds — only "current sample", "previous sample", "sample before that". Every algorithm in this module is built from three primitives: <b>delay by one sample</b>, <b>multiply by a constant</b>, <b>add</b>. A billion-transistor 5G modem does nothing else, just very fast. The z-transform, coming next, is precisely the algebra of these three operations.</p>
+</div>
+
+<h2 id="z-transform">3. The z-transform — Laplace for sequences</h2>
+
+<h3 id="z-def">3.1 Definition</h3>
+<p>The <strong>z-transform</strong> (<span class="de">z-Transformation</span>) of a sequence \(x[n]\) is</p>
+\[ \boxed{\;X(z) = \sum_{n=-\infty}^{\infty} x[n]\, z^{-n}\;}, \qquad z \in \mathbb{C}, \]
+<p>defined wherever the sum converges (the <em>region of convergence</em>; for causal signals, the outside of a circle \(|z| &gt; r\)). It plays exactly the role for discrete systems that the Laplace transform plays for continuous ones. The single most important property follows by re-indexing the sum:</p>
+\[ x[n-1] \;\circ\!\!-\!\!\bullet\; z^{-1} X(z). \]
+
+<div class="box key">
+  <div class="box-title"><span class="ic">🔑</span>Key idea: \(z^{-1}\) = one sample of delay</div>
+  <p>Read \(z^{-1}\) not as an abstract variable but as a <em>machine</em>: a one-sample delay register (<span class="de">Verzögerungsglied</span>). Then any block diagram of delays, gains and adders translates line-by-line into an algebraic expression in \(z\) — and back. Digital filter design is algebra on \(z^{-1}\).</p>
+</div>
+
+<h3 id="z-laplace">3.2 Relation to Laplace: \(z = e^{sT}\)</h3>
+<p>Sample the Laplace kernel: \(e^{st}\big|_{t=nT} = (e^{sT})^n\). Calling \(z = e^{sT}\) turns the sampled Laplace transform into the z-transform. This exponential map warps the familiar s-plane geography (Module 12) into the z-plane:</p>
+
+<div class="table-wrap">
+<table class="data">
+<thead><tr><th>s-plane (continuous)</th><th>z-plane (discrete), \(z = e^{sT}\)</th><th>Meaning</th></tr></thead>
+<tbody>
+<tr><td>imaginary axis \(s = j\omega\)</td><td>unit circle \(z = e^{j\Omega}\) (<span class="de">Einheitskreis</span>)</td><td>steady-state sinusoids</td></tr>
+<tr><td>left half-plane \(\sigma &lt; 0\)</td><td>interior \(|z| &lt; 1\)</td><td>decaying modes → stability</td></tr>
+<tr><td>right half-plane \(\sigma &gt; 0\)</td><td>exterior \(|z| &gt; 1\)</td><td>growing modes → instability</td></tr>
+<tr><td>origin \(s = 0\) (DC)</td><td>\(z = 1\)</td><td>DC gain: evaluate \(H(z=1)\)</td></tr>
+<tr><td>\(s = \pm j\pi/T\) (Nyquist)</td><td>\(z = -1\)</td><td>highest representable frequency</td></tr>
+</tbody>
+</table>
+</div>
+
+<figure>
+  <div class="fig-frame">
+  <svg class="diagram" viewBox="0 0 680 280" role="img" aria-label="Mapping from s-plane to z-plane">
+    <defs>
+      <marker id="arrB" markerWidth="9" markerHeight="9" refX="7" refY="4.5" orient="auto">
+        <path d="M0 0 L8 4.5 L0 9 z" fill="var(--text-soft)"/></marker>
+      <marker id="arrC" markerWidth="10" markerHeight="10" refX="8" refY="5" orient="auto">
+        <path d="M0 0 L9 5 L0 10 z" fill="var(--accent-2)"/></marker>
+    </defs>
+    <!-- s-plane -->
+    <rect x="60" y="30" width="90" height="210" fill="var(--accent)" opacity="0.10"/>
+    <line x1="40" y1="135" x2="270" y2="135" class="wire" marker-end="url(#arrB)"/>
+    <line x1="150" y1="250" x2="150" y2="22" stroke="var(--accent)" stroke-width="2.6" marker-end="url(#arrB)"/>
+    <text x="262" y="156" font-size="13">σ</text>
+    <text x="163" y="34" font-size="13" fill="var(--accent)">jω</text>
+    <text x="92" y="60" font-size="12" fill="var(--accent)">stable</text>
+    <text x="92" y="76" font-size="12" fill="var(--accent)">σ &lt; 0</text>
+    <text x="150" y="272" text-anchor="middle" font-size="13" font-weight="600">s-plane</text>
+    <!-- mapping arrow -->
+    <line x1="292" y1="130" x2="368" y2="130" stroke="var(--accent-2)" stroke-width="2.4" marker-end="url(#arrC)"/>
+    <text x="330" y="114" text-anchor="middle" font-size="14" fill="var(--accent-2)">z = e^(sT)</text>
+    <!-- z-plane -->
+    <circle cx="510" cy="135" r="82" fill="var(--accent)" opacity="0.10"/>
+    <circle cx="510" cy="135" r="82" fill="none" stroke="var(--accent)" stroke-width="2.6"/>
+    <line x1="398" y1="135" x2="628" y2="135" class="wire" marker-end="url(#arrB)"/>
+    <line x1="510" y1="250" x2="510" y2="22" class="wire" marker-end="url(#arrB)"/>
+    <text x="620" y="156" font-size="13">Re z</text>
+    <text x="523" y="34" font-size="13">Im z</text>
+    <circle cx="592" cy="135" r="4" fill="var(--accent-2)"/>
+    <text x="600" y="122" font-size="12" fill="var(--accent-2)">z = 1 (DC)</text>
+    <circle cx="428" cy="135" r="4" fill="var(--accent-2)"/>
+    <text x="434" y="164" text-anchor="end" font-size="12" fill="var(--accent-2)">z = −1 (f_s/2)</text>
+    <text x="510" y="106" text-anchor="middle" font-size="12" fill="var(--accent)">|z| &lt; 1: stable</text>
+    <text x="452" y="230" font-size="12" fill="var(--accent)">unit circle: z = e^(jΩ)</text>
+    <text x="510" y="272" text-anchor="middle" font-size="13" font-weight="600">z-plane</text>
+  </svg>
+  </div>
+  <figcaption><b>Fig. 3.1</b> — The map \(z = e^{sT}\) rolls the s-plane's imaginary axis onto the unit circle and folds the stable left half-plane into the circle's interior. Frequency response = walk around the unit circle, from \(z=1\) (DC) counterclockwise to \(z=-1\) (Nyquist).</figcaption>
+</figure>
+
+<h3 id="z-pairs">3.3 The transform pairs you actually need</h3>
+<div class="table-wrap">
+<table class="data">
+<thead><tr><th>Sequence \(x[n]\)</th><th>\(X(z)\)</th><th>ROC / note</th></tr></thead>
+<tbody>
+<tr><td>unit impulse \(\delta[n]\)</td><td>\(1\)</td><td>everywhere — the "1" of convolution</td></tr>
+<tr><td>unit step \(u[n]\)</td><td>\(\dfrac{1}{1-z^{-1}}\)</td><td>\(|z|&gt;1\); pole at \(z=1\)</td></tr>
+<tr><td>geometric \(a^n u[n]\)</td><td>\(\dfrac{1}{1-a z^{-1}}\)</td><td>\(|z|&gt;|a|\); <em>the</em> first-order building block</td></tr>
+<tr><td>\(a^n \cos(\Omega_0 n)\, u[n]\)</td><td>\(\dfrac{1-a\cos\Omega_0\, z^{-1}}{1-2a\cos\Omega_0\, z^{-1}+a^2 z^{-2}}\)</td><td>complex pole pair at \(a e^{\pm j\Omega_0}\)</td></tr>
+<tr><td>delayed \(x[n-k]\)</td><td>\(z^{-k} X(z)\)</td><td>shift theorem</td></tr>
+<tr><td>convolution \(x * h\)</td><td>\(X(z) H(z)\)</td><td>convolution → multiplication, as always</td></tr>
+</tbody>
+</table>
+</div>
+
+<h3 id="z-diffeq">3.4 Difference equations ↔ transfer functions</h3>
+<p>A causal LTI discrete system is described by a <strong>difference equation</strong> (<span class="de">Differenzengleichung</span>) — the discrete sibling of a differential equation:</p>
+\[ y[n] = \sum_{k=0}^{M} b_k\, x[n-k] \;-\; \sum_{k=1}^{K} a_k\, y[n-k]. \]
+<p>Transforming term by term with the shift theorem and solving for \(Y/X\) gives the rational transfer function</p>
+\[ H(z) = \frac{Y(z)}{X(z)} = \frac{b_0 + b_1 z^{-1} + \dots + b_M z^{-M}}{1 + a_1 z^{-1} + \dots + a_K z^{-K}}. \]
+<p>Numerator roots are <strong>zeros</strong>, denominator roots are <strong>poles</strong> (<span class="de">Pol- und Nullstellen</span>). The frequency response is \(H(z)\) evaluated on the unit circle, \(H(e^{j\Omega})\) — and its magnitude has a beautiful geometric reading: the product of distances from \(e^{j\Omega}\) to all zeros, divided by the product of distances to all poles. A pole near the unit circle creates a resonance peak; a zero on the circle creates a perfect null. (Widget in Section 8 lets you feel this.)</p>
+
+<h3 id="z-stability">3.5 Stability</h3>
+<p>The impulse response of a single pole at \(z=p\) is \(p^n\): geometric decay if \(|p|&lt;1\), geometric explosion if \(|p|&gt;1\). Hence the discrete stability criterion:</p>
+\[ \boxed{\;\text{BIBO-stable (causal)} \iff \text{all poles satisfy } |p_k| &lt; 1\;} \]
+<p>— strictly inside the unit circle, the image of "left half-plane" under \(z=e^{sT}\). Example: \(y[n] = a\,y[n-1] + x[n]\) has \(H(z) = 1/(1-az^{-1})\), pole at \(a\), impulse response \(a^n u[n]\). For \(a = 0.9\) it is a smoothing lowpass with time constant \(\approx 1/(1-a) = 10\) samples; for \(a = 1.01\) the output grows without bound — a 1 % coefficient error away from disaster. Filters with poles need care (Section 9).</p>
+
+<div class="box warn">
+  <div class="box-title"><span class="ic">⚠️</span>Convention trap: \(\Omega\) vs \(\omega\), \(z^{-1}\) vs \(z\)</div>
+  <p>German texts write the normalized frequency as \(\Omega\) (capital omega); many US texts write \(\omega\) for the same thing and use \(\hat\omega\) or \(2\pi f/f_s\) elsewhere. Also, filter coefficients are quoted either for \(H(z)\) in powers of \(z^{-1}\) (usual) or of \(z\); and some tools (MATLAB) define \(a_k\) with the opposite sign. Before copying coefficients from anywhere, check the convention — a sign flip on \(a_1\) turns a lowpass into a highpass-ish mess.</p>
+</div>
+
+<h2 id="dtft-dft">4. From DTFT to DFT — spectra you can compute</h2>
+
+<h3 id="dtft">4.1 The DTFT: continuous spectrum of a sequence</h3>
+<p>Evaluate the z-transform on the unit circle and you get the <strong>discrete-time Fourier transform</strong> (DTFT):</p>
+\[ X(e^{j\Omega}) = \sum_{n=-\infty}^{\infty} x[n]\, e^{-j\Omega n}, \]
+<p>a <em>continuous, \(2\pi\)-periodic</em> function of \(\Omega\). Beautiful for analysis — useless for a computer, on two counts: the sum is infinite, and \(\Omega\) is a continuum. The DFT fixes both with one stroke.</p>
+
+<h3 id="dft-def">4.2 The DFT: sampling the spectrum</h3>
+<p>Take a finite record of \(N\) samples \(x[0], \dots, x[N-1]\), and evaluate its spectrum at exactly \(N\) equally spaced frequencies \(\Omega_k = \tfrac{2\pi k}{N}\). This is the <strong>discrete Fourier transform</strong> (<span class="de">diskrete Fourier-Transformation</span>):</p>
+\[ \boxed{\;X[k] = \sum_{n=0}^{N-1} x[n]\, e^{-j 2\pi k n / N}\;}, \quad k = 0, \dots, N-1,
+\qquad x[n] = \frac{1}{N}\sum_{k=0}^{N-1} X[k]\, e^{+j 2\pi k n / N}. \]
+<p>Conventions to burn in: \(n\) indexes time samples, \(k\) indexes frequency <strong>bins</strong> (<span class="de">Frequenzstützstellen</span>), the exponent's sign is negative in the forward direction, and the \(1/N\) sits (here, and in most texts and libraries) on the inverse. Bin \(k\) corresponds to the physical frequency</p>
+\[ f_k = k\,\frac{f_s}{N}, \qquad \Delta f = \frac{f_s}{N} \;\;\text{(frequency resolution)}. \]
+<p>Bins \(k = 0 \dots N/2\) cover DC to Nyquist; bins above \(N/2\) are the <em>negative</em> frequencies in disguise (\(k \equiv k - N\)), and for real signals they carry no new information: \(X[N-k] = X^*[k]\) (conjugate symmetry). A real full-scale cosine landing exactly on bin \(k_0\) produces \(|X[k_0]| = |X[N-k_0]| = N/2\) — remember the \(N/2\), everyone forgets it once.</p>
+
+<div class="box intuition">
+  <div class="box-title"><span class="ic">💡</span>Intuition: the DFT as a bank of correlators</div>
+  <p>Each output \(X[k]\) asks one question: "how much does the record <em>look like</em> a complex oscillation with exactly \(k\) whole cycles in my \(N\) samples?" — computed as a correlation (multiply and sum). \(N\) questions, \(N\) answers. The DFT implicitly assumes the record repeats periodically forever; every strange DFT phenomenon (leakage, circular convolution) is this hidden assumption talking.</p>
+</div>
+
+<div class="example">
+  <div class="ex-head"><span class="ex-tag">Worked example</span> A 4-point DFT, entirely by hand</div>
+  <div class="ex-body">
+    <p>Compute the DFT of \(x = \{1, 1, 0, 0\}\). With \(N = 4\), the kernel is \(e^{-j2\pi kn/4} = (-j)^{kn}\) — only the values \(1, -j, -1, j\) ever occur.</p>
+    <div class="step"><span class="step-label">Step 1 — k = 0 (DC bin):</span>
+      \( X[0] = 1 + 1 + 0 + 0 = 2 \). Always just the sum of samples; average = \(2/4 = 0.5\). ✓</div>
+    <div class="step"><span class="step-label">Step 2 — k = 1:</span>
+      \( X[1] = 1\cdot 1 + 1\cdot(-j) + 0 + 0 = 1 - j = \sqrt{2}\,e^{-j\pi/4} \).</div>
+    <div class="step"><span class="step-label">Step 3 — k = 2 (Nyquist bin):</span>
+      \( X[2] = 1\cdot 1 + 1\cdot(-1) + 0 - 0 = 0 \) — the record contains no \(+1,-1,+1,-1\) component.</div>
+    <div class="step"><span class="step-label">Step 4 — k = 3:</span>
+      \( X[3] = 1 + 1\cdot(j) = 1 + j \). Check: \(X[3] = X^*[1]\) ✓ — conjugate symmetry, as required for a real input.</div>
+    <div class="step"><span class="step-label">Step 5 — sanity check via Parseval:</span>
+      \( \sum |x[n]|^2 = 2 \) and \( \frac{1}{N}\sum |X[k]|^2 = \frac{1}{4}(4 + 2 + 0 + 2) = 2 \) ✓</div>
+    <div class="result-line">\( X = \{2,\; 1-j,\; 0,\; 1+j\} \) — DC-heavy, no Nyquist content, symmetric. Sixteen multiplications did the job; Section 5 shows why that scaling is a problem and how the FFT dodges it.</div>
+  </div>
+</div>
+
+<h2 id="fft">5. The FFT — the trick worth a million</h2>
+
+<p>Computed literally, each of the \(N\) bins needs \(N\) complex multiply-adds: \(N^2\) operations. The <strong>fast Fourier transform</strong> is not a different transform — it is the <em>same</em> DFT computed cleverly. The divide-and-conquer idea (decimation in time): split \(x[n]\) into its even and odd samples. Each is a DFT of length \(N/2\), and the full spectrum is a cheap combination of the two:</p>
+\[ X[k] = E[k] + e^{-j2\pi k/N}\, O[k], \qquad X[k + N/2] = E[k] - e^{-j2\pi k/N}\, O[k]. \]
+<p>Each half splits again, and again, until only trivial 1-point DFTs remain — \(\log_2 N\) stages of \(N/2\) "butterfly" operations each:</p>
+\[ \boxed{\;\text{FFT cost} \sim N \log_2 N \quad \text{vs} \quad \text{DFT cost} \sim N^2\;} \]
+
+<div class="table-wrap">
+<table class="data">
+<thead><tr><th>\(N\)</th><th>direct DFT \(\sim N^2\)</th><th>FFT \(\sim N\log_2 N\)</th><th>speed-up</th></tr></thead>
+<tbody>
+<tr><td>64</td><td>4 096</td><td>384</td><td>≈ 11×</td></tr>
+<tr><td>256</td><td>65 536</td><td>2 048</td><td>32×</td></tr>
+<tr><td><b>1 024</b></td><td><b>≈ 1.05 million</b></td><td><b>≈ 10 240</b></td><td><b>≈ 100×</b></td></tr>
+<tr><td>4 096</td><td>≈ 16.8 million</td><td>≈ 49 000</td><td>≈ 340×</td></tr>
+<tr><td>1 048 576 (2²⁰)</td><td>≈ 1.1 × 10¹²</td><td>≈ 21 million</td><td>≈ 52 000×</td></tr>
+</tbody>
+</table>
+</div>
+
+<p>The bold row is the one to remember: <b>a 1024-point spectrum for ten thousand operations instead of a million</b>. At an audio rate of \(f_s = 48\) kHz, a 1024-sample block arrives every 21 ms; even a modest microcontroller executes 10 k operations in microseconds — real-time spectral processing with power to spare. The \(N^2\) version would already strain it, and at radar/5G rates (hundreds of MHz) the FFT is the difference between "impossible" and "routine". One condition: the radix-2 algorithm wants \(N\) to be a power of two, which is why FFT sizes are always 256, 1024, 4096 …</p>
+
+<h2 id="leakage">6. Spectral leakage, windows, and the spectrogram</h2>
+
+<h3 id="leak-why">6.1 Why finite observation smears the spectrum</h3>
+<p>Chopping \(N\) samples out of an endless signal is multiplying it by a rectangular <strong>window</strong> (<span class="de">Fensterfunktion</span>). Multiplication in time is convolution in frequency (Module 12): every spectral line gets convolved with — smeared into — the window's own spectrum, a \(\mathrm{sinc}\)-like <em>Dirichlet kernel</em> with a main lobe two bins wide and side lobes decaying from only −13 dB.</p>
+<p>If the tone completes an <em>integer</em> number of cycles in the record, its frequency sits exactly on a bin, all other bins land precisely on the kernel's nulls, and the spectrum looks perfectly clean. Move the tone half a bin and the nulls miss: energy <strong>leaks</strong> into every bin of the spectrum (<span class="de">Leckeffekt</span>). The tall −13 dB side lobes of the rectangular window can easily bury a genuine weak signal 40 dB down.</p>
+
+<h3 id="windows">6.2 Windowing: trading resolution for dynamic range</h3>
+<p>The cure is to fade the record in and out smoothly instead of cutting it — multiply by a tapered window before the FFT. Smooth tapering slashes the side lobes but widens the main lobe: a fundamental, inescapable trade-off between <em>resolution</em> (separating two close tones) and <em>dynamic range</em> (seeing a weak tone next to a strong one).</p>
+
+<div class="table-wrap">
+<table class="data">
+<thead><tr><th>Window</th><th>Main lobe (null–null)</th><th>Highest side lobe</th><th>Use when…</th></tr></thead>
+<tbody>
+<tr><td>Rectangular</td><td>\(2\,\Delta f\)</td><td>−13 dB</td><td>tones known to be bin-centered; transients</td></tr>
+<tr><td>Hann \(\;0.5-0.5\cos\frac{2\pi n}{N-1}\)</td><td>\(4\,\Delta f\)</td><td>−31 dB</td><td>general-purpose default</td></tr>
+<tr><td>Hamming</td><td>\(4\,\Delta f\)</td><td>−43 dB</td><td>slightly better near-in rejection than Hann</td></tr>
+<tr><td>Blackman</td><td>\(6\,\Delta f\)</td><td>−58 dB</td><td>large dynamic range, resolution secondary</td></tr>
+</tbody>
+</table>
+</div>
+
+<div class="box pitfall">
+  <div class="box-title"><span class="ic">🚫</span>Classic pitfall: zero padding "improves resolution"</div>
+  <p>Appending zeros to a record before the FFT gives more, finer-spaced bins — and students conclude the resolution improved. It did not. Zero padding merely <em>interpolates</em> the same underlying DTFT more densely: the main lobe width, set by the true observation time \(N/f_s\), is unchanged. Two tones closer than the main lobe stay merged no matter how many zeros you append. To genuinely resolve them you need <b>more signal</b>, not more zeros. Zero padding is still useful — it makes peak positions easier to read off — just be honest about what it is: a plotting nicety, not new information.</p>
+</div>
+
+<div class="widget">
+  <div class="w-head"><span class="ic">🧪</span>Interactive — DFT spectrum explorer <span class="w-tag">simulation</span></div>
+  <div class="w-body">
+    <p class="small mt0">A 256-point DFT at \(f_s = 8\) kHz (\(\Delta f = 31.25\) Hz) of two tones. Tone 1 starts exactly on bin 32 — a single clean line. Nudge \(f_1\) to 1010 Hz (between bins) and watch the rectangular window smear energy everywhere, drowning the weak tone 2. Switch to Hann: the skirt drops ~20 dB and tone 2 reappears — at the price of a doubled line width.</p>
+    <div id="w-dft"></div>
+  </div>
+</div>
+
+<h3 id="stft">6.3 The STFT and the spectrogram</h3>
+<p>Real signals — speech, music, radar echoes — change over time, and one FFT of a long record averages all that history into mush. The <strong>short-time Fourier transform</strong> (STFT) slides a window along the signal and takes an FFT of each (usually overlapping) segment. Plotting the magnitudes as columns — time across, frequency up, intensity as color — gives the <strong>spectrogram</strong> (<span class="de">Spektrogramm</span>), DSP's single most-used visualization. The window length sets an uncertainty trade-off: long windows give fine frequency detail but blur <em>when</em> things happen; short windows pinpoint events but blur pitch. Speech analysis typically uses 20–30 ms frames — short enough to catch phonemes, long enough to resolve formants.</p>
+
+<h2 id="fir">7. FIR filters — convolution you design</h2>
+
+<h3 id="ma">7.1 The moving average: the simplest filter that works</h3>
+<p>A <strong>finite impulse response</strong> (FIR) filter (<span class="de">Filter mit endlicher Impulsantwort</span>) has no feedback — the output is a weighted sum of the last \(M{+}1\) inputs, i.e. a convolution with a finite tap vector \(b_k\):</p>
+\[ y[n] = \sum_{k=0}^{M} b_k\, x[n-k]. \]
+<p>The humblest choice, all taps equal, is the <strong>moving average</strong> (<span class="de">gleitender Mittelwert</span>) — the thing every spreadsheet user invents independently. It deserves a real analysis:</p>
+
+<div class="example">
+  <div class="ex-head"><span class="ex-tag">Worked example</span> Frequency response of the N-point moving average</div>
+  <div class="ex-body">
+    <p>Derive \(H(e^{j\Omega})\) for \(h[n] = \frac{1}{N}\) for \(n = 0 \dots N-1\), and locate its nulls for \(N = 4\) at \(f_s = 48\) kHz.</p>
+    <div class="step"><span class="step-label">Step 1 — geometric sum:</span>
+      \[ H(e^{j\Omega}) = \frac{1}{N}\sum_{k=0}^{N-1} e^{-j\Omega k} = \frac{1}{N}\,\frac{1 - e^{-j\Omega N}}{1 - e^{-j\Omega}}. \]</div>
+    <div class="step"><span class="step-label">Step 2 — factor out half-angles:</span> writing \(1 - e^{-j\theta} = e^{-j\theta/2}(e^{j\theta/2} - e^{-j\theta/2}) = 2j\,e^{-j\theta/2}\sin(\theta/2)\) top and bottom:
+      \[ H(e^{j\Omega}) = e^{-j\Omega (N-1)/2}\; \frac{\sin(N\Omega/2)}{N \sin(\Omega/2)}. \]</div>
+    <div class="step"><span class="step-label">Step 3 — read it:</span> the magnitude is a Dirichlet kernel: 1 at DC, first crossing zero at \(\Omega = 2\pi/N\), i.e. \(f = f_s/N\), then ripples with slowly falling peaks. The phase factor \(e^{-j\Omega(N-1)/2}\) is <em>exactly linear</em> in \(\Omega\): a pure delay of \((N-1)/2\) samples.</div>
+    <div class="step"><span class="step-label">Step 4 — numbers:</span> \(N = 4\), \(f_s = 48\) kHz → perfect nulls at \(12\) and \(24\) kHz; −3 dB point at \(\approx 0.443 f_s/N \approx 5.3\) kHz.</div>
+    <div class="result-line">A moving average is a lowpass with nulls at \(k \cdot f_s/N\) and linear phase. Choosing \(N\) to drop a null onto an interfering frequency (mains hum!) is a classic one-line filter design — see exercise E5.</div>
+  </div>
+</div>
+
+<h3 id="linphase">7.2 Linear phase — why FIR filters are special</h3>
+<p>The moving average's linear phase was no accident: <strong>any</strong> FIR filter whose taps are symmetric, \(b_k = b_{M-k}\), has exactly linear phase — a frequency-independent <strong>group delay</strong> of \(M/2\) samples. Every frequency component is delayed by the <em>same</em> time, so the waveform's <em>shape</em> passes through undistorted (only amplitudes change). No causal analog filter, and no IIR filter, can do this exactly.</p>
+
+<div class="box key">
+  <div class="box-title"><span class="ic">🔑</span>Key idea: why linear phase matters</div>
+  <p>A filter with curved phase delays bass differently from treble: a crisp pulse comes out smeared even if the magnitude response is flat — this is <em>dispersion</em>. In audio mastering, in data transmission (where a smeared pulse overlaps its neighbors — intersymbol interference, Module 21), and in ECG machines (where a distorted QRS waveform is a misdiagnosis waiting to happen), waveform fidelity is the whole point. That is why these fields run on symmetric FIR filters despite their higher cost.</p>
+</div>
+
+<h3 id="win-design">7.3 Design by windowing the ideal response</h3>
+<p>Want a sharp lowpass with cutoff \(\Omega_c\)? The <em>ideal</em> brick wall has the impulse response \(h_{id}[n] = \frac{\sin(\Omega_c n)}{\pi n}\) — a sinc: infinitely long and two-sided, hence unrealizable. The <strong>window design method</strong>: truncate the sinc to \(M{+}1\) taps around its center, shift right to make it causal, and multiply by a taper (Hann, Hamming — the same windows as Section 6, for the same reason: truncation ripples). More taps → sharper transition; heavier taper → smaller passband/stopband ripple but wider transition. Crude but robust; the workhorse alternatives (Parks–McClellan equiripple) optimize the same trade-off numerically.</p>
+
+<figure>
+  <div class="fig-frame">
+  <svg class="diagram" viewBox="0 0 660 240" role="img" aria-label="FIR direct-form structure">
+    <defs><marker id="arrD" markerWidth="9" markerHeight="9" refX="7" refY="4.5" orient="auto">
+      <path d="M0 0 L8 4.5 L0 9 z" fill="var(--text-soft)"/></marker></defs>
+    <!-- input rail -->
+    <text x="18" y="50" font-size="14">x[n]</text>
+    <path class="wire" d="M52 46 H120" marker-end="url(#arrD)"/>
+    <rect x="124" y="28" width="64" height="36" rx="6" fill="none" stroke="var(--text-soft)" stroke-width="2"/>
+    <text x="156" y="51" text-anchor="middle" font-size="13">z⁻¹</text>
+    <path class="wire" d="M188 46 H280" marker-end="url(#arrD)"/>
+    <rect x="284" y="28" width="64" height="36" rx="6" fill="none" stroke="var(--text-soft)" stroke-width="2"/>
+    <text x="316" y="51" text-anchor="middle" font-size="13">z⁻¹</text>
+    <path class="wire" d="M348 46 H440" marker-end="url(#arrD)"/>
+    <rect x="444" y="28" width="64" height="36" rx="6" fill="none" stroke="var(--text-soft)" stroke-width="2"/>
+    <text x="476" y="51" text-anchor="middle" font-size="13">z⁻¹</text>
+    <!-- taps down -->
+    <circle cx="96" cy="46" r="3.5" class="node"/>
+    <circle cx="248" cy="46" r="3.5" class="node"/>
+    <circle cx="408" cy="46" r="3.5" class="node"/>
+    <path class="wire" d="M96 46 V96"/>
+    <path class="wire" d="M248 46 V96"/>
+    <path class="wire" d="M408 46 V96"/>
+    <path class="wire" d="M560 46 H568 V96" />
+    <path class="wire" d="M508 46 H560"/>
+    <!-- multiplier triangles -->
+    <path d="M84 96 L108 96 L96 122 Z" fill="none" stroke="var(--accent)" stroke-width="2"/>
+    <text x="122" y="112" font-size="13" fill="var(--accent)">b₀</text>
+    <path d="M236 96 L260 96 L248 122 Z" fill="none" stroke="var(--accent)" stroke-width="2"/>
+    <text x="274" y="112" font-size="13" fill="var(--accent)">b₁</text>
+    <path d="M396 96 L420 96 L408 122 Z" fill="none" stroke="var(--accent)" stroke-width="2"/>
+    <text x="434" y="112" font-size="13" fill="var(--accent)">b₂</text>
+    <path d="M556 96 L580 96 L568 122 Z" fill="none" stroke="var(--accent)" stroke-width="2"/>
+    <text x="594" y="112" font-size="13" fill="var(--accent)">b₃</text>
+    <!-- adder -->
+    <path class="wire" d="M96 122 V180 H310" />
+    <path class="wire" d="M248 122 V180"/>
+    <path class="wire" d="M408 122 V180 H366" marker-end="url(#arrD)"/>
+    <path class="wire" d="M568 122 V180 H430" />
+    <circle cx="338" cy="180" r="20" fill="none" stroke="var(--accent-2)" stroke-width="2.2"/>
+    <text x="338" y="186" text-anchor="middle" font-size="16" fill="var(--accent-2)">Σ</text>
+    <path class="wire" d="M338 200 V222 H600" marker-end="url(#arrD)"/>
+    <text x="612" y="227" font-size="14">y[n]</text>
+  </svg>
+  </div>
+  <figcaption><b>Fig. 7.1</b> — Direct-form ("transversal") FIR structure for \(M = 3\): a shift register of \(z^{-1}\) delays, one multiplier per tap, one big adder. In a DSP chip this is <em>the</em> inner loop: one multiply-accumulate (MAC) per tap per sample.</figcaption>
+</figure>
+
+<div class="widget">
+  <div class="w-head"><span class="ic">🧪</span>Interactive — moving-average frequency response <span class="w-tag">simulation</span></div>
+  <div class="w-body">
+    <p class="small mt0">Magnitude response \(|H(e^{j\Omega})|\) of an \(N\)-tap moving average versus normalized frequency \(f/f_s\). Increase \(N\): the passband narrows (first null at \(f/f_s = 1/N\)), but the stopband side lobes never drop below −13 dB relative to the neighboring null spacing — averaging is a mediocre lowpass, which is exactly why windowed-sinc designs exist.</p>
+    <div id="w-ma"></div>
+  </div>
+</div>
+
+<h2 id="iir">8. IIR filters — poles for efficiency</h2>
+
+<h3 id="iir-idea">8.1 Feedback buys steepness</h3>
+<p>An <strong>infinite impulse response</strong> (IIR) filter feeds outputs back (<span class="de">Rückkopplung</span>): \(a_k \neq 0\), poles appear, and the impulse response rings on forever (geometrically decaying, if stable). The payoff is dramatic: a resonant pole pair near the unit circle produces a steep, selective response that an FIR filter would need dozens of taps to imitate. Rule of thumb: an elliptic IIR of order 6 matches the magnitude selectivity of an FIR with 100+ taps. The price: possible instability, coefficient sensitivity, and phase that is <em>never</em> exactly linear.</p>
+
+<h3 id="bilinear">8.2 From analog prototypes: the bilinear transform</h3>
+<p>Decades of analog filter craft (Butterworth, Chebyshev, elliptic — Module 12) are recycled digitally via the <strong>bilinear transform</strong> (<span class="de">Bilineartransformation</span>): substitute</p>
+\[ \boxed{\;s \;\to\; \frac{2}{T}\,\frac{1 - z^{-1}}{1 + z^{-1}}\;} \]
+<p>into the analog \(H(s)\). This maps the entire \(j\omega\) axis one-to-one onto the unit circle — no aliasing of the response, stability preserved (left half-plane → circle interior). The cost is <strong>frequency warping</strong>: the infinite analog frequency axis is squeezed into \(0 \dots f_s/2\) via \(\omega_a = \frac{2}{T}\tan(\Omega/2)\). The fix is <em>prewarping</em>: design the analog prototype at the warped frequency \(\omega_a = \frac{2}{T}\tan(\pi f_c / f_s)\) so that after the squeeze, the critical frequency lands exactly where you wanted it.</p>
+
+<div class="example">
+  <div class="ex-head"><span class="ex-tag">Worked example</span> Digitizing an RC lowpass by bilinear transform</div>
+  <div class="ex-body">
+    <p>Design a first-order digital lowpass with \(f_c = 1\) kHz at \(f_s = 8\) kHz from the analog prototype \(H(s) = \frac{1}{1 + s/\omega_c}\).</p>
+    <div class="step"><span class="step-label">Step 1 — prewarp the cutoff:</span>
+      \( \omega_c' = \frac{2}{T}\tan\!\left(\pi \frac{f_c}{f_s}\right) = 16\,000 \cdot \tan(22.5°) = 6627\,\mathrm{rad/s} \)
+      (5.5 % above the naive \(2\pi \cdot 1000 = 6283\) — the warp is already visible at \(f_c = f_s/8\)).</div>
+    <div class="step"><span class="step-label">Step 2 — substitute:</span> with \(\frac{2}{T} = 16\,000\), let \(\alpha = \frac{16\,000}{6627} = 2.414\):
+      \[ H(z) = \frac{1}{1 + \alpha\,\frac{1-z^{-1}}{1+z^{-1}}} = \frac{1 + z^{-1}}{(1+\alpha) + (1-\alpha)z^{-1}} = \frac{0.2929\,(1 + z^{-1})}{1 - 0.4142\, z^{-1}}. \]</div>
+    <div class="step"><span class="step-label">Step 3 — sanity checks:</span> pole at \(z = 0.414\) — inside the unit circle, stable ✓. DC (\(z=1\)): \(H = \frac{0.5858}{0.5858} = 1\) ✓. Nyquist (\(z=-1\)): numerator zero → \(H = 0\), a bonus brick-wall at \(f_s/2\) ✓.</div>
+    <div class="step"><span class="step-label">Step 4 — verify the cutoff:</span> at \(\Omega = \pi/4\) (1 kHz): \(|H| = 0.7071\) — <em>exactly</em> −3 dB. Prewarping did its job to four digits.</div>
+    <div class="result-line">\( y[n] = 0.4142\,y[n-1] + 0.2929\,x[n] + 0.2929\,x[n-1] \) — three MACs per sample replace a physical RC pair, with a cutoff that will never drift.</div>
+  </div>
+</div>
+
+<h3 id="biquads">8.3 Biquads: second-order sections</h3>
+<p>High-order IIR filters are never implemented as one big polynomial ratio — root positions become absurdly sensitive to coefficient rounding (a 10th-order polynomial's roots can move drastically when coefficients are stored in 16 bits). Instead the filter is factored into cascaded <strong>second-order sections</strong> ("biquads", <span class="de">Filterkaskade aus Teilfiltern 2. Ordnung</span>):</p>
+\[ H(z) = \prod_i \frac{b_{0i} + b_{1i} z^{-1} + b_{2i} z^{-2}}{1 + a_{1i} z^{-1} + a_{2i} z^{-2}}, \]
+<p>each section owning one pole pair (and zero pair). Every audio equalizer band, every anti-hum notch, every crossover in a powered speaker is a handful of biquads. A single all-pole biquad with poles at \(r e^{\pm j\Omega_0}\) is the digital resonator: difference equation \(y[n] = 2r\cos\Omega_0\, y[n-1] - r^2 y[n-2] + x[n]\), peak near \(f_0\), bandwidth shrinking as \(r \to 1\).</p>
+
+<div class="widget">
+  <div class="w-head"><span class="ic">🧪</span>Interactive — biquad pole explorer <span class="w-tag">simulation</span></div>
+  <div class="w-body">
+    <p class="small mt0">Magnitude response of a two-pole resonator with poles at \(r e^{\pm j 2\pi f_0/f_s}\). Slide \(f_0/f_s\): the peak follows the pole angle around the unit circle. Push \(r \to 1\): the peak grows and narrows sharply (bandwidth \(\approx (1-r)/\pi \cdot f_s\)) — and imagine \(r &gt; 1\): the same geometry, but exploding. Stability lives one slider-notch away.</p>
+    <div id="w-biquad"></div>
+  </div>
+</div>
+
+<h3 id="fir-vs-iir">8.4 FIR vs IIR — the decision table</h3>
+<div class="table-wrap">
+<table class="data">
+<thead><tr><th></th><th>FIR</th><th>IIR</th></tr></thead>
+<tbody>
+<tr><td>Stability</td><td>guaranteed (no poles except \(z=0\))</td><td>must be checked; poles can drift outside</td></tr>
+<tr><td>Phase</td><td>exactly linear if taps symmetric</td><td>never exactly linear; worst near band edges</td></tr>
+<tr><td>Order for sharp cutoff</td><td>high (tens to hundreds of taps)</td><td>low (order 4–8 often suffices)</td></tr>
+<tr><td>Cost per sample</td><td>one MAC per tap</td><td>≈ 5 MACs per biquad — usually far cheaper</td></tr>
+<tr><td>Coefficient sensitivity</td><td>benign</td><td>severe → always cascade biquads</td></tr>
+<tr><td>Analog heritage</td><td>none needed (windowed sinc, equiripple)</td><td>direct via bilinear transform</td></tr>
+<tr><td>Typical home turf</td><td>audio mastering, data links, ECG</td><td>equalizers, notch filters, control loops</td></tr>
+</tbody>
+</table>
+</div>
+
+<h2 id="implementation">9. Implementation: structures and fixed point</h2>
+
+<p>A difference equation can be wired in several algebraically identical but numerically different <strong>structures</strong>: direct form I (separate delay lines for \(x\) and \(y\)), direct form II (shared delay line — minimum memory), and their transposed twins. On paper they are equal; in finite-precision arithmetic they differ in noise and overflow behavior (transposed direct form II is the common default for biquads).</p>
+<p>Small processors compute in <strong>fixed-point</strong> arithmetic (<span class="de">Festkommaarithmetik</span>), typically Q15: 16-bit words interpreted as fractions in \([-1, 1)\). Three demons follow:</p>
+<ul>
+  <li><strong>Coefficient quantization</strong> — rounding coefficients moves poles; a pole intended at \(r = 0.999\) may land at \(1.001\). Biquad cascading (Section 8.3) exists to contain this.</li>
+  <li><strong>Overflow</strong> — sums exceeding ±1 wrap around catastrophically unless saturated; internal signals must be scaled with headroom.</li>
+  <li><strong>Limit cycles</strong> — rounding inside a feedback loop can sustain small permanent oscillations even with zero input; a fixed-point IIR filter can literally hum to itself. Cures: more internal bits, error feedback, or dither.</li>
+</ul>
+<p>Floating point (<span class="de">Gleitkomma</span>) makes most of this vanish and is why desktop audio tools are carefree — but at 10 mW battery budgets, fixed point still rules.</p>
+
+<h2 id="quantization">10. Quantization — the price of going digital</h2>
+
+<h3 id="q-snr">10.1 The uniform quantizer and its SNR</h3>
+<p>An ideal \(b\)-bit ADC maps its full-scale range \(\pm A\) onto \(2^b\) levels spaced \(\Delta = 2A/2^b\) apart (<span class="de">Quantisierung</span>). Each sample acquires an error \(e = x_q - x\) confined to \(\pm\Delta/2\). For busy signals the error behaves like uniform white noise, with power</p>
+\[ \sigma_e^2 = \frac{1}{\Delta}\int_{-\Delta/2}^{\Delta/2} e^2\, \mathrm{d}e = \frac{\Delta^2}{12}. \]
+<p>Now feed in the loudest undistorted test signal, a full-scale sine of amplitude \(A = 2^{b-1}\Delta\), power \(A^2/2 = 2^{2b}\Delta^2/8\). The signal-to-quantization-noise ratio:</p>
+\[ \mathrm{SNR} = \frac{2^{2b}\Delta^2/8}{\Delta^2/12} = \frac{3}{2}\cdot 2^{2b}
+\;\;\Rightarrow\;\;
+\boxed{\;\mathrm{SNR}_{\mathrm{dB}} = 6.02\,b + 1.76\;} \]
+<p><strong>Six dB per bit</strong> — each extra bit halves \(\Delta\), quartering the noise power. This one line prices every ADC datasheet and every audio format.</p>
+
+<div class="example">
+  <div class="ex-head"><span class="ex-tag">Worked example</span> How many bits does music need?</div>
+  <div class="ex-body">
+    <p>Evaluate CD audio (16 bit) and studio audio (24 bit), and find the bit depth needed to span the ~120 dB from the threshold of hearing to the threshold of pain.</p>
+    <div class="step"><span class="step-label">Step 1 — CD:</span>
+      \( \mathrm{SNR} = 6.02 \cdot 16 + 1.76 = 98.1\,\mathrm{dB} \). On a 2 V full-scale converter, \(\Delta = 2/2^{16} = 30.5\,\mathrm{\mu V}\) — comparable to the thermal noise of the analog stages that follow.</div>
+    <div class="step"><span class="step-label">Step 2 — studio:</span>
+      \( 6.02 \cdot 24 + 1.76 = 146.2\,\mathrm{dB} \) — more than any microphone or ear. The extra bits are headroom: engineers record 20 dB below full scale without touching the noise floor.</div>
+    <div class="step"><span class="step-label">Step 3 — full auditory range:</span>
+      \( b = (120 - 1.76)/6.02 = 19.6 \Rightarrow 20\,\mathrm{bits} \). Real 24-bit ADCs deliver ~21 effective bits — just enough, and why 24-bit became the studio standard.</div>
+    <div class="result-line">16 bits ≈ 98 dB suits playback; 24 bits ≈ 146 dB (theoretical) buys recording headroom; the ear itself is a ~20-bit instrument.</div>
+  </div>
+</div>
+
+<h3 id="dither">10.2 Dither: adding noise on purpose</h3>
+<p>For <em>quiet</em> signals the error is no longer noise-like: a sine hovering around one step gets truncated into a square-ish wave, producing harsh, correlated distortion. The counterintuitive cure is <strong>dither</strong>: adding a tiny random noise (~1 LSB) <em>before</em> quantizing. The distortion decorrelates into a smooth, benign hiss, and — remarkably — signals <em>below</em> one LSB become audible, encoded in the statistics of the toggling last bit. Every professional mastering chain dithers when reducing 24-bit masters to 16-bit CDs. Trading distortion for noise is a recurring DSP bargain, and dither is its purest form.</p>
+
+<div class="widget">
+  <div class="w-head"><span class="ic">🧪</span>Interactive — quantization and its noise <span class="w-tag">simulation</span></div>
+  <div class="w-body">
+    <p class="small mt0">A unit sine quantized to \(b\) bits, with the error signal below it. At 3 bits the staircase and the ugly, signal-correlated error are obvious; by 8 bits the error hides below the line width — yet it is still there, exactly \(6.02\,b + 1.76\) dB down. Watch the LSB and SNR readouts as you add bits.</p>
+    <div id="w-quant"></div>
+  </div>
+</div>
+
+<h2 id="multirate">11. Multirate DSP — changing the sampling rate in software</h2>
+
+<p>Different subsystems want different rates: a Wi-Fi front-end samples at 160 MHz, the demodulator needs 20 MHz; a 48 kHz studio file must play on 44.1 kHz hardware. <strong>Multirate</strong> techniques (<span class="de">Abtastratenumsetzung</span>) convert rates digitally:</p>
+<ul>
+  <li><strong>Decimation</strong> (<span class="de">Dezimierung</span>) by \(M\): keep every \(M\)-th sample. The new Nyquist limit is \(f_s/(2M)\) — any content above it aliases irreversibly into the kept band. Therefore, iron law: <strong>lowpass-filter first, then downsample</strong>. The filter runs at the high rate but (in efficient <em>polyphase</em> form) only computes the outputs that survive.</li>
+  <li><strong>Interpolation</strong> by \(L\): insert \(L-1\) zeros between samples (creating spectral images at multiples of the old \(f_s\)), then lowpass-filter with gain \(L\) to erase the images and "fill in" smooth values between the originals.</li>
+  <li><strong>Rational conversion</strong> \(L/M\): interpolate then decimate, sharing one filter. \(44.1 \to 48\) kHz is \(L/M = 160/147\).</li>
+</ul>
+<p>Multirate thinking underlies delta-sigma converters (sample at MHz with 1 bit, decimate to kHz with 24 bits — Module 10), SDR channelizers, and every "resample" button in an audio editor.</p>
+
+<figure>
+  <div class="fig-frame">
+  <svg class="diagram" viewBox="0 0 700 210" role="img" aria-label="Decimation and interpolation block diagrams">
+    <defs><marker id="arrE" markerWidth="9" markerHeight="9" refX="7" refY="4.5" orient="auto">
+      <path d="M0 0 L8 4.5 L0 9 z" fill="var(--text-soft)"/></marker></defs>
+    <!-- decimation row -->
+    <text x="16" y="62" font-size="13">x[n] @ f_s</text>
+    <line x1="100" y1="58" x2="150" y2="58" class="wire" marker-end="url(#arrE)"/>
+    <rect x="154" y="34" width="180" height="48" rx="8" fill="none" stroke="var(--accent)" stroke-width="2"/>
+    <text x="244" y="54" text-anchor="middle" font-size="12" fill="var(--accent)">anti-alias lowpass</text>
+    <text x="244" y="72" text-anchor="middle" font-size="12" fill="var(--accent)">passband &lt; f_s / 2M</text>
+    <line x1="334" y1="58" x2="384" y2="58" class="wire" marker-end="url(#arrE)"/>
+    <rect x="388" y="34" width="70" height="48" rx="8" fill="none" stroke="var(--text-soft)" stroke-width="2"/>
+    <text x="423" y="65" text-anchor="middle" font-size="15">↓M</text>
+    <line x1="458" y1="58" x2="508" y2="58" class="wire" marker-end="url(#arrE)"/>
+    <text x="518" y="62" font-size="13">y[m] @ f_s / M</text>
+    <text x="16" y="24" font-size="12" fill="var(--text-faint)">DECIMATION — filter FIRST, then discard</text>
+    <!-- interpolation row -->
+    <text x="16" y="162" font-size="13">x[n] @ f_s</text>
+    <line x1="100" y1="158" x2="150" y2="158" class="wire" marker-end="url(#arrE)"/>
+    <rect x="154" y="134" width="70" height="48" rx="8" fill="none" stroke="var(--text-soft)" stroke-width="2"/>
+    <text x="189" y="165" text-anchor="middle" font-size="15">↑L</text>
+    <line x1="224" y1="158" x2="274" y2="158" class="wire" marker-end="url(#arrE)"/>
+    <rect x="278" y="134" width="180" height="48" rx="8" fill="none" stroke="var(--accent)" stroke-width="2"/>
+    <text x="368" y="154" text-anchor="middle" font-size="12" fill="var(--accent)">image-reject lowpass</text>
+    <text x="368" y="172" text-anchor="middle" font-size="12" fill="var(--accent)">gain L, &lt; f_s / 2</text>
+    <line x1="458" y1="158" x2="508" y2="158" class="wire" marker-end="url(#arrE)"/>
+    <text x="518" y="162" font-size="13">y[m] @ L·f_s</text>
+    <text x="16" y="124" font-size="12" fill="var(--text-faint)">INTERPOLATION — insert zeros, then smooth</text>
+  </svg>
+  </div>
+  <figcaption><b>Fig. 11.1</b> — Multirate building blocks. Decimation must filter <em>before</em> discarding samples; interpolation must filter <em>after</em> inserting zeros. Getting either order wrong aliases or leaves images — both irreversible.</figcaption>
+</figure>
+
+<div class="box pitfall">
+  <div class="box-title"><span class="ic">🚫</span>Classic pitfall: "just take every 4th sample"</div>
+  <p>Downsampling 48 kHz audio to 12 kHz by simply keeping every 4th sample folds everything between 6 and 24 kHz right on top of the speech band — cymbals become growls, and no later processing can undo it, because two different inputs now produce identical samples. Aliasing destroys information; the anti-alias filter <em>before</em> the decimator is not optional polish, it is the whole trick. (Same law as at the ADC in Fig. 2.1 — decimation <em>is</em> resampling.)</p>
+</div>
+
+<h2 id="applications">12. Where DSP runs your life</h2>
+
+<ul>
+  <li><strong>Audio coding (MP3/AAC).</strong> A filter bank (an MDCT — a cousin of the DFT) splits audio into subbands; a psychoacoustic model computes, per band, how much quantization noise the ear will <em>mask</em> — a loud tone at 1 kHz renders quiet content in neighboring bands literally inaudible. Bits are spent only where the ear would notice their absence: ~10× compression with little audible loss. The compression is not in the math but in the model of you.</li>
+  <li><strong>Active noise cancellation.</strong> Headphone microphones capture ambient noise; an adaptive filter (coefficients updated every sample by the LMS algorithm) predicts the noise at the eardrum and emits its negative. The whole loop must run in tens of microseconds — sound travels ~1 cm in 30 µs, so latency directly limits how high in frequency cancellation works. Pure real-time DSP under a hard deadline.</li>
+  <li><strong>Software-defined radio.</strong> Digitize a wide chunk of spectrum as early as possible; then mixing (multiply by \(e^{-j\Omega_0 n}\)), channel filtering, decimation and demodulation are all software. One hardware platform receives FM, ADS-B aircraft beacons, or LTE depending on which program is loaded — Section 1's promise made literal. A 30 € USB dongle does this on your desk.</li>
+  <li><strong>Medical.</strong> ECG front-ends run a 50 Hz IIR notch plus a linear-phase FIR bandpass (waveform shape is the diagnosis — Section 7.2). Ultrasound machines beamform by digitally delaying and summing dozens of transducer channels. And MRI reconstructs images by, essentially, a giant 2-D inverse FFT of the acquired k-space data — no FFT, no MRI as we know it.</li>
+</ul>
+
+<div class="box german">
+  <div class="box-title"><span class="ic">🇩🇪</span>Vokabeln</div>
+  <p>sampling = <span class="de">Abtastung</span> · sampling rate = <span class="de">Abtastrate</span> · discrete-time = <span class="de">zeitdiskret</span> · difference equation = <span class="de">Differenzengleichung</span> · unit circle = <span class="de">Einheitskreis</span> · frequency bin = <span class="de">Frequenzstützstelle</span> · window(ing) = <span class="de">Fensterfunktion / Fensterung</span> · leakage = <span class="de">Leckeffekt</span> · moving average = <span class="de">gleitender Mittelwert</span> · linear phase = <span class="de">linearphasig</span> · feedback = <span class="de">Rückkopplung</span> · quantization noise = <span class="de">Quantisierungsrauschen</span> · fixed point = <span class="de">Festkomma</span> · decimation = <span class="de">Dezimierung</span> · sample-rate conversion = <span class="de">Abtastratenumsetzung</span> · spectrogram = <span class="de">Spektrogramm</span></p>
+</div>
+
+<div class="box history">
+  <div class="box-title"><span class="ic">📜</span>Where you'll meet all this again</div>
+  <p>Digital control loops (Module 14) are IIR filters wearing a different hat — same z-transform, same stability circle. Delta-sigma ADCs (Module 10) are multirate DSP plus noise shaping. OFDM modems (Module 21) transmit IFFTs and receive FFTs. Machine-learning audio front-ends (Module 22) eat spectrograms, not waveforms. DSP is the connective tissue of the modern curriculum.</p>
+</div>
+
+<h2 id="summary">13. Formula summary — <span class="de">Formelsammlung</span></h2>
+
+<div class="table-wrap">
+<table class="data">
+<thead><tr><th>Concept</th><th>Formula</th><th>Remember as</th></tr></thead>
+<tbody>
+<tr><td>Normalized frequency</td><td>\( \Omega = 2\pi f / f_s \), Nyquist at \(\Omega = \pi\)</td><td>samples know only ratios</td></tr>
+<tr><td>z-transform</td><td>\( X(z) = \sum_n x[n] z^{-n} \)</td><td>\(z^{-1}\) = one-sample delay</td></tr>
+<tr><td>Laplace link</td><td>\( z = e^{sT} \): \(j\omega\)-axis → unit circle</td><td>LHP folds inside the circle</td></tr>
+<tr><td>Stability</td><td>all poles \( |p_k| &lt; 1 \)</td><td>inside the unit circle</td></tr>
+<tr><td>First-order pair</td><td>\( a^n u[n] \;\circ\!\!-\!\!\bullet\; \frac{1}{1-az^{-1}} \)</td><td>the geometric workhorse</td></tr>
+<tr><td>DFT / IDFT</td><td>\( X[k] = \sum_{n=0}^{N-1} x[n] e^{-j2\pi kn/N} \), \( x[n] = \frac1N \sum_k X[k] e^{+j2\pi kn/N} \)</td><td>\(1/N\) on the inverse</td></tr>
+<tr><td>Bin frequency / resolution</td><td>\( f_k = k f_s / N \), \( \Delta f = f_s/N \)</td><td>longer record = finer bins</td></tr>
+<tr><td>FFT cost</td><td>\( \sim N \log_2 N \) vs \( N^2 \)</td><td>1024 pts: 10 k vs 1 M</td></tr>
+<tr><td>Moving average</td><td>\( |H| = \left|\frac{\sin(N\Omega/2)}{N\sin(\Omega/2)}\right| \), nulls at \(k f_s/N\)</td><td>place a null on the hum</td></tr>
+<tr><td>Linear phase</td><td>symmetric taps \( b_k = b_{M-k} \) → delay \(M/2\) samples</td><td>no waveform distortion</td></tr>
+<tr><td>Bilinear transform</td><td>\( s \to \frac{2}{T}\frac{1-z^{-1}}{1+z^{-1}} \), prewarp \( \omega_a = \frac{2}{T}\tan\frac{\Omega}{2} \)</td><td>analog craft, recycled</td></tr>
+<tr><td>Quantization noise</td><td>\( \sigma_e^2 = \Delta^2/12 \), \( \mathrm{SNR} = 6.02b + 1.76 \) dB</td><td>6 dB per bit</td></tr>
+<tr><td>Decimation by M</td><td>lowpass to \( f_s/2M \) <em>before</em> ↓M</td><td>filter first — always</td></tr>
+</tbody>
+</table>
+</div>
+
+<h2 id="exercises">14. Exercises</h2>
+<p>Work these on paper (and, where tempting, verify with a few lines of Python) before opening the solutions.</p>
+
+<div class="exercise">
+  <p class="ex-q"><span class="ex-num">E1</span>A 3 kHz tone is sampled at \(f_s = 48\) kHz and a 1024-point DFT is taken. What is the frequency resolution, and in which bin does the tone appear? Is there leakage? <span class="diff easy">easy</span></p>
+  <details><summary>Show solution</summary>
+    <div class="solution">
+      \( \Delta f = f_s/N = 48\,000/1024 = 46.875\,\mathrm{Hz} \). Bin: \( k = f/\Delta f = 3000/46.875 = 64 \) — exactly an integer, so the tone sits precisely on bin 64 and (with any window) shows no leakage: 64 whole cycles fit in the record. A 3.01 kHz tone would give \(k = 64.21\) — off-bin — and smear. Sanity check: bin 64 of 1024 ≙ \(64/1024 = 1/16\) of \(f_s\) = 3 kHz ✓.
+    </div>
+  </details>
+</div>
+
+<div class="exercise">
+  <p class="ex-q"><span class="ex-num">E2</span>A processor performs 100 million real MACs per second. A 4096-point spectrum of a 48 kHz signal must be produced for every block (one block = 4096 samples). Check real-time feasibility for (a) the direct DFT (\(\approx 4N^2\) real MACs) and (b) the FFT (\(\approx 4 N\log_2 N\)). <span class="diff easy">easy</span></p>
+  <details><summary>Show solution</summary>
+    <div class="solution">
+      Block duration: \(4096/48\,000 = 85.3\,\mathrm{ms}\) — the compute budget.<br>
+      (a) DFT: \(4 \cdot 4096^2 = 67.1\) million MACs → \(671\,\mathrm{ms}\) per block. Almost <b>8× too slow</b> — impossible.<br>
+      (b) FFT: \(4 \cdot 4096 \cdot 12 = 197\,\mathrm{k}\) MACs → \(2.0\,\mathrm{ms}\) per block: uses 2.3 % of the budget, leaving 97 % for the actual application. The same chip is hopeless or bored depending on the algorithm — that is the FFT's entire historical significance in one arithmetic line.
+    </div>
+  </details>
+</div>
+
+<div class="exercise">
+  <p class="ex-q"><span class="ex-num">E3</span>For the "leaky integrator" \(y[n] = 0.9\,y[n-1] + 0.1\,x[n]\): find \(H(z)\), the pole, the DC gain, the impulse response, and the approximate time constant in samples. Is it stable? <span class="diff med">medium</span></p>
+  <details><summary>Show solution</summary>
+    <div class="solution">
+      Transform: \(Y(1 - 0.9z^{-1}) = 0.1X\) → \(H(z) = \frac{0.1}{1 - 0.9 z^{-1}}\). One pole at \(z = 0.9\): inside the unit circle → <b>stable</b>. DC gain: \(H(1) = 0.1/0.1 = 1\) — sensible for an averager. Impulse response: \(h[n] = 0.1 \cdot 0.9^n u[n]\), a sampled exponential. Time constant: \(0.9^n = e^{-n/\tau}\) → \(\tau = -1/\ln 0.9 \approx 9.5\) samples ≈ \(1/(1-a)\). This two-multiply filter is the ubiquitous "exponential smoothing" of sensor readings, stock charts and load averages — now you know its pole.
+    </div>
+  </details>
+</div>
+
+<div class="exercise">
+  <p class="ex-q"><span class="ex-num">E4</span>Compute the 4-point DFT of \(x = \{1, 0, 1, 0\}\) and interpret each bin physically. <span class="diff med">medium</span></p>
+  <details><summary>Show solution</summary>
+    <div class="solution">
+      \(X[0] = 1+0+1+0 = 2\). \(X[1] = 1 + 0\cdot(-j) + 1\cdot(-1) + 0 = 0\). \(X[2] = 1 - 0 + 1 - 0 = 2\). \(X[3] = 1 + 0 + 1\cdot(-1) + 0 = 0\).<br>
+      So \(X = \{2, 0, 2, 0\}\): the signal is a DC level of \(0.5\) (bin 0: \(2/4\)) plus a Nyquist-rate alternation \(\pm 0.5\) (bin 2) — indeed \(x[n] = 0.5 + 0.5(-1)^n\) reproduces \(\{1,0,1,0\}\) exactly ✓. No bin-1/3 content: the record contains no once-per-record oscillation. A two-line signal, a two-line spectrum.
+    </div>
+  </details>
+</div>
+
+<div class="exercise">
+  <p class="ex-q"><span class="ex-num">E5</span>A sensor sampled at \(f_s = 1\) kHz suffers from 50 Hz mains hum. Choose the length \(N\) of a moving-average filter that removes the hum <em>and all its harmonics</em> exactly. How much does it attenuate a wanted 10 Hz signal? <span class="diff med">medium</span></p>
+  <details><summary>Show solution</summary>
+    <div class="solution">
+      Moving-average nulls sit at \(k \cdot f_s/N\). Demanding the first null at 50 Hz: \(N = f_s/50 = 20\) — one full mains period per average. Then nulls fall at 50, 100, 150, … Hz: <b>every</b> harmonic dies, because each contributes a whole number of cycles that average to zero. At 10 Hz (\(\Omega\)-argument \(\nu = f/f_s = 0.01\)): \( |H| = \left|\frac{\sin(20\pi\nu)}{20\sin(\pi \nu)}\right| = \frac{\sin(0.2\pi)}{20\sin(0.01\pi)} = \frac{0.588}{0.628} = 0.936 \) → only \(-0.58\) dB. A 20-tap filter, designed with one division, kills the interference completely while barely touching the signal — the professional's favorite party trick.
+    </div>
+  </details>
+</div>
+
+<div class="exercise">
+  <p class="ex-q"><span class="ex-num">E6</span>Derive \( \mathrm{SNR}_{\mathrm{dB}} = 6.02\,b + 1.76 \) from first principles, stating every assumption. Then explain why a sine at 10 % of full scale measures ~20 dB worse. <span class="diff hard">challenge</span></p>
+  <details><summary>Show solution</summary>
+    <div class="solution">
+      Assumptions: uniform quantizer, step \(\Delta\); error \(e\) uniformly distributed on \([-\Delta/2, \Delta/2]\) and uncorrelated with the signal (valid for busy signals spanning many steps).
+      Noise power: \( \sigma_e^2 = \frac{1}{\Delta}\int_{-\Delta/2}^{\Delta/2} e^2\,\mathrm{d}e = \frac{\Delta^2}{12} \).
+      Full-scale sine: amplitude \(A = 2^{b-1}\Delta\), power \(P_s = A^2/2 = 2^{2b}\Delta^2/8\).
+      \( \mathrm{SNR} = P_s/\sigma_e^2 = \tfrac{3}{2}\,2^{2b} \); in dB: \(10\log_{10}1.5 + 2b \cdot 10\log_{10}2 = 1.76 + 6.02\,b\) ✓.
+      At 10 % amplitude the signal power drops by \(20\log_{10}10 = 20\) dB while the noise floor \(\Delta^2/12\) stays fixed — SNR follows the signal down. Moral: quantization SNR is a property of the <em>level</em>, not just the converter; recording too quietly throws bits away, which is exactly what recording engineers mean by "use your headroom".
+    </div>
+  </details>
+</div>
+
+<div class="exercise">
+  <p class="ex-q"><span class="ex-num">E7</span>A 48 kHz signal must be decimated to 8 kHz (\(M = 6\)) for a speech codec. (a) Specify the anti-alias filter. (b) A colleague skips the filter "because the signal is mostly speech below 4 kHz anyway" — a 15 kHz whistle from a CRT monitor is present at −30 dB. Where does it land, and why is this fatal? <span class="diff hard">challenge</span></p>
+  <details><summary>Show solution</summary>
+    <div class="solution">
+      (a) New Nyquist: \(8/2 = 4\) kHz. The filter (running at 48 kHz, before ↓6) needs passband ≈ 0–3.4 kHz (speech), stopband from 4 kHz with enough attenuation that aliases fall below the codec's noise floor — typically ≥ 60 dB, e.g. a ~60-tap linear-phase FIR.<br>
+      (b) Aliasing folds frequencies about multiples of the new \(f_s = 8\) kHz: the 15 kHz whistle appears at \(|15 - 2\cdot 8| = 1\) kHz — dead center of the speech band, at −30 dB: clearly audible, and <em>indistinguishable</em> from a genuine 1 kHz tone after decimation, so no later filter can remove it without removing speech. Filter first is not advice; it is information theory. (Bonus check: the filtered path attenuates 15 kHz by ≥ 60 dB, pushing the alias to −90 dB — inaudible.)
+    </div>
+  </details>
+</div>
+
+<h2 id="quiz">15. Self-assessment</h2>
+
+<div class="quiz" data-quiz-title="Module 13 — Self-test">
+<script type="application/json">
+[
+ {"q":"In a block diagram, the operator z⁻¹ represents…",
+  "opts":["multiplication by the sampling period","a delay of exactly one sample","an integration over one sample","the inverse z-transform"],"a":1,
+  "explain":"The shift theorem \\(x[n-1] \\;\\circ\\!-\\!\\bullet\\; z^{-1}X(z)\\) means \\(z^{-1}\\) is a one-sample delay register — the elementary memory cell from which all digital filters are built."},
+ {"q":"A causal discrete-time filter has a pole at z = 1.05. The filter is…",
+  "opts":["stable, since the pole is close to 1","unstable — its impulse response grows like 1.05ⁿ","stable only for small inputs","marginally stable"],"a":1,
+  "explain":"Each pole p contributes \\(p^n\\) to the impulse response. \\(|p| = 1.05 > 1\\) grows without bound — stability requires ALL poles strictly inside the unit circle, the z-plane image of the left half s-plane."},
+ {"q":"A 4800-point DFT is taken of a signal sampled at 48 kHz. The frequency resolution is…",
+  "opts":["10 Hz","100 Hz","48 Hz","4.8 Hz"],"a":0,
+  "explain":"\\(\\Delta f = f_s/N = 48\\,000/4800 = 10\\,\\mathrm{Hz}\\). Finer resolution requires a longer record (larger N at fixed \\(f_s\\)) — i.e., more observation time."},
+ {"q":"Spectral leakage occurs when…",
+  "opts":["the ADC has too few bits","the signal frequency does not complete an integer number of cycles in the record","the FFT length is not a power of two","the signal exceeds full scale"],"a":1,
+  "explain":"The DFT implicitly repeats the record periodically. An off-bin tone has a discontinuity at the wrap-around point, and its energy smears across all bins via the window's side lobes. On-bin tones hit the Dirichlet kernel's nulls exactly and stay clean."},
+ {"q":"Zero-padding a record before the FFT…",
+  "opts":["improves the true frequency resolution","interpolates the existing spectrum more densely without adding information","reduces spectral leakage","increases the SNR"],"a":1,
+  "explain":"Resolution is set by observation time \\(N/f_s\\) of REAL samples. Zeros add bins between the old ones — a smoother plot of the same DTFT — but two tones inside one main lobe remain merged. More signal, not more zeros."},
+ {"q":"An FIR filter with symmetric coefficients b_k = b_{M−k} is prized because it…",
+  "opts":["needs no multiplications","has exactly linear phase, delaying all frequencies equally","is the cheapest filter per sample","automatically has unity DC gain"],"a":1,
+  "explain":"Symmetric taps give phase \\(-\\Omega M/2\\): a constant group delay of \\(M/2\\) samples. Every component arrives together, so waveform shape is preserved — impossible to achieve exactly with IIR or analog filters."},
+ {"q":"Compared to an FIR filter of similar magnitude selectivity, an IIR filter typically…",
+  "opts":["needs far fewer operations but sacrifices linear phase and guaranteed stability","needs more operations but has better phase","is always preferred in audio mastering","cannot implement a lowpass"],"a":0,
+  "explain":"Poles buy steepness cheaply: order 6 IIR ≈ 100-tap FIR in magnitude. The price: phase is never exactly linear and poles can drift outside the unit circle under coefficient quantization — hence biquad cascades."},
+ {"q":"The bilinear transform is popular for IIR design because it…",
+  "opts":["maps the entire jω axis onto the unit circle with no aliasing of the response","preserves the impulse response exactly","requires no prewarping","makes the filter linear-phase"],"a":0,
+  "explain":"\\(s \\to \\frac{2}{T}\\frac{1-z^{-1}}{1+z^{-1}}\\) maps the analog frequency axis one-to-one onto the unit circle and the left half-plane inside it: stability preserved, no response aliasing. The cost is frequency warping — corrected by prewarping the design frequencies."},
+ {"q":"An ideal 12-bit ADC driven by a full-scale sine achieves an SNR of about…",
+  "opts":["48 dB","74 dB","98 dB","61 dB"],"a":1,
+  "explain":"\\(\\mathrm{SNR} = 6.02 \\cdot 12 + 1.76 \\approx 74\\,\\mathrm{dB}\\) — six dB per bit plus 1.76 dB. (16 bits gives 98 dB; 8 bits gives 50 dB.)"},
+ {"q":"To reduce the sampling rate of a signal by a factor of 4, the correct procedure is…",
+  "opts":["keep every 4th sample, then lowpass filter","lowpass filter to below f_s/8 first, then keep every 4th sample","average groups of 4 samples — no filter needed","take an FFT and discard three quarters of the bins"],"a":1,
+  "explain":"After decimation the Nyquist limit is \\(f_s/8\\); any content above it aliases irreversibly into the kept band. The anti-alias filter must therefore act BEFORE samples are discarded. (Averaging 4 samples IS a filter — but a poor one, with only −13 dB stopband.)"}
+]
+</script>
+</div>
+
+<script>
+document.addEventListener("ee-ready", () => {
+
+  /* --- Widget 1: DFT spectrum explorer (custom) --- */
+  (function () {
+    const N = 256, FS = 8000, DF = FS / N;
+    EE.custom({
+      mount: "#w-dft", height: 340,
+      params: [
+        { key: "f1", label: "Tone 1 frequency", min: 200, max: 3800, step: 5, value: 1000, unit: "Hz", fmt: v => v.toFixed(0) },
+        { key: "f2", label: "Tone 2 frequency", min: 200, max: 3800, step: 5, value: 2500, unit: "Hz", fmt: v => v.toFixed(0) },
+        { key: "a2", label: "Tone 2 amplitude", min: 0, max: 1, step: 0.01, value: 0.05, unit: "×", fmt: v => v.toFixed(2) },
+        { key: "win", label: "Window", type: "select", value: "rect",
+          options: [{ label: "Rectangular", value: "rect" }, { label: "Hann", value: "hann" }] }
+      ],
+      readouts: [
+        { label: "Bin spacing Δf = fs/N", fn: () => DF.toFixed(2) + " Hz" },
+        { label: "Tone 1 position", fn: p => {
+            const b = p.f1 / DF, r = Math.round(b);
+            return Math.abs(b - r) < 0.02 ? "on bin " + r + " — clean" : "bin " + b.toFixed(2) + " — leaks!";
+          } },
+        { label: "First side lobe", fn: p => p.win === "rect" ? "−13 dB (rect)" : "−31 dB (Hann)" }
+      ],
+      draw: (ctx, w, h, p, hp) => {
+        /* window + coherent gain */
+        const win = new Array(N); let wsum = 0;
+        for (let n = 0; n < N; n++) {
+          win[n] = p.win === "hann" ? 0.5 - 0.5 * Math.cos(2 * Math.PI * n / (N - 1)) : 1;
+          wsum += win[n];
+        }
+        /* two-tone signal, tone 1 at full scale */
+        const x = new Array(N);
+        for (let n = 0; n < N; n++)
+          x[n] = (Math.sin(2 * Math.PI * p.f1 * n / FS) + p.a2 * Math.sin(2 * Math.PI * p.f2 * n / FS)) * win[n];
+        /* view + frame */
+        const view = hp.makeView(
+          { min: 0, max: FS / 2, label: "f in Hz" },
+          { min: -90, max: 6, label: "|X[k]| in dB re full scale" });
+        hp.drawFrame(view);
+        hp.drawAnnotations(view, [
+          { type: "vline", x: p.f1, label: "f₁" },
+          { type: "vline", x: p.f2, label: "f₂ (" + (20 * Math.log10(Math.max(p.a2, 1e-6))).toFixed(0) + " dB)" }
+        ]);
+        /* DFT bins 0..N/2 drawn as stems */
+        ctx.save();
+        ctx.beginPath(); ctx.rect(view.padL, view.padT, view.iw, view.ih); ctx.clip();
+        ctx.strokeStyle = hp.color(0); ctx.fillStyle = hp.color(0); ctx.lineWidth = 2;
+        for (let k = 0; k <= N / 2; k++) {
+          let re = 0, im = 0;
+          for (let n = 0; n < N; n++) {
+            const a = 2 * Math.PI * k * n / N;
+            re += x[n] * Math.cos(a); im -= x[n] * Math.sin(a);
+          }
+          const mag = 2 * Math.hypot(re, im) / wsum;          /* on-bin full-scale tone → 0 dB */
+          const dB = Math.max(-90, 20 * Math.log10(Math.max(mag, 1e-9)));
+          const px = view.X(k * DF);
+          ctx.beginPath(); ctx.moveTo(px, view.Y(-90)); ctx.lineTo(px, view.Y(dB)); ctx.stroke();
+          if (dB > -89) { ctx.beginPath(); ctx.arc(px, view.Y(dB), 1.8, 0, 7); ctx.fill(); }
+        }
+        ctx.restore();
+      }
+    });
+  })();
+
+  /* --- Widget 2: moving-average magnitude response --- */
+  EE.functionPlot({
+    mount: "#w-ma", height: 300,
+    x: { min: 0, max: 0.5, label: "normalized frequency f/fs" },
+    y: { min: -50, max: 4, label: "|H| in dB" },
+    params: [
+      { key: "N", label: "Number of taps N", min: 2, max: 32, step: 1, value: 8, unit: "", fmt: v => v.toFixed(0) }
+    ],
+    curves: [
+      { label: "|H(e^jΩ)| moving avg", color: 0, fn: (nu, p) => {
+          if (nu < 1e-9) return 0;
+          const num = Math.sin(Math.PI * p.N * nu), den = p.N * Math.sin(Math.PI * nu);
+          const m = Math.abs(num / den);
+          return Math.max(-50, 20 * Math.log10(Math.max(m, 1e-9)));
+        } }
+    ],
+    annotations: p => [
+      { type: "vline", x: 1 / p.N, label: "first null fs/N" },
+      { type: "hline", y: -3, label: "−3 dB" },
+      { type: "hline", y: -13.3, label: "−13 dB side-lobe ceiling" }
+    ],
+    readouts: [
+      { label: "First null", fn: p => "f/fs = 1/" + p.N + " = " + (1 / p.N).toFixed(3) },
+      { label: "−3 dB cutoff ≈ 0.443/N", fn: p => "f/fs ≈ " + (0.443 / p.N).toFixed(3) },
+      { label: "Group delay (linear phase)", fn: p => ((p.N - 1) / 2).toFixed(1) + " samples" }
+    ]
+  });
+
+  /* --- Widget 3: quantization demo --- */
+  EE.functionPlot({
+    mount: "#w-quant", height: 320,
+    x: { min: 0, max: 1.25, label: "t / T (1.25 periods of a unit sine)" },
+    y: { min: -1.35, max: 1.35, label: "amplitude (full scale = ±1)" },
+    params: [
+      { key: "b", label: "Resolution b", min: 2, max: 16, step: 1, value: 3, unit: "bit", fmt: v => v.toFixed(0) }
+    ],
+    curves: [
+      { label: "", color: 1, dash: [5, 4], fn: t => Math.sin(2 * Math.PI * t) },
+      { label: "quantized (b bits)", color: 0, fn: (t, p) => {
+          const D = Math.pow(2, 1 - p.b);            /* Δ = 2 / 2^b, mid-rise */
+          const v = Math.sin(2 * Math.PI * t);
+          return Math.max(-1 + D / 2, Math.min(1 - D / 2, D * (Math.floor(v / D) + 0.5)));
+        } },
+      { label: "error e[n]", color: 5, fn: (t, p) => {
+          const D = Math.pow(2, 1 - p.b);
+          const v = Math.sin(2 * Math.PI * t);
+          const q = Math.max(-1 + D / 2, Math.min(1 - D / 2, D * (Math.floor(v / D) + 0.5)));
+          return v - q;
+        } }
+    ],
+    readouts: [
+      { label: "Step Δ = 2/2^b", fn: p => EE.fmt(Math.pow(2, 1 - p.b)) },
+      { label: "Levels 2^b", fn: p => Math.pow(2, p.b).toLocaleString("en") },
+      { label: "SNR = 6.02·b + 1.76", fn: p => (6.02 * p.b + 1.76).toFixed(1) + " dB" },
+      { label: "RMS error Δ/√12", fn: p => EE.fmt(Math.pow(2, 1 - p.b) / Math.sqrt(12)) }
+    ]
+  });
+
+  /* --- Widget 4: biquad pole explorer --- */
+  (function () {
+    function magdB(nu, p) {
+      const W = 2 * Math.PI * nu, W0 = 2 * Math.PI * p.nu0, r = p.r;
+      const d1 = Math.hypot(Math.cos(W) - r * Math.cos(W0), Math.sin(W) - r * Math.sin(W0));
+      const d2 = Math.hypot(Math.cos(W) - r * Math.cos(W0), Math.sin(W) + r * Math.sin(W0));
+      return -20 * Math.log10(Math.max(d1 * d2, 1e-9));
+    }
+    EE.functionPlot({
+      mount: "#w-biquad", height: 310,
+      x: { min: 0, max: 0.5, label: "normalized frequency f/fs" },
+      y: p => {
+        const peak = magdB(p.nu0, p);
+        return { min: -25, max: peak + 6, label: "|H| in dB" };
+      },
+      params: [
+        { key: "r", label: "Pole radius r", min: 0.5, max: 0.99, step: 0.005, value: 0.9, unit: "", fmt: v => v.toFixed(3) },
+        { key: "nu0", label: "Pole angle f₀/fs", min: 0.05, max: 0.45, step: 0.005, value: 0.25, unit: "", fmt: v => v.toFixed(3) }
+      ],
+      curves: [
+        { label: "|H(e^jΩ)| resonator", color: 4, fn: (nu, p) => magdB(nu, p) }
+      ],
+      annotations: p => [
+        { type: "vline", x: p.nu0, label: "pole angle f₀/fs" },
+        { type: "hline", y: 0, label: "0 dB" }
+      ],
+      readouts: [
+        { label: "Peak gain", fn: p => magdB(p.nu0, p).toFixed(1) + " dB" },
+        { label: "−3 dB bandwidth ≈ (1−r)/π", fn: p => "Δf/fs ≈ " + ((1 - p.r) / Math.PI).toFixed(4) },
+        { label: "a₁, a₂ of difference eq.", fn: p => {
+            const a1 = -2 * p.r * Math.cos(2 * Math.PI * p.nu0);
+            return (Math.abs(a1) < 5e-4 ? 0 : a1).toFixed(3) + ", " + (p.r * p.r).toFixed(3);
+          } }
+      ]
+    });
+  })();
+
+});
+</script>
+
+</article>
+</main>
+</div>
+</body>
+</html>

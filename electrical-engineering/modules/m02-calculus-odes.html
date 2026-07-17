@@ -1,0 +1,768 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>M02 · Calculus & Differential Equations — EE Knowledge Base</title>
+<link rel="stylesheet" href="../../assets/vendor/katex/katex.min.css">
+<link rel="stylesheet" href="../../assets/css/style.css">
+<script src="../../assets/vendor/katex/katex.min.js" defer></script>
+<script src="../../assets/vendor/katex/auto-render.min.js" defer></script>
+<script src="../curriculum.js" defer></script>
+<script src="../../assets/js/app.js" defer></script>
+<script src="../../assets/js/widgets.js" defer></script>
+</head>
+<body data-module="m02">
+<div class="layout">
+<main class="content">
+<article class="article">
+
+<span class="eyebrow">∑ Mathematical Foundations · Module 02</span>
+<h1>Calculus &amp; Differential Equations <span class="muted" style="font-weight:400;font-size:1.4rem">· <span class="de">Analysis &amp; Differentialgleichungen</span></span></h1>
+<p class="lead">Every signal in electrical engineering is a function of time, and the components that make circuits interesting — capacitors and inductors — respond not to a signal's <em>value</em> but to its <em>rate of change</em>. That makes calculus the native language of circuits, and differential equations the sentences it forms: flip any switch, and the circuit's behavior from that instant on is the solution of an ODE. This module takes you from the Abitur derivative to solving the equations that govern every charging capacitor, every motor start-up, and every ringing filter.</p>
+
+<div class="page-meta">
+  <span><b>Corresponds to:</b> Höhere Mathematik I/II (1st–2nd semester)</span>
+  <span><b>Prerequisites:</b> Module 01</span>
+  <span><b>Study time:</b> ≈ 6–8 h</span>
+</div>
+
+<h2 id="derivative">1. The derivative — change is the signal</h2>
+
+<p>You know the derivative (<span class="de">Ableitung</span>) from the Abitur: the slope of the tangent line. Let us restate it the way an engineer uses it, because in this course the independent variable is nearly always <em>time</em>. For a function \(u(t)\) — think of a voltage measured on an oscilloscope — the average rate of change over an interval \(\Delta t\) is the <strong>difference quotient</strong> (<span class="de">Differenzenquotient</span>), and the derivative is its limit (<span class="de">Grenzwert</span>) as the interval shrinks:</p>
+\[ \frac{\mathrm{d}u}{\mathrm{d}t} = \lim_{\Delta t \to 0} \frac{u(t + \Delta t) - u(t)}{\Delta t}. \]
+<p>Geometrically, the secant through two points on the curve tips over into the tangent. Physically, \(\mathrm{d}u/\mathrm{d}t\) is the <strong>instantaneous rate of change</strong> — the number a speedometer shows, as opposed to the trip computer's average.</p>
+
+<figure>
+  <div class="fig-frame">
+  <svg class="diagram" viewBox="0 0 640 280" role="img" aria-label="Secant line becoming the tangent line as the interval shrinks">
+    <!-- axes -->
+    <line x1="40" y1="240" x2="560" y2="240" class="wire"/>
+    <line x1="40" y1="240" x2="40" y2="20" class="wire"/>
+    <text x="548" y="260" font-size="13" fill="var(--text-soft)">t</text>
+    <text x="18" y="24" font-size="13" fill="var(--text-soft)">u(t)</text>
+    <!-- hint text -->
+    <text x="56" y="34" font-size="12" fill="var(--text-soft)">let Δt → 0: Q slides toward P, the secant tips into the tangent</text>
+    <!-- curve: parabola from (40,240) to (520,33) -->
+    <path d="M40 240 Q 280 240 520 33" fill="none" stroke="var(--text-soft)" stroke-width="2.2"/>
+    <!-- secant through P(200,217) and Q(400,123) -->
+    <line x1="150" y1="240" x2="470" y2="90" stroke="var(--accent-2)" stroke-width="2" stroke-dasharray="7 5"/>
+    <text x="478" y="88" font-size="13" fill="var(--accent-2)">secant</text>
+    <!-- tangent at P, slope -0.288 -->
+    <line x1="110" y1="243" x2="430" y2="151" stroke="var(--accent)" stroke-width="2"/>
+    <text x="438" y="150" font-size="13" fill="var(--accent)">tangent</text>
+    <!-- delta guides -->
+    <line x1="200" y1="217" x2="400" y2="217" stroke="var(--text-faint)" stroke-dasharray="4 4"/>
+    <line x1="400" y1="217" x2="400" y2="123" stroke="var(--text-faint)" stroke-dasharray="4 4"/>
+    <text x="295" y="233" text-anchor="middle" font-size="13" fill="var(--text-soft)">Δt</text>
+    <text x="412" y="175" font-size="13" fill="var(--text-soft)">Δu</text>
+    <!-- points -->
+    <circle cx="200" cy="217" r="5" fill="var(--accent)"/>
+    <text x="188" y="205" font-size="14" font-weight="700" fill="var(--accent)">P</text>
+    <circle cx="400" cy="123" r="5" fill="var(--accent-2)"/>
+    <text x="404" y="111" font-size="14" font-weight="700" fill="var(--accent-2)">Q</text>
+  </svg>
+  </div>
+  <figcaption><b>Fig. 1.1</b> — The derivative as a limit: the secant slope \(\Delta u/\Delta t\) becomes the tangent slope \(\mathrm{d}u/\mathrm{d}t\) as \(\Delta t \to 0\). Leibniz's notation \(\mathrm{d}u/\mathrm{d}t\) deliberately looks like a fraction of infinitesimally small changes — and engineers happily treat it as one.</figcaption>
+</figure>
+
+<p>Why does an electrical engineer care so much? Because two of the three basic passive components are <em>defined</em> by derivatives. A capacitor stores charge in proportion to its voltage, \(q = C\,u\); differentiating both sides (current is the flow rate of charge, Module 04) gives the single most important equation of this module's running example:</p>
+\[ \boxed{\; i_C = C \, \frac{\mathrm{d}u_C}{\mathrm{d}t} \;} \qquad \text{and dually} \qquad u_L = L \, \frac{\mathrm{d}i_L}{\mathrm{d}t}. \]
+<p>Read it aloud: <em>a capacitor carries current only while its voltage is changing</em>. Hold the voltage constant and \(i_C = 0\) — the capacitor just sits there, charged. Try to change the voltage infinitely fast and it demands infinite current — which is why capacitor voltages can never jump. This one derivative already explains half of transient circuit behavior.</p>
+
+<div class="box intuition">
+  <div class="box-title"><span class="ic">💡</span>Intuition: the derivative is a zoom</div>
+  <p>Zoom into any smooth curve far enough and it looks like a straight line — the tangent. The derivative is the slope of that line. This "locally linear" idea is the master key of the whole module: Taylor series (Section 4) exploit it systematically, small-signal transistor models (Module 09) apply it to a diode curve, and linearization of nonlinear plants (Module 14) applies it to whole systems.</p>
+</div>
+
+<div class="widget">
+  <div class="w-head"><span class="ic">🧪</span>Interactive — tangent &amp; derivative explorer <span class="w-tag">simulation</span></div>
+  <div class="w-body">
+    <p class="small mt0">Pick a function and slide the tangent point \(x_0\). The dashed line is the tangent at \(x_0\); the second curve is the derivative \(f'\), computed numerically. Notice: wherever \(f\) has a peak or valley, \(f'\) crosses zero; wherever \(f\) climbs steepest, \(f'\) peaks. For \(e^x\), the two curves lie exactly on top of each other — Section 3 explains why that is no accident.</p>
+    <div id="w-deriv"></div>
+  </div>
+</div>
+
+<h2 id="rules">2. The differentiation toolbox</h2>
+
+<p>Differentiation is completely mechanical — a small set of rules covers every function you will ever meet in engineering. From the Abitur you know the power rule and linearity; make sure the product, quotient and above all the <strong>chain rule</strong> (<span class="de">Kettenregel</span>) are reflexes:</p>
+
+<div class="table-wrap">
+<table class="data">
+<thead><tr><th>Rule</th><th>Formula</th><th>EE reading</th></tr></thead>
+<tbody>
+<tr><td>Linearity</td><td>\( (a f + b g)' = a f' + b g' \)</td><td>differentiation respects superposition — it is a <em>linear operator</em></td></tr>
+<tr><td>Power rule</td><td>\( (t^n)' = n\,t^{\,n-1} \)</td><td>ramps, parabolic sweeps</td></tr>
+<tr><td>Product rule (<span class="de">Produktregel</span>)</td><td>\( (fg)' = f'g + fg' \)</td><td>e.g. instantaneous power \(p = u\,i\) with both varying</td></tr>
+<tr><td>Quotient rule</td><td>\( \left(\frac{f}{g}\right)' = \frac{f'g - fg'}{g^2} \)</td><td>rarely needed — rewrite as product with \(g^{-1}\) when you can</td></tr>
+<tr><td>Chain rule</td><td>\( \big(f(g(t))\big)' = f'(g(t)) \cdot g'(t) \)</td><td>the "inner derivative" — source of the ubiquitous \(\omega\) factors</td></tr>
+</tbody>
+</table>
+</div>
+
+<div class="box pitfall">
+  <div class="box-title"><span class="ic">🚫</span>Classic pitfall: the forgotten inner derivative</div>
+  <p>\( \frac{\mathrm{d}}{\mathrm{d}t}\sin(\omega t) = \omega \cos(\omega t) \) — <b>not</b> \(\cos(\omega t)\). The chain rule's inner derivative \(\omega\) is exactly why capacitor current grows with frequency (\(i = C\,\hat u\,\omega \cos \omega t\)) and why high-frequency design is hard: every derivative multiplies by \(\omega\). Forgetting this factor is the single most common calculus error in first-semester circuit exams — and it is off by a factor of \(\omega\), i.e. often by orders of magnitude, so sanity checks catch it.</p>
+</div>
+
+<div class="example">
+  <div class="ex-head"><span class="ex-tag">Worked example</span> Capacitor current on the 230 V mains</div>
+  <div class="ex-body">
+    <p>A \(C = 1\,\mu\mathrm{F}\) capacitor (e.g. an X-class filter capacitor) sits directly across the European mains: \(u(t) = 325\,\mathrm{V} \cdot \sin(2\pi \cdot 50\,\mathrm{Hz}\cdot t)\) (325 V is the peak of "230 V", Module 05). Find the current.</p>
+    <div class="step"><span class="step-label">Step 1 — differentiate with the chain rule:</span>
+      \( i = C\,\frac{\mathrm{d}u}{\mathrm{d}t} = C \cdot 325 \cdot \underbrace{2\pi \cdot 50}_{\omega \,\approx\, 314\,\mathrm{s^{-1}}} \cdot \cos(\omega t) \).</div>
+    <div class="step"><span class="step-label">Step 2 — numbers:</span>
+      \( \hat i = 10^{-6} \cdot 325 \cdot 314 \approx 0.102\,\mathrm{A} \). So \( i(t) \approx 102\,\mathrm{mA}\cdot\cos(\omega t) \).</div>
+    <div class="step"><span class="step-label">Step 3 — interpret:</span> the current is a <em>cosine</em> while the voltage is a <em>sine</em>: it runs a quarter period ahead. Differentiating a sinusoid shifts it by \(90°\) — memorize this; it becomes the phasor rule \(\underline{I} = \mathrm{j}\omega C\, \underline{U}\) in Module 05.</div>
+    <div class="result-line">\( \hat i \approx 102\,\mathrm{mA}\), leading the voltage by 90°. Sanity check: at 50 Hz a microfarad is "a few kilo-ohms of reactance" (\(1/\omega C \approx 3.2\,\mathrm{k\Omega}\)), and \(325\,\mathrm{V}/3.2\,\mathrm{k\Omega} \approx 0.1\,\mathrm{A}\) ✓</div>
+  </div>
+</div>
+
+<h2 id="royal">3. The royal functions: exponential, logarithm, sine and cosine</h2>
+
+<p>A handful of functions dominate all of electrical engineering, and they earn that role through their behavior under differentiation:</p>
+\[ \frac{\mathrm{d}}{\mathrm{d}x} e^x = e^x, \qquad
+   \frac{\mathrm{d}}{\mathrm{d}x} \ln x = \frac{1}{x}, \qquad
+   \frac{\mathrm{d}}{\mathrm{d}x} \sin x = \cos x, \qquad
+   \frac{\mathrm{d}}{\mathrm{d}x} \cos x = -\sin x. \]
+<p>The exponential function is <strong>its own derivative</strong> — it is the unique function (up to scaling) whose rate of change equals its current value. That is precisely the signature of processes whose speed is proportional to their state: discharge of a capacitor (the fuller, the faster it empties), radioactive decay, cooling. And with a constant in the exponent, the chain rule gives the form you will write hundreds of times:</p>
+\[ \frac{\mathrm{d}}{\mathrm{d}t} e^{st} = s \, e^{st}. \]
+
+<div class="box key">
+  <div class="box-title"><span class="ic">🔑</span>Key idea: \(e^{st}\) is the eigenfunction of \(\mathrm{d}/\mathrm{d}t\)</div>
+  <p>Differentiating \(e^{st}\) returns the <em>same function</em>, merely multiplied by the number \(s\). In the language of Module 01: \(e^{st}\) is an <b>eigenvector</b> of the differentiation operator with eigenvalue \(s\). This is the deepest fact in this module. It means exponentials pass through linear circuits without changing shape — only their amplitude scales. Every solution technique that follows (the exponential ansatz, the characteristic equation) and half the later curriculum (phasors in M05, Laplace transforms in M13, transfer functions in M14) is this observation, systematically exploited. Allow \(s = \mathrm{j}\omega\) to be complex, and sinusoids join the family via Euler's formula (Module 01).</p>
+</div>
+
+<p>The sine–cosine pair rotates into itself under differentiation with period four: \(\sin \to \cos \to -\sin \to -\cos \to \sin\). Differentiate twice and you get the <em>negative</em> of what you started with, \((\sin)'' = -\sin\) — keep that in mind for Section 11, where "second derivative proportional to minus the function" will be the very definition of oscillation.</p>
+
+<div class="box warn">
+  <div class="box-title"><span class="ic">⚠️</span>Radians only</div>
+  <p>The clean derivative \((\sin x)' = \cos x\) holds <b>only when \(x\) is in radians</b> (<span class="de">Bogenmaß</span>). In degrees an ugly factor \(\pi/180\) appears. All of calculus, all small-angle approximations, and every \(\omega t\) in this course are in radians. Set your calculator accordingly — the "degree-mode Taylor series" is a beloved exam trap.</p>
+</div>
+
+<h2 id="taylor">4. Taylor series — every smooth function is locally a polynomial</h2>
+
+<p>Section 1 said: zoomed in far enough, every smooth curve is a line. The <strong>Taylor series</strong> (<span class="de">Taylorreihe</span>) refines this: near a point, a smooth function is approximated to any desired accuracy by a polynomial whose coefficients are the function's derivatives at that point. Around \(x_0 = 0\) (then also called a Maclaurin series):</p>
+\[ f(x) = f(0) + f'(0)\,x + \frac{f''(0)}{2!}x^2 + \frac{f'''(0)}{3!}x^3 + \dots
+       = \sum_{n=0}^{\infty} \frac{f^{(n)}(0)}{n!}\,x^n. \]
+<p>The logic: the polynomial is built to match the function's value, slope, curvature, … at the point. The three series every engineer knows by heart:</p>
+\[ e^x = 1 + x + \frac{x^2}{2!} + \frac{x^3}{3!} + \dots \qquad
+   \sin x = x - \frac{x^3}{3!} + \frac{x^5}{5!} - \dots \qquad
+   \cos x = 1 - \frac{x^2}{2!} + \frac{x^4}{4!} - \dots \]
+
+<p>Truncating after the first nontrivial term gives the <strong>small-signal approximations</strong> that engineers use daily:</p>
+\[ \boxed{\;\sin x \approx x, \qquad \cos x \approx 1 - \tfrac{x^2}{2}, \qquad e^x \approx 1 + x \qquad (|x| \ll 1)\;} \]
+<p>How good is \(\sin x \approx x\)? The first neglected term is \(x^3/6\), so the relative error is about \(x^2/6\): at \(x = 0.1\,\mathrm{rad}\) (\(5.7°\)) the error is a mere 0.17 %. This single approximation linearizes the pendulum, the phase detector in a PLL (Module 21), and the power-transmission angle equation (Module 19). Engineering approximation culture in one sentence: <em>know the first neglected term, and you know your error.</em></p>
+
+<div class="box history">
+  <div class="box-title"><span class="ic">📜</span>Taylor series prove Euler's formula</div>
+  <p>In Module 01 you met \(e^{\mathrm{j}\varphi} = \cos\varphi + \mathrm{j}\sin\varphi\). Now you can prove it: substitute \(x = \mathrm{j}\varphi\) into the \(e^x\) series and use \(\mathrm{j}^2 = -1\). The even powers of \(\varphi\) collect (with alternating signs) into exactly the cosine series; the odd powers, each carrying one factor \(\mathrm{j}\), collect into \(\mathrm{j}\) times the sine series. Three power series, one identity — this is why Feynman called it "the most remarkable formula in mathematics". It will do heavy lifting again in Section 11, where complex roots of the characteristic equation turn into decaying oscillations.</p>
+</div>
+
+<div class="widget">
+  <div class="w-head"><span class="ic">🧪</span>Interactive — Taylor approximation, order by order <span class="w-tag">simulation</span></div>
+  <div class="w-body">
+    <p class="small mt0">Slide the maximum polynomial degree \(N\) and watch the partial sum hug the true function over a growing interval. For \(\sin x\) note how each new (odd) term buys roughly one more half-period of accuracy — and how badly a truncated polynomial fails <em>outside</em> its zone of validity: polynomials must run off to \(\pm\infty\), a sine must not. Approximations have a domain; respect it.</p>
+    <div id="w-taylor"></div>
+  </div>
+</div>
+
+<h2 id="integral">5. Integration — accumulation, and the fundamental theorem</h2>
+
+<p>The derivative asks "how fast is it changing right now?". The <strong>integral</strong> (<span class="de">Integral</span>) asks the reverse: "given the rate, how much has accumulated?". The definite integral is the limit of a sum of slices — value × small duration, added up:</p>
+\[ \int_{t_1}^{t_2} i(t)\,\mathrm{d}t = \lim_{\Delta t \to 0} \sum_k i(t_k)\,\Delta t . \]
+<p>The two EE readings you will use constantly:</p>
+\[ \boxed{\; Q = \int_{t_1}^{t_2} i(t)\,\mathrm{d}t \;} \qquad\qquad
+   \boxed{\; W = \int_{t_1}^{t_2} p(t)\,\mathrm{d}t \;} \]
+<p>— charge is accumulated current, energy is accumulated power.</p>
+<p>Your electricity meter <em>is</em> an integrator: it accumulates \(p(t)\) into kWh. A battery's "3000 mAh" rating is an integral of current over time. A coulomb counter in a laptop's fuel gauge literally computes \(\int i\,\mathrm{d}t\) numerically, exactly like the sum above.</p>
+
+<figure>
+  <div class="fig-frame">
+  <svg class="diagram" viewBox="0 0 620 250" role="img" aria-label="Area under a current curve equals accumulated charge">
+    <!-- axes -->
+    <line x1="50" y1="200" x2="580" y2="200" class="wire"/>
+    <line x1="50" y1="200" x2="50" y2="28" class="wire"/>
+    <text x="568" y="220" font-size="13" fill="var(--text-soft)">t</text>
+    <text x="24" y="34" font-size="13" fill="var(--text-soft)">i(t)</text>
+    <!-- filled area -->
+    <path d="M50 200 L50 145 C 150 55, 250 95, 350 105 C 420 112, 480 150, 540 128 L540 200 Z"
+          fill="var(--accent)" opacity="0.14" stroke="none"/>
+    <!-- curve -->
+    <path d="M50 145 C 150 55, 250 95, 350 105 C 420 112, 480 150, 540 128"
+          fill="none" stroke="var(--accent)" stroke-width="2.4"/>
+    <!-- one slice -->
+    <rect x="292" y="106" width="16" height="94" fill="var(--accent-2)" opacity="0.45"/>
+    <text x="316" y="92" font-size="12" fill="var(--accent-2)">one slice: i(t)·dt</text>
+    <!-- big label -->
+    <text x="180" y="172" font-size="15" fill="var(--text-soft)">area = Q = ∫ i dt</text>
+    <!-- limits -->
+    <text x="50" y="220" text-anchor="middle" font-size="13" fill="var(--text-soft)">t₁</text>
+    <text x="540" y="220" text-anchor="middle" font-size="13" fill="var(--text-soft)">t₂</text>
+    <line x1="540" y1="200" x2="540" y2="128" stroke="var(--text-faint)" stroke-dasharray="4 4"/>
+  </svg>
+  </div>
+  <figcaption><b>Fig. 5.1</b> — The definite integral as accumulation: slice the time axis, multiply each instant's current by the slice width \(\mathrm{d}t\), and sum. The area under a current curve is charge; under a power curve, energy. Negative excursions of the curve subtract — a discharging battery integrates <em>down</em>.</figcaption>
+</figure>
+
+<p>Computing such areas slice-by-slice would be hopeless. The <strong>fundamental theorem of calculus</strong> (<span class="de">Hauptsatz der Differential- und Integralrechnung</span>) rescues us: integration and differentiation are inverse operations. If \(F\) is an <strong>antiderivative</strong> (<span class="de">Stammfunktion</span>) of \(f\), i.e. \(F' = f\), then</p>
+\[ \boxed{\;\int_a^b f(x)\,\mathrm{d}x = F(b) - F(a)\;} \]
+<p>— an infinite sum of slices collapses to two function evaluations. It is worth pausing at how remarkable this is: the "area problem" (Archimedes) and the "tangent problem" (Fermat) look unrelated, and the theorem says they are one problem, mirrored. Indefinite integrals carry a free constant \(+C\), since any constant differentiates to zero; physically, \(C\) is the initial state — a capacitor's voltage is \(u_C(t) = \frac{1}{C}\int i\,\mathrm{d}t + u_C(0)\), and forgetting \(u_C(0)\) means forgetting that the capacitor may already be charged.</p>
+
+<h2 id="techniques">6. Integration techniques — the two you actually need</h2>
+
+<p>Differentiation is mechanical; integration is an art. Fortunately, two techniques — each a differentiation rule read backwards — cover almost every integral in this curriculum. (For the rest, engineers unapologetically use tables and computer algebra.)</p>
+
+<h3 id="substitution">6.1 Substitution — the chain rule backwards</h3>
+<p><span class="de">Substitution</span>: if the integrand contains a function <em>and</em> its derivative, set \(v = g(t)\), \(\mathrm{d}v = g'(t)\,\mathrm{d}t\), and the integral simplifies:</p>
+\[ \int f\big(g(t)\big)\,g'(t)\,\mathrm{d}t = \int f(v)\,\mathrm{d}v. \]
+
+<div class="example">
+  <div class="ex-head"><span class="ex-tag">Worked example</span> The energy stored in a capacitor — by substitution</div>
+  <div class="ex-body">
+    <p>Charge a capacitor from \(0\) to a final voltage \(U\). How much energy is stored? Power delivered <em>to</em> the capacitor is \(p = u \, i = u \cdot C\,\frac{\mathrm{d}u}{\mathrm{d}t}\); integrate it over the whole charging process.</p>
+    <div class="step"><span class="step-label">Step 1 — set up the integral:</span>
+      \( W = \int_0^{\infty} u(t)\, C\, \frac{\mathrm{d}u}{\mathrm{d}t}\, \mathrm{d}t \). The integrand contains \(u\) and its derivative — substitution territory.</div>
+    <div class="step"><span class="step-label">Step 2 — substitute \(v = u(t)\):</span> then \(\mathrm{d}v = \frac{\mathrm{d}u}{\mathrm{d}t}\mathrm{d}t\), and the time integral becomes a voltage integral. The limits transform too: \(t: 0 \to \infty\) becomes \(v: 0 \to U\).
+      \[ W = C \int_0^{U} v \, \mathrm{d}v = C \cdot \frac{v^2}{2}\Big|_0^U . \]</div>
+    <div class="step"><span class="step-label">Step 3 — evaluate:</span>
+      \( W = \tfrac{1}{2} C U^2 \). Notice the result does not depend on <em>how</em> the voltage rose — only on the final value. That is the hallmark of a stored (state) energy.</div>
+    <div class="result-line">\( \boxed{W = \tfrac12 C U^2} \) — e.g. a 10 mF capacitor at 400 V (a traction inverter's DC link) stores 800 J: enough to be lethal minutes after switch-off. This formula returns in M03 (field energy) and M06.</div>
+  </div>
+</div>
+
+<h3 id="byparts">6.2 Integration by parts — the product rule backwards</h3>
+<p><span class="de">Partielle Integration</span>: integrate the product rule \((fg)' = f'g + fg'\) and rearrange:</p>
+\[ \int f\,g'\,\mathrm{d}x = f\,g - \int f'\,g\,\mathrm{d}x. \]
+<p>Strategy: choose as \(f\) the factor that gets <em>simpler</em> when differentiated (polynomials!), and as \(g'\) the factor you can integrate easily (\(e^{st}\), \(\sin\), \(\cos\)).</p>
+
+<div class="example">
+  <div class="ex-head"><span class="ex-tag">Worked example</span> \(\int_0^\infty t\,e^{-t/\tau}\,\mathrm{d}t\) — by parts</div>
+  <div class="ex-body">
+    <p>This integral appears whenever an exponential decay is weighted by time — e.g. computing the mean duration of an RC discharge pulse, or a ramp driving an RC filter (Module 13). Evaluate it for \(\tau &gt; 0\).</p>
+    <div class="step"><span class="step-label">Step 1 — choose parts:</span> \(f = t\) (differentiates to 1 — simpler), \(g' = e^{-t/\tau}\) (integrates to \(g = -\tau e^{-t/\tau}\)).</div>
+    <div class="step"><span class="step-label">Step 2 — apply the formula:</span>
+      \[ \int_0^{\infty} t\,e^{-t/\tau}\mathrm{d}t = \Big[-\tau\, t\, e^{-t/\tau}\Big]_0^{\infty} + \tau \int_0^{\infty} e^{-t/\tau}\,\mathrm{d}t. \]</div>
+    <div class="step"><span class="step-label">Step 3 — evaluate both pieces:</span> the boundary term vanishes at both ends (the exponential beats the linear \(t\) as \(t\to\infty\) — exponentials always win against polynomials). The remaining integral is \(\tau \cdot \big[-\tau e^{-t/\tau}\big]_0^\infty = \tau \cdot \tau\).</div>
+    <div class="result-line">\( \int_0^\infty t\,e^{-t/\tau}\mathrm{d}t = \tau^2 \). Sanity check by units: \([t]\cdot[\mathrm{d}t] = \mathrm{s^2}\) ✓. Dividing by \(\int_0^\infty e^{-t/\tau}\mathrm{d}t = \tau\) says the "center of mass" of an exponential decay sits at \(t = \tau\) — a useful mental image for the time constant.</div>
+  </div>
+</div>
+
+<h2 id="partial">7. Functions of several variables — partial derivatives</h2>
+
+<p>Real quantities rarely depend on one variable. A resistor's power \(P(U, R) = U^2/R\) depends on two; a MOSFET's drain current on three. The <strong>partial derivative</strong> (<span class="de">partielle Ableitung</span>) \(\partial f/\partial x\) differentiates with respect to one variable <em>while holding the others fixed</em> — the curly \(\partial\) signals that ceteris-paribus condition:</p>
+\[ \frac{\partial P}{\partial U} = \frac{2U}{R} \quad (R \text{ held fixed}), \qquad
+   \frac{\partial P}{\partial R} = -\frac{U^2}{R^2} \quad (U \text{ held fixed}). \]
+<p>For small simultaneous changes, the effects superpose — this is the <strong>total differential</strong> (<span class="de">totales Differential</span>), the multivariable version of "locally linear":</p>
+\[ \mathrm{d}P \approx \frac{\partial P}{\partial U}\,\mathrm{d}U + \frac{\partial P}{\partial R}\,\mathrm{d}R. \]
+<p>This is the engineer's <em>sensitivity analysis</em> and the basis of error propagation: which tolerance hurts more, the supply's or the resistor's? Compute both partials, multiply by the tolerances, compare. Collecting all partial derivatives into a vector gives the <strong>gradient</strong> \(\nabla f = (\partial f/\partial x,\; \partial f/\partial y,\; \partial f/\partial z)^{\mathsf T}\), which points in the direction of steepest increase. You will meet it twice more, in starring roles: the electric field is the negative gradient of the potential, \(\vec E = -\nabla \varphi\) (Module 03), and gradient <em>descent</em> is how neural networks and adaptive filters learn (Module 22). Here, all we need is fluency in taking partials — differentiate normally, treat the other symbols as constants.</p>
+
+<div class="box german">
+  <div class="box-title"><span class="ic">🇩🇪</span>Vokabeln</div>
+  <p>derivative = <span class="de">Ableitung</span> · difference quotient = <span class="de">Differenzenquotient</span> · chain rule = <span class="de">Kettenregel</span> · antiderivative = <span class="de">Stammfunktion</span> · fundamental theorem = <span class="de">Hauptsatz der Differential- und Integralrechnung</span> · integration by parts = <span class="de">partielle Integration</span> · power/Taylor series = <span class="de">Potenzreihe/Taylorreihe</span> · partial derivative = <span class="de">partielle Ableitung</span> · ordinary differential equation (ODE) = <span class="de">gewöhnliche Differentialgleichung (DGL)</span> · separation of variables = <span class="de">Trennung der Variablen</span> · homogeneous/particular solution = <span class="de">homogene/partikuläre Lösung</span> · initial condition = <span class="de">Anfangsbedingung</span> · time constant = <span class="de">Zeitkonstante</span> · characteristic equation = <span class="de">charakteristische Gleichung</span> · damping = <span class="de">Dämpfung</span> · critically damped case = <span class="de">aperiodischer Grenzfall</span> · transient = <span class="de">Einschwingvorgang/Ausgleichsvorgang</span></p>
+</div>
+
+<h2 id="odes">8. Differential equations — the language of dynamic circuits</h2>
+
+<p>Now the heart of the module. An <strong>ordinary differential equation</strong> (ODE, <span class="de">gewöhnliche Differentialgleichung</span>, universally abbreviated <em>DGL</em> in German lectures) is an equation that relates an unknown <em>function</em> to its own derivatives:</p>
+\[ \text{e.g.} \qquad \frac{\mathrm{d}u}{\mathrm{d}t} = -\frac{u}{\tau}, \qquad \text{or} \qquad y'' + 2\zeta\omega_0\, y' + \omega_0^2\, y = 0 . \]
+<p>"Ordinary" means one independent variable (for us: time \(t\)); partial differential equations, with several (space <em>and</em> time — Maxwell!), wait until Module 03 and beyond. The <strong>order</strong> of an ODE is the highest derivative appearing; it equals the number of initial conditions needed and — no coincidence — the number of independent energy stores in the circuit.</p>
+
+<div class="box key">
+  <div class="box-title"><span class="ic">🔑</span>Key idea: why EVERY dynamic circuit is an ODE</div>
+  <p>Kirchhoff's laws (Module 04) are algebraic: sums of voltages and currents equal zero <em>at every instant</em>. But the moment a circuit contains a capacitor (\(i = C\,\mathrm{d}u/\mathrm{d}t\)) or an inductor (\(u = L\,\mathrm{d}i/\mathrm{d}t\)), those sums contain derivatives — and the Kirchhoff equations <em>become</em> differential equations. One energy store → first-order ODE. Two stores (RLC) → second order. A power grid with thousands of machines → a system of thousands of coupled ODEs (Module 19). The ODE is the circuit's local law ("given my state now, here is how I change"); the solution is its entire future, the <span class="de">Einschwingvorgang</span>. Solving ODEs is not a math elective for engineers — it is what "analyzing a circuit after a switching event" literally means.</p>
+</div>
+
+<p>Vocabulary we will use throughout: an ODE is <strong>linear</strong> if \(y\) and its derivatives appear only to the first power and not multiplied together (all circuits made of R, L, C and sources are linear); it has <strong>constant coefficients</strong> if the component values do not change with time; it is <strong>homogeneous</strong> (<span class="de">homogen</span>) if the source-free version — right-hand side zero — is meant. Linear constant-coefficient ODEs are the ones we can solve completely, and mercifully they are also the ones circuits produce.</p>
+
+<figure>
+  <div class="fig-frame">
+  <svg class="diagram" viewBox="0 0 620 250" role="img" aria-label="RC charging circuit with switch, resistor and capacitor">
+    <!-- source -->
+    <circle cx="80" cy="130" r="26" fill="none" stroke="var(--text-soft)" stroke-width="2"/>
+    <line x1="80" y1="104" x2="80" y2="156" class="wire"/>
+    <text x="40" y="135" text-anchor="middle" font-size="14">U</text>
+    <!-- wires: top loop -->
+    <path class="wire" d="M80 104 V50 H150"/>
+    <!-- switch: blade open -->
+    <circle cx="150" cy="50" r="3.5" class="node"/>
+    <line x1="150" y1="50" x2="196" y2="30" class="wire"/>
+    <circle cx="205" cy="50" r="3.5" class="node"/>
+    <text x="178" y="18" text-anchor="middle" font-size="13" fill="var(--text-soft)">S closes at t = 0</text>
+    <!-- wire to R -->
+    <path class="wire" d="M205 50 H270"/>
+    <!-- R box -->
+    <rect x="270" y="38" width="70" height="24" fill="none" stroke="var(--text-soft)" stroke-width="2"/>
+    <text x="305" y="28" text-anchor="middle" font-size="14">R</text>
+    <!-- u_R arrow above R -->
+    <line x1="270" y1="80" x2="340" y2="80" stroke="var(--accent-2)" stroke-width="2" marker-end="url(#m2arrB)"/>
+    <text x="305" y="98" text-anchor="middle" font-size="13" fill="var(--accent-2)">u_R = R·i</text>
+    <!-- wire R to right -->
+    <path class="wire" d="M340 50 H520 V96"/>
+    <!-- current arrow -->
+    <line x1="410" y1="50" x2="460" y2="50" stroke="var(--accent)" stroke-width="2.2" marker-end="url(#m2arrA)"/>
+    <text x="435" y="38" text-anchor="middle" font-size="13" fill="var(--accent)">i = C·du_C/dt</text>
+    <!-- capacitor plates -->
+    <line x1="494" y1="96" x2="546" y2="96" stroke="var(--text-soft)" stroke-width="3"/>
+    <line x1="494" y1="114" x2="546" y2="114" stroke="var(--text-soft)" stroke-width="3"/>
+    <text x="560" y="110" font-size="14">C</text>
+    <!-- wire cap to bottom -->
+    <path class="wire" d="M520 114 V210 H80 V156"/>
+    <!-- u_C arrow -->
+    <line x1="472" y1="88" x2="472" y2="130" stroke="var(--accent)" stroke-width="2" marker-end="url(#m2arrA)"/>
+    <text x="452" y="112" text-anchor="end" font-size="13" fill="var(--accent)">u_C</text>
+    <defs>
+      <marker id="m2arrA" markerWidth="9" markerHeight="9" refX="7" refY="4.5" orient="auto"><path d="M0 0 L8 4.5 L0 9 z" fill="var(--accent)"/></marker>
+      <marker id="m2arrB" markerWidth="9" markerHeight="9" refX="7" refY="4.5" orient="auto"><path d="M0 0 L8 4.5 L0 9 z" fill="var(--accent-2)"/></marker>
+    </defs>
+  </svg>
+  </div>
+  <figcaption><b>Fig. 8.1</b> — THE circuit of this module: at \(t=0\) the switch connects an uncharged capacitor, through a resistor, to a constant source \(U\). KVL around the loop: \(U = u_R + u_C = R\,i + u_C\). Substituting \(i = C\,\mathrm{d}u_C/\mathrm{d}t\) turns this algebraic law into the first-order ODE \(RC\,\dot u_C + u_C = U\).</figcaption>
+</figure>
+
+<h2 id="separation">9. Separation of variables — the first solution technique</h2>
+
+<p>The simplest ODEs let you sort everything containing the unknown \(u\) to one side and everything containing \(t\) to the other, then integrate both sides — <strong>separation of variables</strong> (<span class="de">Trennung der Variablen</span>). Take the source-free version of Fig. 8.1: a capacitor charged to \(U_0\), discharging through \(R\) (set \(U = 0\)):</p>
+\[ RC\,\frac{\mathrm{d}u_C}{\mathrm{d}t} + u_C = 0
+   \quad\Longrightarrow\quad
+   \frac{\mathrm{d}u_C}{u_C} = -\frac{\mathrm{d}t}{RC}. \]
+<p>Integrate both sides (left over \(u_C\), right over \(t\)):</p>
+\[ \ln|u_C| = -\frac{t}{RC} + C_1
+   \quad\Longrightarrow\quad
+   u_C(t) = A\, e^{-t/RC}, \qquad A = e^{C_1}. \]
+<p>The initial condition (<span class="de">Anfangsbedingung</span>) \(u_C(0) = U_0\) fixes \(A = U_0\):</p>
+\[ \boxed{\; u_C(t) = U_0 \, e^{-t/\tau}, \qquad \tau = RC \;} \]
+<p>There it is: the exponential discharge, with the <strong>time constant</strong> (<span class="de">Zeitkonstante</span>) \(\tau = RC\). Check the units: ohms × farads = (V/A)·(As/V) = seconds ✓. Every \(\tau\), the voltage falls to \(e^{-1} \approx 36.8\,\%\) of its current value; after \(5\tau\) less than 1 % remains, which engineers round to "done". This is precisely the "rate proportional to state" behavior promised in Section 3 — the fuller the capacitor, the harder it pushes current through \(R\), the faster it empties.</p>
+
+<div class="box intuition">
+  <div class="box-title"><span class="ic">💡</span>Intuition: an ODE is a local rule, the solution its life story</div>
+  <p>The ODE never mentions the exponential — it only says "at every instant, decay at a rate proportional to your current value". The exponential curve <em>emerges</em> from applying that local rule continuously, the same way compound interest emerges from "grow by x % of the current balance". This is also exactly how a circuit simulator works: SPICE knows only the local rule and steps forward in tiny \(\Delta t\) increments — numerical integration of the ODE. When you solve it in closed form, you are outperforming the simulator with a pencil.</p>
+</div>
+
+<h2 id="firstorder">10. Linear first-order ODEs — RC charging solved completely</h2>
+
+<p>Separation fails as soon as a source term makes the equation inhomogeneous. For the workhorse class — <strong>linear, constant coefficients, constant drive</strong> — the universal strategy is:</p>
+\[ \text{general solution} \;=\; \underbrace{\text{homogeneous solution}}_{\text{transient, dies out}} \;+\; \underbrace{\text{particular solution}}_{\text{steady state, remains}} \]
+<p>The homogeneous solution (<span class="de">homogene Lösung</span>) solves the equation with the right side zeroed and carries the free constant; the particular solution (<span class="de">partikuläre Lösung</span>) is <em>any one</em> solution of the full equation — for constant drive, simply the constant steady state. Superposition (the ODE is linear!) guarantees the sum solves the full equation. Let us execute this completely on Fig. 8.1 — the most important derivation of the module.</p>
+
+<div class="example">
+  <div class="ex-head"><span class="ex-tag">Worked example</span> RC charging — the canonical first-order transient</div>
+  <div class="ex-body">
+    <p>In Fig. 8.1 the switch closes at \(t = 0\) with the capacitor empty: \(u_C(0) = 0\). Solve \( RC\,\dot u_C + u_C = U \) and evaluate for \(R = 10\,\mathrm{k\Omega}\), \(C = 100\,\mu\mathrm{F}\), \(U = 10\,\mathrm{V}\).</p>
+    <div class="step"><span class="step-label">Step 1 — homogeneous solution:</span> solve \(RC\,\dot u_h + u_h = 0\). From Section 9 (or the ansatz of Section 11): \( u_h(t) = A\,e^{-t/\tau} \) with \(\tau = RC\). \(A\) is still free — do <em>not</em> fix it yet.</div>
+    <div class="step"><span class="step-label">Step 2 — particular solution:</span> the drive is constant, so try a constant: \(u_p = k\). Then \(\dot u_p = 0\), and the ODE gives \(k = U\). Physically obvious: after the transient, no current flows, no drop across \(R\), the capacitor sits at the full source voltage. The steady state <em>is</em> the particular solution.</div>
+    <div class="step"><span class="step-label">Step 3 — superpose and apply the initial condition:</span>
+      \( u_C(t) = U + A\,e^{-t/\tau} \). Now impose \(u_C(0) = 0\): \(0 = U + A \Rightarrow A = -U\). (Imposing the IC on the homogeneous part alone — before adding \(u_p\) — is a classic error; the IC constrains the <em>total</em> solution.)</div>
+    <div class="step"><span class="step-label">Step 4 — result and numbers:</span>
+      \[ \boxed{\; u_C(t) = U\left(1 - e^{-t/\tau}\right), \qquad \tau = RC \;} \]
+      Here \(\tau = 10^4 \cdot 10^{-4} = 1\,\mathrm{s}\). At \(t = \tau\): \(u_C = 10\,(1 - e^{-1}) \approx 6.32\,\mathrm{V}\) (the famous 63.2 %). Time to 99 %: \(e^{-t/\tau} = 0.01 \Rightarrow t = \tau \ln 100 \approx 4.6\,\mathrm{s}\). The current is \( i = C\,\dot u_C = \frac{U}{R} e^{-t/\tau} \): it <em>starts</em> at the maximum \(U/R = 1\,\mathrm{mA}\) (empty capacitor ≙ short circuit) and decays to zero (full capacitor ≙ open circuit).</div>
+    <div class="result-line">\(u_C(t) = 10\,\mathrm{V}\cdot(1 - e^{-t/1\,\mathrm{s}})\); 63 % after 1 s, "done" after ≈ 5 s. Sanity: both limits check out — \(u_C(0)=0\) ✓, \(u_C(\infty)=U\) ✓, and the initial slope is \(U/\tau = 10\,\mathrm{V/s}\), i.e. the tangent at the origin would reach \(U\) after exactly one \(\tau\).</div>
+  </div>
+</div>
+
+<p>That last remark is the standard oscilloscope trick: extend the tangent at the start of any exponential transient until it hits the final value; the time where it hits <em>is</em> \(\tau\). Play with it below.</p>
+
+<div class="widget">
+  <div class="w-head"><span class="ic">🧪</span>Interactive — the first-order step response family <span class="w-tag">simulation</span></div>
+  <div class="w-body">
+    <p class="small mt0">\(u_C(t) = U(1 - e^{-t/\tau})\) with adjustable \(U\) and \(\tau\). The dashed line is the tangent at \(t=0\): it always intersects the final value at exactly \(t = \tau\) — the graphical definition of the time constant. Note that changing \(U\) scales the curve but never changes its <em>shape</em>: linearity at work.</p>
+    <div id="w-rc"></div>
+  </div>
+</div>
+
+<div class="box pitfall">
+  <div class="box-title"><span class="ic">🚫</span>Classic pitfall: initial condition before superposition</div>
+  <p>The exam killer of this chapter: students find \(u_h = A e^{-t/\tau}\), immediately set \(A = u_C(0)\), and <em>then</em> add the particular solution — producing \(u_C(t) = U + 0 \cdot e^{-t/\tau} = U\), a capacitor that charges instantly. Wrong order! First build the <b>complete</b> general solution \(u_p + u_h\), then apply the initial condition to it. The free constant belongs to the whole solution, not to its homogeneous part.</p>
+</div>
+
+<div class="box history">
+  <div class="box-title"><span class="ic">📜</span>Newton, Leibniz — and Heaviside's shortcut</div>
+  <p>Calculus was invented twice, by Newton (1665, "fluxions") and Leibniz (1675, whose superior \(\mathrm{d}/\mathrm{d}t\) and \(\int\) notation we use), triggering the nastiest priority dispute in science history. Two centuries later the self-taught telegraph engineer Oliver Heaviside, impatient with solving transmission-line ODEs longhand, simply treated \(\mathrm{d}/\mathrm{d}t\) as an algebraic symbol \(p\) and calculated with it — to the horror of mathematicians and the delight of engineers. Asked to justify the missing rigor he replied: <em>"Shall I refuse my dinner because I do not fully understand the process of digestion?"</em> His operational calculus was later legitimized as the Laplace transform — the subject of Module 13, where ODEs become algebra and this module's transients are solved in three lines.</p>
+</div>
+
+<h2 id="ansatz">11. The exponential ansatz and second-order ODEs</h2>
+
+<h3 id="charpoly">11.1 The characteristic equation</h3>
+<p>Section 3's key idea — \(e^{st}\) is the eigenfunction of \(\mathrm{d}/\mathrm{d}t\) — now becomes a solution method, the <strong>exponential ansatz</strong> (<span class="de">Exponentialansatz</span>; the German word <em>Ansatz</em> = "educated trial form" is used untranslated in English math). For any linear homogeneous ODE with constant coefficients, try \(y = e^{st}\). Every derivative just multiplies by \(s\), so the ODE collapses into a polynomial. Second order:</p>
+\[ y'' + 2\zeta\omega_0\,y' + \omega_0^2\,y = 0
+   \;\xrightarrow{\;y\,=\,e^{st}\;}\;
+   \left(s^2 + 2\zeta\omega_0\,s + \omega_0^2\right)e^{st} = 0 . \]
+<p>Since \(e^{st} \neq 0\), the bracket must vanish — the <strong>characteristic equation</strong> (<span class="de">charakteristische Gleichung</span>):</p>
+\[ \boxed{\; s^2 + 2\zeta\omega_0\, s + \omega_0^2 = 0 \quad\Longrightarrow\quad s_{1,2} = \omega_0\left(-\zeta \pm \sqrt{\zeta^2 - 1}\,\right) \;} \]
+<p>We have written the coefficients in the <strong>normal form</strong> used across all of engineering: \(\omega_0\) is the undamped natural frequency (<span class="de">Kennkreisfrequenz</span>), \(\zeta\) (zeta, sometimes \(D\) or \(\vartheta\) in German texts) the dimensionless <strong>damping ratio</strong> (<span class="de">Dämpfungsgrad</span>). Where does such an equation come from? Add an inductor to Fig. 8.1: KVL for the series RLC circuit gives \(L\,\dot i + R\,i + u_C = U\) with \(i = C \dot u_C\), hence</p>
+\[ LC\,\ddot u_C + RC\,\dot u_C + u_C = U
+   \qquad\Longrightarrow\qquad
+   \omega_0 = \frac{1}{\sqrt{LC}}, \quad \zeta = \frac{R}{2}\sqrt{\frac{C}{L}} . \]
+<p>Two energy stores (C stores charge, L stores momentum-like current) → second order. The physics of the oscillation: the capacitor and inductor toss energy back and forth — like a mass on a spring — while the resistor taxes every pass.</p>
+
+<h3 id="trichotomy">11.2 The damping trichotomy — three kinds of roots, three behaviors</h3>
+<p>Everything hinges on the discriminant \(\zeta^2 - 1\), i.e. on whether the roots are real and distinct, real and repeated, or complex conjugates:</p>
+
+<div class="table-wrap">
+<table class="data">
+<thead><tr><th>Case</th><th>Roots \(s_{1,2}\)</th><th>General solution</th><th>Behavior</th></tr></thead>
+<tbody>
+<tr><td>\(\zeta &gt; 1\) — <b>overdamped</b> (<span class="de">Kriechfall</span>)</td>
+    <td>two real, negative, distinct</td>
+    <td>\( A_1 e^{s_1 t} + A_2 e^{s_2 t} \)</td>
+    <td>sluggish creep to the final value, no overshoot</td></tr>
+<tr><td>\(\zeta = 1\) — <b>critically damped</b> (<span class="de">aperiodischer Grenzfall</span>)</td>
+    <td>double root \(s = -\omega_0\)</td>
+    <td>\( (A_1 + A_2\, t)\, e^{-\omega_0 t} \)</td>
+    <td>fastest settling without any overshoot</td></tr>
+<tr><td>\(0 &lt; \zeta &lt; 1\) — <b>underdamped</b> (<span class="de">Schwingfall</span>)</td>
+    <td>complex pair \( -\zeta\omega_0 \pm \mathrm{j}\omega_d \)</td>
+    <td>\( e^{-\zeta\omega_0 t}\big(A_1 \cos \omega_d t + A_2 \sin \omega_d t\big) \)</td>
+    <td>decaying oscillation ("ringing") at \(\omega_d = \omega_0\sqrt{1-\zeta^2}\)</td></tr>
+<tr><td>\(\zeta = 0\) — undamped</td>
+    <td>\(\pm \mathrm{j}\omega_0\)</td>
+    <td>\( A_1 \cos \omega_0 t + A_2 \sin \omega_0 t \)</td>
+    <td>ideal LC oscillation, forever (no R to tax it)</td></tr>
+</tbody>
+</table>
+</div>
+
+<p>The complex case deserves a second look, because it shows Module 01's machinery paying off. The roots \(s = -\zeta\omega_0 \pm \mathrm{j}\omega_d\) give formal solutions \(e^{st} = e^{-\zeta\omega_0 t}\,e^{\pm\mathrm{j}\omega_d t}\); Euler's formula unpacks \(e^{\mathrm{j}\omega_d t}\) into \(\cos \omega_d t + \mathrm{j}\sin\omega_d t\), and real linear combinations yield the real solution in the table. Read the anatomy of a complex root directly: <em>real part = decay rate, imaginary part = oscillation frequency</em>. That sentence is the Rosetta stone for pole locations in control theory (Module 14) — a pole drifting toward the imaginary axis means ringing that barely decays; a pole crossing into the right half-plane means an amplitude that <em>grows</em>: instability.</p>
+
+<div class="example">
+  <div class="ex-head"><span class="ex-tag">Worked example</span> Will this RLC circuit ring?</div>
+  <div class="ex-body">
+    <p>A series RLC circuit has \(L = 10\,\mathrm{mH}\), \(C = 100\,\mathrm{nF}\), \(R = 200\,\Omega\) (typical snubber-design numbers). Classify the response and find the ringing frequency if any.</p>
+    <div class="step"><span class="step-label">Step 1 — natural frequency:</span>
+      \( \omega_0 = \frac{1}{\sqrt{LC}} = \frac{1}{\sqrt{10^{-2}\cdot 10^{-7}}} = \frac{1}{\sqrt{10^{-9}}} \approx 3.16 \cdot 10^4\,\mathrm{s^{-1}} \), i.e. \(f_0 = \omega_0/2\pi \approx 5.0\,\mathrm{kHz}\).</div>
+    <div class="step"><span class="step-label">Step 2 — damping ratio:</span>
+      \( \zeta = \frac{R}{2}\sqrt{\frac{C}{L}} = \frac{200}{2}\sqrt{\frac{10^{-7}}{10^{-2}}} = 100 \cdot 3.16\cdot 10^{-3} \approx 0.316 \). Since \(\zeta &lt; 1\): <b>underdamped — it rings</b>.</div>
+    <div class="step"><span class="step-label">Step 3 — ringing frequency and decay:</span>
+      \( \omega_d = \omega_0 \sqrt{1 - 0.1} \approx 3.0\cdot 10^4\,\mathrm{s^{-1}} \) (\(f_d \approx 4.8\,\mathrm{kHz}\)); envelope time constant \(1/(\zeta\omega_0) = 1/10^4 = 100\,\mu\mathrm{s}\).</div>
+    <div class="step"><span class="step-label">Step 4 — what R would kill the ringing?</span> Critical damping needs \(\zeta = 1\):
+      \( R_{crit} = 2\sqrt{L/C} = 2\sqrt{10^{-2}/10^{-7}} = 2 \cdot 316 \approx 632\,\Omega \).</div>
+    <div class="result-line">Underdamped: ≈ 4.8 kHz ringing decaying with \(\tau_{env} = 100\,\mu s\); raising \(R\) to ≈ 632 Ω would just suppress it. This is <em>exactly</em> the calculation behind every snubber network and every scope-probe compensation — and the full RLC story continues in Module 06.</div>
+  </div>
+</div>
+
+<div class="widget">
+  <div class="w-head"><span class="ic">🧪</span>Interactive — the damping trichotomy <span class="w-tag">simulation</span></div>
+  <div class="w-body">
+    <p class="small mt0">The solution of \( y'' + 2\zeta\omega_0 y' + \omega_0^2 y = 0 \) with \(y(0)=1\), \(y'(0)=0\) — e.g. a capacitor released from an initial charge inside an RLC loop. Sweep \(\zeta\) through 1 and watch oscillation die into creep; the readouts show the roots morphing from a complex pair into two real exponents. Try \(\zeta = 0.05\) (a good resonator, Module 06), \(\zeta = 0.7\) (the control engineer's favorite compromise, Module 14), \(\zeta = 1\), and \(\zeta = 2\).</p>
+    <div id="w-damping"></div>
+  </div>
+</div>
+
+<div class="box warn">
+  <div class="box-title"><span class="ic">⚠️</span>Fast ≠ well-damped</div>
+  <p>Two different things hide in \(s = -\zeta\omega_0 \pm \mathrm{j}\omega_d\): \(\omega_0\) sets the <em>time scale</em> (how fast everything happens), \(\zeta\) sets the <em>shape</em> (how much overshoot/ringing). A system can be lightning-fast and horribly ringy, or slow and perfectly smooth. When a datasheet says "response time", always ask which of the two was meant. Control engineering (Module 14) will spend weeks placing these two numbers — i.e. the roots — where you want them.</p>
+</div>
+
+<h2 id="summary">12. Formula summary — <span class="de">Formelsammlung</span></h2>
+
+<div class="table-wrap">
+<table class="data">
+<thead><tr><th>Concept</th><th>Formula</th><th>Remember as</th></tr></thead>
+<tbody>
+<tr><td>Derivative</td><td>\( f'(t) = \lim_{\Delta t \to 0} \frac{f(t+\Delta t)-f(t)}{\Delta t} \)</td><td>instantaneous rate; tangent slope</td></tr>
+<tr><td>Capacitor / inductor law</td><td>\( i_C = C\,\dot u_C, \quad u_L = L\,\dot i_L \)</td><td>storage elements respond to <em>change</em></td></tr>
+<tr><td>Chain rule</td><td>\( (f(g(t)))' = f'(g)\cdot g' \)</td><td>never forget the inner \(\omega\)</td></tr>
+<tr><td>Royal derivatives</td><td>\( (e^{st})' = s\,e^{st}, \; (\sin \omega t)' = \omega\cos\omega t \)</td><td>\(e^{st}\): eigenfunction of \(\mathrm{d}/\mathrm{d}t\)</td></tr>
+<tr><td>Taylor series</td><td>\( f(x) = \sum_n \frac{f^{(n)}(0)}{n!}x^n \)</td><td>\(\sin x \approx x\), \(e^x \approx 1+x\) for small \(x\)</td></tr>
+<tr><td>Integral as accumulation</td><td>\( Q = \int i\,\mathrm{d}t, \quad W = \int p\,\mathrm{d}t \)</td><td>area under the curve</td></tr>
+<tr><td>Fundamental theorem</td><td>\( \int_a^b f\,\mathrm{d}x = F(b)-F(a),\; F'=f \)</td><td>integration ⇄ differentiation</td></tr>
+<tr><td>Substitution / by parts</td><td>\( \int f(g)g'\mathrm{d}t = \int f\,\mathrm{d}v; \quad \int fg' = fg - \int f'g \)</td><td>chain / product rule backwards</td></tr>
+<tr><td>1st-order ODE recipe</td><td>\( y = y_p + A e^{-t/\tau} \), IC fixes \(A\) <em>last</em></td><td>steady state + dying transient</td></tr>
+<tr><td>RC charging</td><td>\( u_C = U(1-e^{-t/\tau}),\; \tau = RC \)</td><td>63 % at \(\tau\), done at \(5\tau\); tangent trick</td></tr>
+<tr><td>Characteristic equation</td><td>\( s^2 + 2\zeta\omega_0 s + \omega_0^2 = 0 \)</td><td>ansatz \(e^{st}\) turns ODE into algebra</td></tr>
+<tr><td>Damping trichotomy</td><td>\( \zeta \gtrless 1 \): creep / limit case / ringing at \(\omega_d = \omega_0\sqrt{1-\zeta^2}\)</td><td>Re(s) = decay, Im(s) = oscillation</td></tr>
+<tr><td>Series RLC parameters</td><td>\( \omega_0 = 1/\sqrt{LC}, \quad \zeta = \tfrac{R}{2}\sqrt{C/L} \)</td><td>\(R_{crit} = 2\sqrt{L/C}\)</td></tr>
+</tbody>
+</table>
+</div>
+
+<h2 id="exercises">13. Exercises</h2>
+<p>Work these on paper before opening the solutions — fluency in this module is what makes Modules 05, 06, 13 and 14 feel easy instead of mysterious.</p>
+
+<div class="exercise">
+  <p class="ex-q"><span class="ex-num">E1</span>A capacitor \(C = 47\,\mu\mathrm{F}\) carries the voltage \(u_C(t) = 12\,\mathrm{V}\cdot e^{-t/2\,\mathrm{ms}}\). Find the current \(i(t)\) and its value at \(t=0\). What does the sign tell you? <span class="diff easy">easy</span></p>
+  <details><summary>Show solution</summary>
+    <div class="solution">
+      Chain rule with inner derivative \(-1/(2\,\mathrm{ms}) = -500\,\mathrm{s^{-1}}\):
+      \[ i = C\,\frac{\mathrm{d}u_C}{\mathrm{d}t} = 47\cdot 10^{-6} \cdot 12 \cdot (-500)\, e^{-t/2\,\mathrm{ms}} \approx -0.282\,\mathrm{A}\cdot e^{-t/2\,\mathrm{ms}} . \]
+      \(i(0) \approx -282\,\mathrm{mA}\). The minus sign (with the arrow conventions of Fig. 8.1) means current flows <em>out</em> of the capacitor — it is discharging, as the decaying voltage already announced. Sanity: this is exactly \(u/R\) discharge behavior with \(R = \tau/C = 2\,\mathrm{ms}/47\,\mu\mathrm{F} \approx 42.6\,\Omega\), and \(12/42.6 \approx 0.28\) A ✓.
+    </div>
+  </details>
+</div>
+
+<div class="exercise">
+  <p class="ex-q"><span class="ex-num">E2</span>During a capacitor-bank test, the current into the bank ramps linearly from 0 to 3 A over 10 s, then stops. How much charge was delivered, in coulombs and in mAh? If the bank is \(C = 5\,\mathrm{F}\) (a supercap) and started empty, what voltage did it reach? <span class="diff easy">easy</span></p>
+  <details><summary>Show solution</summary>
+    <div class="solution">
+      Charge = area under \(i(t)\): a triangle, \(Q = \tfrac12 \cdot 3\,\mathrm{A} \cdot 10\,\mathrm{s} = 15\,\mathrm{C}\).
+      In battery units: \(15\,\mathrm{C} = 15\,\mathrm{As} = \frac{15}{3.6}\,\mathrm{mAh} \approx 4.2\,\mathrm{mAh}\) (1 mAh = 3.6 C).
+      Voltage: \(u = Q/C = 15/5 = 3\,\mathrm{V}\).
+      Remark: no calculus rules needed — recognizing "integral = area" and using geometry is the fastest route, and exactly how you read charge off an oscilloscope trace.
+    </div>
+  </details>
+</div>
+
+<div class="exercise">
+  <p class="ex-q"><span class="ex-num">E3</span>Using the Taylor series of \(\sin x\): (a) estimate the relative error of the small-angle approximation \(\sin x \approx x\) at \(x = 10°\); (b) up to what angle is the error below 1 %? <span class="diff med">medium</span></p>
+  <details><summary>Show solution</summary>
+    <div class="solution">
+      Degrees to radians first (Section 3's warning!): \(10° = 0.1745\,\mathrm{rad}\).
+      (a) First neglected term: \(x^3/6\). Relative error \(\approx \frac{x^3/6}{x} = \frac{x^2}{6} = \frac{0.1745^2}{6} \approx 0.51\,\% \).
+      Check exactly: \(\sin(0.1745) = 0.17365\); \((0.1745-0.17365)/0.17365 \approx 0.49\,\%\) ✓ — the leading-term estimate is excellent.
+      (b) \( \frac{x^2}{6} &lt; 0.01 \Rightarrow x &lt; \sqrt{0.06} \approx 0.245\,\mathrm{rad} \approx 14° \).
+      Real-world remark: this is why "small-signal" analyses of phase detectors and power-grid load angles quietly assume operation within ±15° or so — beyond that, the linear model visibly lies.
+    </div>
+  </details>
+</div>
+
+<div class="exercise">
+  <p class="ex-q"><span class="ex-num">E4</span>A \(10\,\mu\mathrm{F}\) capacitor charged to 9 V discharges through \(R = 1\,\mathrm{M\Omega}\) (e.g. a voltmeter's input resistance). Derive \(u_C(t)\) by separation of variables and find the time until \(u_C = 1\,\mathrm{V}\). <span class="diff med">medium</span></p>
+  <details><summary>Show solution</summary>
+    <div class="solution">
+      KVL: \(RC\,\dot u_C + u_C = 0\). Separate: \(\frac{\mathrm{d}u_C}{u_C} = -\frac{\mathrm{d}t}{RC}\); integrate: \(\ln u_C = -t/RC + C_1\), so \(u_C = A e^{-t/\tau}\) with \(\tau = RC = 10^6 \cdot 10^{-5} = 10\,\mathrm{s}\). IC \(u_C(0) = 9\,\mathrm{V}\) gives
+      \[ u_C(t) = 9\,\mathrm{V}\, e^{-t/10\,\mathrm{s}} . \]
+      Solve for \(u_C = 1\,\mathrm{V}\): \(e^{-t/10} = 1/9 \Rightarrow t = 10 \ln 9 \approx 22\,\mathrm{s} \).
+      Sanity: 9 V → 1 V is a factor 9 ≈ \(e^{2.2}\), so ≈ 2.2 time constants ✓. Practical remark: this is why a capacitor "mysteriously loses" its charge while you probe it — the meter itself is the discharge path.
+    </div>
+  </details>
+</div>
+
+<div class="exercise">
+  <p class="ex-q"><span class="ex-num">E5</span>The kettle of Module 04 dissipates \(P(U,R) = U^2/R\) with \(U = 230\,\mathrm{V}\), \(R = 26.5\,\Omega\). Using partial derivatives and the total differential, estimate the change in power if the mains rises by 10 V <em>and</em> the element's resistance rises by 1 Ω (it heats up). Which effect dominates? <span class="diff med">medium</span></p>
+  <details><summary>Show solution</summary>
+    <div class="solution">
+      Partials: \( \frac{\partial P}{\partial U} = \frac{2U}{R} = \frac{460}{26.5} \approx 17.4\,\mathrm{W/V} \); \( \frac{\partial P}{\partial R} = -\frac{U^2}{R^2} = -\frac{52900}{702} \approx -75.3\,\mathrm{W/\Omega} \).
+      Total differential: \( \Delta P \approx 17.4 \cdot 10 + (-75.3)\cdot 1 \approx 174 - 75 = +99\,\mathrm{W} \).
+      The voltage effect dominates here — but note the leverage of \(R\): a mere 1 Ω (≈ 3.8 %) costs 75 W.
+      Check against the exact value: \(P_{new} = 240^2/27.5 \approx 2095\,\mathrm{W}\) vs. \(P_{old} = 230^2/26.5 \approx 1996\,\mathrm{W}\): exact \(\Delta P \approx 99\,\mathrm{W}\) ✓ — the linear estimate is spot-on because the changes are small.
+    </div>
+  </details>
+</div>
+
+<div class="exercise">
+  <p class="ex-q"><span class="ex-num">E6</span>At \(t=0\), a voltage \(U = 12\,\mathrm{V}\) is switched onto a series connection of \(R = 50\,\Omega\) and a coil \(L = 100\,\mathrm{mH}\) (a relay). Set up the ODE for the current, solve it completely (homogeneous + particular + initial condition \(i(0)=0\)), and find when the current reaches 90 % of its final value. <span class="diff hard">challenge</span></p>
+  <details><summary>Show solution</summary>
+    <div class="solution">
+      KVL: \(U = L\,\dot i + R\,i\), i.e. \( \frac{L}{R}\,\dot i + i = \frac{U}{R} \) — same form as RC charging with \(\tau = L/R\).
+      <b>Homogeneous:</b> \(i_h = A e^{-t/\tau}\), \(\tau = L/R = 0.1/50 = 2\,\mathrm{ms}\).
+      <b>Particular</b> (constant drive → constant trial): \(i_p = U/R = 0.24\,\mathrm{A}\) (in steady state the coil is just a wire: \(\dot i = 0 \Rightarrow u_L = 0\)).
+      <b>Superpose, then IC:</b> \(i(t) = 0.24 + A e^{-t/\tau}\); \(i(0)=0 \Rightarrow A = -0.24\):
+      \[ i(t) = 0.24\,\mathrm{A}\left(1 - e^{-t/2\,\mathrm{ms}}\right). \]
+      90 %: \(e^{-t/\tau} = 0.1 \Rightarrow t = \tau \ln 10 \approx 2.3\,\tau \approx 4.6\,\mathrm{ms}\).
+      Sanity: duality check — the inductor current does exactly what the capacitor <em>voltage</em> did, because \(i_L\), like \(u_C\), is a state that cannot jump. Real-world remark: those ≈ 5 ms are a relay's electrical pick-up delay; and the stored \( \tfrac12 L i^2 \approx 2.9\,\mathrm{mJ}\) is why relays need a freewheeling diode — that energy must go <em>somewhere</em> at turn-off.
+    </div>
+  </details>
+</div>
+
+<div class="exercise">
+  <p class="ex-q"><span class="ex-num">E7</span>Solve \( y'' + 4y' + 13y = 0 \) with \( y(0) = 1, \; y'(0) = 0 \). Classify the damping, give \(\omega_0\), \(\zeta\), and sketch the qualitative behavior. <span class="diff hard">challenge</span></p>
+  <details><summary>Show solution</summary>
+    <div class="solution">
+      <b>Characteristic equation:</b> \(s^2 + 4s + 13 = 0 \Rightarrow s = \frac{-4 \pm \sqrt{16-52}}{2} = -2 \pm 3\mathrm{j}\).
+      Complex pair → <b>underdamped</b>. Comparing with the normal form: \(\omega_0^2 = 13 \Rightarrow \omega_0 = \sqrt{13} \approx 3.61\), \(2\zeta\omega_0 = 4 \Rightarrow \zeta = 2/\sqrt{13} \approx 0.55\); \(\omega_d = 3\).
+      <b>General solution:</b> \( y = e^{-2t}(A\cos 3t + B\sin 3t) \).
+      <b>ICs:</b> \(y(0)=1 \Rightarrow A = 1\). Differentiate (product + chain rule!): \( y' = e^{-2t}\big((-2A+3B)\cos 3t + (-2B-3A)\sin 3t\big) \); \(y'(0) = -2A + 3B = 0 \Rightarrow B = \tfrac23\).
+      \[ \boxed{\; y(t) = e^{-2t}\left(\cos 3t + \tfrac23 \sin 3t\right) \;} \]
+      Behavior: oscillation at 3 rad/s inside an envelope decaying with time constant \(1/2\) s — about 2–3 visible swings before it is gone (\(\zeta = 0.55\) is moderately damped). Check: \(y(0) = 1\) ✓; initial slope zero because the \(-2\cos\) and \(+2\cos\) contributions cancel ✓. Read the roots like an engineer: Re = −2 → decay rate; Im = ±3 → ringing frequency.
+    </div>
+  </details>
+</div>
+
+<h2 id="quiz">14. Self-assessment</h2>
+
+<div class="quiz" data-quiz-title="Module 02 — Self-test">
+<script type="application/json">
+[
+ {"q":"The derivative of \\(\\sin(3t)\\) with respect to t is…",
+  "opts":["\\(\\cos(3t)\\)","\\(3\\cos(3t)\\)","\\(-3\\cos(3t)\\)","\\(\\tfrac{1}{3}\\cos(3t)\\)"],"a":1,
+  "explain":"Chain rule: outer derivative \\(\\cos(3t)\\) times inner derivative 3. Forgetting the inner factor is the classic error — it is why every differentiation of a sinusoid brings out a factor \\(\\omega\\)."},
+ {"q":"The voltage across a 10 µF capacitor rises linearly from 0 to 5 V in 2 ms. The current during the ramp is…",
+  "opts":["25 mA, constant","25 mA, rising linearly","2.5 mA, constant","zero — the voltage is not sinusoidal"],"a":0,
+  "explain":"\\(i = C\\,\\mathrm{d}u/\\mathrm{d}t = 10^{-5} \\cdot (5/0.002) = 25\\,\\mathrm{mA}\\). A linear ramp has a constant slope, so the current is constant — capacitors respond to the rate of change, whatever the waveform."},
+ {"q":"Why is \\(\\sin x \\approx x\\) for small x?",
+  "opts":["because sine is periodic","because the Taylor series of sin x starts with x, and the next term \\(x^3/6\\) is negligible for small x","because sin x is always smaller than x","it only holds in degrees"],"a":1,
+  "explain":"\\(\\sin x = x - x^3/6 + \\dots\\); for small \\(|x|\\) the cubic term is tiny (relative error \\(\\approx x^2/6\\)). And it requires radians — in degrees the series has an extra \\(\\pi/180\\) factor."},
+ {"q":"The physical meaning of \\(\\int_0^T i(t)\\,\\mathrm{d}t\\) is…",
+  "opts":["the average current","the total charge that passed in time T","the dissipated energy","the peak current"],"a":1,
+  "explain":"Current is charge per time, so accumulating (integrating) it over time gives charge: \\(Q = \\int i\\,\\mathrm{d}t\\). Energy would be \\(\\int p\\,\\mathrm{d}t\\); the average current is \\(Q/T\\) — the integral divided by the duration."},
+ {"q":"The fundamental theorem of calculus states that…",
+  "opts":["every function has a Taylor series","\\(\\int_a^b f\\,\\mathrm{d}x = F(b) - F(a)\\) where \\(F' = f\\)","differentiation and integration both make functions smoother","every integral can be solved by substitution"],"a":1,
+  "explain":"Integration and differentiation are inverse operations: a definite integral is evaluated from any antiderivative at just the two endpoints. This collapses an infinite sum of slices into two function evaluations."},
+ {"q":"Which function solves \\(\\dot y = -2y\\)?",
+  "opts":["\\(y = C\\,e^{-2t}\\)","\\(y = -2t + C\\)","\\(y = C\\,e^{2t}\\)","\\(y = C\\cos 2t\\)"],"a":0,
+  "explain":"\"Rate proportional to the state, negative constant\" is exponential decay: differentiate \\(C e^{-2t}\\) and you get \\(-2 \\cdot C e^{-2t} = -2y\\) ✓. Option (b) has constant slope, option (c) grows, option (d) solves a second-order equation."},
+ {"q":"An RC charging circuit has \\(\\tau = RC = 3\\,\\mathrm{ms}\\). At \\(t = 3\\,\\mathrm{ms}\\) after switch-on, the capacitor voltage has reached about…",
+  "opts":["37 % of the source voltage","50 %","63 %","100 %"],"a":2,
+  "explain":"\\(u_C(\\tau) = U(1 - e^{-1}) \\approx 0.632\\,U\\). The complementary 36.8 % is what remains during a discharge after one \\(\\tau\\). Full charge takes about \\(5\\tau\\) in engineering practice."},
+ {"q":"The characteristic equation of \\(y'' + 5y' + 6y = 0\\) has roots…",
+  "opts":["\\(s = -2, -3\\): overdamped, two decaying exponentials","\\(s = 2, 3\\): growing exponentials","\\(s = -2.5 \\pm j\\): decaying oscillation","a double root at \\(s = -2.5\\)"],"a":0,
+  "explain":"\\(s^2 + 5s + 6 = (s+2)(s+3) = 0\\). Two distinct negative real roots → overdamped: \\(y = A_1 e^{-2t} + A_2 e^{-3t}\\), a creep with no ringing. The discriminant \\(25 - 24 > 0\\) already ruled out complex roots."},
+ {"q":"A characteristic equation yields \\(s_{1,2} = -1 \\pm 4\\mathrm{j}\\). The homogeneous solution is…",
+  "opts":["a pure oscillation at 4 rad/s","an oscillation at 4 rad/s decaying with time constant 1 s","a growing oscillation","two decaying exponentials with \\(\\tau = 1\\,\\mathrm{s}\\) and \\(\\tau = 0.25\\,\\mathrm{s}\\)"],"a":1,
+  "explain":"Read complex roots like an engineer: real part −1 → envelope \\(e^{-t}\\) (decay, \\(\\tau = 1\\) s); imaginary part ±4 → oscillation at \\(\\omega_d = 4\\) rad/s: \\(y = e^{-t}(A\\cos 4t + B\\sin 4t)\\). Growth would require a positive real part."},
+ {"q":"When solving \\(RC\\,\\dot u_C + u_C = U\\) with \\(u_C(0) = 0\\), a student writes \\(u_h = A e^{-t/\\tau}\\), sets \\(A = 0\\) from the initial condition, then adds \\(u_p = U\\). What went wrong?",
+  "opts":["nothing — the answer \\(u_C = U\\) is correct","the particular solution should be 0, not U","the initial condition must be applied to the complete solution \\(u_p + u_h\\), not to the homogeneous part alone","separation of variables should have been used instead"],"a":2,
+  "explain":"The free constant belongs to the total solution. Correct order: \\(u_C = U + A e^{-t/\\tau}\\), then \\(u_C(0)=0\\) gives \\(A = -U\\), hence \\(u_C = U(1 - e^{-t/\\tau})\\). The student's \"answer\" claims the capacitor charges instantly — physically impossible, which is how you catch it."}
+]
+</script>
+</div>
+
+<script>
+document.addEventListener("ee-ready", () => {
+
+  /* ---------- helpers ---------- */
+  const nderiv = (f) => (x) => (f(x + 1e-4) - f(x - 1e-4)) / 2e-4;
+  const FUNCS = {
+    sin:  { f: (x) => Math.sin(x),                     x: { min: -6.5, max: 6.5 }, y: { min: -1.7,  max: 1.7  }, name: "sin x" },
+    exp:  { f: (x) => Math.exp(x),                     x: { min: -3,   max: 3   }, y: { min: -2,    max: 21   }, name: "eˣ" },
+    sq:   { f: (x) => x * x,                           x: { min: -3,   max: 3   }, y: { min: -7,    max: 10   }, name: "x²" },
+    dsin: { f: (x) => Math.exp(-x) * Math.sin(3 * x),  x: { min: 0,    max: 6   }, y: { min: -3.3,  max: 3.3  }, name: "e⁻ˣ sin 3x" }
+  };
+  const clampX0 = (p) => {
+    const r = FUNCS[p.f].x;
+    return Math.min(Math.max(p.x0, r.min + 0.1), r.max - 0.1);
+  };
+
+  /* ---------- 1. Tangent & derivative explorer ---------- */
+  EE.functionPlot({
+    mount: "#w-deriv", height: 300,
+    x: (p) => ({ min: FUNCS[p.f].x.min, max: FUNCS[p.f].x.max, label: "x" }),
+    y: (p) => ({ min: FUNCS[p.f].y.min, max: FUNCS[p.f].y.max, label: "f, f′" }),
+    params: [
+      { key: "f", label: "Function f(x)", type: "select", value: "sin",
+        options: [
+          { label: "sin x", value: "sin" },
+          { label: "eˣ (its own derivative!)", value: "exp" },
+          { label: "x²", value: "sq" },
+          { label: "e⁻ˣ · sin 3x (damped ring)", value: "dsin" }
+        ] },
+      { key: "x0", label: "Tangent point x₀", min: -3, max: 3, step: 0.05, value: 0.6, unit: "", fmt: (v) => v.toFixed(2) }
+    ],
+    curves: [
+      { label: "f(x)",  color: 0, fn: (x, p) => FUNCS[p.f].f(x) },
+      { label: "f′(x) (numeric)", color: 1, fn: (x, p) => nderiv(FUNCS[p.f].f)(x) },
+      { label: "tangent at x₀", color: 2, dash: [6, 4],
+        fn: (x, p) => { const x0 = clampX0(p), f = FUNCS[p.f].f;
+          return f(x0) + nderiv(f)(x0) * (x - x0); } }
+    ],
+    annotations: (p) => {
+      const x0 = clampX0(p), f = FUNCS[p.f].f;
+      return [{ type: "point", x: x0, y: f(x0), label: "x₀" }];
+    },
+    readouts: [
+      { label: "f(x₀)",  fn: (p) => EE.fmt(FUNCS[p.f].f(clampX0(p))) },
+      { label: "slope f′(x₀)", fn: (p) => EE.fmt(nderiv(FUNCS[p.f].f)(clampX0(p))) },
+      { label: "check for eˣ", fn: (p) => p.f === "exp" ? "f = f′ exactly" : "—" }
+    ]
+  });
+
+  /* ---------- 2. Taylor partial sums ---------- */
+  const FACT = [1]; for (let k = 1; k <= 20; k++) FACT[k] = FACT[k - 1] * k;
+  const taylor = (fkey, N, x) => {
+    let s = 0;
+    if (fkey === "sin") {
+      for (let n = 1; n <= N; n += 2) s += ((n - 1) % 4 === 0 ? 1 : -1) * Math.pow(x, n) / FACT[n];
+    } else {
+      for (let n = 0; n <= N; n++) s += Math.pow(x, n) / FACT[n];
+    }
+    return s;
+  };
+  EE.functionPlot({
+    mount: "#w-taylor", height: 300,
+    x: (p) => p.f === "sin" ? { min: -8, max: 8, label: "x" } : { min: -4, max: 4, label: "x" },
+    y: (p) => p.f === "sin" ? { min: -3, max: 3, label: "f(x)" } : { min: -4, max: 26, label: "f(x)" },
+    params: [
+      { key: "f", label: "Function", type: "select", value: "sin",
+        options: [{ label: "sin x", value: "sin" }, { label: "eˣ", value: "exp" }] },
+      { key: "N", label: "Max. polynomial degree N", min: 1, max: 13, step: 1, value: 3, unit: "", fmt: (v) => v.toFixed(0) }
+    ],
+    curves: [
+      { label: "true function", color: 0, fn: (x, p) => p.f === "sin" ? Math.sin(x) : Math.exp(x) },
+      { label: "Taylor partial sum", color: 5, dash: [6, 4], fn: (x, p) => taylor(p.f, Math.round(p.N), x) }
+    ],
+    annotations: (p) => [{ type: "vline", x: 0, label: "expansion point" }],
+    readouts: [
+      { label: "Terms kept", fn: (p) => {
+          const N = Math.round(p.N);
+          return p.f === "sin" ? String(Math.ceil(N / 2)) + " odd terms" : String(N + 1) + " terms"; } },
+      { label: "Error at x = 1", fn: (p) => {
+          const N = Math.round(p.N);
+          const t = taylor(p.f, N, 1), tr = p.f === "sin" ? Math.sin(1) : Math.exp(1);
+          return EE.fmt(Math.abs(t - tr)); } },
+      { label: "Error at x = 3", fn: (p) => {
+          const N = Math.round(p.N);
+          const t = taylor(p.f, N, 3), tr = p.f === "sin" ? Math.sin(3) : Math.exp(3);
+          return EE.fmt(Math.abs(t - tr)); } }
+    ]
+  });
+
+  /* ---------- 3. First-order step response family ---------- */
+  EE.functionPlot({
+    mount: "#w-rc", height: 300,
+    x: { min: 0, max: 20, label: "t in ms" },
+    y: (p) => ({ min: 0, max: p.U * 1.3, label: "u_C in V" }),
+    params: [
+      { key: "U",   label: "Source voltage U", min: 1, max: 24, step: 0.5, value: 10, unit: "V",  fmt: (v) => v.toFixed(1) },
+      { key: "tau", label: "Time constant τ = RC", min: 0.5, max: 8, step: 0.1, value: 3, unit: "ms", fmt: (v) => v.toFixed(1) }
+    ],
+    curves: [
+      { label: "u_C(t)", color: 0, fn: (t, p) => p.U * (1 - Math.exp(-t / p.tau)) },
+      { label: "initial tangent", color: 2, dash: [6, 4], fn: (t, p) => Math.min(p.U * t / p.tau, p.U * 1.3) }
+    ],
+    annotations: (p) => [
+      { type: "hline", y: p.U, label: "U (final value)" },
+      { type: "vline", x: p.tau, label: "t = τ" },
+      { type: "point", x: p.tau, y: p.U * (1 - Math.exp(-1)), label: "63.2 %" }
+    ],
+    readouts: [
+      { label: "u_C(τ)", fn: (p) => (p.U * (1 - Math.exp(-1))).toFixed(2) + " V" },
+      { label: "Initial slope U/τ", fn: (p) => (p.U / p.tau).toFixed(2) + " V/ms" },
+      { label: "99 % reached at", fn: (p) => (4.605 * p.tau).toFixed(1) + " ms (≈ 4.6 τ)" }
+    ]
+  });
+
+  /* ---------- 4. Damping trichotomy ---------- */
+  const y2nd = (t, z, w) => {
+    if (Math.abs(z - 1) < 1e-3) return Math.exp(-w * t) * (1 + w * t);
+    if (z < 1) {
+      const wd = w * Math.sqrt(1 - z * z);
+      return Math.exp(-z * w * t) * (Math.cos(wd * t) + (z * w / wd) * Math.sin(wd * t));
+    }
+    const a = w * Math.sqrt(z * z - 1), s1 = -z * w + a, s2 = -z * w - a;
+    return (s2 * Math.exp(s1 * t) - s1 * Math.exp(s2 * t)) / (s2 - s1);
+  };
+  EE.functionPlot({
+    mount: "#w-damping", height: 320,
+    x: { min: 0, max: 10, label: "t in s" },
+    y: { min: -1.15, max: 1.15, label: "y(t)" },
+    params: [
+      { key: "zeta", label: "Damping ratio ζ", min: 0, max: 2, step: 0.01, value: 0.2, unit: "", fmt: (v) => v.toFixed(2) },
+      { key: "w0", label: "Natural frequency ω₀", min: 1, max: 10, step: 0.1, value: 4, unit: "rad/s", fmt: (v) => v.toFixed(1) }
+    ],
+    curves: [
+      { label: "y(t), y(0)=1, y′(0)=0", color: 0, fn: (t, p) => y2nd(t, p.zeta, p.w0) }
+    ],
+    annotations: (p) => [{ type: "hline", y: 0, label: "" }],
+    readouts: [
+      { label: "Regime", fn: (p) => Math.abs(p.zeta - 1) < 1e-3 ? "critically damped (aperiodischer Grenzfall)"
+          : (p.zeta < 1 ? (p.zeta === 0 ? "undamped oscillation" : "underdamped — rings") : "overdamped — creeps") },
+      { label: "Roots s₁,₂", fn: (p) => {
+          const z = p.zeta, w = p.w0;
+          if (Math.abs(z - 1) < 1e-3) return "double root at −" + EE.fmt(w);
+          if (z < 1) { const wd = w * Math.sqrt(1 - z * z);
+            return "−" + EE.fmt(z * w) + " ± j" + EE.fmt(wd); }
+          const a = w * Math.sqrt(z * z - 1);
+          return EE.fmt(-z * w + a) + " and " + EE.fmt(-z * w - a); } },
+      { label: "Ringing freq. ω_d", fn: (p) => p.zeta < 1
+          ? EE.fmt(p.w0 * Math.sqrt(1 - p.zeta * p.zeta)) + " rad/s" : "— (no oscillation)" }
+    ]
+  });
+
+});
+</script>
+
+</article>
+</main>
+</div>
+</body>
+</html>

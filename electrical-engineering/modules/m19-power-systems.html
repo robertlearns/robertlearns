@@ -1,0 +1,962 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>M19 · Power Systems &amp; the Grid — EE Knowledge Base</title>
+<link rel="stylesheet" href="../../assets/vendor/katex/katex.min.css">
+<link rel="stylesheet" href="../../assets/css/style.css">
+<script src="../../assets/vendor/katex/katex.min.js" defer></script>
+<script src="../../assets/vendor/katex/auto-render.min.js" defer></script>
+<script src="../curriculum.js" defer></script>
+<script src="../../assets/js/app.js" defer></script>
+<script src="../../assets/js/widgets.js" defer></script>
+</head>
+<body data-module="m19">
+<div class="layout">
+<main class="content">
+<article class="article">
+
+<span class="eyebrow">🏭 Power Engineering · Module 19</span>
+<h1>Power Systems &amp; the Grid <span class="muted" style="font-weight:400;font-size:1.4rem">· <span class="de">Elektrische Energieversorgung</span></span></h1>
+<p class="lead">The continental European grid is the largest machine humanity has ever built: hundreds of thousands of kilometers of lines, thousands of generators — and every single rotor from Portugal to Turkey spins in lockstep, balanced second by second against a load nobody fully controls. This module explains how that miracle works: how power flows, why voltage sags, what happens in the milliseconds after a short circuit, and how the grid survives losing a power plant — or gains a million solar roofs.</p>
+
+<div class="page-meta">
+  <span><b>Corresponds to:</b> Elektrische Energieversorgung / Energietechnik (5th–6th semester)</span>
+  <span><b>Prerequisites:</b> Modules 05, 17</span>
+  <span><b>Study time:</b> ≈ 6–8 h</span>
+</div>
+
+<h2 id="grid-structure">1. The largest machine ever built</h2>
+
+<p>An electric power system (<span class="de">Elektrisches Energieversorgungssystem</span>) has one defining property that shapes everything else: <strong>electricity is produced and consumed in the same instant</strong>. There is no warehouse in the wires. Every time you switch on a kettle, somewhere a turbine pushes imperceptibly harder — within seconds. To organize this real-time balancing act across a continent, the grid is layered into voltage levels, each with its own job.</p>
+
+<h3 id="voltage-ladder">1.1 The German voltage ladder</h3>
+
+<figure>
+  <div class="fig-frame">
+  <svg class="diagram" viewBox="0 0 660 300" role="img" aria-label="German grid voltage levels from 380 kV transmission to 400 V distribution">
+    <!-- role labels above -->
+    <text x="79" y="62" text-anchor="middle" font-size="11" fill="var(--text-soft)">transmission · meshed</text>
+    <text x="242" y="62" text-anchor="middle" font-size="11" fill="var(--text-soft)">sub-transmission · rings</text>
+    <text x="405" y="62" text-anchor="middle" font-size="11" fill="var(--text-soft)">distribution · rings/radial</text>
+    <text x="568" y="62" text-anchor="middle" font-size="11" fill="var(--text-soft)">distribution · radial</text>
+    <!-- level boxes -->
+    <rect x="12" y="90" width="135" height="58" rx="8" fill="none" stroke="var(--accent)" stroke-width="2"/>
+    <text x="79" y="115" text-anchor="middle" font-size="14" font-weight="700" fill="var(--accent)">380 / 220 kV</text>
+    <text x="79" y="135" text-anchor="middle" font-size="11.5">Höchstspannung</text>
+    <rect x="175" y="90" width="135" height="58" rx="8" fill="none" stroke="var(--text-soft)" stroke-width="2"/>
+    <text x="242" y="115" text-anchor="middle" font-size="14" font-weight="700">110 kV</text>
+    <text x="242" y="135" text-anchor="middle" font-size="11.5">Hochspannung</text>
+    <rect x="338" y="90" width="135" height="58" rx="8" fill="none" stroke="var(--text-soft)" stroke-width="2"/>
+    <text x="405" y="115" text-anchor="middle" font-size="14" font-weight="700">10–30 kV</text>
+    <text x="405" y="135" text-anchor="middle" font-size="11.5">Mittelspannung</text>
+    <rect x="501" y="90" width="135" height="58" rx="8" fill="none" stroke="var(--accent-2)" stroke-width="2"/>
+    <text x="568" y="115" text-anchor="middle" font-size="14" font-weight="700" fill="var(--accent-2)">400 / 230 V</text>
+    <text x="568" y="135" text-anchor="middle" font-size="11.5">Niederspannung</text>
+    <!-- transformer symbols between boxes -->
+    <line x1="147" y1="119" x2="151" y2="119" class="wire"/>
+    <circle cx="157" cy="119" r="9" fill="none" stroke="var(--text-soft)" stroke-width="2"/>
+    <circle cx="167" cy="119" r="9" fill="none" stroke="var(--text-soft)" stroke-width="2"/>
+    <line x1="173" y1="119" x2="175" y2="119" class="wire"/>
+    <line x1="310" y1="119" x2="314" y2="119" class="wire"/>
+    <circle cx="320" cy="119" r="9" fill="none" stroke="var(--text-soft)" stroke-width="2"/>
+    <circle cx="330" cy="119" r="9" fill="none" stroke="var(--text-soft)" stroke-width="2"/>
+    <line x1="336" y1="119" x2="338" y2="119" class="wire"/>
+    <line x1="473" y1="119" x2="477" y2="119" class="wire"/>
+    <circle cx="483" cy="119" r="9" fill="none" stroke="var(--text-soft)" stroke-width="2"/>
+    <circle cx="493" cy="119" r="9" fill="none" stroke="var(--text-soft)" stroke-width="2"/>
+    <line x1="499" y1="119" x2="501" y2="119" class="wire"/>
+    <!-- who connects, below -->
+    <text x="79" y="172" text-anchor="middle" font-size="11" fill="var(--text-soft)">large plants, offshore wind,</text>
+    <text x="79" y="188" text-anchor="middle" font-size="11" fill="var(--text-soft)">HVDC, ENTSO-E ties</text>
+    <text x="242" y="172" text-anchor="middle" font-size="11" fill="var(--text-soft)">heavy industry,</text>
+    <text x="242" y="188" text-anchor="middle" font-size="11" fill="var(--text-soft)">regional networks</text>
+    <text x="405" y="172" text-anchor="middle" font-size="11" fill="var(--text-soft)">wind &amp; solar parks,</text>
+    <text x="405" y="188" text-anchor="middle" font-size="11" fill="var(--text-soft)">factories, Stadtwerke</text>
+    <text x="568" y="172" text-anchor="middle" font-size="11" fill="var(--text-soft)">homes, rooftop PV,</text>
+    <text x="568" y="188" text-anchor="middle" font-size="11" fill="var(--text-soft)">EV chargers, shops</text>
+    <!-- energy flow arrows -->
+    <line x1="80" y1="232" x2="560" y2="232" stroke="var(--accent)" stroke-width="2" marker-end="url(#m19arrA)"/>
+    <text x="320" y="224" text-anchor="middle" font-size="11.5" fill="var(--accent)">classic power flow: plant → socket</text>
+    <line x1="500" y1="262" x2="120" y2="262" stroke="var(--accent-2)" stroke-width="2" stroke-dasharray="6 5" marker-end="url(#m19arrB)"/>
+    <text x="320" y="284" text-anchor="middle" font-size="11.5" fill="var(--accent-2)">today: PV &amp; wind push power back up the ladder</text>
+    <defs>
+      <marker id="m19arrA" markerWidth="9" markerHeight="9" refX="7" refY="4.5" orient="auto"><path d="M0 0 L8 4.5 L0 9 z" fill="var(--accent)"/></marker>
+      <marker id="m19arrB" markerWidth="9" markerHeight="9" refX="7" refY="4.5" orient="auto"><path d="M0 0 L8 4.5 L0 9 z" fill="var(--accent-2)"/></marker>
+    </defs>
+  </svg>
+  </div>
+  <figcaption><b>Fig. 1.1</b> — The German voltage ladder. Each pair of overlapping circles is a transformer (IEC symbol). Historically energy flowed strictly left→right; distributed renewables have made the lower levels bidirectional.</figcaption>
+</figure>
+
+<p>Reading the ladder from the top:</p>
+<ul>
+  <li><strong>380 kV / 220 kV — <span class="de">Höchstspannung</span></strong>: the <em>transmission grid</em> (<span class="de">Übertragungsnetz</span>), about 37&thinsp;000 km in Germany, operated by four transmission system operators (<span class="de">Übertragungsnetzbetreiber, ÜNB</span>): 50Hertz, Amprion, TenneT, TransnetBW. It hauls gigawatts across hundreds of kilometers and ties Germany to its neighbors.</li>
+  <li><strong>110 kV — <span class="de">Hochspannung</span></strong>: sub-transmission; feeds cities and large industrial sites, collects large wind farms.</li>
+  <li><strong>10–30 kV (typically 20 kV) — <span class="de">Mittelspannung</span></strong>: regional distribution to villages, commercial areas, and the ubiquitous local substations.</li>
+  <li><strong>400 V / 230 V — <span class="de">Niederspannung</span></strong>: the last few hundred meters to your socket. 400 V is the line-to-line voltage of the three-phase system, 230 V the line-to-neutral value (Module 05: \(400 = \sqrt{3}\cdot 230\)).</li>
+</ul>
+
+<h3 id="meshed-radial">1.2 Meshed transmission, radial distribution</h3>
+<p>The <em>topology</em> differs deliberately between layers. The transmission grid is <strong>meshed</strong> (<span class="de">vermascht</span>): every important node can be reached over several independent paths, so any single line can fail without interrupting supply — the famous <strong>(n−1) criterion</strong> (<span class="de">(n−1)-Kriterium</span>): the system must survive the loss of any one element. Distribution grids, by contrast, are mostly <strong>radial</strong> (<span class="de">Strahlennetz</span>) or open rings: a feeder leaves the substation and dead-ends at the last customer. Radial grids are cheaper, easier to protect (current flows one way — Section 9), and an outage affects only one feeder; redundancy is provided by normally-open tie switches that let operators re-supply a feeder from the neighboring one after a fault.</p>
+
+<h3 id="entsoe">1.3 One frequency from Portugal to Turkey</h3>
+<p>Germany's grid is not an island. It is embedded in the <strong>synchronous area Continental Europe</strong> of <strong>ENTSO-E</strong> (European Network of Transmission System Operators for Electricity) — the largest synchronous machine complex on Earth, serving on the order of 400 million people from the Iberian peninsula to the Black Sea. "Synchronous" means exactly that: every synchronous generator in the area (Module 17) rotates at a speed locked to one common frequency. When you measure 49.98 Hz in Hamburg, a student in Lisbon measures 49.98 Hz too, within millihertz. Other synchronous areas (Great Britain, the Nordic countries, the Baltic states) run their own frequency and connect to Continental Europe only through DC links (Section 2.3) — a DC link transports power but does <em>not</em> transmit frequency.</p>
+
+<div class="box intuition">
+  <div class="box-title"><span class="ic">💡</span>Intuition: one shaft, a million motors</div>
+  <p>Imagine every generator rotor in Europe mounted on one gigantic elastic shaft. Power lines are the elastic couplings: if one machine tries to run ahead, the "shaft" twists (the voltage phase angles shift) and power flows from the fast machine to the slow ones, pulling all back into step. The grid frequency is the rotation speed of this collective shaft — a single number that tells you the state of the entire continent's power balance (Section 10).</p>
+</div>
+
+<h2 id="why-ac">2. Why three-phase AC — and where DC wins</h2>
+
+<h3 id="ac-case">2.1 The case for high-voltage AC</h3>
+<p>Transporting a given power \(P\) at line-to-line voltage \(U\) and power factor \(\cos\varphi\) requires a line current (Module 05)</p>
+\[ I = \frac{P}{\sqrt{3}\, U \cos\varphi}, \]
+<p>and the line loses \(P_v = 3 I^2 R\) in its three conductors. Since \(I \propto 1/U\), the loss falls with the <em>square</em> of the voltage:</p>
+\[ \boxed{\; P_v = 3I^2R \propto \frac{1}{U^2} \;} \]
+<p>Ten times the voltage → one hundred times less loss in the same conductor. That is the entire economic argument for the voltage ladder — and it only became practical with the <strong>transformer</strong> (Module 17), which converts AC voltage levels with 99+ % efficiency but does nothing for DC. This is why Tesla's and Dolivo-Dobrowolsky's AC won the 1890s "war of currents" against Edison's 110 V DC.</p>
+<p>Why <em>three</em> phases and not one? Three reasons, all from Module 05/17:</p>
+<ul>
+  <li><strong>Constant power:</strong> the instantaneous power of a symmetric three-phase system is constant, not pulsating at \(2f\) — machines run smoothly, shafts are not hammered 100 times per second.</li>
+  <li><strong>The rotating field</strong> (<span class="de">Drehfeld</span>): three phases create a rotating magnetic field for free — the basis of every induction and synchronous machine.</li>
+  <li><strong>Conductor economy:</strong> three wires carry three times the power of a single-phase pair using only 1.5× the copper; the neutral carries nothing in balanced operation.</li>
+</ul>
+
+<h3 id="hvdc">2.2 Where DC wins: HVDC</h3>
+<p>High-voltage DC transmission (<span class="de">Hochspannungs-Gleichstrom-Übertragung, HGÜ</span>) reverses Edison's defeat — at the top of the ladder. Power-electronic converter stations (Module 12 territory) rectify AC to DC at one end and invert back at the other, at ±320…±525 kV and gigawatt ratings. HVDC wins in three situations:</p>
+<ul>
+  <li><strong>Very long overhead corridors.</strong> A DC line needs 2 conductors instead of 3, a narrower right-of-way, has no reactive power demand and no stability angle limit (Section 5). But the converter stations are expensive. A useful cost model: \(K_{AC}(l) = a_{AC} + b_{AC}\,l\) and \(K_{DC}(l) = a_{DC} + b_{DC}\,l\) with \(a_{DC} \gg a_{AC}\) (converters) but \(b_{DC} &lt; b_{AC}\) (cheaper line). The <strong>breakeven distance</strong> is
+  \[ l^\ast = \frac{a_{DC}-a_{AC}}{b_{AC}-b_{DC}}. \]
+  With representative numbers — converter stations ≈ 400 M€ extra, line savings ≈ 0.6 M€/km — you get \(l^\ast \approx 650\) km. Real studies land at roughly 500–800 km for overhead lines. Germany's north–south links (SuedLink, ≈ 700 km, 2×2 GW at ±525 kV DC) sit exactly in this regime.</li>
+  <li><strong>Submarine and underground cables.</strong> For cables the breakeven collapses to ~50–100 km, because AC cables drown in their own charging current (Section 3.3). NordLink (Germany–Norway, 623 km, 1.4 GW) could never be built as an AC cable.</li>
+  <li><strong>Asynchronous coupling.</strong> A back-to-back converter joins two grids that are not synchronized (different frequency or phase discipline) — e.g. the links between Continental Europe and Great Britain. Power flows, frequency does not.</li>
+</ul>
+
+<div class="box history">
+  <div class="box-title"><span class="ic">📜</span>The war of currents, round two</div>
+  <p>Edison (DC) lost to Westinghouse/Tesla (AC) in the 1890s because DC voltage could not be transformed. A century later, thyristors and IGBTs gave DC its transformer-equivalent — and DC now takes over precisely the jobs AC does worst: sea cables, ultra-long lines (China operates ±1100 kV HVDC over 3300 km at 12 GW), and coupling asynchronous grids. Neither side "won"; each found its physics-given niche.</p>
+</div>
+
+<h2 id="line-model">3. Modeling a line: R′, L′, C′ per kilometer</h2>
+
+<h3 id="line-params">3.1 Distributed parameters</h3>
+<p>A transmission line is a distributed structure: every meter has series resistance and inductance, and capacitance to ground and between conductors. We describe it by <strong>per-kilometer parameters</strong> \(R'\), \(L'\) (usually quoted as reactance \(X' = \omega L'\)) and \(C'\) (<span class="de">Leitungsbeläge</span>). Typical 50 Hz values per phase:</p>
+
+<div class="table-wrap">
+<table class="data">
+<thead><tr><th>Line type</th><th>R′ in Ω/km</th><th>X′ in Ω/km</th><th>C′ in nF/km</th><th>X/R</th></tr></thead>
+<tbody>
+<tr><td>380 kV overhead, 4-conductor bundle</td><td>0.03</td><td>0.26</td><td>13.5</td><td>≈ 9</td></tr>
+<tr><td>110 kV overhead, single conductor</td><td>0.12</td><td>0.39</td><td>9.5</td><td>≈ 3</td></tr>
+<tr><td>20 kV overhead line</td><td>0.31</td><td>0.35</td><td>10</td><td>≈ 1.1</td></tr>
+<tr><td>20 kV XLPE cable (240 mm²)</td><td>0.13</td><td>0.11</td><td>300</td><td>≈ 0.9</td></tr>
+<tr><td>0.4 kV cable (NAYY 4×150)</td><td>0.21</td><td>0.08</td><td>—</td><td>≈ 0.4</td></tr>
+</tbody>
+</table>
+</div>
+
+<p>Two patterns in this table run the whole module. First, <strong>X/R falls as you descend the ladder</strong>: transmission lines are almost purely inductive, low-voltage cables almost purely resistive — this will decide what controls voltage where (Section 4). Second, <strong>cables have ~20–30× the capacitance</strong> of overhead lines, because the grounded sheath sits millimeters from the conductor instead of meters of air — this is the AC cable's Achilles heel.</p>
+
+<h3 id="short-line">3.2 The short-line model</h3>
+<p>For lines up to roughly 100 km (overhead), the shunt capacitance is negligible and the line collapses to a series impedance — the <strong>short-line model</strong>:</p>
+\[ \underline{Z} = (R' + jX')\cdot l = R + jX. \]
+
+<figure>
+  <div class="fig-frame">
+  <svg class="diagram" viewBox="0 0 640 240" role="img" aria-label="Short line equivalent circuit with series R and X and dashed shunt capacitances">
+    <!-- top wire -->
+    <circle cx="60" cy="70" r="4" class="node"/>
+    <path class="wire" d="M60 70 H180"/>
+    <rect x="180" y="58" width="70" height="24" fill="none" stroke="var(--text-soft)" stroke-width="2"/>
+    <text x="215" y="48" text-anchor="middle" font-size="13">R = R′·l</text>
+    <path class="wire" d="M250 70 H300"/>
+    <rect x="300" y="58" width="70" height="24" fill="none" stroke="var(--text-soft)" stroke-width="2"/>
+    <text x="335" y="48" text-anchor="middle" font-size="13">jX = jX′·l</text>
+    <path class="wire" d="M370 70 H560"/>
+    <circle cx="560" cy="70" r="4" class="node"/>
+    <!-- bottom rail -->
+    <path class="wire" d="M60 190 H560"/>
+    <circle cx="60" cy="190" r="4" class="node"/>
+    <circle cx="560" cy="190" r="4" class="node"/>
+    <!-- current arrow -->
+    <line x1="100" y1="54" x2="140" y2="54" stroke="var(--accent)" stroke-width="2" marker-end="url(#m19arrI)"/>
+    <text x="120" y="42" text-anchor="middle" font-size="13" fill="var(--accent)">I</text>
+    <!-- shunt capacitor left (dashed, pi model) -->
+    <path d="M130 70 V108" stroke="var(--text-faint)" stroke-width="1.6" stroke-dasharray="5 4" fill="none"/>
+    <line x1="116" y1="108" x2="144" y2="108" stroke="var(--text-faint)" stroke-width="2"/>
+    <line x1="116" y1="118" x2="144" y2="118" stroke="var(--text-faint)" stroke-width="2"/>
+    <path d="M130 118 V190" stroke="var(--text-faint)" stroke-width="1.6" stroke-dasharray="5 4" fill="none"/>
+    <text x="152" y="117" font-size="12" fill="var(--text-faint)">C/2</text>
+    <!-- shunt capacitor right -->
+    <path d="M470 70 V108" stroke="var(--text-faint)" stroke-width="1.6" stroke-dasharray="5 4" fill="none"/>
+    <line x1="456" y1="108" x2="484" y2="108" stroke="var(--text-faint)" stroke-width="2"/>
+    <line x1="456" y1="118" x2="484" y2="118" stroke="var(--text-faint)" stroke-width="2"/>
+    <path d="M470 118 V190" stroke="var(--text-faint)" stroke-width="1.6" stroke-dasharray="5 4" fill="none"/>
+    <text x="492" y="117" font-size="12" fill="var(--text-faint)">C/2</text>
+    <!-- voltage arrows -->
+    <line x1="88" y1="92" x2="88" y2="168" stroke="var(--accent)" stroke-width="2" marker-end="url(#m19arrI)"/>
+    <text x="72" y="134" text-anchor="end" font-size="14" fill="var(--accent)">U₁</text>
+    <line x1="532" y1="92" x2="532" y2="168" stroke="var(--accent)" stroke-width="2" marker-end="url(#m19arrI)"/>
+    <text x="548" y="134" font-size="14" fill="var(--accent)">U₂</text>
+    <text x="320" y="222" text-anchor="middle" font-size="11.5" fill="var(--text-faint)">dashed: π-model shunt capacitance — negligible for overhead lines below ≈ 100 km</text>
+    <defs><marker id="m19arrI" markerWidth="9" markerHeight="9" refX="7" refY="4.5" orient="auto"><path d="M0 0 L8 4.5 L0 9 z" fill="var(--accent)"/></marker></defs>
+  </svg>
+  </div>
+  <figcaption><b>Fig. 3.1</b> — Short-line model per phase: a series impedance \(R + jX\). For longer lines the capacitance is added as a π-equivalent; for very long lines (&gt; 250 km) the full wave equation with hyperbolic functions takes over.</figcaption>
+</figure>
+
+<h3 id="charging">3.3 Why AC cables can't go far: charging current</h3>
+<p>The line capacitance draws a <strong>charging current</strong> (<span class="de">Ladestrom</span>) from the phase voltage even at no load:</p>
+\[ I_c = \omega C' l \cdot \frac{U}{\sqrt{3}}, \qquad Q_c = \omega C' l\, U^2 . \]
+<p>For a 380 kV <em>overhead line</em>, \(Q_c' = \omega C' U^2 \approx 314 \cdot 13.5\,\mathrm{nF/km} \cdot (380\,\mathrm{kV})^2 \approx 0.6\,\mathrm{Mvar/km}\) — manageable. For a 380 kV <em>cable</em> with \(C' \approx 230\) nF/km it is ≈ 10 Mvar/km, i.e. a charging current of ≈ 16 A per km. A cable rated 1200 A is <em>completely full of its own charging current after about 75 km</em> — zero ampacity left for useful power. This is the physical reason offshore wind farms beyond ~100 km connect via DC cables, and why the German underground sections of new transmission corridors are DC. (Remedy for moderate lengths: shunt reactors that absorb the charging Q — Section 6.)</p>
+
+<div class="box pitfall">
+  <div class="box-title"><span class="ic">🚫</span>Classic pitfall: forgetting √3 and the voltage convention</div>
+  <p>In power engineering, \(U\) without further comment means the <strong>line-to-line</strong> (<span class="de">verkettete</span>) voltage, and \(P, Q, S\) mean <strong>three-phase totals</strong>. The bookkeeping \(S = \sqrt{3}\,U I\), \(I_c = \omega C U/\sqrt{3}\) (phase voltage across the capacitance!) trips up more exam candidates than any derivation. When in doubt, draw the single-phase equivalent with the star voltage \(U/\sqrt{3}\), compute per phase, and multiply powers by 3 at the end.</p>
+</div>
+
+<h2 id="voltage-drop">4. Voltage drop — and the great P/Q decoupling</h2>
+
+<h3 id="dU-derivation">4.1 Deriving the engineer's ΔU formula</h3>
+<p>Let a load draw \(S = P + jQ\) (three-phase, inductive \(Q&gt;0\)) at the receiving end of a short line, with receiving line-to-line voltage \(U_2\) taken as phase reference. The per-phase current is \(\underline{I} = (P - jQ)/(\sqrt{3}\,U_2)\), and the per-phase voltage drop:</p>
+\[ \Delta\underline{U}_{ph} = (R + jX)\,\underline{I}
+   = \frac{(R + jX)(P - jQ)}{\sqrt{3}\,U_2}
+   = \underbrace{\frac{RP + XQ}{\sqrt{3}\,U_2}}_{\text{longitudinal}} \;+\; j\,\underbrace{\frac{XP - RQ}{\sqrt{3}\,U_2}}_{\text{transverse}} . \]
+<p>The <em>longitudinal</em> component adds directly to the magnitude of \(U_2\); the <em>transverse</em> component mostly rotates the phasor (it creates the angle δ) and barely changes the magnitude as long as angles are small. Converting to line-to-line values (× √3) gives the formula every distribution engineer knows by heart:</p>
+\[ \boxed{\;\Delta U \approx \frac{R\,P + X\,Q}{U}\;} \qquad \text{(line-to-line } U\text{, three-phase } P, Q\text{)} \]
+
+<div class="example">
+  <div class="ex-head"><span class="ex-tag">Worked example</span> Voltage drop on a 20 kV feeder</div>
+  <div class="ex-body">
+    <p>A 10 km overhead feeder (R′ = 0.31 Ω/km, X′ = 0.35 Ω/km) supplies a village drawing 4 MW at \(\cos\varphi = 0.9\) (inductive). Is the voltage at the end still within the ±5 % planning band?</p>
+    <div class="step"><span class="step-label">Step 1 — line impedance:</span>
+      \( R = 3.1\,\Omega,\; X = 3.5\,\Omega \).</div>
+    <div class="step"><span class="step-label">Step 2 — reactive power:</span>
+      \( Q = P\tan\varphi = 4\,\mathrm{MW} \cdot \tan(25.8^\circ) \approx 1.94\,\mathrm{Mvar} \).</div>
+    <div class="step"><span class="step-label">Step 3 — voltage drop:</span>
+      \[ \Delta U \approx \frac{3.1 \cdot 4\cdot 10^6 + 3.5 \cdot 1.94\cdot 10^6}{20\,000} = \frac{12.4 + 6.8}{20}\,\mathrm{kV}\cdot 10^{-3}\cdot 10^{3} \approx 960\,\mathrm{V}. \]</div>
+    <div class="step"><span class="step-label">Step 4 — assess:</span> \( 960\,\mathrm{V} / 20\,\mathrm{kV} = 4.8\,\% \) — inside ±5 %, but with zero margin. Note that the reactive power, only half the size of P, causes more than a third of the drop because X &gt; R here.</div>
+    <div class="result-line">ΔU ≈ 0.96 kV ≈ 4.8 % — acceptable, but compensating Q locally (capacitor bank, Section 6) or a cable with lower X would buy margin.</div>
+  </div>
+</div>
+
+<h3 id="decoupling">4.2 The crucial insight: X ≫ R decouples P and Q</h3>
+<p>Now look at the transmission grid, where \(X \approx 9R\). Drop the R-terms:</p>
+\[ \Delta U \approx \frac{X\,Q}{U}, \qquad \delta \approx \frac{X\,P}{U^2}\ \text{(from the transverse term, in rad)}. \]
+
+<div class="box key">
+  <div class="box-title"><span class="ic">🔑</span>Key idea: P → angle, Q → voltage</div>
+  <p>In a high-voltage grid, <strong>active power flow is governed by voltage <em>angles</em></strong>, and <strong>voltage <em>magnitude</em> is governed by reactive power</strong>. The two problems decouple: frequency/angle control means balancing P (Section 10); voltage control means managing Q (Section 6). Every control room on Earth is organized around this separation. — But beware the fine print: in a <em>low-voltage</em> cable grid R ≫ X, so the coupling <em>reverses</em>: there, active power (e.g. midday PV feed-in) is what pushes the voltage up. Same formula, opposite regime.</p>
+</div>
+
+<div class="widget">
+  <div class="w-head"><span class="ic">🧪</span>Interactive — voltage profile along a radial feeder <span class="w-tag">simulation</span></div>
+  <div class="w-body">
+    <p class="small mt0">A 20 kV feeder with its load spread evenly along the length. Watch the voltage sag toward the end — then crank up the distributed PV infeed and watch the gradient <em>reverse</em>: at high PV the feeder's problem is voltage <em>rise</em>, the defining constraint for connecting renewables. The dashed lines are the ±5 % planning band.</p>
+    <div id="w-feeder"></div>
+  </div>
+</div>
+
+<h2 id="power-transfer">5. Power transfer over a line: P(δ) and stability</h2>
+
+<h3 id="pdelta-derivation">5.1 Deriving P = (U₁U₂/X)·sin δ</h3>
+<p>Take a lossless line (\(R \approx 0\), justified at 380 kV) between bus 1 (sending, \(\underline{U}_1 = U_1 e^{j\delta}\)) and bus 2 (receiving, \(\underline{U}_2 = U_2 e^{j0}\)), phase quantities for the moment. The line current is</p>
+\[ \underline{I} = \frac{\underline{U}_1 - \underline{U}_2}{jX} . \]
+<p>The complex power delivered to bus 2 is \( \underline{S}_2 = 3\,\underline{U}_2\, \underline{I}^{\,*} \):</p>
+\[ \underline{S}_2 = 3\, U_2 \cdot \frac{U_1 e^{-j\delta} - U_2}{-jX}
+ = \frac{3 U_1 U_2}{X}\sin\delta \;+\; j\,\frac{3 U_2\,(U_1\cos\delta - U_2)}{X}. \]
+<p>Reading off the real part and switching to line-to-line voltages (the factor 3 is absorbed):</p>
+\[ \boxed{\;P = \frac{U_1 U_2}{X}\,\sin\delta\;} \qquad
+   Q_2 = \frac{U_2\,(U_1\cos\delta - U_2)}{X}. \]
+<p>Look how perfectly this confirms Section 4.2: P depends on the <strong>angle</strong> δ (<span class="de">Übertragungswinkel</span>), while \(Q_2\) depends on the <strong>difference of the voltage magnitudes</strong> (via \(U_1\cos\delta - U_2\)).</p>
+
+<h3 id="stability-limit">5.2 The static stability limit</h3>
+<p>Since \(\sin\delta \le 1\), a line can transfer at most</p>
+\[ P_{max} = \frac{U_1 U_2}{X} \quad \text{at } \delta = 90^\circ. \]
+<p>Beyond 90° the physics turns treacherous: pushing the sending generator harder <em>increases</em> δ but <em>decreases</em> transmitted power — the surplus torque accelerates the rotor further, δ runs away, and the machine slips poles and falls out of synchronism (<span class="de">Außertrittfallen</span>). \(\delta = 90^\circ\) is the <strong>static stability limit</strong> (<span class="de">statische Stabilitätsgrenze</span>). Real operation stays below ≈ 30–40°, keeping reserve for the <em>transient</em> swings that follow every fault: when a short circuit momentarily blocks power transfer, the rotor accelerates, and after fault clearing it swings out well past its steady-state angle (the "equal-area criterion" of the full lecture). A long line means large X, small \(P_{max}\), small margin.</p>
+
+<div class="widget">
+  <div class="w-head"><span class="ic">🧪</span>Interactive — power transfer P(δ) and the stability limit <span class="w-tag">simulation</span></div>
+  <div class="w-body">
+    <p class="small mt0">The P(δ) sine for a 380 kV line. Lengthen the line and watch \(P_{max}\) collapse (X grows with every km). Move the operating angle toward 90° and watch the stability margin evaporate. Real grid codes keep δ small enough that even losing a parallel circuit doesn't push the system over the top.</p>
+    <div id="w-pdelta"></div>
+  </div>
+</div>
+
+<h3 id="compensation">5.3 Compensation: fighting X</h3>
+<p>If X limits the line, reduce X — or manage the reactive household it creates:</p>
+<ul>
+  <li><strong>Series compensation</strong> (<span class="de">Reihenkompensation</span>): capacitors <em>in series</em> with the line cancel part of X′l; 50 % compensation doubles \(P_{max}\). Common on very long lines (Scandinavia, the Americas).</li>
+  <li><strong>Shunt compensation</strong> (<span class="de">Parallelkompensation</span>): shunt <em>reactors</em> absorb the charging Q of lightly loaded lines/cables (voltage would otherwise rise — the Ferranti effect); shunt <em>capacitors</em> support voltage under heavy load.</li>
+  <li><strong>SVC and STATCOM</strong>: power-electronic shunt compensators that adjust their reactive output continuously and within milliseconds — thyristor-switched (SVC) or IGBT-converter based (STATCOM). They hold the voltage dynamically where rotating machines are too slow or absent.</li>
+</ul>
+
+<h2 id="reactive-voltage">6. Reactive power management and voltage control</h2>
+<p>Voltage control is <em>local</em>. Because transporting reactive power over an inductive line itself causes voltage drop (\(\Delta U \approx XQ/U\)) and losses, Q must be produced close to where it is consumed. The toolbox, from generator to consumer:</p>
+<ul>
+  <li><strong>Generator excitation</strong> (Module 17): over-excite a synchronous machine and it <em>delivers</em> Q (behaves capacitively), under-excite and it <em>absorbs</em> Q. The automatic voltage regulator (AVR) holds the terminal voltage by steering the field current — the primary voltage-control actor of the classic grid. Grid codes demand \(\cos\varphi\) ranges like 0.9 under- to 0.8 over-excited.</li>
+  <li><strong>Tap changers</strong> (<span class="de">Stufenschalter</span>): large transformers can shift their turns ratio under load (on-load tap changer, OLTC), typically ±13 × 1.6 % steps. They don't create Q — they <em>re-distribute</em> voltage between levels, e.g. holding the 20 kV busbar at 1.03 pu while the 110 kV side wanders.</li>
+  <li><strong>Capacitor banks and reactors</strong>: switched shunt elements, the cheap workhorses. Industrial plants compensate their motors' Q locally to avoid paying for reactive energy.</li>
+  <li><strong>SVC/STATCOM and modern inverters</strong>: every wind and solar inverter can source or sink Q at the flick of a setpoint — distribution codes (e.g. cosφ(P) characteristics) already enlist them for voltage control.</li>
+</ul>
+<p>The operating logic: keep all bus voltages in a band (transmission typically 380–420 kV; distribution ±5…10 %), with enough dynamic Q reserve to survive contingencies. A grid that runs out of reactive reserve suffers <strong>voltage collapse</strong> — voltages ratchet down over minutes as loads and tap changers fight back; several historic blackouts (Athens 2004) ended that way.</p>
+
+<h2 id="load-flow">7. Load flow — the grid's daily arithmetic</h2>
+
+<h3 id="lf-problem">7.1 The problem statement</h3>
+<p>The <strong>load-flow</strong> (power-flow, <span class="de">Lastflussrechnung</span>) problem: given the network impedances and the powers injected or drawn at every bus, find all bus voltages (magnitude and angle) — and from them every line flow, every loading, every loss. It is <em>the</em> planning and operating calculation, run thousands of times a day in every control center. Each bus (<span class="de">Netzknoten</span>) is classified by what is known about it:</p>
+
+<div class="table-wrap">
+<table class="data">
+<thead><tr><th>Bus type</th><th>Known</th><th>Unknown</th><th>Physically</th></tr></thead>
+<tbody>
+<tr><td><b>PQ</b> (load bus)</td><td>\(P,\ Q\)</td><td>\(U,\ \delta\)</td><td>loads, small infeeds — most buses</td></tr>
+<tr><td><b>PV</b> (generator bus)</td><td>\(P,\ U\)</td><td>\(Q,\ \delta\)</td><td>power plant with AVR: schedules P, holds U</td></tr>
+<tr><td><b>Slack</b> (<span class="de">Bilanzknoten</span>)</td><td>\(U,\ \delta = 0\)</td><td>\(P,\ Q\)</td><td>one strong bus that provides the angle reference and absorbs the mismatch — you can't know the losses before solving, so one injection must stay free</td></tr>
+</tbody>
+</table>
+</div>
+
+<h3 id="lf-nonlinear">7.2 Why it's nonlinear — and how Newton fixes that</h3>
+<p>Structurally this is nodal analysis from Module 04 — \( \underline{\mathbf{I}} = \mathbf{Y}\,\underline{\mathbf{U}} \) with the bus admittance matrix built by inspection. But the specifications are <em>powers</em>, not currents, and power is a product of two unknowns:</p>
+\[ \underline{S}_k = \underline{U}_k\, \underline{I}_k^{\,*} = \underline{U}_k \Big( \textstyle\sum_m \underline{Y}_{km} \underline{U}_m \Big)^{\!*} . \]
+<p>Quadratic in the voltages → no closed-form solution → iterate. The industry standard is <strong>Newton–Raphson</strong>: linearize the power mismatch \( \Delta\mathbf{S}(\mathbf{U}) \) with its Jacobian, solve the linear system, update, repeat. Convergence is quadratic — 3 to 5 iterations even for a 10&thinsp;000-bus model. (The Jacobian's dominant blocks ∂P/∂δ and ∂Q/∂U being nearly independent is, once more, the X ≫ R decoupling — the "fast decoupled load flow" exploits exactly that.)</p>
+
+<div class="example">
+  <div class="ex-head"><span class="ex-tag">Worked example</span> A 2-bus load flow, iterated by hand</div>
+  <div class="ex-body">
+    <p>Slack bus 1 holds \(\underline{U}_1 = 1.0\angle 0^\circ\) pu. A line with \(X = 0.2\) pu (R neglected) feeds PQ bus 2, which draws \(P = 0.5\) pu, \(Q = 0.3\) pu (inductive). Find \(\underline{U}_2\) by fixed-point iteration of \( \underline{U}_2 = \underline{U}_1 - jX\,\underline{I} \) with \( \underline{I} = (P - jQ)/\underline{U}_2^{\,*} \).</p>
+    <div class="step"><span class="step-label">Step 0 — flat start:</span> \( \underline{U}_2^{(0)} = 1.0\angle 0^\circ \).</div>
+    <div class="step"><span class="step-label">Iteration 1:</span>
+      \( \underline{I} = (0.5 - j0.3)/1.0 = 0.5 - j0.3 \);
+      \( \underline{U}_2^{(1)} = 1 - j0.2\,(0.5 - j0.3) = 1 - j0.1 - 0.06 = 0.94 - j0.10 \)
+      → \( |\underline{U}_2| = 0.945,\ \delta = -6.1^\circ \).</div>
+    <div class="step"><span class="step-label">Iteration 2:</span>
+      \( \underline{I} = \dfrac{0.5 - j0.3}{0.94 + j0.10} = 0.492 - j0.372 \);
+      \( \underline{U}_2^{(2)} = 1 - j0.2\,(0.492 - j0.372) = 0.926 - j0.098 \)
+      → \( |\underline{U}_2| = 0.931,\ \delta = -6.1^\circ \).</div>
+    <div class="step"><span class="step-label">Iteration 3 (check):</span> repeating once more gives \( |\underline{U}_2| = 0.930 \) — converged to three digits.</div>
+    <div class="result-line">\( \underline{U}_2 \approx 0.93\angle{-6.1^\circ} \) pu — a 7 % dip: this line is heavily loaded, and mostly because of the 0.3 pu of <em>reactive</em> power (X·Q strikes again). Newton–Raphson would converge in 2 iterations; the physics is identical.</div>
+  </div>
+</div>
+
+<h2 id="short-circuit">8. Short-circuit analysis — Thévenin pays off</h2>
+
+<h3 id="sc-why">8.1 Why we compute fault currents</h3>
+<p>A bolted short circuit (<span class="de">Kurzschluss</span>) turns the grid's greatest strength — stiff voltage, low source impedance — into a monster: currents of ten to fifty times rated flow within milliseconds. We must compute them <em>before</em> they happen, because:</p>
+<ul>
+  <li><strong>Breaker rating:</strong> every circuit breaker (<span class="de">Leistungsschalter</span>) must be able to <em>interrupt</em> the maximum fault current at its location (standard classes 16/25/40/63 kA), and the switchgear must survive the mechanical forces (∝ \(i^2\)) of the first current peak.</li>
+  <li><strong>Protection settings:</strong> relays must distinguish faults from heavy load and grade with their neighbors (Section 9) — that requires knowing maximum <em>and</em> minimum fault currents at each location.</li>
+</ul>
+
+<h3 id="sc-thevenin">8.2 The Thévenin method at the fault location</h3>
+<p>The computation is Module 04's Thévenin theorem, resurrected at 380 kV: <em>as seen from the fault location, the entire grid collapses to one equivalent voltage source behind one impedance</em> \(\underline{Z}_k\). Per IEC 60909 the source is taken as \(c\,U_n/\sqrt{3}\) with a voltage factor \(c\) (1.10 for maximum fault currents at HV/MV) covering pre-fault voltage spread. The initial symmetrical short-circuit current is then</p>
+\[ \boxed{\; I_k'' = \frac{c\, U_n}{\sqrt{3}\, Z_k} \;} \qquad
+   S_k'' = \sqrt{3}\, U_n\, I_k'' \]
+<p>\(S_k''\) is the <strong>short-circuit power</strong> — a stiffness rating of the bus, <em>not</em> a power anything consumes.</p>
+
+<figure>
+  <div class="fig-frame">
+  <svg class="diagram" viewBox="0 0 640 250" role="img" aria-label="Thevenin equivalent of the grid at the fault location">
+    <!-- cloud -->
+    <ellipse cx="105" cy="90" rx="88" ry="48" fill="none" stroke="var(--text-soft)" stroke-width="2" stroke-dasharray="7 5"/>
+    <text x="105" y="84" text-anchor="middle" font-size="12">the whole upstream grid</text>
+    <text x="105" y="102" text-anchor="middle" font-size="11" fill="var(--text-soft)">plants · lines · transformers</text>
+    <!-- arrow -->
+    <line x1="205" y1="90" x2="255" y2="90" stroke="var(--text-soft)" stroke-width="2" marker-end="url(#m19arrT)"/>
+    <text x="230" y="74" text-anchor="middle" font-size="11.5" fill="var(--text-soft)">Thévenin (M04)</text>
+    <!-- equivalent source -->
+    <circle cx="310" cy="90" r="24" fill="none" stroke="var(--text-soft)" stroke-width="2"/>
+    <line x1="310" y1="66" x2="310" y2="114" class="wire"/>
+    <text x="298" y="140" text-anchor="end" font-size="12.5">c·U<tspan baseline-shift="sub" font-size="10">n</tspan>/√3</text>
+    <!-- series impedance -->
+    <path class="wire" d="M334 90 H380"/>
+    <rect x="380" y="78" width="76" height="24" fill="none" stroke="var(--text-soft)" stroke-width="2"/>
+    <text x="418" y="66" text-anchor="middle" font-size="12.5">Z<tspan baseline-shift="sub" font-size="10">k</tspan> = Z<tspan baseline-shift="sub" font-size="10">Q</tspan> + Z<tspan baseline-shift="sub" font-size="10">T</tspan> + Z<tspan baseline-shift="sub" font-size="10">L</tspan></text>
+    <path class="wire" d="M456 90 H560"/>
+    <circle cx="560" cy="90" r="5" class="node"/>
+    <text x="576" y="86" font-size="12">fault</text>
+    <!-- fault bolt -->
+    <path d="M560 96 L548 128 L566 126 L552 164" fill="none" stroke="var(--accent-2)" stroke-width="3"/>
+    <path d="M552 164 L549 150 M552 164 L563 156" stroke="var(--accent-2)" stroke-width="3" fill="none"/>
+    <!-- bottom rail -->
+    <path class="wire" d="M310 114 V200 H560 V172"/>
+    <!-- current arrow -->
+    <line x1="480" y1="72" x2="530" y2="72" stroke="var(--accent)" stroke-width="2.4" marker-end="url(#m19arrU)"/>
+    <text x="505" y="58" text-anchor="middle" font-size="13" fill="var(--accent)">I″k</text>
+    <defs>
+      <marker id="m19arrT" markerWidth="9" markerHeight="9" refX="7" refY="4.5" orient="auto"><path d="M0 0 L8 4.5 L0 9 z" fill="var(--text-soft)"/></marker>
+      <marker id="m19arrU" markerWidth="9" markerHeight="9" refX="7" refY="4.5" orient="auto"><path d="M0 0 L8 4.5 L0 9 z" fill="var(--accent)"/></marker>
+    </defs>
+  </svg>
+  </div>
+  <figcaption><b>Fig. 8.1</b> — Short-circuit calculation is Thévenin's theorem at scale: grid feed-in \(Z_Q\), transformer \(Z_T\) and line \(Z_L\) in series, driven by the equivalent source \(c\,U_n/\sqrt{3}\).</figcaption>
+</figure>
+
+<p>The building blocks, each from its nameplate ratings — grid feed-in, transformer (from its impedance voltage \(u_k\)), and line:</p>
+\[ Z_Q = \frac{c\,U_n^2}{S_k''}, \qquad
+   Z_T = u_k \, \frac{U_n^2}{S_{rT}}, \qquad
+   Z_L = Z' \, l . \]
+<p>Impedances must be <em>referred</em> to the voltage level of the fault: crossing a transformer scales them by \((U_1/U_2)^2\) — forget the square and your result is off by an order of magnitude (a beloved exam trap).</p>
+
+<div class="example">
+  <div class="ex-head"><span class="ex-tag">Worked example</span> Symmetrical fault at a 20 kV busbar</div>
+  <div class="ex-body">
+    <p>A 110 kV grid with \(S_k'' = 3\,\mathrm{GVA}\) feeds a 40 MVA, 110/20 kV transformer with \(u_k = 12\,\%\). Compute the three-phase fault current at the 20 kV busbar (c = 1.1) and pick the breaker class.</p>
+    <div class="step"><span class="step-label">Step 1 — grid impedance, referred to 20 kV:</span>
+      \( Z_Q = \dfrac{1.1 \cdot (20\,\mathrm{kV})^2}{3\,\mathrm{GVA}} = \dfrac{1.1 \cdot 4\cdot10^8}{3\cdot10^9}\,\Omega \approx 0.15\,\Omega \).
+      (Using 20 kV in the formula performs the \((U_1/U_2)^2\) referral automatically.)</div>
+    <div class="step"><span class="step-label">Step 2 — transformer impedance:</span>
+      \( Z_T = 0.12 \cdot \dfrac{(20\,\mathrm{kV})^2}{40\,\mathrm{MVA}} = 0.12 \cdot \dfrac{4\cdot10^8}{4\cdot10^7}\,\Omega = 1.2\,\Omega \). The transformer dominates — typical.</div>
+    <div class="step"><span class="step-label">Step 3 — fault current:</span> both impedances are almost purely reactive, so magnitudes simply add:
+      \( Z_k \approx 1.35\,\Omega \), hence
+      \( I_k'' = \dfrac{1.1 \cdot 20\,000}{\sqrt{3} \cdot 1.35}\,\mathrm{A} \approx 9.4\,\mathrm{kA} \) and \( S_k'' = \sqrt{3}\cdot 20\,\mathrm{kV} \cdot 9.4\,\mathrm{kA} \approx 330\,\mathrm{MVA} \).</div>
+    <div class="step"><span class="step-label">Step 4 — peak and rating:</span> with peak factor \(\kappa \approx 1.8\): \( i_p = \kappa\sqrt{2}\, I_k'' \approx 24\,\mathrm{kA} \) first crest. A 12.5 kA breaker class is too tight → choose the standard 16 kA class, leaving margin for future grid strengthening.</div>
+    <div class="result-line">\( I_k'' \approx 9.4\,\mathrm{kA} \) — about 8× the transformer's 1.15 kA rated current; peak ≈ 24 kA → 16 kA switchgear. Sanity check via the shortcut \(I_k'' \approx c\,I_{rT}/u_k = 1.1\cdot 1155/0.12 \approx 10.6\,\mathrm{kA}\) — same ballpark, slightly high because it ignores \(Z_Q\). ✓</div>
+  </div>
+</div>
+
+<h3 id="sc-asym">8.3 Asymmetric faults and symmetrical components — the idea</h3>
+<p>The three-phase "bolted" fault is the textbook case, but ~80 % of real faults are <strong>single line-to-ground</strong> (<span class="de">einpoliger Erdkurzschluss</span>), plus line-to-line and double-ground faults. An unbalanced network seems to demand solving all three phases at once — until Fortescue's 1918 trick, <strong>symmetrical components</strong> (<span class="de">symmetrische Komponenten</span>): <em>any</em> unbalanced set of three phasors decomposes uniquely into three balanced sets — a <strong>positive-sequence</strong> system (<span class="de">Mitsystem</span>, normal rotation), a <strong>negative-sequence</strong> system (<span class="de">Gegensystem</span>, reverse rotation) and a <strong>zero-sequence</strong> system (<span class="de">Nullsystem</span>, three in-phase phasors that need a ground return path). Each sequence sees its own simple single-phase network; the fault type dictates how the three networks interconnect (a single line-to-ground fault puts all three in series, for instance). Asymmetry is thus reduced to three symmetric problems — the same divide-and-conquer spirit as phasors themselves.</p>
+
+<h3 id="sc-time">8.4 The time-shape of a fault current</h3>
+<p>A synchronous generator does not deliver a constant fault current. Its effective reactance grows as flux is forced out of the damper and field windings: the <strong>sub-transient</strong> phase (<span class="de">subtransient</span>, \(X_d'' \approx 0.15\) pu, first ~50 ms) yields the highest AC amplitude \(I_k''\), decaying through the <strong>transient</strong> phase (\(X_d' \approx 0.3\) pu, ~1 s) toward the steady value set by \(X_d \approx 2\) pu. On top rides a decaying <strong>DC offset</strong> whose worst case gives the peak factor κ above. Consequences: a breaker opening after 60–80 ms interrupts less than the initial \(I_k''\) — but the switchgear must survive the first peak \(i_p\) mechanically, and IEC 60909 standardizes \(I_k''\) as the reference quantity.</p>
+
+<h2 id="protection">9. Protection — selectivity, speed, reliability</h2>
+
+<h3 id="prot-req">9.1 What protection must deliver</h3>
+<p>Protection (<span class="de">Schutztechnik</span>) is the grid's immune system: measure, decide, trip — within tens of milliseconds. The classical requirements:</p>
+<ul>
+  <li><strong>Selectivity</strong> (<span class="de">Selektivität</span>): isolate <em>only</em> the faulted element; every healthy customer stays supplied. The device nearest the fault trips; upstream devices act as slower back-ups.</li>
+  <li><strong>Speed</strong> (<span class="de">Schnelligkeit</span>): HV faults must clear in ~100–150 ms — every extra cycle heats conductors (\(\int i^2\,dt\)), deepens the voltage dip for the whole region, and pushes generators toward instability (Section 5.2).</li>
+  <li><strong>Sensitivity &amp; reliability</strong> (<span class="de">Zuverlässigkeit</span>): detect even the weakest legitimate fault, never trip on healthy load, and provide back-up in case a relay or breaker fails — a fault must never survive because one device did.</li>
+</ul>
+
+<h3 id="fuses">9.2 Fuses, inverse-time relays and grading</h3>
+<p>The oldest protection device is the <strong>fuse</strong> (<span class="de">Sicherung</span>): a calibrated melting wire. Melting obeys approximately \(\int i^2 dt = \text{const}\), giving the characteristically steep <strong>inverse time–current curve</strong>: minutes at modest overload, milliseconds at 20× rated current. Selectivity between series devices comes from <strong>grading</strong> (<span class="de">Staffelung</span>): each upstream curve must lie <em>above</em> the downstream one over the whole current range, with a safety margin (≈ 0.2–0.4 s between relays; fuse-to-fuse via standardized rating ratios like 1 : 1.6). <strong>Inverse-time overcurrent relays</strong> (<span class="de">AMZ-Schutz</span>) formalize the same idea with a settable pickup current \(I_s\) and time multiplier; the IEC "standard inverse" curve is</p>
+\[ t = \mathrm{TMS}\cdot\frac{0.14}{(I/I_s)^{0.02} - 1}. \]
+
+<div class="widget">
+  <div class="w-head"><span class="ic">🧪</span>Interactive — protection grading on the I–t plane <span class="w-tag">simulation</span></div>
+  <div class="w-body">
+    <p class="small mt0">A downstream 63 A fuse and an upstream inverse-time relay on the classic log–log time–current chart. Slide the fault current and check who trips first and with what margin. Then lower the relay's TMS until the margin collapses — that is exactly the mis-coordination that turns a branch fault into a feeder-wide outage.</p>
+    <div id="w-grading"></div>
+  </div>
+</div>
+
+<h3 id="distance">9.3 Distance protection</h3>
+<p>Meshed HV grids break the "current flows one way" assumption, so plain overcurrent grading fails there. The transmission workhorse is <strong>distance protection</strong> (<span class="de">Distanzschutz</span>): the relay continuously computes the apparent impedance \( \underline{Z} = \underline{U}/\underline{I} \) at its location. Under normal load \(|\underline{Z}|\) is large; a fault drops it abruptly to the line impedance <em>between relay and fault</em> — which, at ≈ 0.26 Ω/km, makes the relay a tape measure: impedance <em>is</em> distance. Zone 1 (≈ 85 % of the line length, to stay clear of measurement errors) trips instantaneously; Zone 2 (whole line + margin) after ≈ 0.3 s; Zone 3 backs up the neighboring line after ≈ 0.6–1 s. Each relay protects its own line fast and its neighbor slowly — selectivity without any communication channel.</p>
+
+<h3 id="differential">9.4 Differential protection</h3>
+<p><strong>Differential protection</strong> (<span class="de">Differentialschutz</span>) is Kirchhoff's current law weaponized (Module 04): measure every current entering a protected zone — a transformer, a busbar, a cable — and sum them. Healthy: \(\sum \underline{I} = 0\) within CT tolerance. Internal fault: the sum <em>is</em> the fault current → trip instantly, with no grading delay, inherently selective because the zone boundary is defined by the current-transformer locations. It is the premium scheme for every large transformer and busbar and, with fiber-optic links between the ends, for important lines.</p>
+
+<h3 id="reclosing">9.5 Automatic reclosing</h3>
+<p>A happy statistic: <strong>most overhead-line faults are transient</strong> — a lightning flashover, a swinging branch, a bird. The arc ionizes air, not equipment. So after tripping, the breaker waits ~0.3–1 s for the arc channel to de-ionize and simply closes again: <strong>automatic reclosing</strong> (<span class="de">automatische Wiedereinschaltung, AWE</span>). In roughly 70–80 % of cases the line holds and customers see only a blink. If the fault persists, the breaker trips again and stays open. Cables get no AWE: a cable fault is always permanent (punctured insulation), and reclosing onto it only deepens the damage.</p>
+
+<h2 id="frequency">10. Frequency, inertia and the balancing act</h2>
+
+<h3 id="balance-gauge">10.1 50 Hz — the grid's balance gauge</h3>
+<p>Nothing in the grid stores AC electricity, but something does store <em>energy</em>: the rotating masses of every synchronous generator and motor, all locked to the common frequency. That kinetic energy is the buffer between generation and load:</p>
+<ul>
+  <li>Load exceeds generation → the deficit is drawn from the rotors → they slow down → <strong>frequency falls</strong>.</li>
+  <li>Generation exceeds load → the surplus accelerates the rotors → <strong>frequency rises</strong>.</li>
+</ul>
+<p>The frequency is thus a real-time, continent-wide gauge of the active-power balance — one number, readable at any wall socket. Continental Europe holds it within ±50 mHz of 50 Hz almost all the time.</p>
+
+<div class="box intuition">
+  <div class="box-title"><span class="ic">💡</span>Intuition: the flywheel bathtub</div>
+  <p>Think of a bathtub where the water level is the frequency: generation is the tap, load is the drain. Level constant ⇔ inflow = outflow. The tub's <em>cross-section</em> is the system inertia: a wide tub (much rotating steel) changes level slowly after a disturbance, buying the control systems time; a narrow tub (inverter-dominated grid) sloshes violently. Every mechanism in this section is either "make the tub wider" or "adjust the tap faster".</p>
+</div>
+
+<h3 id="swing">10.2 Swing equation lite, and inertia</h3>
+<p>For the aggregated system, Newton's law for rotation, \(J\dot{\omega} = M\), multiplied by ω and normalized to the rated apparent power \(S\), becomes the <strong>swing equation</strong> (<span class="de">Bewegungsgleichung</span>). With the <strong>inertia constant</strong> \(H\) — the stored kinetic energy per unit of rated power,</p>
+\[ H = \frac{\tfrac12 J \omega_0^2}{S} \quad \text{(units: seconds; typical 2–8 s)}, \]
+<p>it reads, for small deviations:</p>
+\[ \boxed{\;\frac{\mathrm{d}f}{\mathrm{d}t} = \frac{f_0}{2H}\cdot\frac{\Delta P}{S}\;} \]
+<p>\(H = 5\) s means: the rotor stores five seconds' worth of full output as kinetic energy. Lose 2 % of generation in a system with \(H = 5\) s and the frequency initially falls at \(50 \cdot 0.02/10 = 0.1\) Hz/s — the <strong>RoCoF</strong> (rate of change of frequency). Inertia is not a control system; it is pure physics, delivered instantaneously and for free by every spinning synchronous machine (<span class="de">Momentanreserve</span>). This is exactly what solar inverters and DC-decoupled wind turbines do <em>not</em> provide naturally: an inverter has no flywheel — replace synchronous plants with inverters and \(H\) shrinks, RoCoF grows, and everything downstream must act faster (Section 11.3).</p>
+
+<h3 id="reserves">10.3 The control-reserve cascade</h3>
+
+<figure>
+  <div class="fig-frame">
+  <svg class="diagram" viewBox="0 0 660 240" role="img" aria-label="Timeline of frequency control reserves from inertia to minute reserve">
+    <!-- bars -->
+    <rect x="50" y="38" width="181" height="26" rx="5" fill="var(--accent)" opacity="0.18"/>
+    <rect x="50" y="38" width="181" height="26" rx="5" fill="none" stroke="var(--accent)" stroke-width="1.6"/>
+    <text x="58" y="55" font-size="11.5" fill="var(--accent)" font-weight="600">Inertia (Momentanreserve)</text>
+    <text x="240" y="55" font-size="11" fill="var(--text-soft)">physics — instantaneous</text>
+    <rect x="134" y="76" width="370" height="26" rx="5" fill="var(--accent-2)" opacity="0.15"/>
+    <rect x="134" y="76" width="370" height="26" rx="5" fill="none" stroke="var(--accent-2)" stroke-width="1.6"/>
+    <text x="142" y="93" font-size="11.5" fill="var(--accent-2)" font-weight="600">Primary control (FCR / Primärregelung)</text>
+    <text x="512" y="93" font-size="11" fill="var(--text-soft)">droop — stabilizes f ≠ 50 Hz</text>
+    <rect x="298" y="114" width="290" height="26" rx="5" fill="var(--accent)" opacity="0.18"/>
+    <rect x="298" y="114" width="290" height="26" rx="5" fill="none" stroke="var(--accent)" stroke-width="1.6"/>
+    <text x="306" y="131" font-size="11.5" fill="var(--accent)" font-weight="600">Secondary (aFRR / Sekundärregelung)</text>
+    <text x="306" y="158" font-size="11" fill="var(--text-soft)">AGC — restores 50.00 Hz and tie-line schedules</text>
+    <rect x="480" y="166" width="150" height="26" rx="5" fill="var(--accent-2)" opacity="0.15"/>
+    <rect x="480" y="166" width="150" height="26" rx="5" fill="none" stroke="var(--accent-2)" stroke-width="1.6"/>
+    <text x="488" y="183" font-size="11.5" fill="var(--accent-2)" font-weight="600">mFRR / Minutenreserve</text>
+    <!-- axis -->
+    <line x1="50" y1="206" x2="640" y2="206" stroke="var(--text-soft)" stroke-width="1.6" marker-end="url(#m19arrX)"/>
+    <line x1="50" y1="201" x2="50" y2="211" stroke="var(--text-soft)" stroke-width="1.4"/>
+    <text x="50" y="228" text-anchor="middle" font-size="11">1 s</text>
+    <line x1="231" y1="201" x2="231" y2="211" stroke="var(--text-soft)" stroke-width="1.4"/>
+    <text x="231" y="228" text-anchor="middle" font-size="11">10 s</text>
+    <line x1="298" y1="201" x2="298" y2="211" stroke="var(--text-soft)" stroke-width="1.4"/>
+    <text x="298" y="228" text-anchor="middle" font-size="11">30 s</text>
+    <line x1="340" y1="201" x2="340" y2="211" stroke="var(--text-soft)" stroke-width="1.4"/>
+    <text x="345" y="228" text-anchor="middle" font-size="11">1 min</text>
+    <line x1="504" y1="201" x2="504" y2="211" stroke="var(--text-soft)" stroke-width="1.4"/>
+    <text x="504" y="228" text-anchor="middle" font-size="11">15 min</text>
+    <line x1="588" y1="201" x2="588" y2="211" stroke="var(--text-soft)" stroke-width="1.4"/>
+    <text x="588" y="228" text-anchor="middle" font-size="11">1 h</text>
+    <defs><marker id="m19arrX" markerWidth="9" markerHeight="9" refX="7" refY="4.5" orient="auto"><path d="M0 0 L8 4.5 L0 9 z" fill="var(--text-soft)"/></marker></defs>
+  </svg>
+  </div>
+  <figcaption><b>Fig. 10.1</b> — The reserve cascade after a generation loss (time axis logarithmic). Each layer hands over to the next, freeing the faster reserve to catch the <em>next</em> incident.</figcaption>
+</figure>
+
+<ul>
+  <li><strong>Primary control / FCR</strong> (<span class="de">Primärregelung</span>): governors on participating plants react <em>locally and proportionally</em> to the frequency deviation — the <strong>droop</strong> (<span class="de">Statik</span>) \(s\): a droop of 5 % means the plant swings its full output for a 5 % frequency change. Fully deployed within 30 s, ±3000 MW held continent-wide (sized for the "reference incident": simultaneous loss of two large units). Crucially, primary control <em>stabilizes</em> the frequency at an offset — it does not restore 50.00 Hz.</li>
+  <li><strong>Secondary control / aFRR</strong> (<span class="de">Sekundärregelung</span>): the automatic generation control (AGC) of the area that <em>caused</em> the imbalance ramps its plants (from 30 s to 15 min) to bring the frequency back to 50.00 Hz and the cross-border flows back to schedule — and thereby relieves everyone else's primary reserve.</li>
+  <li><strong>Tertiary / minute reserve, mFRR</strong> (<span class="de">Minutenreserve</span>): market-procured, manually activated within 15 min, replaces aFRR for long disturbances.</li>
+  <li><strong>Last line — under-frequency load shedding</strong> (<span class="de">Lastabwurf</span>): if the frequency ever reaches 49.0 Hz despite all reserves, relays start disconnecting load in ~5 steps (about 10–15 % of load each) down to 47.5 Hz — below which power plants must disconnect to protect their turbines, and the lights go out for real.</li>
+</ul>
+
+<div class="widget">
+  <div class="w-head"><span class="ic">🧪</span>Interactive — frequency dynamics after losing a power plant <span class="w-tag">simulation</span></div>
+  <div class="w-body">
+    <p class="small mt0">A minimal swing-equation model: at t = 5 s the system loses generation (a step ΔP). Inertia sets the initial slope (RoCoF), primary control (droop) catches the fall at the <em>nadir</em> and stabilizes at an offset below 50 Hz — restoring 50.00 Hz is secondary control's job, beyond this 40 s window. Halve the inertia H and watch the nadir plunge for the same ΔP: that is the energy-transition challenge in one plot.</p>
+    <div id="w-freq"></div>
+  </div>
+</div>
+
+<div class="box history">
+  <div class="box-title"><span class="ic">📜</span>The 50.2 Hz problem — a near-miss by design error</div>
+  <p>Early German grid codes told rooftop PV inverters: "disconnect instantly if f &gt; 50.2 Hz". Sensible for a few systems — but by 2011 some 25–30 GW of PV shared that <em>identical</em> hard threshold. A modest over-frequency event could have switched off more generation in one instant than the entire ±3000 MW reserve is sized for, turning a surplus into a catastrophic deficit within seconds. The fix: a multi-year retrofit of ~315&thinsp;000 inverters (the "50.2-Hz-Retrofit"), and modern codes demanding a smooth power <em>reduction</em> statistics-spread over frequency instead of a cliff. Moral: in a grid of millions of devices, <em>correlated</em> behavior is a stability parameter.</p>
+</div>
+
+<h3 id="blackout">10.4 Anatomy of a blackout — and black start</h3>
+<p>Blackouts are almost never one failure; they are <strong>cascades</strong>. The canonical sequence: a line trips → its power shifts to parallel paths (load flow re-arranges instantly!) → one of those overloads and is tripped by protection → more power on fewer lines → an avalanche of trips splits the grid into islands, each with a violent generation/load imbalance that frequency control cannot ride out. On 4 November 2006, a routine planned switch-off of one 380 kV line over the river Ems (to let a cruise ship pass) cascaded exactly like this: within 14 seconds the European grid split into three islands; the western island, ~9 GW short, fell to 49 Hz and shed load for some 15 million households. Resynchronization took the rest of the night — and Europe tightened its (n−1) and data-exchange rules substantially.</p>
+<p>Restoring a dead grid is its own discipline: most thermal plants need external power for their pumps and controls — they cannot start into a dead network. <strong>Black-start capable</strong> (<span class="de">schwarzstartfähig</span>) plants — hydro and pumped storage above all, plus gas turbines with diesel starters — energize small islands around themselves, pick up load block by block (each block's inrush must not overwhelm the young island's frequency), and finally the islands are synchronized: breaker closes only when frequency, voltage magnitude <em>and</em> phase angle match on both sides (<span class="de">Synchrocheck</span>).</p>
+
+<h2 id="transition">11. Engineering the energy transition</h2>
+
+<h3 id="variability">11.1 Variable renewables: forecast + flexibility</h3>
+<p>Wind and PV are <em>variable</em> and <em>uncertain</em>: German PV alone swings from 0 to beyond 40 GW between night and a clear noon; wind can deliver 50 GW one week and 2 GW the next. The system answer has two halves: <strong>forecasting</strong> (day-ahead wind/PV forecasts are now accurate to a few percent — every percent of error must be held as reserve) and <strong>flexibility</strong>: dispatchable plants, storage, interconnectors (trading surplus across the ENTSO-E area), and increasingly flexible demand. The feared planning case has a German name the world has adopted: the <strong><span class="de">Dunkelflaute</span></strong> — a cold, dark, windless high-pressure week in winter.</p>
+
+<h3 id="storage">11.2 Storage: energy is not power</h3>
+
+<div class="table-wrap">
+<table class="data">
+<thead><tr><th>Technology</th><th>Round-trip η</th><th>Typical discharge</th><th>Strength</th><th>Germany today (rough)</th></tr></thead>
+<tbody>
+<tr><td>Pumped hydro (<span class="de">Pumpspeicher</span>)</td><td>75–80 %</td><td>4–8 h</td><td>bulk, proven, cheap per kWh cycled</td><td>≈ 10 GW / ≈ 40 GWh</td></tr>
+<tr><td>Li-ion batteries</td><td>~90 %</td><td>1–4 h</td><td>fast (ms!), modular, does FCR brilliantly</td><td>several GW / a few GWh, growing fast</td></tr>
+<tr><td>Hydrogen (electrolysis → cavern → CCGT/fuel cell)</td><td>35–45 %</td><td>days–months</td><td>the only <em>seasonal</em> option: TWh-scale caverns</td><td>pilot scale</td></tr>
+</tbody>
+</table>
+</div>
+
+<div class="box warn">
+  <div class="box-title"><span class="ic">⚠️</span>kW vs. kWh — two ratings, two problems</div>
+  <p>A storage plant has a <strong>power</strong> rating (kW — how fast it can deliver) and an <strong>energy</strong> rating (kWh — for how long). They solve different problems: batteries are power-rich but energy-poor (perfect for 30-second frequency reserve, hopeless for a dark week); hydrogen is the reverse. Any storage debate that quotes only one of the two numbers is not yet an engineering debate.</p>
+</div>
+
+<div class="example">
+  <div class="ex-head"><span class="ex-tag">Worked example</span> Sizing storage for one day of Dunkelflaute</div>
+  <div class="ex-body">
+    <p>Assume German load averages 60 GW and, during a winter lull, wind + PV deliver only 15 GW. What storage would bridge <em>one day</em>, and how do the technologies compare?</p>
+    <div class="step"><span class="step-label">Step 1 — power gap:</span> \( \Delta P = 60 - 15 = 45\,\mathrm{GW} \) must come from storage (plus any remaining thermal fleet — ignore it here to see the scale).</div>
+    <div class="step"><span class="step-label">Step 2 — energy gap:</span> \( W = 45\,\mathrm{GW} \cdot 24\,\mathrm{h} = 1080\,\mathrm{GWh} \approx 1.1\,\mathrm{TWh} \) — for a <em>single</em> day.</div>
+    <div class="step"><span class="step-label">Step 3 — pumped hydro:</span> all German pumped storage holds ≈ 40 GWh and ≈ 10 GW: it covers <em>under one hour</em> of the energy gap and under a quarter of the power gap. Grid batteries (a few GWh) are another order of magnitude smaller.</div>
+    <div class="step"><span class="step-label">Step 4 — hydrogen:</span> delivering 1080 GWh electric through a ~55 % efficient reconversion needs \( 1080/0.55 \approx 1960\,\mathrm{GWh} \) of stored hydrogen ≈ \( 1.96\cdot10^{12}/33.3 \,\mathrm{Wh/(Wh/kg)} \approx 59\,\mathrm{kt}\ \mathrm{H_2} \). Germany's existing gas caverns store the thermal equivalent of &gt;200 TWh — the vessel exists; the electrolyzers and H₂ turbines are the build-out task.</div>
+    <div class="result-line">One Dunkelflaute day ≈ 1.1 TWh — 25× the national pumped-hydro fleet. Batteries balance hours, pumped hydro balances days at the margin, and only chemical storage (or dispatchable backup plants) reaches the TWh scale. Energy ≠ power, twice over.</div>
+  </div>
+</div>
+
+<h3 id="grid-forming">11.3 Grid-following vs. grid-forming inverters</h3>
+<p>Today's standard renewable inverter is <strong>grid-following</strong> (<span class="de">netzfolgend</span>): a phase-locked loop measures the grid voltage's angle and the inverter injects current synchronized to it — a well-behaved current source that <em>presupposes</em> a stiff grid made by someone else. As synchronous machines retire, someone else must become the "someone": <strong>grid-forming</strong> (<span class="de">netzbildend</span>) inverters act as voltage sources that <em>set</em> their own frequency and voltage and respond to load changes instantaneously from the DC-side storage — emulating (and with "virtual inertia" control, numerically reproducing) the physics of Section 10.2. Grid-forming capability is entering grid codes now; it is the key enabling technology for a 100 %-inverter grid, including its black start.</p>
+
+<h3 id="congestion">11.4 Redispatch — the German congestion reality</h3>
+<p>The market clears electricity Germany-wide as if the grid were a copper plate; physics disagrees. Wind power lives in the north, big loads in the south, and the north–south corridors are chronically full (<span class="de">Netzengpass</span>). When the market outcome would overload a line, the TSOs perform <strong>redispatch</strong>: pay wind farms (or plants) <em>before</em> the bottleneck to reduce output and plants <em>behind</em> it to increase — same total power, different geography. Cost to German consumers: on the order of a few billion euros in recent years, the strongest possible argument for the HVDC corridors of Section 2.2. When even redispatch fails, renewables are curtailed (<span class="de">Einspeisemanagement</span>) — free energy thrown away for lack of wire.</p>
+
+<h3 id="smart">11.5 Sector coupling and the smart grid</h3>
+<p><strong>Sector coupling</strong> (<span class="de">Sektorenkopplung</span>) turns other energy sectors into grid flexibility: heat pumps with thermal storage, EV fleets charging when wind blows (and, with V2G, discharging back), electrolyzers as interruptible mega-loads. Exploiting them needs measurement and communication down to the household — smart meters (<span class="de">intelligente Messsysteme</span>), controllable loads, time-varying tariffs — plus observability for the distribution operator, who historically knew a feeder's load only from its annual fuse blowing. The distribution grid, built as a passive one-way street, is being retrofitted into a sensed, actuated, bidirectional system: the <strong>smart grid</strong> is less a gadget than the low-voltage grid finally getting the instrumentation the 380 kV level has had for fifty years.</p>
+
+<div class="box german">
+  <div class="box-title"><span class="ic">🇩🇪</span>Vokabeln</div>
+  <p>grid = <span class="de">Netz</span> · transmission grid = <span class="de">Übertragungsnetz</span> · distribution grid = <span class="de">Verteilnetz</span> · meshed = <span class="de">vermascht</span> · radial network = <span class="de">Strahlennetz</span> · voltage level = <span class="de">Spannungsebene</span> · load flow = <span class="de">Lastfluss</span> · voltage drop = <span class="de">Spannungsfall</span> · short-circuit current = <span class="de">Kurzschlussstrom</span> · protection = <span class="de">Schutztechnik</span> · selectivity = <span class="de">Selektivität</span> · fuse = <span class="de">Sicherung</span> · circuit breaker = <span class="de">Leistungsschalter</span> · distance protection = <span class="de">Distanzschutz</span> · auto-reclosing = <span class="de">Wiedereinschaltung (AWE)</span> · control reserve = <span class="de">Regelleistung</span> · inertia = <span class="de">Momentanreserve/Trägheit</span> · droop = <span class="de">Statik</span> · load shedding = <span class="de">Lastabwurf</span> · black start = <span class="de">Schwarzstart</span> · congestion = <span class="de">Netzengpass</span> · dark lull = <span class="de">Dunkelflaute</span> · pumped storage = <span class="de">Pumpspeicherkraftwerk</span></p>
+</div>
+
+<h2 id="summary">12. Formula summary — <span class="de">Formelsammlung</span></h2>
+
+<div class="table-wrap">
+<table class="data">
+<thead><tr><th>Concept</th><th>Formula</th><th>Remember as</th></tr></thead>
+<tbody>
+<tr><td>Three-phase power</td><td>\( S = \sqrt{3}\,U I,\quad P = S\cos\varphi \)</td><td>U = line-to-line, P/Q/S = 3-phase totals</td></tr>
+<tr><td>Line losses vs. voltage</td><td>\( P_v = 3I^2R \propto 1/U^2 \)</td><td>10× voltage → 100× less loss</td></tr>
+<tr><td>Voltage drop</td><td>\( \Delta U \approx (RP + XQ)/U \)</td><td>in HV grids the XQ term rules</td></tr>
+<tr><td>Charging current / power</td><td>\( I_c = \omega C' l\, U/\sqrt{3},\ \ Q_c = \omega C' l\, U^2 \)</td><td>kills long AC cables</td></tr>
+<tr><td>Power transfer</td><td>\( P = \dfrac{U_1 U_2}{X}\sin\delta \)</td><td>P ↔ angle, limit at δ = 90°</td></tr>
+<tr><td>Static limit</td><td>\( P_{max} = U_1U_2/X \)</td><td>long line = big X = small limit</td></tr>
+<tr><td>Swing / RoCoF</td><td>\( \mathrm{d}f/\mathrm{d}t = \dfrac{f_0\,\Delta P}{2 H S} \)</td><td>inertia H buys reaction time</td></tr>
+<tr><td>Droop</td><td>\( \Delta P/P_r = -\dfrac{1}{s}\cdot\dfrac{\Delta f}{f_0} \)</td><td>primary control stabilizes, doesn't restore</td></tr>
+<tr><td>Fault current (Thévenin)</td><td>\( I_k'' = \dfrac{c\,U_n}{\sqrt{3}\,Z_k} \)</td><td>M04 at 380 kV; c ≈ 1.1</td></tr>
+<tr><td>Grid / transformer impedance</td><td>\( Z_Q = c\,U_n^2/S_k'',\quad Z_T = u_k U_n^2/S_{rT} \)</td><td>from nameplate data</td></tr>
+<tr><td>Impedance referral</td><td>\( Z_1 = Z_2 \cdot (U_1/U_2)^2 \)</td><td>never forget the square</td></tr>
+<tr><td>IEC inverse-time relay</td><td>\( t = \mathrm{TMS}\cdot\dfrac{0.14}{(I/I_s)^{0.02}-1} \)</td><td>grade ≈ 0.3 s above downstream device</td></tr>
+</tbody>
+</table>
+</div>
+
+<h2 id="exercises">13. Exercises</h2>
+<p>Work these on paper first — grid engineering is 80 % disciplined bookkeeping with √3, squares and prefixes.</p>
+
+<div class="exercise">
+  <p class="ex-q"><span class="ex-num">E1</span>Transmit 1 GW (\(\cos\varphi = 1\)) over a line with 3 Ω per-phase resistance, once at 380 kV and once at 110 kV. Compute current and loss for both, in MW and percent. <span class="diff easy">easy</span></p>
+  <details><summary>Show solution</summary>
+    <div class="solution">
+      At 380 kV: \( I = \frac{10^9}{\sqrt{3}\cdot 380\cdot10^3} \approx 1519\,\mathrm{A} \), loss \( P_v = 3 I^2 R = 3 \cdot 1519^2 \cdot 3 \approx 20.8\,\mathrm{MW} = 2.1\,\% \).<br>
+      At 110 kV: \( I \approx 5249\,\mathrm{A} \), \( P_v = 3\cdot 5249^2 \cdot 3 \approx 248\,\mathrm{MW} = 24.8\,\% \) — and no realistic conductor even carries 5 kA.<br>
+      Ratio: \((380/110)^2 \approx 12\) ✓. This factor-of-\(U^2\) is the entire reason the Höchstspannung level exists.
+    </div>
+  </details>
+</div>
+
+<div class="exercise">
+  <p class="ex-q"><span class="ex-num">E2</span>A 110 kV XLPE cable has C′ = 0.2 µF/km. Compute the charging current of a 50 km run at 50 Hz and compare with a 500 A ampacity. <span class="diff easy">easy</span></p>
+  <details><summary>Show solution</summary>
+    <div class="solution">
+      \( C = 10\,\mathrm{µF} \), \( I_c = \omega C \cdot U/\sqrt{3} = 314.16 \cdot 10^{-5}\,\mathrm{S} \cdot 63.5\,\mathrm{kV} \approx 200\,\mathrm{A} \) — 40 % of the ampacity is gone before a single watt is delivered, and it grows linearly with length. At 125 km the cable would be full of charging current alone. This is why long submarine links are DC (charging current exists only at AC).
+    </div>
+  </details>
+</div>
+
+<div class="exercise">
+  <p class="ex-q"><span class="ex-num">E3</span>A 5 km, 10 kV cable feeder (R′ = 0.32 Ω/km, X′ = 0.08 Ω/km) supplies 2 MW at \(\cos\varphi = 0.95\). Find ΔU absolutely and in percent, and the share caused by Q. <span class="diff med">medium</span></p>
+  <details><summary>Show solution</summary>
+    <div class="solution">
+      \( R = 1.6\,\Omega,\ X = 0.4\,\Omega,\ Q = 2\,\mathrm{MW}\cdot\tan(18.2^\circ) \approx 0.66\,\mathrm{Mvar} \).<br>
+      \( \Delta U \approx \frac{1.6\cdot 2\cdot10^6 + 0.4\cdot 0.66\cdot10^6}{10^4} = \frac{3.2\cdot10^6 + 0.26\cdot10^6}{10^4} \approx 346\,\mathrm{V} = 3.5\,\% \).<br>
+      The Q-term contributes only ≈ 8 % of the drop — in a <em>cable</em> grid (R &gt; X) active power dominates the voltage drop, the mirror image of the transmission situation. Sanity: 3.5 % on one feeder is acceptable but leaves little for the LV grid below.
+    </div>
+  </details>
+</div>
+
+<div class="exercise">
+  <p class="ex-q"><span class="ex-num">E4</span>A 630 kVA, 20/0.4 kV distribution transformer has \(u_k = 6\,\%\); the 20 kV grid is stiff. Estimate the three-phase fault current at the 400 V busbar (c = 1.05), directly and via the shortcut \(I_k'' \approx c\,I_r/u_k\). <span class="diff med">medium</span></p>
+  <details><summary>Show solution</summary>
+    <div class="solution">
+      \( Z_T = u_k U^2/S_r = 0.06 \cdot 400^2 / 630\,000 \approx 15.2\,\mathrm{m\Omega} \).<br>
+      \( I_k'' = \frac{1.05\cdot 400}{\sqrt{3}\cdot 0.0152} \approx 15.9\,\mathrm{kA} \).<br>
+      Shortcut: \( I_r = 630\,000/(\sqrt{3}\cdot400) \approx 909\,\mathrm{A} \), \( I_k'' \approx 1.05 \cdot 909/0.06 \approx 15.9\,\mathrm{kA} \) ✓ — a transformer delivers roughly \(1/u_k\) times its rated current into a bolted fault. Every LV installation downstream must be built for ~16 kA prospective current; your house's fuses interrupt a share of exactly this.
+    </div>
+  </details>
+</div>
+
+<div class="exercise">
+  <p class="ex-q"><span class="ex-num">E5</span>A synchronous area has 200 GVA of rotating capacity with average H = 4 s and suddenly loses a 3 GW plant. Compute the initial RoCoF and the time to reach the 49.0 Hz load-shedding threshold if <em>no</em> control acted. Repeat for H = 2 s. <span class="diff med">medium</span></p>
+  <details><summary>Show solution</summary>
+    <div class="solution">
+      \( \mathrm{RoCoF} = \frac{f_0 \Delta P}{2HS} = \frac{50\cdot 3}{2\cdot 4\cdot 200} \approx 0.094\,\mathrm{Hz/s} \).
+      Time to fall 1 Hz: \( t = 1/0.094 \approx 10.7\,\mathrm{s} \) — comfortably more than the 30 s primary-control deployment because primary control begins acting immediately, not at 30 s.<br>
+      With H = 2 s: 0.19 Hz/s and ≈ 5.3 s. Halving inertia halves the reaction time available to every controller — which is why low-inertia systems (Ireland, South Australia) already enforce RoCoF limits and procure synthetic inertia, and why continental Europe watches its retiring synchronous fleet carefully.
+    </div>
+  </details>
+</div>
+
+<div class="exercise">
+  <p class="ex-q"><span class="ex-num">E6</span>A 380 kV double-circuit line, 300 km, X′ = 0.26 Ω/km per circuit, carries 1800 MW total with \(U_1 = U_2 = 380\) kV. Find the operating angle δ. One circuit trips — find the new maximum power and new steady-state δ, and judge the stability margin. <span class="diff hard">challenge</span></p>
+  <details><summary>Show solution</summary>
+    <div class="solution">
+      Both circuits: \( X = \frac{0.26\cdot300}{2} = 39\,\Omega \), \( P_{max} = \frac{380^2\cdot10^6}{39} \approx 3.70\,\mathrm{GW} \), so \( \delta = \arcsin(1800/3703) \approx 29^\circ \) — healthy.<br>
+      One circuit: \( X = 78\,\Omega \), \( P_{max} \approx 1.85\,\mathrm{GW} \); the same 1800 MW now needs \( \sin\delta = 0.972 \Rightarrow \delta \approx 76.5^\circ \).<br>
+      A steady-state solution exists — barely. But the transition is dynamic: at the moment of the trip the angle is still 29° while the line can carry far less than before, so the generators accelerate and δ <em>swings</em> well beyond 76.5°; by the equal-area argument it will likely pass the unstable point at \(180° - 76.5° = 103.5°\) and lose synchronism. Verdict: 1800 MW violates (n−1) on this corridor; a secure loading must keep the <em>post-fault</em> angle low (in practice ≲ 40–50°), i.e. well under 1.4 GW here — or add series compensation.
+    </div>
+  </details>
+</div>
+
+<h2 id="quiz">14. Self-assessment</h2>
+
+<div class="quiz" data-quiz-title="Module 19 — Self-test">
+<script type="application/json">
+[
+ {"q":"A lossless 380 kV line has X = 50 Ω and equal voltage magnitudes at both ends. Its static transfer limit is about…",
+  "opts":["720 MW","1.4 GW","2.9 GW","5.8 GW"],"a":2,
+  "explain":"\\(P_{max} = U_1U_2/X = (380\\,\\mathrm{kV})^2/50\\,\\Omega \\approx 2890\\,\\mathrm{MW}\\). With line-to-line voltages this formula directly yields three-phase power."},
+ {"q":"In the transmission grid (X ≫ R), the voltage magnitude at a bus is controlled primarily by…",
+  "opts":["active power injection","reactive power injection","the phase angle δ","the grid frequency"],"a":1,
+  "explain":"\\(\\Delta U \\approx (RP+XQ)/U\\): with X ≫ R the XQ term dominates, so Q controls |U|, while P couples to the angle δ. In LV cable grids (R ≫ X) the roles reverse."},
+ {"q":"Which level of the German ladder is 'Mittelspannung'?",
+  "opts":["380/220 kV","110 kV","10–30 kV","400/230 V"],"a":2,
+  "explain":"Mittelspannung is the 10–30 kV (typically 20 kV) distribution level feeding local substations; 380/220 kV = Höchstspannung, 110 kV = Hochspannung, 400/230 V = Niederspannung."},
+ {"q":"Long AC cables are problematic mainly because…",
+  "opts":["cable resistance is much higher than for overhead lines","their large capacitance draws charging current that consumes the ampacity","insulation cannot withstand 50 Hz for long distances","skin effect is stronger underground"],"a":1,
+  "explain":"A cable has 20–30× the capacitance of an overhead line; the charging current \\(I_c = \\omega C' l\\, U/\\sqrt{3}\\) grows with length until, after ~75 km at 380 kV, it fills the entire current rating. DC has no charging current — hence HVDC sea cables."},
+ {"q":"In a load-flow calculation, the slack bus…",
+  "opts":["has fixed P and Q","has fixed P and |U|","fixes |U| and angle and absorbs the power mismatch including losses","is the bus with the largest load"],"a":2,
+  "explain":"Losses are unknown before solving, so one bus must leave its injection free: the slack (Bilanzknoten) sets the angle reference (δ = 0) and |U|, and its P, Q come out of the solution."},
+ {"q":"You measure 50.1 Hz at your wall socket. This tells you…",
+  "opts":["the grid is overloaded","generation currently exceeds load in the synchronous area","your local voltage is too high","a short circuit is in progress"],"a":1,
+  "explain":"Frequency is the balance gauge: surplus power accelerates all rotors together, so f rises. 'High frequency = stressed grid' is the classic misconception — a stressed (deficit) grid shows LOW frequency."},
+ {"q":"A system with inertia constant H = 5 s suddenly loses 2 % of its generation. The initial rate of change of frequency is about…",
+  "opts":["0.02 Hz/s","0.1 Hz/s","0.5 Hz/s","1 Hz/s"],"a":1,
+  "explain":"\\(\\mathrm{RoCoF} = f_0\\,\\Delta p/(2H) = 50 \\cdot 0.02 / 10 = 0.1\\,\\mathrm{Hz/s}\\). Halving the inertia doubles it — the core challenge of inverter-dominated grids."},
+ {"q":"Selectivity (Selektivität) in protection means…",
+  "opts":["all breakers in the path open simultaneously for safety","only the device nearest the fault trips; upstream devices act as delayed back-up","the fastest available device always clears the fault","protection selects the least loaded path"],"a":1,
+  "explain":"The goal is to isolate only the faulted element and keep everyone else supplied — achieved by grading time–current curves or by inherently zone-selective schemes (distance, differential)."},
+ {"q":"Automatic reclosing (AWE) is used on overhead lines because…",
+  "opts":["circuit breakers must be exercised regularly","most overhead faults are transient arcs that clear once the line is de-energized","it compensates reactive power","cables require it as well"],"a":1,
+  "explain":"70–80 % of overhead faults (lightning flashover, branches) vanish after the arc de-ionizes, so trip → wait ~0.3–1 s → reclose restores supply. Cable faults are permanent, so cables never get AWE."},
+ {"q":"HVDC is preferred over AC transmission when…",
+  "opts":["the distance is short and both grids are synchronous","corridors are very long, submarine, or connect asynchronous grids","large amounts of reactive power must be transported","transformers are unavailable"],"a":1,
+  "explain":"Converters cost a lot (fixed), the DC line is cheaper per km and has no charging current or stability angle — so DC wins beyond the breakeven length (~500–800 km overhead, ~50–100 km cable) and is the only way to couple asynchronous areas."}
+]
+</script>
+</div>
+
+<script>
+document.addEventListener("ee-ready", () => {
+
+  /* ---------- Widget 1: P(δ) power transfer ---------- */
+  EE.functionPlot({
+    mount: "#w-pdelta", height: 300,
+    x: { min: 0, max: 180, label: "δ in °" },
+    y: p => ({ min: 0, max: 1.15 * (p.U1 * p.U2) / (0.26 * p.len), label: "P in MW" }),
+    params: [
+      { key: "U1", label: "U₁ (sending)", min: 350, max: 420, step: 1, value: 400, unit: "kV", fmt: v => v.toFixed(0) },
+      { key: "U2", label: "U₂ (receiving)", min: 350, max: 420, step: 1, value: 390, unit: "kV", fmt: v => v.toFixed(0) },
+      { key: "len", label: "Line length (X′ = 0.26 Ω/km)", min: 50, max: 600, step: 10, value: 200, unit: "km", fmt: v => v.toFixed(0) },
+      { key: "del", label: "Operating angle δ", min: 0, max: 90, step: 1, value: 30, unit: "°", fmt: v => v.toFixed(0) }
+    ],
+    curves: [
+      { label: "P(δ)", color: 0, fn: (d, p) => (p.U1 * p.U2) / (0.26 * p.len) * Math.sin(d * Math.PI / 180) }
+    ],
+    annotations: p => {
+      const Pmax = (p.U1 * p.U2) / (0.26 * p.len);
+      return [
+        { type: "vline", x: 90, label: "static stability limit" },
+        { type: "point", x: p.del, y: Pmax * Math.sin(p.del * Math.PI / 180), label: "operating point" }
+      ];
+    },
+    readouts: [
+      { label: "Line reactance X", fn: p => (0.26 * p.len).toFixed(0) + " Ω" },
+      { label: "P at δ", fn: p => ((p.U1 * p.U2) / (0.26 * p.len) * Math.sin(p.del * Math.PI / 180)).toFixed(0) + " MW" },
+      { label: "P_max (δ = 90°)", fn: p => ((p.U1 * p.U2) / (0.26 * p.len)).toFixed(0) + " MW" },
+      { label: "Stability margin", fn: p => (100 * (1 - Math.sin(p.del * Math.PI / 180))).toFixed(0) + " %" }
+    ]
+  });
+
+  /* ---------- Widget 2: feeder voltage profile ---------- */
+  const FEED_N = 24, FEED_UN = 20e3, FEED_R = 0.31, FEED_X = 0.35;
+  function feederProfile(p) {
+    const dx = p.len / FEED_N;
+    const Q = p.P * Math.tan(Math.acos(p.pf)) * 1e6;
+    const pNode = p.P * 1e6 / FEED_N, qNode = Q / FEED_N, gNode = p.PV * 1e6 / FEED_N;
+    const u = [1];
+    for (let k = 1; k <= FEED_N; k++) {
+      const down = FEED_N - k + 1;
+      const Pk = (pNode - gNode) * down, Qk = qNode * down;
+      const dU = (FEED_R * dx * Pk + FEED_X * dx * Qk) / (FEED_UN * FEED_UN * u[k - 1]);
+      u.push(u[k - 1] - dU);
+    }
+    return u;
+  }
+  function feederAt(u, p, x) {
+    const s = Math.min(Math.max(x / p.len, 0), 1) * FEED_N;
+    const i = Math.min(Math.floor(s), FEED_N - 1);
+    return u[i] + (u[i + 1] - u[i]) * (s - i);
+  }
+  EE.custom({
+    mount: "#w-feeder", height: 300,
+    params: [
+      { key: "len", label: "Feeder length", min: 4, max: 40, step: 1, value: 12, unit: "km", fmt: v => v.toFixed(0) },
+      { key: "P", label: "Total load P", min: 0, max: 8, step: 0.25, value: 4, unit: "MW", fmt: v => v.toFixed(2) },
+      { key: "pf", label: "Load cos φ (inductive)", min: 0.85, max: 1, step: 0.01, value: 0.9, fmt: v => v.toFixed(2) },
+      { key: "PV", label: "Distributed PV infeed", min: 0, max: 10, step: 0.25, value: 0, unit: "MW", fmt: v => v.toFixed(2) }
+    ],
+    readouts: [
+      { label: "Voltage at feeder end", fn: p => { const u = feederProfile(p); const e = u[FEED_N]; return e.toFixed(3) + " pu = " + (e * 20).toFixed(2) + " kV"; } },
+      { label: "Worst deviation", fn: p => { const u = feederProfile(p); let w = 0; for (const v of u) if (Math.abs(v - 1) > Math.abs(w)) w = v - 1; return (w >= 0 ? "+" : "") + (100 * w).toFixed(1) + " %"; } },
+      { label: "Band check (±5 %)", fn: p => { const u = feederProfile(p); const ok = u.every(v => v >= 0.95 && v <= 1.05); return ok ? "within band ✓" : "VIOLATION ✗"; } }
+    ],
+    draw: (ctx, w, h, p, hp) => {
+      const u = feederProfile(p);
+      let lo = Math.min(...u), hi = Math.max(...u);
+      lo = Math.min(lo - 0.01, 0.935); hi = Math.max(hi + 0.01, 1.065);
+      const v = hp.makeView({ min: 0, max: p.len, label: "distance from substation in km" },
+                            { min: lo, max: hi, label: "U in pu" });
+      hp.drawFrame(v);
+      hp.drawAnnotations(v, [
+        { type: "hline", y: 1.05, label: "+5 %" },
+        { type: "hline", y: 0.95, label: "−5 %" }
+      ]);
+      hp.drawCurve(v, x => feederAt(u, p, x), hp.color(0));
+      /* node dots */
+      ctx.fillStyle = hp.color(0);
+      for (let k = 0; k <= FEED_N; k += 4) {
+        ctx.beginPath(); ctx.arc(v.X(k * p.len / FEED_N), v.Y(u[k]), 3, 0, 7); ctx.fill();
+      }
+      ctx.font = "600 11.5px system-ui, sans-serif";
+      ctx.fillStyle = hp.color(0); ctx.textAlign = "right"; ctx.textBaseline = "bottom";
+      ctx.fillText("U(x)", v.padL + v.iw - 8, v.Y(u[FEED_N]) - 6);
+    }
+  });
+
+  /* ---------- Widget 3: frequency dynamics (swing + droop) ---------- */
+  let fqCache = { key: "", data: null };
+  function simFreq(p) {
+    const key = p.H + "|" + p.dP + "|" + p.droop;
+    if (fqCache.key === key) return fqCache.data;
+    const f0 = 50, dt = 0.02, T = 40, n = Math.round(T / dt);
+    const Tt = 2.0, D = 1.0;                    /* turbine lag s, load damping pu/pu */
+    let df = 0, pm = 0, nadir = 50, tn = 0;
+    const arr = new Float64Array(n + 1); arr[0] = 50;
+    for (let i = 1; i <= n; i++) {
+      const t = i * dt;
+      const pL = t >= 5 ? p.dP / 100 : 0;       /* generation loss as load step */
+      const pmT = -df / (f0 * p.droop / 100);   /* droop characteristic */
+      pm += dt * (pmT - pm) / Tt;
+      df += dt * (f0 / (2 * p.H)) * (pm - pL - D * df / f0);
+      arr[i] = f0 + df;
+      if (arr[i] < nadir) { nadir = arr[i]; tn = t; }
+    }
+    fqCache = { key, data: { arr, dt, T, nadir, tn, fss: arr[n] } };
+    return fqCache.data;
+  }
+  EE.custom({
+    mount: "#w-freq", height: 320,
+    params: [
+      { key: "H", label: "System inertia H", min: 1, max: 8, step: 0.5, value: 5, unit: "s", fmt: v => v.toFixed(1) },
+      { key: "dP", label: "Generation loss ΔP", min: 0.5, max: 10, step: 0.5, value: 3, unit: "% of S", fmt: v => v.toFixed(1) },
+      { key: "droop", label: "Primary droop s", min: 2, max: 12, step: 0.5, value: 5, unit: "%", fmt: v => v.toFixed(1) }
+    ],
+    readouts: [
+      { label: "Initial RoCoF", fn: p => "−" + (50 * p.dP / 100 / (2 * p.H)).toFixed(3) + " Hz/s" },
+      { label: "Nadir", fn: p => simFreq(p).nadir.toFixed(3) + " Hz" },
+      { label: "Quasi-steady f (primary only)", fn: p => simFreq(p).fss.toFixed(3) + " Hz" }
+    ],
+    draw: (ctx, w, h, p, hp) => {
+      const s = simFreq(p);
+      const lo = Math.min(49.78, s.nadir - 0.06);
+      const v = hp.makeView({ min: 0, max: s.T, label: "t in s" },
+                            { min: lo, max: 50.05, label: "f in Hz" });
+      hp.drawFrame(v);
+      hp.drawAnnotations(v, [
+        { type: "vline", x: 5, label: "plant lost" },
+        { type: "hline", y: 49.8, label: "49.8 Hz — alert" },
+        { type: "hline", y: 49.0, label: "49.0 Hz — load shedding" },
+        { type: "point", x: s.tn, y: s.nadir, label: "nadir" }
+      ]);
+      hp.drawCurve(v, t => {
+        const i = Math.min(Math.max(t / s.dt, 0), s.arr.length - 1);
+        const k = Math.floor(i);
+        return k >= s.arr.length - 1 ? s.arr[s.arr.length - 1] : s.arr[k] + (s.arr[k + 1] - s.arr[k]) * (i - k);
+      }, hp.color(0));
+      ctx.font = "600 11.5px system-ui, sans-serif";
+      ctx.fillStyle = hp.color(0); ctx.textAlign = "right"; ctx.textBaseline = "bottom";
+      ctx.fillText("f(t)", v.padL + v.iw - 8, v.Y(s.fss) - 6);
+    }
+  });
+
+  /* ---------- Widget 4: protection grading, log-log I-t ---------- */
+  EE.custom({
+    mount: "#w-grading", height: 340,
+    params: [
+      { key: "Is", label: "Relay pickup current I_s", min: 150, max: 600, step: 25, value: 300, unit: "A", fmt: v => v.toFixed(0) },
+      { key: "tms", label: "Relay time multiplier TMS", min: 0.05, max: 1, step: 0.05, value: 0.3, fmt: v => v.toFixed(2) },
+      { key: "If", label: "Fault current I_F", min: 400, max: 15000, step: 100, value: 3000, unit: "A", fmt: v => v.toFixed(0) }
+    ],
+    readouts: [
+      { label: "Fuse trip time", fn: p => { const t = tFuse(p.If); return t > 100 ? "> 100 s" : EE.si(t, "s"); } },
+      { label: "Relay trip time", fn: p => { const t = tRelay(p.If, p); return isFinite(t) ? EE.si(t, "s") : "no pickup"; } },
+      { label: "First to trip", fn: p => { const a = tFuse(p.If), b = tRelay(p.If, p); return a < b ? "fuse (selective ✓)" : "RELAY (not selective ✗)"; } },
+      { label: "Grading margin", fn: p => { const a = tFuse(p.If), b = tRelay(p.If, p); return isFinite(b) ? EE.si(b - a, "s") : "—"; } }
+    ],
+    draw: (ctx, w, h, p, hp) => {
+      const k = hp.ink;
+      const x0 = 58, x1 = w - 16, y0 = 16, y1 = h - 44;
+      const LI0 = 2, LI1 = Math.log10(20000), LT0 = -2, LT1 = 2;
+      const X = I => x0 + (Math.log10(I) - LI0) / (LI1 - LI0) * (x1 - x0);
+      const Y = t => y1 - (Math.log10(t) - LT0) / (LT1 - LT0) * (y1 - y0);
+      ctx.font = "11.5px system-ui, sans-serif"; ctx.lineWidth = 1;
+      /* gridlines */
+      for (let e = 2; e <= 4; e++) for (const m of [1, 2, 5]) {
+        const I = m * Math.pow(10, e);
+        if (I < 100 || I > 20000) continue;
+        ctx.strokeStyle = m === 1 ? k.axis : k.grid;
+        ctx.beginPath(); ctx.moveTo(X(I), y0); ctx.lineTo(X(I), y1); ctx.stroke();
+        if (m === 1 || m === 2 || m === 5) {
+          ctx.fillStyle = k.muted; ctx.textAlign = "center"; ctx.textBaseline = "top";
+          if (m === 1) ctx.fillText(EE.si(I, "A"), X(I), y1 + 6);
+        }
+      }
+      for (let e = -2; e <= 2; e++) for (const m of [1, 2, 5]) {
+        const t = m * Math.pow(10, e);
+        if (t < 0.01 || t > 100) continue;
+        ctx.strokeStyle = m === 1 ? k.axis : k.grid;
+        ctx.beginPath(); ctx.moveTo(x0, Y(t)); ctx.lineTo(x1, Y(t)); ctx.stroke();
+        if (m === 1) {
+          ctx.fillStyle = k.muted; ctx.textAlign = "right"; ctx.textBaseline = "middle";
+          ctx.fillText(EE.fmt(t), x0 - 7, Y(t));
+        }
+      }
+      ctx.strokeStyle = k.axis; ctx.strokeRect(x0, y0, x1 - x0, y1 - y0);
+      ctx.fillStyle = k.primary; ctx.font = "600 12px system-ui, sans-serif";
+      ctx.textAlign = "center"; ctx.textBaseline = "bottom";
+      ctx.fillText("current I in A (log)", (x0 + x1) / 2, h - 6);
+      ctx.save(); ctx.translate(13, (y0 + y1) / 2); ctx.rotate(-Math.PI / 2);
+      ctx.fillText("trip time t in s (log)", 0, 0); ctx.restore();
+      /* curves */
+      ctx.save();
+      ctx.beginPath(); ctx.rect(x0, y0, x1 - x0, y1 - y0); ctx.clip();
+      const plot = (fn, color) => {
+        ctx.strokeStyle = color; ctx.lineWidth = 2.2; ctx.beginPath();
+        let pen = false;
+        for (let i = 0; i <= 300; i++) {
+          const I = Math.pow(10, LI0 + (i / 300) * (LI1 - LI0));
+          const t = fn(I);
+          if (!isFinite(t) || t <= 0) { pen = false; continue; }
+          const px = X(I), py = Y(Math.min(Math.max(t, 0.005), 300));
+          if (!pen) { ctx.moveTo(px, py); pen = true; } else ctx.lineTo(px, py);
+        }
+        ctx.stroke();
+      };
+      plot(I => tFuse(I), hp.color(2));
+      plot(I => tRelay(I, p), hp.color(0));
+      /* fault-current line + trip points */
+      ctx.strokeStyle = k.muted; ctx.setLineDash([5, 4]); ctx.lineWidth = 1.4;
+      ctx.beginPath(); ctx.moveTo(X(p.If), y0); ctx.lineTo(X(p.If), y1); ctx.stroke();
+      ctx.setLineDash([]);
+      const dot = (t, color) => {
+        if (!isFinite(t) || t < 0.01 || t > 100) return;
+        ctx.fillStyle = color;
+        ctx.beginPath(); ctx.arc(X(p.If), Y(t), 4.5, 0, 7); ctx.fill();
+        ctx.strokeStyle = k.surface; ctx.lineWidth = 2; ctx.stroke();
+      };
+      dot(tFuse(p.If), hp.color(2));
+      dot(tRelay(p.If, p), hp.color(0));
+      ctx.restore();
+      /* labels */
+      ctx.font = "600 11.5px system-ui, sans-serif"; ctx.textAlign = "left"; ctx.textBaseline = "bottom";
+      ctx.fillStyle = hp.color(2); ctx.fillText("63 A fuse (downstream)", X(195), Y(40) - 2);
+      ctx.fillStyle = hp.color(0); ctx.fillText("overcurrent relay (upstream)", X(p.Is * 1.35), Y(Math.min(tRelay(p.Is * 1.35, p), 90)) - 8);
+      ctx.fillStyle = k.muted; ctx.font = "600 11px system-ui, sans-serif";
+      ctx.textAlign = "left"; ctx.textBaseline = "top";
+      ctx.fillText("I_F", X(p.If) + 5, y0 + 4);
+    }
+  });
+  function tFuse(I) { return 5 * Math.pow(I / 300, -3.8); }
+  function tRelay(I, p) { return I > 1.1 * p.Is ? p.tms * 0.14 / (Math.pow(I / p.Is, 0.02) - 1) : Infinity; }
+});
+</script>
+
+</article>
+</main>
+</div>
+</body>
+</html>

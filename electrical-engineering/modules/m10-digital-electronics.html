@@ -1,0 +1,1233 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>M10 · Digital Logic Design — EE Knowledge Base</title>
+<link rel="stylesheet" href="../../assets/vendor/katex/katex.min.css">
+<link rel="stylesheet" href="../../assets/css/style.css">
+<script src="../../assets/vendor/katex/katex.min.js" defer></script>
+<script src="../../assets/vendor/katex/auto-render.min.js" defer></script>
+<script src="../curriculum.js" defer></script>
+<script src="../../assets/js/app.js" defer></script>
+<script src="../../assets/js/widgets.js" defer></script>
+</head>
+<body data-module="m10">
+<div class="layout">
+<main class="content">
+<article class="article">
+
+<span class="eyebrow">🔬 Electronics · Module 10</span>
+<h1>Digital Logic Design <span class="muted" style="font-weight:400;font-size:1.4rem">· <span class="de">Digitaltechnik</span></span></h1>
+<p class="lead">Every processor, memory chip and communication link on Earth is built from one idea: represent information as crisp 0s and 1s, compute with them using a tiny algebra invented in 1854, and let billions of transistor switches do the rest. This module takes you from "why binary at all?" to designing your own state machines — the exact skill set behind CPUs, and the mental model you need for every embedded, chip-design and computer-architecture course that follows.</p>
+
+<div class="page-meta">
+  <span><b>Corresponds to:</b> Digitaltechnik (2nd–3rd semester)</span>
+  <span><b>Prerequisites:</b> Modules 04, 08</span>
+  <span><b>Study time:</b> ≈ 6–8 h</span>
+</div>
+
+<h2 id="why-digital">1. Why digital won</h2>
+
+<p>An analog signal (Module 09) carries information in a <em>continuous</em> voltage: 3.172 V means something different from 3.171 V. That precision is also its curse. Every resistor adds thermal noise, every stage of amplification adds distortion, every meter of cable picks up interference — and once noise has been added to an analog value, <strong>no circuit in the universe can tell it apart from the signal</strong>. Copy an audio cassette ten times and the hiss grows every generation.</p>
+
+<p>A digital signal (<span class="de">Digitalsignal</span>) throws away almost all of that continuum. We agree that anything below, say, 0.8 V counts as <b>0</b> and anything above 2.0 V counts as <b>1</b>, and we only ever transmit those two symbols. Now noise is harmless as long as it is smaller than the safety margin: a "1" transmitted at 3.3 V and received at 2.9 V is still, unambiguously, a 1. This margin is the <strong>noise margin</strong> (<span class="de">Störabstand</span>) — we will compute it precisely in Section 13.</p>
+
+<div class="box key">
+  <div class="box-title"><span class="ic">🔑</span>Key idea: regeneration</div>
+  <p>The deepest advantage is not tolerance but <strong>regeneration</strong> (<span class="de">Signalregeneration</span>): every logic gate re-decides its output and drives it back to a clean 0 or a clean 1. Noise is not merely tolerated — it is <em>erased</em> at every stage. An analog chain of 1000 stages accumulates 1000 doses of noise; a digital chain of 1000 gates delivers bits as perfect as the first. That is why you can copy a file a million times without loss, and why a CPU can chain <em>billions</em> of operations per second without the answer dissolving into mush.</p>
+</div>
+
+<p>The third pillar is <strong>abstraction</strong>. Because a gate's behavior is fully described by a finite truth table, we can stack levels of design without ever revisiting the physics: transistors → gates → adders and registers → processors → software. Each layer only needs the layer below to honor its 0/1 contract. This layering — impossible in analog, where every stage loads and detunes its neighbor — is what allows a chip with 100 billion transistors to be designed by teams who mostly never think about electrons. Digital design is the art of engineering <em>inside</em> this contract; Module 08 explained the transistor beneath it, Module 11 shows how the layers become silicon.</p>
+
+<div class="box history">
+  <div class="box-title"><span class="ic">📜</span>From relays to logic</div>
+  <p>Claude Shannon's 1937 master's thesis — often called the most important master's thesis ever written — showed that relay switching circuits obey George Boole's 1854 "algebra of logic". Suddenly circuit design became mathematics: simplify the formula, and you have simplified the hardware. Konrad Zuse built exactly such relay machines in Berlin (Z3, 1941). Everything in this module is the modern, CMOS-flavored descendant of that insight.</p>
+</div>
+
+<h2 id="numbers">2. Number systems — binary and hexadecimal</h2>
+
+<h3 id="positional">2.1 Positional notation</h3>
+<p>Any base-\(b\) number system (<span class="de">Stellenwertsystem</span>) assigns each digit a weight that is a power of the base:</p>
+\[ (d_{n-1}\,d_{n-2}\dots d_1 d_0)_b \;=\; \sum_{i=0}^{n-1} d_i \cdot b^i . \]
+<p>Decimal uses \(b=10\) because we have ten fingers; logic circuits use \(b=2\) — the <strong>binary system</strong> (<span class="de">Dualsystem</span>) — because a transistor switch has two reliable states. A binary digit is a <strong>bit</strong>. For example:</p>
+\[ (1011\,0101)_2 = 128 + 32 + 16 + 4 + 1 = 181_{10}. \]
+<p>To convert decimal → binary, repeatedly divide by 2 and collect remainders bottom-up: \(181 = 2\cdot 90 + \mathbf{1}\), \(90 = 2\cdot45+\mathbf{0}\), \(45=2\cdot22+\mathbf{1}\), \(22=2\cdot11+\mathbf{0}\), \(11=2\cdot5+\mathbf{1}\), \(5=2\cdot2+\mathbf{1}\), \(2=2\cdot1+\mathbf{0}\), \(1=2\cdot0+\mathbf{1}\) → \(10110101_2\). ✓</p>
+
+<h3 id="hex">2.2 Hexadecimal — binary for humans</h3>
+<p>Long bit strings are unreadable, so engineers group them in blocks of four. Since \(2^4 = 16\), each block is one digit of the <strong>hexadecimal system</strong> (<span class="de">Hexadezimalsystem</span>), base 16, with digits 0–9 and A–F. Conversion binary ↔ hex is pure regrouping, no arithmetic:</p>
+\[ \underbrace{1011}_{\mathrm{B}}\;\underbrace{0101}_{5} \;=\; \mathrm{0xB5}. \]
+
+<div class="table-wrap">
+<table class="data">
+<thead><tr><th>Decimal</th><th>Binary</th><th>Hex</th><th>Decimal</th><th>Binary</th><th>Hex</th></tr></thead>
+<tbody>
+<tr><td>0</td><td>0000</td><td>0</td><td>8</td><td>1000</td><td>8</td></tr>
+<tr><td>1</td><td>0001</td><td>1</td><td>9</td><td>1001</td><td>9</td></tr>
+<tr><td>2</td><td>0010</td><td>2</td><td>10</td><td>1010</td><td>A</td></tr>
+<tr><td>3</td><td>0011</td><td>3</td><td>11</td><td>1011</td><td>B</td></tr>
+<tr><td>4</td><td>0100</td><td>4</td><td>12</td><td>1100</td><td>C</td></tr>
+<tr><td>5</td><td>0101</td><td>5</td><td>13</td><td>1101</td><td>D</td></tr>
+<tr><td>6</td><td>0110</td><td>6</td><td>14</td><td>1110</td><td>E</td></tr>
+<tr><td>7</td><td>0111</td><td>7</td><td>15</td><td>1111</td><td>F</td></tr>
+</tbody>
+</table>
+</div>
+
+<h3 id="binary-arith">2.3 Binary arithmetic</h3>
+<p>Addition works exactly like in school, with a much smaller times table: \(0+0=0\), \(0+1=1\), \(1+1 = 10_2\) (write 0, <strong>carry</strong> 1, <span class="de">Übertrag</span>), \(1+1+1 = 11_2\) (write 1, carry 1). Example:</p>
+<pre><code>    0110 1011   (107)
+  + 0011 0110   ( 54)
+  -----------
+    1010 0001   (161)  ✓  carries ripple leftward</code></pre>
+<p>Multiplication by 2 is a left shift; division by 2 a right shift — a fact hardware exploits constantly. Subtraction we postpone one section, because the elegant way to subtract is <em>not</em> to build a subtractor at all.</p>
+
+<h2 id="twos-complement">3. Signed numbers — the two's complement</h2>
+
+<h3 id="sign-problem">3.1 The sign problem</h3>
+<p>How do we represent −5 with only 0s and 1s? The naive answer — reserve the top bit as a sign flag (<b>sign-magnitude</b>, <span class="de">Vorzeichen-Betrag</span>) — turns out to be a trap. With 8 bits, \(00000101\) would be +5 and \(10000101\) would be −5. But then:</p>
+<ul>
+  <li>there are <em>two</em> zeros (\(00000000\) and \(10000000\)) that hardware must treat as equal, and</li>
+  <li>the ordinary adder gives garbage: \(5 + (-5) = 00000101 + 10000101 = 10001010 = -10\)?!</li>
+</ul>
+<p>We would need a separate subtractor circuit plus sign-comparison logic — expensive and ugly. The fix is one of the most elegant ideas in computing.</p>
+
+<h3 id="twos-def">3.2 Two's complement: make the top bit negative</h3>
+<p>In <strong>two's complement</strong> (<span class="de">Zweierkomplement</span>), an \(n\)-bit word keeps the usual weights <em>except</em> that the most significant bit (MSB) has weight \(-2^{\,n-1}\):</p>
+\[ \boxed{\;X \;=\; -\,b_{n-1}\, 2^{\,n-1} \;+\; \sum_{i=0}^{n-2} b_i\, 2^{\,i}\;} \]
+<p>For 8 bits the range is \(-128 \dots +127\) — note the asymmetry: one more negative number than positive, and exactly <em>one</em> zero. Examples: \(11111111 = -128+127 = -1\); \(10000000 = -128\); \(11111011 = -128 + 123 = -5\).</p>
+
+<p><strong>Negation recipe:</strong> invert every bit, then add 1. Why it works: inverting gives \(\overline{X}\) with \(X + \overline{X} = 11111111 = -1\), hence \(\overline{X} + 1 = -X\). Try it: \(+5 = 00000101\) → invert → \(11111010\) → +1 → \(11111011 = -5\). ✓</p>
+
+<div class="box key">
+  <div class="box-title"><span class="ic">🔑</span>Key idea: one adder rules them all</div>
+  <p>The magic: <strong>the ordinary unsigned adder is automatically correct for two's-complement numbers.</strong> Addition modulo \(2^n\) doesn't care how you <em>interpret</em> the bit patterns. Subtraction becomes \(A - B = A + \overline{B} + 1\): invert B's bits and feed a 1 into the adder's carry input. One piece of hardware does add, subtract, signed and unsigned — this is why every CPU on the planet uses two's complement. Think of it as an odometer: rolling backward from 000 gives 999, and \(999 \equiv -1\) modulo 1000.</p>
+</div>
+
+<h3 id="overflow">3.3 Overflow — when the wheel wraps the wrong way</h3>
+<p>With \(n\) bits, results outside \([-2^{n-1},\, 2^{n-1}-1]\) cannot be represented; the computed value wraps around. This is <strong>overflow</strong> (<span class="de">Überlauf</span>). Signs tell the story: adding two positives can never legitimately give a negative, and two negatives never a positive. Hardware detects it even more cheaply:</p>
+\[ V \;=\; c_{\text{in,MSB}} \;\oplus\; c_{\text{out,MSB}} \]
+<p>— overflow occurred iff the carry <em>into</em> the sign bit differs from the carry <em>out of</em> it. Careful: the carry-out flag \(C\) itself signals overflow only for <em>unsigned</em> arithmetic. \(C\) and \(V\) are different flags answering different questions — every CPU status register has both.</p>
+
+<div class="example">
+  <div class="ex-head"><span class="ex-tag">Worked example</span> 8-bit signed arithmetic, with and without overflow</div>
+  <div class="ex-body">
+    <p>Compute (a) \(75 - 90\) and (b) \(75 + 90\) in 8-bit two's complement. Check the V flag in both cases.</p>
+    <div class="step"><span class="step-label">Step 1 — encode:</span>
+      \(75 = 01001011\), \(90 = 01011010\). For (a) we need \(-90\): invert \(01011010 \to 10100101\), add 1 → \(10100110\).</div>
+    <div class="step"><span class="step-label">Step 2 — case (a), add \(75 + (-90)\):</span>
+      \(01001011 + 10100110 = 11110001\). Carry into MSB: \(0\); carry out of MSB: \(0\) → \(V = 0\), valid.
+      Decode: \(11110001 = -128 + 113 = -15\). ✓ (indeed \(75-90=-15\))</div>
+    <div class="step"><span class="step-label">Step 3 — case (b), add \(75 + 90\):</span>
+      \(01001011 + 01011010 = 10100101\). Carry into MSB: \(1\); carry out: \(0\) → \(V = 1\), <b>overflow!</b>
+      The pattern reads \(-91\) — nonsense, because the true result 165 exceeds +127. Positive + positive gave "negative": the classic signature.</div>
+    <div class="result-line">(a) \(-15\), valid. (b) overflow — 165 doesn't fit in 8 signed bits. Moral: the adder never errors out; <em>you</em> must watch V. (Ariane 5 flight 501 was destroyed in 1996 by exactly such an unchecked overflow.)</div>
+  </div>
+</div>
+
+<div class="widget">
+  <div class="w-head"><span class="ic">🧪</span>Interactive — two's complement explorer <span class="w-tag">simulation</span></div>
+  <div class="w-body">
+    <p class="small mt0">Slide A through the whole range and watch the bit pattern: the MSB carries weight −128, and crossing from +127 to −128 is one tick of the odometer. Switch to <b>add</b> mode, set A = 100, B = 50 and watch the V flag fire while the carries tell you exactly why.</p>
+    <div id="w-twos"></div>
+  </div>
+</div>
+
+<div class="box pitfall">
+  <div class="box-title"><span class="ic">🚫</span>Classic pitfall: "the MSB is a sign flag"</div>
+  <p>It is not. The MSB is a normal digit with a <em>negative weight</em>. \(10000001\) is not "−1" (sign-magnitude thinking) but \(-128 + 1 = -127\). Also remember <b>sign extension</b> (<span class="de">Vorzeichenerweiterung</span>): widening \(-5 = 11111011\) to 16 bits requires copying the sign bit (\(1111\,1111\,1111\,1011\)), not padding with zeros — zero-padding would turn −5 into +251.</p>
+</div>
+
+<h2 id="boolean">4. Boolean algebra — the arithmetic of truth</h2>
+
+<p>George Boole's algebra (<span class="de">Boolesche Algebra</span>) operates on the set \(\{0, 1\}\) with three operations: <b>AND</b> (\(A \cdot B\), also \(A \wedge B\)), <b>OR</b> (\(A + B\), also \(A \vee B\)) and <b>NOT</b> (\(\overline{A}\), <span class="de">Negation</span>). German texts often write ∧/∨; we use the engineering notation ·/+ that makes the algebra look familiar — with two famous exceptions: \(1 + 1 = 1\) (OR saturates) and the second distributive law below, which ordinary algebra lacks.</p>
+
+<div class="table-wrap">
+<table class="data">
+<thead><tr><th>Law</th><th>AND form</th><th>OR form (dual)</th></tr></thead>
+<tbody>
+<tr><td>Identity</td><td>\( A \cdot 1 = A \)</td><td>\( A + 0 = A \)</td></tr>
+<tr><td>Null element</td><td>\( A \cdot 0 = 0 \)</td><td>\( A + 1 = 1 \)</td></tr>
+<tr><td>Idempotence</td><td>\( A \cdot A = A \)</td><td>\( A + A = A \)</td></tr>
+<tr><td>Complement</td><td>\( A \cdot \overline{A} = 0 \)</td><td>\( A + \overline{A} = 1 \)</td></tr>
+<tr><td>Commutative</td><td>\( AB = BA \)</td><td>\( A + B = B + A \)</td></tr>
+<tr><td>Associative</td><td>\( A(BC) = (AB)C \)</td><td>\( A + (B+C) = (A+B) + C \)</td></tr>
+<tr><td>Distributive</td><td>\( A(B + C) = AB + AC \)</td><td>\( A + BC = (A+B)(A+C) \) ←&nbsp;surprising!</td></tr>
+<tr><td>Absorption</td><td>\( A(A + B) = A \)</td><td>\( A + AB = A \)</td></tr>
+<tr><td>De Morgan</td><td>\( \overline{A \cdot B} = \overline{A} + \overline{B} \)</td><td>\( \overline{A + B} = \overline{A} \cdot \overline{B} \)</td></tr>
+</tbody>
+</table>
+</div>
+
+<p>Every law comes in a pair: swap AND ↔ OR and 0 ↔ 1 and a true identity stays true. This <strong>duality principle</strong> (<span class="de">Dualitätsprinzip</span>) halves your memorization work. Proofs are trivial by exhaustion — check all input combinations in a truth table; with finitely many cases, "proof by trying everything" is rigorous. Example, absorption by algebra instead: \(A + AB = A(1 + B) = A \cdot 1 = A\).</p>
+
+<h3 id="demorgan">4.1 De Morgan — the bubble-pushing law</h3>
+<p>De Morgan's theorem (<span class="de">De-Morgan-Regeln</span>) is the workhorse: <em>a negated AND is an OR of negations, and vice versa</em>. Generalizes to any width: \(\overline{ABC} = \overline{A} + \overline{B} + \overline{C}\).</p>
+
+<div class="box intuition">
+  <div class="box-title"><span class="ic">💡</span>Intuition: invert the bubble</div>
+  <p>Read it on the schematic, not in the formula. A NAND gate — AND with an inversion bubble on its output — is <em>identical</em> to an OR gate with bubbles on its <em>inputs</em>: "NOT(both true)" = "at least one false". Practicing engineers redraw circuits by <b>pushing bubbles</b> through gates: slide the bubble from output to inputs and swap the gate's shape (AND ↔ OR). Two bubbles on one wire cancel. A schematic drawn with matched bubbles reads like prose ("if NOT ready OR NOT enabled → halt") instead of a puzzle. Sanity check in words: "the door is not (locked and bolted)" means "unlocked <em>or</em> unbolted" — not "unlocked and unbolted".</p>
+</div>
+
+<div class="box german">
+  <div class="box-title"><span class="ic">🇩🇪</span>Vokabeln</div>
+  <p>gate = <span class="de">Gatter</span> · truth table = <span class="de">Wahrheitstabelle</span> · combinational circuit = <span class="de">Schaltnetz</span> · sequential circuit = <span class="de">Schaltwerk</span> · two's complement = <span class="de">Zweierkomplement</span> · carry = <span class="de">Übertrag</span> · overflow = <span class="de">Überlauf</span> · Karnaugh map = <span class="de">KV-Diagramm</span> (Karnaugh–Veitch) · don't care = <span class="de">Freistelle</span> · adder = <span class="de">Addierer</span> · flip-flop = <span class="de">Flipflop</span> · clock = <span class="de">Takt</span> · rising edge = <span class="de">steigende Flanke</span> · setup/hold time = <span class="de">Vorbereite-/Haltezeit</span> · propagation delay = <span class="de">Gatterlaufzeit</span> · counter = <span class="de">Zähler</span> · shift register = <span class="de">Schieberegister</span> · finite state machine = <span class="de">endlicher (Zustands-)Automat</span> · noise margin = <span class="de">Störabstand</span></p>
+</div>
+
+<h2 id="gates">5. Logic gates and truth tables</h2>
+
+<p>A <strong>gate</strong> (<span class="de">Gatter</span>) is a circuit realizing one Boolean operation; its behavior is completely specified by a <strong>truth table</strong> (<span class="de">Wahrheitstabelle</span>) listing the output for all \(2^n\) input combinations. Two symbol families coexist: the rectangular <strong>IEC symbols</strong> (DIN EN 60617 — standard in German courses and industry documentation) and the curvy <strong>US symbols</strong> (ANSI/IEEE — dominant in international textbooks and schematics tools). You must read both fluently.</p>
+
+<figure>
+  <div class="fig-frame">
+  <svg class="diagram" viewBox="0 0 760 340" role="img" aria-label="IEC and US gate symbols for AND, OR, NOT, NAND, NOR, XOR">
+    <!-- row 1: AND, OR, NOT -->
+    <g transform="translate(20,22)">
+      <text x="0" y="10" font-size="13" font-weight="700">AND</text>
+      <path class="wire" d="M0,45 H18 M0,65 H18 M64,55 H88"/>
+      <rect x="18" y="30" width="46" height="50" fill="none" stroke="var(--text-soft)" stroke-width="2"/>
+      <text x="41" y="60" text-anchor="middle" font-size="15">&amp;</text>
+      <text x="30" y="102" font-size="10" fill="var(--text-faint)">IEC</text>
+      <g transform="translate(130,33)">
+        <path class="wire" d="M-14,12 H0 M-14,32 H0 M48,22 H66"/>
+        <path d="M0,0 H26 A22,22 0 0 1 26,44 H0 Z" fill="none" stroke="var(--text-soft)" stroke-width="2"/>
+      </g>
+      <text x="150" y="102" font-size="10" fill="var(--text-faint)">US</text>
+    </g>
+    <g transform="translate(270,22)">
+      <text x="0" y="10" font-size="13" font-weight="700">OR</text>
+      <path class="wire" d="M0,45 H18 M0,65 H18 M64,55 H88"/>
+      <rect x="18" y="30" width="46" height="50" fill="none" stroke="var(--text-soft)" stroke-width="2"/>
+      <text x="41" y="60" text-anchor="middle" font-size="14">≥1</text>
+      <text x="30" y="102" font-size="10" fill="var(--text-faint)">IEC</text>
+      <g transform="translate(130,33)">
+        <path class="wire" d="M-14,12 H6 M-14,32 H6 M46,22 H66"/>
+        <path d="M0,0 Q14,22 0,44 Q26,42 46,22 Q26,2 0,0 Z" fill="none" stroke="var(--text-soft)" stroke-width="2"/>
+      </g>
+      <text x="150" y="102" font-size="10" fill="var(--text-faint)">US</text>
+    </g>
+    <g transform="translate(520,22)">
+      <text x="0" y="10" font-size="13" font-weight="700">NOT (inverter)</text>
+      <path class="wire" d="M0,55 H18 M73,55 H92"/>
+      <rect x="18" y="30" width="46" height="50" fill="none" stroke="var(--text-soft)" stroke-width="2"/>
+      <text x="41" y="60" text-anchor="middle" font-size="14">1</text>
+      <circle cx="68.5" cy="55" r="4.5" fill="none" stroke="var(--text-soft)" stroke-width="2"/>
+      <text x="30" y="102" font-size="10" fill="var(--text-faint)">IEC</text>
+      <g transform="translate(130,33)">
+        <path class="wire" d="M-14,22 H0 M43,22 H62"/>
+        <path d="M0,2 L34,22 L0,42 Z" fill="none" stroke="var(--text-soft)" stroke-width="2"/>
+        <circle cx="38.5" cy="22" r="4.5" fill="none" stroke="var(--text-soft)" stroke-width="2"/>
+      </g>
+      <text x="150" y="102" font-size="10" fill="var(--text-faint)">US</text>
+    </g>
+    <!-- row 2: NAND, NOR, XOR -->
+    <g transform="translate(20,190)">
+      <text x="0" y="10" font-size="13" font-weight="700">NAND</text>
+      <path class="wire" d="M0,45 H18 M0,65 H18 M73,55 H92"/>
+      <rect x="18" y="30" width="46" height="50" fill="none" stroke="var(--text-soft)" stroke-width="2"/>
+      <text x="41" y="60" text-anchor="middle" font-size="15">&amp;</text>
+      <circle cx="68.5" cy="55" r="4.5" fill="none" stroke="var(--text-soft)" stroke-width="2"/>
+      <text x="30" y="102" font-size="10" fill="var(--text-faint)">IEC</text>
+      <g transform="translate(130,33)">
+        <path class="wire" d="M-14,12 H0 M-14,32 H0 M57,22 H74"/>
+        <path d="M0,0 H26 A22,22 0 0 1 26,44 H0 Z" fill="none" stroke="var(--text-soft)" stroke-width="2"/>
+        <circle cx="52.5" cy="22" r="4.5" fill="none" stroke="var(--text-soft)" stroke-width="2"/>
+      </g>
+      <text x="150" y="102" font-size="10" fill="var(--text-faint)">US</text>
+    </g>
+    <g transform="translate(270,190)">
+      <text x="0" y="10" font-size="13" font-weight="700">NOR</text>
+      <path class="wire" d="M0,45 H18 M0,65 H18 M73,55 H92"/>
+      <rect x="18" y="30" width="46" height="50" fill="none" stroke="var(--text-soft)" stroke-width="2"/>
+      <text x="41" y="60" text-anchor="middle" font-size="14">≥1</text>
+      <circle cx="68.5" cy="55" r="4.5" fill="none" stroke="var(--text-soft)" stroke-width="2"/>
+      <text x="30" y="102" font-size="10" fill="var(--text-faint)">IEC</text>
+      <g transform="translate(130,33)">
+        <path class="wire" d="M-14,12 H6 M-14,32 H6 M55,22 H74"/>
+        <path d="M0,0 Q14,22 0,44 Q26,42 46,22 Q26,2 0,0 Z" fill="none" stroke="var(--text-soft)" stroke-width="2"/>
+        <circle cx="50.5" cy="22" r="4.5" fill="none" stroke="var(--text-soft)" stroke-width="2"/>
+      </g>
+      <text x="150" y="102" font-size="10" fill="var(--text-faint)">US</text>
+    </g>
+    <g transform="translate(520,190)">
+      <text x="0" y="10" font-size="13" font-weight="700">XOR</text>
+      <path class="wire" d="M0,45 H18 M0,65 H18 M64,55 H88"/>
+      <rect x="18" y="30" width="46" height="50" fill="none" stroke="var(--text-soft)" stroke-width="2"/>
+      <text x="41" y="60" text-anchor="middle" font-size="14">=1</text>
+      <text x="30" y="102" font-size="10" fill="var(--text-faint)">IEC</text>
+      <g transform="translate(137,33)">
+        <path class="wire" d="M-20,12 H2 M-20,32 H2 M46,22 H64"/>
+        <path d="M-7,0 Q7,22 -7,44" fill="none" stroke="var(--text-soft)" stroke-width="2"/>
+        <path d="M0,0 Q14,22 0,44 Q26,42 46,22 Q26,2 0,0 Z" fill="none" stroke="var(--text-soft)" stroke-width="2"/>
+      </g>
+      <text x="150" y="102" font-size="10" fill="var(--text-faint)">US</text>
+    </g>
+  </svg>
+  </div>
+  <figcaption><b>Fig. 5.1</b> — The six basic gates in IEC (rectangular, German standard) and US (distinctive-shape) notation. IEC labels: <b>&amp;</b> = AND, <b>≥1</b> = OR ("at least one"), <b>=1</b> = XOR ("exactly one"), <b>1</b> = buffer/inverter; the small circle is the negation "bubble" in both worlds.</figcaption>
+</figure>
+
+<div class="table-wrap">
+<table class="data">
+<thead><tr><th>A</th><th>B</th><th>AND \(A\cdot B\)</th><th>OR \(A+B\)</th><th>NAND \(\overline{AB}\)</th><th>NOR \(\overline{A+B}\)</th><th>XOR \(A \oplus B\)</th></tr></thead>
+<tbody>
+<tr><td>0</td><td>0</td><td>0</td><td>0</td><td>1</td><td>1</td><td>0</td></tr>
+<tr><td>0</td><td>1</td><td>0</td><td>1</td><td>1</td><td>0</td><td>1</td></tr>
+<tr><td>1</td><td>0</td><td>0</td><td>1</td><td>1</td><td>0</td><td>1</td></tr>
+<tr><td>1</td><td>1</td><td>1</td><td>1</td><td>0</td><td>0</td><td>0</td></tr>
+</tbody>
+</table>
+</div>
+
+<p>Note XOR (<span class="de">Antivalenz</span>): output 1 iff the inputs <em>differ</em>. It is the sum bit of 1-bit addition and the workhorse of parity, comparison and encryption. Its complement XNOR (<span class="de">Äquivalenz</span>) detects equality.</p>
+
+<div class="box key">
+  <div class="box-title"><span class="ic">🔑</span>NAND is universal</div>
+  <p>NAND (and likewise NOR) is <strong>functionally complete</strong>: tie a NAND's inputs together and you get NOT; NOT after NAND gives AND; De Morgan then buys you OR. So <em>any</em> digital system — including the computer you are reading this on — could be built from a single gate type. This matters practically: in CMOS, NAND and NOR are the cheap, fast native gates (Section 13), while AND and OR are actually built as NAND/NOR plus inverter.</p>
+</div>
+
+<h2 id="canonical">6. From truth table to circuit — canonical forms</h2>
+
+<p>Given <em>any</em> truth table, can we always build a circuit? Yes — mechanically. A <strong>minterm</strong> (<span class="de">Minterm</span>) \(m_i\) is an AND of all \(n\) variables, each plain or negated, that is 1 for exactly <em>one</em> input row. For three variables, row 5 (\(A{=}1, B{=}0, C{=}1\)) has minterm \(m_5 = A\overline{B}C\). Then:</p>
+\[ F \;=\; \sum_{\text{rows where } F = 1} m_i \]
+<p>— OR together the minterms of all 1-rows. This is the <strong>canonical sum of products</strong> (SOP, <span class="de">disjunktive Normalform, DNF</span>), written compactly as \(F = \Sigma m(1,3,5)\) etc. The dual construction — AND of <strong>maxterms</strong> (<span class="de">Maxterme</span>) over the 0-rows — gives the canonical product of sums (<span class="de">konjunktive Normalform</span>). Rule of thumb: few 1s → SOP is smaller; few 0s → POS is smaller.</p>
+
+<p>Structurally, canonical SOP is a two-level circuit: a row of ANDs feeding one OR. Two levels means fast (two gate delays) — but the canonical form is wastefully <em>wide</em>: an 8-input truth table with 200 ones would need 200 ANDs of 8 literals each. Hence the next section: minimization.</p>
+
+<h2 id="kmap">7. Minimization — Karnaugh maps</h2>
+
+<p>Two product terms that differ in exactly one literal merge: \(AB\overline{C} + ABC = AB(\overline{C} + C) = AB\). Minimization is the systematic hunt for such merges. Doing it algebraically is error-prone; the <strong>Karnaugh map</strong> (<span class="de">KV-Diagramm</span>, for Karnaugh–Veitch — the standard German name) makes the merges <em>visible</em>: it rearranges the truth table so that cells that differ in one variable are geometric neighbors. The trick is <strong>Gray-code ordering</strong> of rows and columns — 00, 01, 11, 10 — where consecutive labels differ in a single bit. Crucially, the map wraps around: the leftmost and rightmost columns are neighbors, as are top and bottom rows. Think of it as a torus, drawn flat.</p>
+
+<p><b>Reading rules:</b> group adjacent 1-cells into rectangles of size 1, 2, 4, 8 … (powers of two only). Each group of \(2^k\) cells eliminates \(k\) variables — the term keeps only the variables constant across the group. Make groups <em>as large as possible</em> and use <em>as few as possible</em>; overlap is free (idempotence: \(A + A = A\)).</p>
+
+<p><strong>Don't-cares</strong> (<span class="de">Freistellen</span>, marked ×) are input combinations that can never occur or whose output nobody reads — e.g. patterns 1010–1111 in a BCD digit, which only uses 0000–1001. A × may be counted as 1 or 0, whichever makes your groups bigger. Free real estate — always use it.</p>
+
+<div class="example">
+  <div class="ex-head"><span class="ex-tag">Worked example</span> Complete 4-variable K-map with don't-cares</div>
+  <div class="ex-body">
+    <p>A BCD digit \(ABCD\) (A = MSB, values 0–9 only) should drive an output \(F = 1\) when the digit is ≥ 5. Minimize F.</p>
+    <div class="step"><span class="step-label">Step 1 — truth table to map:</span>
+      \(F = \Sigma m(5,6,7,8,9)\) with don't-cares \(d(10,11,12,13,14,15)\). Fill the map in Fig. 7.1: rows = AB, columns = CD, both Gray-coded.</div>
+    <div class="step"><span class="step-label">Step 2 — group greedily, largest first:</span>
+      The six ×s plus \(m_8, m_9\) fill the entire bottom half (rows AB = 11 and 10): a group of <b>8</b> in which only \(A = 1\) is constant → term \(A\). Next, \(m_5, m_7\) join ×-cells \(m_{13}, m_{15}\): a square of <b>4</b> with \(B = 1, D = 1\) constant → term \(BD\). Finally \(m_6, m_7\) with \(m_{14}, m_{15}\): square of 4, \(B = 1, C = 1\) → \(BC\).</div>
+    <div class="step"><span class="step-label">Step 3 — read off and verify:</span>
+      \( F = A + BD + BC = A + B(C + D). \)
+      Check digit 4 (0100): \(A{=}0\), \(BD{=}0\), \(BC{=}0\) → 0 ✓. Digit 5 (0101): \(BD = 1\) → 1 ✓. Digit 9 (1001): \(A = 1\) → 1 ✓.</div>
+    <div class="result-line">\(F = A + B(C+D)\): 3 gates instead of the canonical 5 four-input ANDs + one 5-input OR. The don't-cares did serious work — without them, "≥ 5" would cost \(A\overline{B}\,\overline{C} + BD + BC\).</div>
+  </div>
+</div>
+
+<figure>
+  <div class="fig-frame">
+  <svg class="diagram" viewBox="0 0 560 400" role="img" aria-label="4-variable Karnaugh map with three groups">
+    <!-- axis labels -->
+    <text x="96" y="52" font-size="13" font-weight="700" text-anchor="end">AB \ CD</text>
+    <text x="175" y="52" text-anchor="middle" font-size="13">00</text>
+    <text x="245" y="52" text-anchor="middle" font-size="13">01</text>
+    <text x="315" y="52" text-anchor="middle" font-size="13">11</text>
+    <text x="385" y="52" text-anchor="middle" font-size="13">10</text>
+    <text x="118" y="105" text-anchor="end" font-size="13">00</text>
+    <text x="118" y="175" text-anchor="end" font-size="13">01</text>
+    <text x="118" y="245" text-anchor="end" font-size="13">11</text>
+    <text x="118" y="315" text-anchor="end" font-size="13">10</text>
+    <!-- grid -->
+    <g stroke="var(--text-soft)" stroke-width="1.6" fill="none">
+      <rect x="140" y="65" width="280" height="280"/>
+      <line x1="210" y1="65" x2="210" y2="345"/>
+      <line x1="280" y1="65" x2="280" y2="345"/>
+      <line x1="350" y1="65" x2="350" y2="345"/>
+      <line x1="140" y1="135" x2="420" y2="135"/>
+      <line x1="140" y1="205" x2="420" y2="205"/>
+      <line x1="140" y1="275" x2="420" y2="275"/>
+    </g>
+    <!-- cell values row AB=00: m0 m1 m3 m2 -->
+    <g font-size="16" text-anchor="middle">
+      <text x="175" y="106">0</text><text x="245" y="106">0</text><text x="315" y="106">0</text><text x="385" y="106">0</text>
+      <text x="175" y="176">0</text><text x="245" y="176">1</text><text x="315" y="176">1</text><text x="385" y="176">1</text>
+      <text x="175" y="246">×</text><text x="245" y="246">×</text><text x="315" y="246">×</text><text x="385" y="246">×</text>
+      <text x="175" y="316">1</text><text x="245" y="316">1</text><text x="315" y="316">×</text><text x="385" y="316">×</text>
+    </g>
+    <!-- minterm indices -->
+    <g font-size="9" fill="var(--text-faint)">
+      <text x="146" y="76">0</text><text x="216" y="76">1</text><text x="286" y="76">3</text><text x="356" y="76">2</text>
+      <text x="146" y="146">4</text><text x="216" y="146">5</text><text x="286" y="146">7</text><text x="356" y="146">6</text>
+      <text x="154" y="224">12</text><text x="222" y="224">13</text><text x="292" y="224">15</text><text x="362" y="224">14</text>
+      <text x="154" y="294">8</text><text x="222" y="294">9</text><text x="292" y="294">11</text><text x="362" y="294">10</text>
+    </g>
+    <!-- group A: bottom two rows -->
+    <rect x="146" y="211" width="268" height="128" rx="14" fill="none" stroke="var(--accent)" stroke-width="2.4"/>
+    <text x="430" y="330" font-size="13" fill="var(--accent)" font-weight="700">A (8 cells)</text>
+    <!-- group BD: rows 01,11 x cols 01,11 -->
+    <rect x="216" y="141" width="128" height="128" rx="14" fill="none" stroke="var(--accent-2)" stroke-width="2.4" stroke-dasharray="7 4"/>
+    <text x="430" y="160" font-size="13" fill="var(--accent-2)" font-weight="700">BD (4 cells)</text>
+    <!-- group BC: rows 01,11 x cols 11,10 -->
+    <rect x="290" y="149" width="124" height="112" rx="14" fill="none" stroke="var(--text-soft)" stroke-width="2.2" stroke-dasharray="2 4"/>
+    <text x="430" y="192" font-size="13" fill="var(--text-soft)" font-weight="700">BC (4 cells)</text>
+    <text x="280" y="378" text-anchor="middle" font-size="12" fill="var(--text-faint)">Gray order 00·01·11·10 — opposite edges are adjacent (torus!)</text>
+  </svg>
+  </div>
+  <figcaption><b>Fig. 7.1</b> — K-map for "BCD digit ≥ 5". Small gray numbers are minterm indices. Three groups — one of 8 (solid), two of 4 (dashed) — give \(F = A + BD + BC\). The ×s are don't-cares recruited to enlarge every group.</figcaption>
+</figure>
+
+<h3 id="hazards">7.1 A warning: hazards</h3>
+<p>Minimal does not mean glitch-free. Consider \(F = x\overline{z} + yz\) with \(x = y = 1\): for both \(z = 0\) and \(z = 1\), \(F = 1\). But when \(z\) switches 1 → 0, the term \(yz\) turns off <em>slightly before</em> \(x\overline{z}\) turns on (the inverter adds delay) — the output emits a brief 0-spike. This is a <strong>static-1 hazard</strong> (<span class="de">Hazard</span>). On the K-map it appears whenever an input change jumps between two groups with no group covering the transition. Cure: add the redundant <b>consensus term</b> \(xy\) that bridges the gap. Purely combinational outputs feeding displays can tolerate glitches; anything clocked or asynchronous (Section 11's ripple-counter decode!) cannot. In synchronous design (Section 10) hazards are tamed by simply waiting for the dust to settle before the next clock edge.</p>
+
+<h2 id="blocks">8. Combinational building blocks</h2>
+
+<p>Nobody designs a CPU gate by gate. We package recurring functions into <strong>medium-scale blocks</strong> and think in those — the digital designer's LEGO set.</p>
+
+<h3 id="mux">8.1 Multiplexer — the data switch that computes anything</h3>
+<p>A <strong>multiplexer</strong> (MUX, <span class="de">Multiplexer</span>) routes one of \(2^k\) data inputs to its single output, chosen by \(k\) select lines: a 2:1 MUX computes</p>
+\[ Y = \overline{S}\,D_0 + S\,D_1 . \]
+<p>Beyond routing (bus sharing, time-division multiplexing, Module 21), the MUX has a secret identity: <strong>it is a universal logic element</strong>. Connect the \(n\) variables of any function to the select lines of a \(2^n\):1 MUX and hard-wire each data input to the corresponding truth-table row (0 or 1) — the MUX looks up the answer. This is <em>Shannon expansion</em> in hardware, \(F = \overline{S}\cdot F|_{S=0} + S\cdot F|_{S=1}\), and it is literally how FPGAs implement your logic (Section 14: a LUT is a MUX fed by configuration memory).</p>
+
+<h3 id="decoder">8.2 Decoder</h3>
+<p>An \(n\)-to-\(2^n\) <strong>decoder</strong> (<span class="de">Dekodierer</span>) activates exactly one of its \(2^n\) outputs — output \(i\) is the minterm \(m_i\). Decoders select memory rows (an address decoder is why RAM chips have \(2^n\) words), drive 7-segment displays, and — since any function is a sum of minterms — a decoder plus one OR gate implements any truth table directly.</p>
+
+<h3 id="adder">8.3 The adder, built up honestly</h3>
+<p>Addition of two bits: sum \(S = A \oplus B\), carry \(C = A\cdot B\) — the <strong>half adder</strong> (<span class="de">Halbaddierer</span>). But a middle column of a real addition receives a third input, the carry from the right. The <strong>full adder</strong> (<span class="de">Volladdierer</span>) adds three bits:</p>
+\[ S = A \oplus B \oplus C_{in}, \qquad
+   C_{out} = AB + C_{in}\,(A \oplus B). \]
+<p>Read the carry equation aloud: a carry leaves this column if both summand bits are 1 (<em>generate</em>), or if exactly one is 1 and a carry came in (<em>propagate</em>). Two half adders plus an OR realize it — try all eight input combinations in the widget and watch the internal wires:</p>
+
+<div class="widget">
+  <div class="w-head"><span class="ic">🧪</span>Interactive — full adder, gate by gate <span class="w-tag">simulation</span></div>
+  <div class="w-body">
+    <p class="small mt0">Toggle A, B and C<sub>in</sub> and follow the live 0/1 values through the network (green wires carry a 1). Check: the outputs always encode the <em>count</em> of 1-inputs in binary, \( (C_{out}\,S)_2 = A + B + C_{in} \). The left half is a half adder; the right half adds the incoming carry.</p>
+    <div id="w-adder"></div>
+  </div>
+</div>
+
+<h3 id="ripple">8.4 Ripple carry and its delay problem</h3>
+<p>Chain \(n\) full adders — carry-out to carry-in — and you add \(n\)-bit words: the <strong>ripple-carry adder</strong> (<span class="de">Ripple-Carry-Addierer</span>). Elegant, tiny, and slow: in the worst case (e.g. \(11111111 + 1\)) the carry must ripple through every stage, so the delay grows <em>linearly</em>:</p>
+\[ t_{\text{add}} \approx n \cdot t_{\text{carry}} . \]
+<p>With \(t_{\text{carry}} = 20\,\mathrm{ps}\) per stage, a 64-bit ripple adder needs ≈ 1.3 ns — capping a CPU that must add every cycle at well under 1 GHz. The fix, <strong>carry-lookahead</strong> (<span class="de">Übertragsvorausberechnung</span>): compute for each column generate \(g_i = A_iB_i\) and propagate \(p_i = A_i \oplus B_i\), then unroll the recursion \(c_{i+1} = g_i + p_i c_i\) into wide, flat expressions — e.g. \(c_2 = g_1 + p_1 g_0 + p_1 p_0 c_0\) — computed in parallel. Organized hierarchically (4 bits per block, blocks of blocks), the delay falls from \(O(n)\) to \(O(\log n)\): a few gate delays for 64 bits, at the price of a lot more silicon. Speed bought with area — the eternal trade of digital design.</p>
+
+<h3 id="comparator">8.5 Comparator</h3>
+<p>Equality is cheap: \(A = B\) iff every bit pair matches, so \(EQ = \prod_i \overline{A_i \oplus B_i}\) — XNORs feeding an AND. Magnitude (\(A > B\)) scans from the MSB: A is greater iff \(A_i = 1, B_i = 0\) in the first position where they differ. Or simply compute \(A - B\) with the adder and inspect the sign and V flags — exactly what a CPU's <code>CMP</code> instruction does (Module 15).</p>
+
+<h2 id="sequential">9. Sequential logic — circuits that remember</h2>
+
+<p>Everything so far is a <strong>combinational circuit</strong> (<span class="de">Schaltnetz</span>): outputs depend only on the <em>present</em> inputs. But a counter must remember its count, a CPU its registers. Memory requires a new ingredient: <strong>feedback</strong> — route an output back to an input, and the circuit's past influences its present. Such circuits are <strong>sequential</strong> (<span class="de">Schaltwerke</span>).</p>
+
+<p>The simplest stable feedback loop is two inverters in a ring: it holds a 0 or a 1 forever (this <em>is</em> the storage cell of SRAM, Module 11) — but offers no way in. To <em>write</em>, we upgrade the inverters to NOR gates, whose second inputs become controls.</p>
+
+<h3 id="srlatch">9.1 The SR latch, analyzed state by state</h3>
+
+<figure>
+  <div class="fig-frame">
+  <svg class="diagram" viewBox="0 0 560 250" role="img" aria-label="SR latch built from two cross-coupled NOR gates">
+    <!-- NOR 1 (top) -->
+    <rect x="200" y="40" width="60" height="60" fill="none" stroke="var(--text-soft)" stroke-width="2"/>
+    <text x="230" y="76" text-anchor="middle" font-size="14">≥1</text>
+    <circle cx="266" cy="70" r="5" fill="none" stroke="var(--text-soft)" stroke-width="2"/>
+    <!-- NOR 2 (bottom) -->
+    <rect x="200" y="150" width="60" height="60" fill="none" stroke="var(--text-soft)" stroke-width="2"/>
+    <text x="230" y="186" text-anchor="middle" font-size="14">≥1</text>
+    <circle cx="266" cy="180" r="5" fill="none" stroke="var(--text-soft)" stroke-width="2"/>
+    <!-- inputs -->
+    <path class="wire" d="M120 55 H200"/>
+    <text x="110" y="60" text-anchor="end" font-size="15">R</text>
+    <path class="wire" d="M120 195 H200"/>
+    <text x="110" y="200" text-anchor="end" font-size="15">S</text>
+    <!-- outputs -->
+    <path class="wire" d="M271 70 H420"/>
+    <text x="432" y="75" font-size="15">Q</text>
+    <path class="wire" d="M271 180 H420"/>
+    <text x="432" y="185" font-size="15">Q̅</text>
+    <!-- cross-coupling: Q -> lower NOR input -->
+    <circle cx="330" cy="70" r="4" class="node"/>
+    <path class="wire" d="M330 70 V122 H165 V165 H200"/>
+    <!-- cross-coupling: Qbar -> upper NOR input -->
+    <circle cx="350" cy="180" r="4" class="node"/>
+    <path class="wire" d="M350 180 V130 H178 V85 H200"/>
+  </svg>
+  </div>
+  <figcaption><b>Fig. 9.1</b> — SR latch (<span class="de">RS-Kippglied</span>) from two cross-coupled NOR gates. Each gate's output feeds the other's input — the feedback that creates memory.</figcaption>
+</figure>
+
+<p>Recall NOR: output 1 only if <em>both</em> inputs are 0. Walk through the four input cases:</p>
+<ul>
+  <li><b>S = 1, R = 0 (set):</b> the lower NOR sees a 1 → \(\overline{Q} = 0\). The upper NOR then sees R = 0 and \(\overline{Q} = 0\) → \(Q = 1\). Consistent, stable.</li>
+  <li><b>S = 0, R = 1 (reset):</b> by symmetry \(Q = 0\), \(\overline{Q} = 1\).</li>
+  <li><b>S = 0, R = 0 (hold):</b> each gate's output is the inverse of the other's — <em>both</em> \(Q{=}1\) and \(Q{=}0\) are self-consistent. The latch keeps whichever state it had. <b>This is the memory.</b></li>
+  <li><b>S = 1, R = 1 (forbidden):</b> both outputs are forced to 0 — no longer complementary — and worse, releasing both inputs simultaneously sends the loop into a race whose winner is decided by manufacturing mismatch. Undefined behavior; the data sheet says "don't".</li>
+</ul>
+
+<h3 id="dlatch">9.2 Gated D latch — one input, one gatekeeper</h3>
+<p>Two fixes at once: derive \(S = D \cdot E\) and \(R = \overline{D} \cdot E\) from a single <b>data</b> input D and an <b>enable</b> E. Now S = R = 1 is impossible, and while \(E = 1\) the latch is <strong>transparent</strong> (<span class="de">transparent</span>) — Q follows D — while \(E = 0\) freezes the stored value. But transparency is a liability in a clocked system: if the latch's output feeds logic that feeds back to its own input (as in any counter!), changes race around the loop multiple times within one enable phase. We need a component that samples D at one <em>instant</em>.</p>
+
+<h3 id="dff">9.3 Edge-triggered D flip-flop — master and slave</h3>
+<p>Put two D latches in series with <em>opposite</em> enables: the <b>master</b> is transparent while the clock CLK is low and freezes at the rising edge; the <b>slave</b> opens only when CLK is high, passing the frozen value to Q. Net effect: <strong>Q takes the value D had at the rising clock edge (<span class="de">steigende Taktflanke</span>), and holds it for the entire period</strong> — at no time is there a transparent path from D to Q. This is the <strong>D flip-flop</strong> (<span class="de">D-Flipflop</span>), the atom of synchronous design; the triangle on its symbol's clock pin marks edge sensitivity.</p>
+
+<p>Two relatives you should recognize: the <b>JK flip-flop</b> patches the SR latch's forbidden state by defining J = K = 1 as "toggle"; the <b>T flip-flop</b> (toggle, \(Q^+ = Q \oplus T\)) is a JK with tied inputs and the natural building block of counters. Modern practice, though, is monotheistic: synthesis tools map everything onto D flip-flops.</p>
+
+<div class="box key">
+  <div class="box-title"><span class="ic">🔑</span>Key idea: the synchronous paradigm</div>
+  <p>Almost every digital chip follows one discipline (<span class="de">synchroner Entwurf</span>): <b>state lives only in D flip-flops, all clocked by the same edge; between flip-flops sits only combinational logic.</b> Each clock edge, the machine takes exactly one well-defined step: flip-flops emit the current state, logic computes the next, the edge stores it. Glitches and hazards inside the logic are irrelevant — only the settled value at the next edge matters. All of timing analysis reduces to one question: <em>is the clock period long enough for the logic to settle?</em></p>
+</div>
+
+<h2 id="timing">10. The timing discipline — setup, hold, and maximum clock</h2>
+
+<p>A real flip-flop samples not at a mathematical instant but during a tiny aperture around the clock edge. The data sheet quantifies this with three numbers (<span class="de">Zeitbedingungen</span>):</p>
+<ul>
+  <li>\(t_{su}\) — <b>setup time</b>: D must be stable <em>at least this long before</em> the edge;</li>
+  <li>\(t_h\) — <b>hold time</b>: … and stay stable this long <em>after</em> the edge;</li>
+  <li>\(t_{cq}\) — <b>clock-to-Q delay</b>: how long after the edge the new Q appears.</li>
+</ul>
+<p>Between two flip-flops, the signal must traverse: \(t_{cq}\) out of the first, worst-case combinational delay \(t_{logic}\), and arrive \(t_{su}\) before the next edge. Hence the golden inequality:</p>
+\[ T_{clk} \;\ge\; t_{cq} + t_{logic,max} + t_{su}
+   \qquad\Longrightarrow\qquad
+   \boxed{\; f_{max} = \frac{1}{t_{cq} + t_{logic,max} + t_{su}} \;} \]
+<p>A separate check guards the <em>other</em> end: the fastest path must not overwrite data before the hold window closes, \(t_{cq,min} + t_{logic,min} \ge t_h\) — note that no clock slowdown can fix a hold violation; only added delay can.</p>
+
+<div class="example">
+  <div class="ex-head"><span class="ex-tag">Worked example</span> Maximum clock frequency of a pipeline stage</div>
+  <div class="ex-body">
+    <p>A register-to-register path uses flip-flops with \(t_{cq} = 0.9\,\mathrm{ns}\), \(t_{su} = 0.6\,\mathrm{ns}\), \(t_h = 0.3\,\mathrm{ns}\). The combinational logic between them has \(t_{logic,max} = 3.2\,\mathrm{ns}\) and \(t_{logic,min} = 0.5\,\mathrm{ns}\). Find \(f_{max}\) and check hold.</p>
+    <div class="step"><span class="step-label">Step 1 — minimum period:</span>
+      \( T_{min} = t_{cq} + t_{logic,max} + t_{su} = 0.9 + 3.2 + 0.6 = 4.7\,\mathrm{ns} \).</div>
+    <div class="step"><span class="step-label">Step 2 — frequency:</span>
+      \( f_{max} = 1/4.7\,\mathrm{ns} \approx 213\,\mathrm{MHz} \).</div>
+    <div class="step"><span class="step-label">Step 3 — hold check:</span>
+      fastest arrival \( t_{cq,min} + t_{logic,min} \approx 0.9 + 0.5 = 1.4\,\mathrm{ns} \ge t_h = 0.3\,\mathrm{ns} \) ✓ — data from the new edge cannot outrun the hold window.</div>
+    <div class="result-line">\(f_{max} \approx 213\,\mathrm{MHz}\), hold satisfied. Want it faster? Split the logic across two stages of ≈ 1.6 ns each — <em>pipelining</em>, the trick behind every GHz-class CPU (Module 15).</div>
+  </div>
+</div>
+
+<p>What if D changes <em>inside</em> the aperture? The flip-flop may go <strong>metastable</strong> (<span class="de">Metastabilität</span>): its internal feedback loop balances on the knife's edge between 0 and 1, outputs hover at an invalid mid-level, and the resolution time is theoretically unbounded (probability decays exponentially — engineers make it negligible, never zero). This is unavoidable when sampling truly asynchronous inputs (a button, a foreign clock domain); the standard mitigation is a chain of two flip-flops, giving the first a full period to resolve.</p>
+
+<div class="widget">
+  <div class="w-head"><span class="ic">🧪</span>Interactive — D flip-flop timing &amp; setup violation <span class="w-tag">animation</span></div>
+  <div class="w-body">
+    <p class="small mt0">The trace sweeps repeatedly. D (amber) changes a margin \(t_D\) before each rising clock edge; the shaded band before each edge is the setup window (\(t_{su} = 2\,\mathrm{ns}\)), after it the hold window. Drag \(t_D\) below 2 ns: Q goes metastable (hatched ✕ region). Drag it negative: the change lands <em>after</em> the edge and Q cleanly captures the <em>old</em> value — one cycle late, but valid.</p>
+    <div id="w-dff"></div>
+  </div>
+</div>
+
+<h2 id="counters">11. Registers, shift registers, counters</h2>
+
+<h3 id="registers">11.1 Registers and shift registers</h3>
+<p>A <strong>register</strong> (<span class="de">Register</span>) is simply \(n\) D flip-flops sharing a clock — an \(n\)-bit word snapshotted each edge. Chain them output-to-input and you get a <strong>shift register</strong> (<span class="de">Schieberegister</span>): each edge, the word slides one position, taking in a new serial bit. Shift registers convert serial ↔ parallel — the heart of every UART (Module 16), SPI port, and the LED strips on your desk. A shift register with XOR feedback (LFSR) generates pseudo-random sequences used in CRC checksums and scramblers (Module 20).</p>
+
+<h3 id="synccounter">11.2 Designing a synchronous counter</h3>
+<p>A <strong>counter</strong> (<span class="de">Zähler</span>) steps through a fixed sequence of states. In a <strong>synchronous</strong> counter all flip-flops share the clock, and combinational logic computes each next state — our first true state machine. Design recipe: write the state table, derive each \(D_i\) as a function of the current state, minimize.</p>
+
+<div class="example">
+  <div class="ex-head"><span class="ex-tag">Worked example</span> 3-bit synchronous up-counter</div>
+  <div class="ex-body">
+    <p>Design a counter cycling 000 → 001 → … → 111 → 000 with D flip-flops \(Q_2 Q_1 Q_0\).</p>
+    <div class="step"><span class="step-label">Step 1 — when does each bit flip?</span> Watch binary counting: \(Q_0\) toggles every step; \(Q_1\) toggles when \(Q_0 = 1\); \(Q_2\) toggles when \(Q_1 Q_0 = 11\). (Exactly like decimal odometer digits: a digit advances when all digits below are at their maximum.)</div>
+    <div class="step"><span class="step-label">Step 2 — express as D inputs:</span> "toggle when X" means \(Q^+ = Q \oplus X\):
+      \[ D_0 = \overline{Q_0}, \qquad D_1 = Q_1 \oplus Q_0, \qquad D_2 = Q_2 \oplus (Q_1 Q_0). \]</div>
+    <div class="step"><span class="step-label">Step 3 — verify one transition:</span> state 011: \(D_0 = 1 \to 0\)? \(\overline{Q_0} = 0\) ✓; \(D_1 = 1 \oplus 1 = 0\) ✓; \(D_2 = 0 \oplus 1 = 1\) ✓ → next state 100. ✓</div>
+    <div class="result-line">General pattern: \(D_k = Q_k \oplus (Q_{k-1} \cdots Q_0)\). All bits switch simultaneously at the edge — clean, glitch-free counting at full clock speed.</div>
+  </div>
+</div>
+
+<h3 id="ripplecounter">11.3 The ripple counter and its glitches</h3>
+<p>The lazy alternative: make each flip-flop toggle on the <em>output</em> of the previous one — bit \(k\) clocked by \(Q_{k-1}\). This <strong>asynchronous ripple counter</strong> (<span class="de">Asynchronzähler</span>) needs zero extra logic, but each stage adds its \(t_{cq}\): the transition 0111 → 1000 actually marches through 0110 → 0100 → 0000 → 1000, each intermediate lasting one flip-flop delay. Any logic that <em>decodes</em> the count (say, "reset at 6" for a modulo-6 counter) will see these phantom states and can fire spuriously — the classic ripple-counter glitch. With \(n\) stages the count is only valid \(n \cdot t_{cq}\) after the edge, so long ripple chains also cap the usable clock. Fine for a blinking LED divider; never for a state machine input. Modern rule: <b>clock inputs get clocks, not signals</b> — another face of the synchronous discipline.</p>
+
+<h2 id="fsm">12. Finite state machines — designing behavior</h2>
+
+<p>The <strong>finite state machine</strong> (FSM, <span class="de">endlicher Automat</span>) is the crown of this module: a formal recipe that turns a behavioral specification — "unlock after the code 1-0-1", "cycle the traffic light" — into gates and flip-flops. Architecture: a state register (D flip-flops) plus two combinational blocks, next-state logic \(Z^+ = f(Z, X)\) and output logic. Two flavors differ in the output block:</p>
+<ul>
+  <li><b>Moore machine</b> (<span class="de">Moore-Automat</span>): outputs depend on the state only, \(Y = g(Z)\). Outputs are stable for whole clock periods and glitch-free — but react one cycle after the input.</li>
+  <li><b>Mealy machine</b> (<span class="de">Mealy-Automat</span>): outputs depend on state <em>and</em> input, \(Y = g(Z, X)\). Faster reaction, often fewer states — but outputs can twitch mid-cycle when inputs do. Rule of thumb: outputs that drive the outside world → Moore; internal handshakes → either.</li>
+</ul>
+
+<div class="example">
+  <div class="ex-head"><span class="ex-tag">Worked example</span> Sequence detector "101" — the full design flow</div>
+  <div class="ex-body">
+    <p>Design a Moore machine with one input \(x\) (one bit per clock) and output \(Z = 1\) whenever the last three bits were <b>101</b> (overlapping allowed: in 10101, detect twice).</p>
+    <div class="step"><span class="step-label">Step 1 — state diagram:</span> states remember the useful history: S0 "nothing useful", S1 "ends in 1", S2 "ends in 10", S3 "ends in 101" (output 1). Every arrow answers: given this history and the next bit, what is the new useful history? See Fig. 12.1 — e.g. from S3, a 0 gives suffix "10" → S2 (overlap!).</div>
+    <div class="step"><span class="step-label">Step 2 — state table &amp; encoding:</span> binary-encode S0…S3 as \(Q_1Q_0 = 00, 01, 10, 11\):
+      <div class="table-wrap"><table class="data">
+      <thead><tr><th>State \(Q_1Q_0\)</th><th>x = 0 → \(Q_1^+Q_0^+\)</th><th>x = 1 → \(Q_1^+Q_0^+\)</th><th>Z</th></tr></thead>
+      <tbody>
+      <tr><td>S0 = 00</td><td>00</td><td>01</td><td>0</td></tr>
+      <tr><td>S1 = 01</td><td>10</td><td>01</td><td>0</td></tr>
+      <tr><td>S2 = 10</td><td>00</td><td>11</td><td>0</td></tr>
+      <tr><td>S3 = 11</td><td>10</td><td>01</td><td>1</td></tr>
+      </tbody></table></div></div>
+    <div class="step"><span class="step-label">Step 3 — K-maps for the next-state bits:</span>
+      For \(D_0 = Q_0^+\): reading the table, \(Q_0^+ = 1\) exactly when \(x = 1\) — beautifully, \(D_0 = x\) (makes sense: \(Q_0\) means "last bit was 1"). For \(D_1 = Q_1^+\): ones at \((Q_1Q_0x) = 010, 110, 101\); the K-map groups \(Q_0\overline{x}\) (covers 010, 110) and \(Q_1\overline{Q_0}\,x\) (covers 101):
+      \[ D_1 = Q_0\,\overline{x} + Q_1\overline{Q_0}\,x, \qquad D_0 = x, \qquad Z = Q_1 Q_0 . \]</div>
+    <div class="step"><span class="step-label">Step 4 — verify by trace:</span> input 1,0,1,1,0,1 from S0 = 00: → 01 → 10 → <b>11 (Z=1 ✓)</b> → 01 → 10 → <b>11 (Z=1 ✓)</b>. Both 101s detected, including the overlapped one.</div>
+    <div class="result-line">Two flip-flops, one AND, three small gates — behavior compiled into hardware. Every protocol engine, vending machine, elevator controller and CPU control unit is designed exactly this way.</div>
+  </div>
+</div>
+
+<figure>
+  <div class="fig-frame">
+  <svg class="diagram" viewBox="0 0 640 270" role="img" aria-label="State diagram of the 101 sequence detector">
+    <defs>
+      <marker id="arrF" markerWidth="9" markerHeight="9" refX="8" refY="4.5" orient="auto">
+        <path d="M0 0 L8 4.5 L0 9 z" fill="var(--accent)"/>
+      </marker>
+    </defs>
+    <!-- states -->
+    <g fill="none" stroke="var(--text-soft)" stroke-width="2">
+      <circle cx="90" cy="130" r="34"/>
+      <circle cx="250" cy="130" r="34"/>
+      <circle cx="410" cy="130" r="34"/>
+      <circle cx="570" cy="130" r="34"/>
+      <circle cx="570" cy="130" r="28"/>
+    </g>
+    <g text-anchor="middle" font-size="13">
+      <text x="90" y="127" font-weight="700">S0</text><text x="90" y="144">Z=0</text>
+      <text x="250" y="127" font-weight="700">S1</text><text x="250" y="144">Z=0</text>
+      <text x="410" y="127" font-weight="700">S2</text><text x="410" y="144">Z=0</text>
+      <text x="570" y="127" font-weight="700">S3</text><text x="570" y="144">Z=1</text>
+    </g>
+    <!-- forward arrows -->
+    <g fill="none" stroke="var(--accent)" stroke-width="2">
+      <line x1="124" y1="122" x2="212" y2="122" marker-end="url(#arrF)"/>
+      <line x1="284" y1="122" x2="372" y2="122" marker-end="url(#arrF)"/>
+      <line x1="444" y1="122" x2="532" y2="122" marker-end="url(#arrF)"/>
+    </g>
+    <g font-size="13" fill="var(--accent)" text-anchor="middle">
+      <text x="168" y="112">1</text>
+      <text x="328" y="112">0</text>
+      <text x="488" y="112">1</text>
+    </g>
+    <!-- self loops -->
+    <path d="M78 98 A22 22 0 1 1 102 98" fill="none" stroke="var(--accent)" stroke-width="2" marker-end="url(#arrF)"/>
+    <text x="90" y="52" text-anchor="middle" font-size="13" fill="var(--accent)">0</text>
+    <path d="M238 98 A22 22 0 1 1 262 98" fill="none" stroke="var(--accent)" stroke-width="2" marker-end="url(#arrF)"/>
+    <text x="250" y="52" text-anchor="middle" font-size="13" fill="var(--accent)">1</text>
+    <!-- back arcs below -->
+    <path d="M390 162 Q250 240 110 160" fill="none" stroke="var(--accent-2)" stroke-width="2" marker-end="url(#arrF)"/>
+    <text x="250" y="216" text-anchor="middle" font-size="13" fill="var(--accent-2)">0</text>
+    <path d="M550 160 Q410 250 272 158" fill="none" stroke="var(--accent-2)" stroke-width="2" marker-end="url(#arrF)"/>
+    <text x="418" y="238" text-anchor="middle" font-size="13" fill="var(--accent-2)">1</text>
+    <path d="M556 98 Q490 40 428 98" fill="none" stroke="var(--accent-2)" stroke-width="2" marker-end="url(#arrF)"/>
+    <text x="492" y="56" text-anchor="middle" font-size="13" fill="var(--accent-2)">0</text>
+  </svg>
+  </div>
+  <figcaption><b>Fig. 12.1</b> — Moore state diagram (<span class="de">Zustandsdiagramm</span>) of the "101" detector. Double circle: the accepting/output state. Arrow labels are the input bit; outputs are written inside the states (Moore). Note the overlap transitions S3 → S2 (on 0) and S3 → S1 (on 1).</figcaption>
+</figure>
+
+<div class="box pitfall">
+  <div class="box-title"><span class="ic">🚫</span>Classic pitfall: forgetting a transition</div>
+  <p>Every state needs an arrow for <em>every</em> input value — a state with a missing case becomes "undefined behavior" in hardware. Also specify unreachable encodings (with 3 flip-flops and 5 states, patterns 101–111 exist physically!): either steer them to a safe state or accept that a power-up glitch could strand the machine. Exam graders and synthesis linters both check this.</p>
+</div>
+
+<h2 id="cmos">13. CMOS — how gates are actually built</h2>
+
+<h3 id="inverter">13.1 The inverter: two switches, zero compromise</h3>
+<p>From Module 08: an NMOS transistor conducts when its gate is <em>high</em> and pulls well toward 0 V; a PMOS conducts when its gate is <em>low</em> and pulls well toward \(V_{DD}\). <strong>CMOS</strong> (complementary MOS) pairs them so that each does only what it is good at. The inverter: PMOS from \(V_{DD}\) to the output, NMOS from output to ground, gates tied together as input.</p>
+<ul>
+  <li>Input low → NMOS off, PMOS on → output pulled cleanly to \(V_{DD}\) (logic 1).</li>
+  <li>Input high → PMOS off, NMOS on → output clamped to 0 V (logic 0).</li>
+</ul>
+<p><strong>In both states, one transistor is off — no conducting path from supply to ground exists.</strong> A static CMOS gate therefore burns essentially zero power while idle (only tiny leakage, though at nanometer geometries leakage has become a real budget item, Module 11). Power is consumed only when <em>switching</em>, charging and discharging the load capacitance \(C_L\):</p>
+\[ P_{dyn} = \alpha \, C_L \, V_{DD}^{\,2} \, f \]
+<p>with activity factor \(\alpha\). The \(V_{DD}^2\) is why supply voltages fell from 5 V to under 1 V as clocks rose — and why your laptop throttles \(f\) to save battery.</p>
+
+<figure>
+  <div class="fig-frame">
+  <svg class="diagram" viewBox="0 0 660 330" role="img" aria-label="CMOS inverter and NAND gate transistor schematics">
+    <!-- ============ INVERTER (left) ============ -->
+    <text x="150" y="26" text-anchor="middle" font-size="13" font-weight="700">Inverter</text>
+    <!-- VDD rail -->
+    <path class="wire" d="M100 45 H200"/>
+    <text x="90" y="50" text-anchor="end" font-size="13">V₍DD₎</text>
+    <!-- PMOS: channel at x=150, y 75..115; gate plate x=140 -->
+    <path class="wire" d="M150 45 V75 M150 115 V150 M150 75 V115"/>
+    <line x1="141" y1="75" x2="141" y2="115" class="wire"/>
+    <circle cx="132" cy="95" r="5" fill="none" stroke="var(--text-soft)" stroke-width="2"/>
+    <path class="wire" d="M95 95 H127"/>
+    <text x="215" y="99" font-size="11.5" fill="var(--text-faint)">PMOS: on when in = 0</text>
+    <!-- NMOS: channel x=150, y 190..230 -->
+    <path class="wire" d="M150 150 V190 M150 230 V262 M150 190 V230"/>
+    <line x1="141" y1="190" x2="141" y2="230" class="wire"/>
+    <path class="wire" d="M95 210 H141"/>
+    <text x="215" y="214" font-size="11.5" fill="var(--text-faint)">NMOS: on when in = 1</text>
+    <!-- input vertical -->
+    <path class="wire" d="M95 95 V210 M55 152 H95"/>
+    <circle cx="95" cy="152" r="4" class="node"/>
+    <text x="48" y="157" text-anchor="end" font-size="13">V_in</text>
+    <!-- output -->
+    <circle cx="150" cy="150" r="4" class="node"/>
+    <path class="wire" d="M150 150 H255"/>
+    <text x="262" y="155" font-size="13">V_out</text>
+    <!-- ground symbol -->
+    <path class="wire" d="M132 262 H168 M138 270 H162 M144 278 H156"/>
+    <!-- ============ NAND (right) ============ -->
+    <text x="490" y="26" text-anchor="middle" font-size="13" font-weight="700">NAND — series NMOS, parallel PMOS</text>
+    <path class="wire" d="M400 45 H580"/>
+    <text x="392" y="50" text-anchor="end" font-size="13">V₍DD₎</text>
+    <!-- PMOS A: channel x=430 y 70..110 -->
+    <path class="wire" d="M430 45 V70 M430 110 V140 M430 70 V110"/>
+    <line x1="421" y1="70" x2="421" y2="110" class="wire"/>
+    <circle cx="412" cy="90" r="5" fill="none" stroke="var(--text-soft)" stroke-width="2"/>
+    <!-- PMOS B: channel x=550 -->
+    <path class="wire" d="M550 45 V70 M550 110 V140 M550 70 V110"/>
+    <line x1="559" y1="70" x2="559" y2="110" class="wire"/>
+    <circle cx="568" cy="90" r="5" fill="none" stroke="var(--text-soft)" stroke-width="2"/>
+    <!-- drains joined -->
+    <path class="wire" d="M430 140 H550 M490 140 V172"/>
+    <circle cx="490" cy="140" r="4" class="node"/>
+    <path class="wire" d="M490 155 H600"/>
+    <circle cx="490" cy="155" r="4" class="node"/>
+    <text x="607" y="160" font-size="13">Y</text>
+    <!-- NMOS A: channel x=490 y 172..206 -->
+    <path class="wire" d="M490 206 V222 M490 172 V206"/>
+    <line x1="481" y1="172" x2="481" y2="206" class="wire"/>
+    <!-- NMOS B: channel x=490 y 222..256 -->
+    <path class="wire" d="M490 256 V282 M490 222 V256"/>
+    <line x1="481" y1="222" x2="481" y2="256" class="wire"/>
+    <!-- ground -->
+    <path class="wire" d="M472 282 H508 M478 290 H502 M484 298 H496"/>
+    <!-- input A: to PMOS A gate and NMOS A gate -->
+    <path class="wire" d="M372 90 H407 M372 90 V189 H481"/>
+    <text x="364" y="95" text-anchor="end" font-size="13">A</text>
+    <!-- input B: from right, to PMOS B gate and NMOS B gate -->
+    <path class="wire" d="M615 90 H573 M615 90 V239 H481"/>
+    <text x="623" y="95" font-size="13">B</text>
+  </svg>
+  </div>
+  <figcaption><b>Fig. 13.1</b> — Static CMOS. Left: inverter — complementary switch pair, never both on. Right: 2-input NAND — NMOS in <em>series</em> (both inputs high needed to pull Y low), PMOS in <em>parallel</em> (either input low pulls Y high). Pull-up and pull-down networks are always duals: series ↔ parallel.</figcaption>
+</figure>
+
+<h3 id="nandnor">13.2 NAND, NOR and the duality of networks</h3>
+<p>Any inverting gate follows one pattern: an NMOS <b>pull-down network</b> that conducts when the output should be 0, and the <em>dual</em> PMOS <b>pull-up network</b> (series ↔ parallel swapped) for the 1-cases. NAND: NMOS in series (\(Y = 0\) only if A <em>and</em> B high), PMOS in parallel. NOR: exactly mirrored. Note both are naturally <em>inverting</em> — static CMOS cannot build a plain AND in one stage, which is the deep reason NAND/NOR are the native gates of Section 5. In a NAND, both transistor types appear in their favorable role, which is why NAND is <em>the</em> preferred CMOS gate.</p>
+
+<h3 id="levels">13.3 Logic levels and noise margins</h3>
+<p>The 0/1 contract is written in voltages. Output guarantees: a gate drives at least \(V_{OH}\) for a 1 and at most \(V_{OL}\) for a 0. Input thresholds: anything above \(V_{IH}\) is read as 1, below \(V_{IL}\) as 0 (between them: undefined — forbidden zone). The safety margins are</p>
+\[ NM_H = V_{OH} - V_{IH}, \qquad NM_L = V_{IL} - V_{OL}. \]
+<p>For classic 5 V CMOS: \(V_{OH} \approx 4.9\,\mathrm{V}\), \(V_{IH} \approx 3.5\,\mathrm{V}\), \(V_{IL} \approx 1.5\,\mathrm{V}\), \(V_{OL} \approx 0.1\,\mathrm{V}\) → margins of roughly 1.4 V on each side. Any noise smaller than that is annihilated at the next gate — Section 1's promise, now quantified. The steeper the transfer characteristic, the wider the margins; explore it:</p>
+
+<div class="widget">
+  <div class="w-head"><span class="ic">🧪</span>Interactive — CMOS inverter transfer characteristic <span class="w-tag">simulation</span></div>
+  <div class="w-body">
+    <p class="small mt0">The voltage transfer characteristic (VTC): output vs. input voltage. \(V_{IL}\) and \(V_{IH}\) mark where the slope reaches −1; between them lies the forbidden zone. Increase the steepness (gain) and watch the noise margins \(NM_L\), \(NM_H\) grow toward the ideal. Shift the switching threshold \(V_M\) off-center and see one margin get sacrificed for the other.</p>
+    <div id="w-vtc"></div>
+  </div>
+</div>
+
+<div class="box warn">
+  <div class="box-title"><span class="ic">⚠️</span>Never float an input</div>
+  <p>A CMOS input is an insulated gate — practically no current flows into it. Leave it unconnected and it drifts with any stray charge, hovering in the forbidden zone: the gate may oscillate, or bias <em>both</em> transistors partly on and quietly cook (short-circuit current). Unused inputs are always tied to \(V_{DD}\) or GND; buttons get pull-up/pull-down resistors. The #1 breadboard bug in every digital lab course.</p>
+</div>
+
+<h2 id="hdl">14. Outlook: describing hardware in text — HDL and FPGAs</h2>
+
+<p>Nobody draws a million gates. Modern digital design is written in a <strong>hardware description language</strong> (HDL — Verilog/SystemVerilog or, traditionally in German industry, VHDL), and a synthesis tool compiles it into gates. Our "101" detector's next-state logic, in four lines of SystemVerilog:</p>
+
+<pre><code>always_ff @(posedge clk) begin        // a clocked process → D flip-flops
+  q0 &lt;= x;                            // D0 = x
+  q1 &lt;= (q0 &amp; ~x) | (q1 &amp; ~q0 &amp; x);   // D1 from our K-map
+end
+assign z = q1 &amp; q0;                   // Moore output</code></pre>
+
+<p>Crucial mindset: this is not a program executing line by line — it is a <em>description of parallel hardware</em> that all "runs" at once. An <strong>FPGA</strong> (field-programmable gate array) makes the loop instant: a chip containing tens of thousands of small look-up tables (LUTs — truth-table memories read by multiplexers, Section 8.1!), flip-flops and programmable wiring, configured by a bitstream. Write HDL at breakfast, run your processor design on real silicon by lunch. Module 11 follows the path to real chips (ASICs); Module 16 puts FPGAs and microcontrollers to work in embedded systems.</p>
+
+<h2 id="summary">15. Formula summary — <span class="de">Formelsammlung</span></h2>
+
+<div class="table-wrap">
+<table class="data">
+<thead><tr><th>Concept</th><th>Formula / fact</th><th>Remember as</th></tr></thead>
+<tbody>
+<tr><td>Positional value</td><td>\( X = \sum d_i b^i \)</td><td>hex digit = 4 bits</td></tr>
+<tr><td>Two's complement</td><td>\( X = -b_{n-1}2^{n-1} + \sum_{i&lt;n-1} b_i 2^i \)</td><td>MSB weight is negative</td></tr>
+<tr><td>Negation</td><td>\( -X = \overline{X} + 1 \)</td><td>invert bits, add 1</td></tr>
+<tr><td>n-bit signed range</td><td>\( -2^{n-1} \dots 2^{n-1}{-}1 \)</td><td>asymmetric, one zero</td></tr>
+<tr><td>Overflow flag</td><td>\( V = c_{in,MSB} \oplus c_{out,MSB} \)</td><td>pos+pos ≠ neg</td></tr>
+<tr><td>De Morgan</td><td>\( \overline{AB} = \overline{A} + \overline{B} \)</td><td>push the bubble, swap the gate</td></tr>
+<tr><td>Shannon expansion</td><td>\( F = \overline{S}F|_{S=0} + S F|_{S=1} \)</td><td>a MUX computes anything</td></tr>
+<tr><td>Full adder</td><td>\( S = A{\oplus}B{\oplus}C_{in},\; C_{out} = AB + C_{in}(A{\oplus}B) \)</td><td>generate + propagate</td></tr>
+<tr><td>Ripple delay</td><td>\( t \approx n\, t_{carry} \)</td><td>lookahead → \(O(\log n)\)</td></tr>
+<tr><td>K-map group of \(2^k\)</td><td>eliminates \(k\) variables</td><td>bigger groups, fewer literals</td></tr>
+<tr><td>Max clock</td><td>\( f_{max} = 1/(t_{cq} + t_{logic,max} + t_{su}) \)</td><td>the golden timing inequality</td></tr>
+<tr><td>Hold check</td><td>\( t_{cq,min} + t_{logic,min} \ge t_h \)</td><td>slowing the clock never fixes hold</td></tr>
+<tr><td>Sync counter</td><td>\( D_k = Q_k \oplus (Q_{k-1}\cdots Q_0) \)</td><td>toggle when all below are 1</td></tr>
+<tr><td>CMOS dynamic power</td><td>\( P = \alpha C_L V_{DD}^2 f \)</td><td>idle CMOS ≈ free</td></tr>
+<tr><td>Noise margins</td><td>\( NM_H = V_{OH} - V_{IH},\; NM_L = V_{IL} - V_{OL} \)</td><td>the size of the 0/1 safety zone</td></tr>
+</tbody>
+</table>
+</div>
+
+<h2 id="exercises">16. Exercises</h2>
+<p>Do these on paper — especially the K-map and the counter. Digital design is learned through the pencil.</p>
+
+<div class="exercise">
+  <p class="ex-q"><span class="ex-num">E1</span>Convert: (a) 0xB7 to binary and decimal; (b) −42 to 8-bit two's complement (give it in hex too). <span class="diff easy">easy</span></p>
+  <details><summary>Show solution</summary>
+    <div class="solution">
+      (a) B = 1011, 7 = 0111 → \(10110111_2\); value \(= 128+32+16+4+2+1 = 183\).<br>
+      (b) \(+42 = 00101010\); invert → \(11010101\); +1 → \(11010110\) = 0xD6.
+      Check via weights: \(-128 + 64 + 16 + 4 + 2 = -42\) ✓. Sanity: negative numbers always have MSB = 1, and 0xD6 &gt; 0x7F confirms it.
+    </div>
+  </details>
+</div>
+
+<div class="exercise">
+  <p class="ex-q"><span class="ex-num">E2</span>Simplify algebraically: (a) \(F = AB + A\overline{B} + \overline{A}B\); (b) use De Morgan to express \(G = \overline{\overline{A} \cdot \overline{B}}\) without any negation over more than one variable. <span class="diff easy">easy</span></p>
+  <details><summary>Show solution</summary>
+    <div class="solution">
+      (a) \(AB + A\overline{B} = A(B + \overline{B}) = A\); then \(A + \overline{A}B = (A + \overline{A})(A + B) = A + B\) (the "surprising" distributive law — or check by truth table). So \(F = A + B\): three gates collapse into one OR.<br>
+      (b) De Morgan: \(\overline{\overline{A}\cdot\overline{B}} = \overline{\overline{A}} + \overline{\overline{B}} = A + B\). Bubble view: a NAND with inverted inputs <em>is</em> an OR — same answer as (a), seen structurally.
+    </div>
+  </details>
+</div>
+
+<div class="exercise">
+  <p class="ex-q"><span class="ex-num">E3</span>In 8-bit two's complement, compute \((-100) + (-45)\). Give the bit-level result, the C and V flags, and the decoded value. Is it correct? <span class="diff med">medium</span></p>
+  <details><summary>Show solution</summary>
+    <div class="solution">
+      \(-100 = 10011100\) (since \(+100 = 01100100\), invert+1); \(-45 = 11010011\).
+      Sum: \(10011100 + 11010011 = 1\,01101111\) → 8-bit result \(01101111 = +111\), carry-out \(C = 1\).
+      Carry into MSB: adding bits 6…0 of both operands gives carry 0 into the MSB column? Check column 7: \(1 + 1 + c_{in,7}\). Lower 7 bits: \(0011100 + 1010011 = 1101111\) with no carry out → \(c_{in,7} = 0\), \(c_{out,7} = 1\) → \(V = 1\): <b>overflow</b>.
+      Indeed the true sum −145 lies outside \([-128, 127]\); the hardware wrapped to +111 (−145 + 256). Negative + negative gave "positive" — the sign signature agrees with V. Lesson: C = 1 alone says nothing for signed math; V is the flag that matters.
+    </div>
+  </details>
+</div>
+
+<div class="exercise">
+  <p class="ex-q"><span class="ex-num">E4</span>Minimize \(F(A,B,C,D) = \Sigma m(0, 2, 5, 7, 8, 10, 13, 15)\) with a K-map. Hint: remember the map wraps in both directions. <span class="diff med">medium</span></p>
+  <details><summary>Show solution</summary>
+    <div class="solution">
+      Fill the map (rows AB, cols CD, Gray order). The 1s in rows 00 and 10 sit in columns 00 and 10 — the four <em>corners plus the two edge-midpoints</em>… careful, precisely: cells (00,00), (00,10), (10,00), (10,10) form a wraparound 2×2 group (all four "corners" of the torus) with \(B = 0, D = 0\) constant → \(\overline{B}\,\overline{D}\). The 1s in rows 01 and 11, columns 01 and 11 form a central 2×2 with \(B = 1, D = 1\) → \(BD\).
+      \[ F = \overline{B}\,\overline{D} + BD = \overline{B \oplus D} \]
+      — F is simply "B equals D" (XNOR), invisible in the minterm list but obvious on the map. Sanity check \(m_5\) (0101): B=1, D=1 → 1 ✓; \(m_4\) (0100): B=1, D=0 → 0 ✓.
+    </div>
+  </details>
+</div>
+
+<div class="exercise">
+  <p class="ex-q"><span class="ex-num">E5</span>Implement \(F(A,B,C) = \Sigma m(1, 2, 4, 7)\) using one 4:1 multiplexer with \(A, B\) on the select inputs and only \(C\), \(\overline{C}\), 0, 1 available for the data inputs. <span class="diff med">medium</span></p>
+  <details><summary>Show solution</summary>
+    <div class="solution">
+      Partition the truth table by the selects (AB): AB = 00 → rows \(m_0, m_1\): F = 0, 1 → F follows \(C\) → \(D_0 = C\). AB = 01 → \(m_2, m_3\): F = 1, 0 → \(D_1 = \overline{C}\). AB = 10 → \(m_4, m_5\): F = 1, 0 → \(D_2 = \overline{C}\). AB = 11 → \(m_6, m_7\): F = 0, 1 → \(D_3 = C\).
+      One MUX, one inverter — done. (This F is the 3-input XOR/odd-parity function \(A \oplus B \oplus C\); with a \(2^n\):1 MUX and constants you could do it with zero extra gates. Shannon expansion at work.)
+    </div>
+  </details>
+</div>
+
+<div class="exercise">
+  <p class="ex-q"><span class="ex-num">E6</span>A register-to-register path has \(t_{cq} = 1.2\,\mathrm{ns}\) (min 0.8 ns), \(t_{su} = 0.9\,\mathrm{ns}\), \(t_h = 1.0\,\mathrm{ns}\), and combinational delay between 0.1 ns and 6.4 ns. (a) Find \(f_{max}\). (b) Does the path meet hold? If not, fix it. (c) What \(f_{max}\) results from splitting the logic into two balanced pipeline stages? <span class="diff hard">challenge</span></p>
+  <details><summary>Show solution</summary>
+    <div class="solution">
+      (a) \(T_{min} = 1.2 + 6.4 + 0.9 = 8.5\,\mathrm{ns} \Rightarrow f_{max} \approx 118\,\mathrm{MHz}\).<br>
+      (b) Fastest arrival: \(t_{cq,min} + t_{logic,min} = 0.8 + 0.1 = 0.9\,\mathrm{ns} &lt; t_h = 1.0\,\mathrm{ns}\) → <b>hold violation</b>: the new edge's data can smash into the receiving flip-flop while it is still latching the old value. Fix: insert ≥ 0.1 ns of delay (buffers) into the short path. Slowing the clock does <em>not</em> help — hold is a same-edge race, independent of \(T_{clk}\).<br>
+      (c) Two stages of 3.2 ns each: \(T_{min} = 1.2 + 3.2 + 0.9 = 5.3\,\mathrm{ns} \Rightarrow f_{max} \approx 189\,\mathrm{MHz}\). Not 2×: the register overhead \(t_{cq} + t_{su} = 2.1\,\mathrm{ns}\) is paid per stage — pipelining has diminishing returns, which is why CPUs stopped at ~20 stages.
+    </div>
+  </details>
+</div>
+
+<div class="exercise">
+  <p class="ex-q"><span class="ex-num">E7</span>Design a synchronous modulo-5 counter (0→1→2→3→4→0…) with D flip-flops \(Q_2Q_1Q_0\). Use don't-cares for states 5–7, derive minimal \(D_2, D_1, D_0\), and check what happens if the counter powers up in state 6. <span class="diff hard">challenge</span></p>
+  <details><summary>Show solution</summary>
+    <div class="solution">
+      State table: 000→001, 001→010, 010→011, 011→100, 100→000; 101/110/111 → ×.<br>
+      \(D_2 = 1\) only for state 011 → with don't-cares: \(D_2 = Q_1 Q_0\).<br>
+      \(D_1 = 1\) for 001, 010 → \(D_1 = Q_1 \oplus Q_0\) (check 011 → 0 ✓, and it assigns × states freely).<br>
+      \(D_0 = 1\) for 000, 010 → \(D_0 = \overline{Q_2}\,\overline{Q_0}\).<br>
+      Power-up in 110: \(D_2 = Q_1Q_0 = 0\), \(D_1 = 1\oplus 0 = 1\), \(D_0 = \overline{1}\cdot\overline{0} = 0\) → next state 010 — back in the legal cycle after one clock ✓. Check 101 → \(D_2=0, D_1=1, D_0=0\) → 010 ✓; 111 → \(D_2=1, D_1=0, D_0=0\) → 100 ✓. This design happens to be self-correcting; a careful designer verifies this rather than hoping (see the FSM pitfall box).
+    </div>
+  </details>
+</div>
+
+<h2 id="quiz">17. Self-assessment</h2>
+
+<div class="quiz" data-quiz-title="Module 10 — Self-test">
+<script type="application/json">
+[
+ {"q":"The decimal value of 0x2F is…",
+  "opts":["47","37","215","32"],"a":0,
+  "explain":"\\(2 \\cdot 16 + 15 = 47\\). Each hex digit is worth a power of 16 (and exactly 4 bits: 0x2F = 0010 1111)."},
+ {"q":"In 8-bit two's complement, the pattern 11101100 represents…",
+  "opts":["−20","−236","+236","−108"],"a":0,
+  "explain":"MSB has weight −128: \\(-128 + 64 + 32 + 8 + 4 = -20\\). Cross-check by negating: invert+1 gives 00010100 = +20."},
+ {"q":"Why does virtually every CPU use two's complement for signed integers?",
+  "opts":["It can represent more numbers than other codes","The same adder hardware handles signed and unsigned numbers, and subtraction becomes addition","It has two representations of zero for error checking","It makes multiplication trivial"],"a":1,
+  "explain":"Addition modulo \\(2^n\\) is interpretation-blind, and \\(A - B = A + \\overline{B} + 1\\). One adder does everything; sign-magnitude would need separate hardware and has two zeros (a bug, not a feature)."},
+ {"q":"De Morgan's theorem states that a NAND gate is equivalent to…",
+  "opts":["an OR gate with inverted inputs","an AND gate with inverted inputs","a NOR gate with inverted output","an XOR gate"],"a":0,
+  "explain":"\\(\\overline{AB} = \\overline{A} + \\overline{B}\\): push the output bubble to the inputs and swap the shape AND → OR. 'Not both' means 'at least one is false'."},
+ {"q":"In a 4-variable K-map, a valid group of 8 cells eliminates how many variables from the term?",
+  "opts":["1","2","3","4"],"a":2,
+  "explain":"A group of \\(2^k\\) cells eliminates \\(k\\) variables — 8 cells leave a single-literal term (like the group A in the BCD example). Groups must be power-of-two rectangles, wraparound allowed."},
+ {"q":"What makes an SR latch (NOR version) store a value when S = R = 0?",
+  "opts":["The transistors saturate","Cross-coupled feedback: each gate holds the other in a consistent state","The clock keeps refreshing it","Charge stored on the gate capacitance"],"a":1,
+  "explain":"With both controls at 0, each NOR just inverts the other's output — both Q = 1 and Q = 0 are self-consistent, so the loop keeps whichever it had. Feedback, not charge, is the memory (that would be DRAM)."},
+ {"q":"A D flip-flop has t_cq = 1 ns, t_su = 0.5 ns; the logic between two such flip-flops has a worst-case delay of 2.5 ns. The maximum clock frequency is…",
+  "opts":["400 MHz","250 MHz","286 MHz","333 MHz"],"a":1,
+  "explain":"\\(T_{min} = 1 + 2.5 + 0.5 = 4\\,\\mathrm{ns}\\) → \\(f_{max} = 250\\,\\mathrm{MHz}\\). All three terms count: launch delay, logic, and setup at the receiver."},
+ {"q":"A hold-time violation is best fixed by…",
+  "opts":["lowering the clock frequency","adding delay (buffers) into the too-fast data path","increasing the supply voltage","using a bigger flip-flop"],"a":1,
+  "explain":"Hold is a race between the NEW data (launched at the same edge) and the closing of the receiver's hold window — the clock period never enters the inequality \\(t_{cq,min} + t_{logic,min} \\ge t_h\\). Slowing the clock changes nothing; only added path delay helps. A classic exam misconception."},
+ {"q":"Why does a static CMOS gate consume almost no power while its inputs are constant?",
+  "opts":["The transistors are very small","MOSFET gates conduct no DC current AND one of the two complementary networks is always off, so no supply-to-ground path exists","The clock is gated off","Because V_OL is exactly 0 V"],"a":1,
+  "explain":"Two reasons stack: insulated gates draw no input current, and complementarity guarantees the pull-up and pull-down networks are never on simultaneously. Power \\(P = \\alpha C V_{DD}^2 f\\) flows only when nodes actually switch."},
+ {"q":"The output of a Moore machine differs from a Mealy machine's in that it…",
+  "opts":["reacts to inputs within the same clock cycle","depends only on the current state, so it is stable for full clock periods","requires fewer states for the same task","cannot be implemented with D flip-flops"],"a":1,
+  "explain":"Moore: \\(Y = g(Z)\\) — clean, glitch-free, one cycle latent. Mealy: \\(Y = g(Z, X)\\) — faster and often smaller, but the output can twitch when inputs change mid-cycle. Options A and C describe Mealy."}
+]
+</script>
+</div>
+
+<script>
+document.addEventListener("ee-ready", () => {
+
+  /* ---------- Widget: two's complement explorer ---------- */
+  const hex2 = v => "0x" + (v & 255).toString(16).toUpperCase().padStart(2, "0");
+  const add8 = p => {
+    const uA = p.A & 255, uB = p.B & 255;
+    let c = 0; const carries = [0];
+    for (let i = 0; i < 8; i++) {
+      const t = ((uA >> i) & 1) + ((uB >> i) & 1) + c;
+      c = t >> 1; carries.push(c);
+    }
+    const raw = (uA + uB) & 255;
+    return { raw, signed: raw < 128 ? raw : raw - 256,
+             C: carries[8], V: carries[8] ^ carries[7], carries };
+  };
+  EE.custom({
+    mount: "#w-twos", height: 330,
+    params: [
+      { key: "mode", label: "Mode", type: "select", value: "one",
+        options: [{ label: "inspect A", value: "one" }, { label: "add A + B", value: "add" }] },
+      { key: "A", label: "A (signed)", min: -128, max: 127, step: 1, value: 93, fmt: v => v.toFixed(0) },
+      { key: "B", label: "B (signed)", min: -128, max: 127, step: 1, value: 70, fmt: v => v.toFixed(0) }
+    ],
+    readouts: [
+      { label: "A pattern", fn: p => hex2(p.A) + " = " + (p.A & 255).toString(2).padStart(8, "0") },
+      { label: "true sum A+B", fn: p => p.mode === "add" ? String(p.A + p.B) : "—" },
+      { label: "8-bit result", fn: p => p.mode === "add" ? String(add8(p).signed) : "—" },
+      { label: "flags", fn: p => p.mode === "add" ? "C = " + add8(p).C + " · V = " + add8(p).V : "—" }
+    ],
+    draw: (ctx, w, h, p, hp) => {
+      const k = hp.ink;
+      const s = Math.min(1, w / 580);
+      ctx.save(); ctx.scale(s, s);
+      const W = w / s, cw = 42, x0 = Math.max(96, (W - 8 * cw) / 2);
+      const bits = v => Array.from({ length: 8 }, (_, i) => (v >> (7 - i)) & 1);
+      const weights = ["−128", "64", "32", "16", "8", "4", "2", "1"];
+
+      function bitRow(label, v, y, hh) {
+        const b = bits(v & 255);
+        ctx.textAlign = "right"; ctx.fillStyle = k.muted;
+        ctx.font = "600 13px system-ui, sans-serif"; ctx.textBaseline = "alphabetic";
+        ctx.fillText(label, x0 - 14, y + hh / 2 + 4);
+        for (let i = 0; i < 8; i++) {
+          const x = x0 + i * cw;
+          if (i === 0) { ctx.fillStyle = k.accentSoft; ctx.fillRect(x, y, cw, hh); }
+          ctx.strokeStyle = k.axis; ctx.lineWidth = 1.2; ctx.strokeRect(x, y, cw, hh);
+          ctx.fillStyle = b[i] ? hp.color(0) : k.muted;
+          ctx.font = "700 " + (hh > 36 ? 19 : 16) + "px system-ui, sans-serif";
+          ctx.textAlign = "center";
+          ctx.fillText(b[i], x + cw / 2, y + hh / 2 + 6);
+        }
+      }
+
+      if (p.mode === "one") {
+        ctx.textAlign = "center";
+        weights.forEach((t, i) => {
+          ctx.font = (i === 0 ? "700 " : "") + "11px system-ui, sans-serif";
+          ctx.fillStyle = i === 0 ? hp.color(5) : k.muted;
+          ctx.fillText(t, x0 + i * cw + cw / 2, 30);
+        });
+        bitRow("A", p.A, 40, 44);
+        const b = bits(p.A & 255), terms = [];
+        b.forEach((bit, i) => { if (bit) terms.push(weights[i]); });
+        ctx.fillStyle = k.primary; ctx.font = "13px system-ui, sans-serif"; ctx.textAlign = "center";
+        ctx.fillText(p.A + " = " + (terms.length ? terms.join(" + ") : "0"), W / 2, 112);
+        ctx.fillStyle = k.muted;
+        ctx.fillText("pattern " + hex2(p.A) + " · unsigned reading: " + (p.A & 255), W / 2, 134);
+        /* wraparound strip */
+        const sy = 186, sw2 = 8 * cw, half = sw2 / 2;
+        ctx.globalAlpha = 0.22;
+        ctx.fillStyle = hp.color(0); ctx.fillRect(x0, sy, half, 26);
+        ctx.fillStyle = hp.color(5); ctx.fillRect(x0 + half, sy, half, 26);
+        ctx.globalAlpha = 1;
+        ctx.strokeStyle = k.axis; ctx.strokeRect(x0, sy, sw2, 26);
+        ctx.fillStyle = k.muted; ctx.font = "11px system-ui, sans-serif";
+        ctx.fillText("0 … +127  (MSB = 0)", x0 + half / 2, sy + 42);
+        ctx.fillText("−128 … −1  (MSB = 1)", x0 + half + half / 2, sy + 42);
+        const mx = x0 + ((p.A & 255) + 0.5) / 256 * sw2;
+        ctx.fillStyle = k.primary;
+        ctx.beginPath(); ctx.moveTo(mx, sy - 8); ctx.lineTo(mx - 6, sy - 18); ctx.lineTo(mx + 6, sy - 18); ctx.closePath(); ctx.fill();
+        ctx.font = "600 11px system-ui, sans-serif";
+        ctx.fillText("A", mx, sy - 24);
+        ctx.fillStyle = k.muted;
+        ctx.fillText("all 256 patterns in unsigned order — the signed reading wraps at 10000000: +127 + 1 → −128", W / 2, sy + 64);
+      } else {
+        const r = add8(p);
+        ctx.font = "600 11px system-ui, sans-serif"; ctx.textAlign = "center";
+        for (let i = 0; i < 8; i++) {
+          const cin = r.carries[7 - i];
+          ctx.fillStyle = cin ? hp.color(2) : k.muted;
+          ctx.globalAlpha = cin ? 1 : 0.45;
+          ctx.fillText(cin, x0 + i * cw + cw / 2, 26);
+          ctx.globalAlpha = 1;
+        }
+        ctx.fillStyle = r.C ? hp.color(2) : k.muted; ctx.globalAlpha = r.C ? 1 : 0.45;
+        ctx.fillText(r.C, x0 - 44, 26); ctx.globalAlpha = 1;
+        ctx.fillStyle = k.muted; ctx.font = "10px system-ui, sans-serif";
+        ctx.fillText("carry out", x0 - 44, 40);
+        ctx.fillText("carries into each column", x0 + 4 * cw, 12);
+        bitRow("A = " + p.A, p.A, 34, 34);
+        bitRow("B = " + p.B, p.B, 74, 34);
+        ctx.strokeStyle = k.primary; ctx.lineWidth = 1.6;
+        ctx.beginPath(); ctx.moveTo(x0 - 86, 116); ctx.lineTo(x0 + 8 * cw, 116); ctx.stroke();
+        bitRow("sum", r.raw, 122, 34);
+        const fy = 180;
+        const flag = (x, name, v, bad) => {
+          ctx.fillStyle = v ? (bad ? hp.color(5) : hp.color(2)) : k.muted;
+          ctx.globalAlpha = v ? 0.16 : 0.06; ctx.fillRect(x, fy, 84, 30); ctx.globalAlpha = 1;
+          ctx.strokeStyle = v ? (bad ? hp.color(5) : hp.color(2)) : k.axis;
+          ctx.lineWidth = 1.4; ctx.strokeRect(x, fy, 84, 30);
+          ctx.fillStyle = v ? (bad ? hp.color(5) : hp.color(2)) : k.muted;
+          ctx.font = "700 13px system-ui, sans-serif"; ctx.textAlign = "center";
+          ctx.fillText(name + " = " + v, x + 42, fy + 20);
+        };
+        flag(x0, "C", r.C, false);
+        flag(x0 + 100, "V", r.V, true);
+        ctx.textAlign = "left"; ctx.font = "12.5px system-ui, sans-serif";
+        ctx.fillStyle = r.V ? hp.color(5) : k.primary;
+        const msg = r.V
+          ? "overflow! true sum " + (p.A + p.B) + " ∉ [−128, +127] — the pattern reads " + r.signed
+          : "8-bit result " + r.signed + " = true sum ✓" + (r.C ? "   (C = 1 matters only for unsigned)" : "");
+        ctx.fillText(msg, x0, fy + 56);
+        ctx.fillStyle = k.muted; ctx.font = "11px system-ui, sans-serif";
+        ctx.fillText("V = (carry into MSB) ⊕ (carry out of MSB)", x0, fy + 76);
+      }
+      ctx.restore();
+    }
+  });
+
+  /* ---------- Widget: full adder, gate by gate ---------- */
+  const bitOpt = [{ label: "0", value: 0 }, { label: "1", value: 1 }];
+  EE.custom({
+    mount: "#w-adder", height: 300,
+    params: [
+      { key: "A", label: "Input A", type: "select", value: 1, options: bitOpt },
+      { key: "B", label: "Input B", type: "select", value: 0, options: bitOpt },
+      { key: "Cin", label: "Carry in C_in", type: "select", value: 1, options: bitOpt }
+    ],
+    readouts: [
+      { label: "Sum S", fn: p => String((p.A ^ p.B) ^ p.Cin) },
+      { label: "Carry out", fn: p => String((p.A & p.B) | ((p.A ^ p.B) & p.Cin)) },
+      { label: "A + B + C_in", fn: p => {
+          const t = p.A + p.B + p.Cin;
+          return t + "  =  (" + ((t >> 1) & 1) + "" + (t & 1) + ")₂";
+        } }
+    ],
+    draw: (ctx, w, h, p, hp) => {
+      const k = hp.ink;
+      const P = p.A ^ p.B, S = P ^ p.Cin, G = p.A & p.B, T = P & p.Cin, Cout = G | T;
+      const sc = Math.min(w / 660, h / 270);
+      ctx.save();
+      ctx.translate((w - 640 * sc) / 2, (h - 260 * sc) / 2);
+      ctx.scale(sc, sc);
+      const wc = v => (v ? hp.color(3) : k.muted);
+      const wire = (pts, v) => {
+        ctx.strokeStyle = wc(v); ctx.lineWidth = v ? 3 : 2; ctx.beginPath();
+        pts.forEach((pt, i) => (i ? ctx.lineTo(pt[0], pt[1]) : ctx.moveTo(pt[0], pt[1])));
+        ctx.stroke();
+      };
+      const dot = (x, y, v) => { ctx.fillStyle = wc(v); ctx.beginPath(); ctx.arc(x, y, 4, 0, 7); ctx.fill(); };
+      const gate = (x, y, label) => {
+        ctx.fillStyle = k.surface; ctx.strokeStyle = k.primary; ctx.lineWidth = 2;
+        ctx.fillRect(x, y, 55, 60); ctx.strokeRect(x, y, 55, 60);
+        ctx.fillStyle = k.primary; ctx.font = "700 15px system-ui, sans-serif";
+        ctx.textAlign = "center"; ctx.textBaseline = "middle";
+        ctx.fillText(label, x + 27, y + 30);
+      };
+      const val = (x, y, v) => {
+        ctx.fillStyle = wc(v); ctx.font = "700 14px system-ui, sans-serif";
+        ctx.textAlign = "center"; ctx.textBaseline = "middle"; ctx.fillText(v, x, y);
+      };
+      const name = (x, y, t, anchor) => {
+        ctx.fillStyle = k.primary; ctx.font = "600 14px system-ui, sans-serif";
+        ctx.textAlign = anchor || "end"; ctx.textBaseline = "middle"; ctx.fillText(t, x, y);
+      };
+      const note = (x, y, t) => {
+        ctx.fillStyle = k.muted; ctx.font = "11px system-ui, sans-serif";
+        ctx.textAlign = "center"; ctx.textBaseline = "middle"; ctx.fillText(t, x, y);
+      };
+      /* input wires */
+      wire([[45, 45], [150, 45]], p.A); dot(95, 45, p.A);
+      wire([[95, 45], [95, 155], [150, 155]], p.A);
+      wire([[45, 75], [150, 75]], p.B); dot(115, 75, p.B);
+      wire([[115, 75], [115, 185], [150, 185]], p.B);
+      wire([[45, 240], [265, 240], [265, 90], [290, 90]], p.Cin); dot(240, 240, p.Cin);
+      wire([[240, 240], [240, 215], [290, 215]], p.Cin);
+      /* internal + output wires */
+      wire([[205, 60], [290, 60]], P); dot(250, 60, P);
+      wire([[250, 60], [250, 185], [290, 185]], P);
+      wire([[205, 170], [430, 170]], G);
+      wire([[345, 200], [430, 200]], T);
+      wire([[345, 75], [600, 75]], S);
+      wire([[485, 185], [600, 185]], Cout);
+      /* gates on top */
+      gate(150, 30, "=1"); gate(150, 140, "&");
+      gate(290, 45, "=1"); gate(290, 170, "&");
+      gate(430, 155, "≥1");
+      /* labels + live values */
+      name(38, 45, "A"); val(62, 34, p.A);
+      name(38, 75, "B"); val(62, 64, p.B);
+      name(38, 240, "Cᵢₙ"); val(62, 229, p.Cin);
+      val(228, 48, P); note(222, 104, "P = A⊕B");
+      val(390, 158, G); note(300, 158, "G = A·B");
+      val(390, 188, T); note(392, 214, "T = P·Cᵢₙ");
+      name(608, 75, "S = " + S, "start"); val(565, 63, S);
+      name(608, 185, "Cₒᵤₜ = " + Cout, "start"); val(565, 173, Cout);
+      ctx.restore();
+    }
+  });
+
+  /* ---------- Widget: D flip-flop timing & setup violation ---------- */
+  EE.custom({
+    mount: "#w-dff", height: 280, animate: true,
+    params: [
+      { key: "tD", label: "D settles before the edge  t_D", min: -4, max: 8, step: 0.5, value: 5, unit: "ns", fmt: v => v.toFixed(1) }
+    ],
+    readouts: [
+      { label: "setup margin t_D − t_su", fn: p => (p.tD - 2).toFixed(1) + " ns" },
+      { label: "behaviour", fn: p => p.tD >= 2 ? "✓ clean capture of the new value"
+          : (p.tD <= -1 ? "old value captured — new data waits one cycle" : "✗ setup/hold violation → metastable") }
+    ],
+    draw: (ctx, w, h, p, hp) => {
+      const k = hp.ink, tsu = 2, th = 1, tcq = 2, tmeta = 8;
+      const edges = [20, 50, 80];
+      const X = t => 64 + t / 100 * (w - 84);
+      const lanes = { CLK: 28, D: 98, Q: 168 }, LH = 34;
+      const reveal = Math.min(1, (hp.t % 7) / 5.5) * 104;
+      const lim = Math.min(reveal, 100);
+
+      /* setup/hold shading + edge lines */
+      edges.forEach(e => {
+        ctx.globalAlpha = 0.16; ctx.fillStyle = hp.color(2);
+        ctx.fillRect(X(e - tsu), lanes.D - 8, X(e) - X(e - tsu), LH + 16);
+        ctx.globalAlpha = 0.14; ctx.fillStyle = hp.color(5);
+        ctx.fillRect(X(e), lanes.D - 8, X(e + th) - X(e), LH + 16);
+        ctx.globalAlpha = 1;
+        ctx.strokeStyle = k.axis; ctx.setLineDash([4, 4]); ctx.lineWidth = 1;
+        ctx.beginPath(); ctx.moveTo(X(e), 14); ctx.lineTo(X(e), lanes.Q + LH + 8); ctx.stroke();
+        ctx.setLineDash([]);
+      });
+      ctx.font = "700 12.5px system-ui, sans-serif"; ctx.textAlign = "left"; ctx.textBaseline = "middle";
+      ctx.fillStyle = hp.color(0); ctx.fillText("CLK", 12, lanes.CLK + LH / 2);
+      ctx.fillStyle = hp.color(2); ctx.fillText("D", 12, lanes.D + LH / 2);
+      ctx.fillStyle = hp.color(3); ctx.fillText("Q", 12, lanes.Q + LH / 2);
+      ctx.fillStyle = k.muted; ctx.font = "11px system-ui, sans-serif";
+      ctx.fillText("shaded: setup window t_su = 2 ns (amber) · hold window t_h = 1 ns (red) · t_cq = 2 ns", 64, h - 12);
+
+      /* waveform transition lists */
+      const violation = p.tD < tsu && p.tD > -th;
+      const clkTr = [];
+      edges.forEach(e => { clkTr.push([e, 1]); clkTr.push([e + 15, 0]); });
+      const dTr = edges.map((e, i) => [e - p.tD, i % 2 === 0 ? 1 : 0]).filter(t => t[0] >= 0 && t[0] <= 100);
+      const newVal = i => (i % 2 === 0 ? 1 : 0);
+
+      const yOf = (base, vv) => (vv ? base : base + LH);
+      const drawWave = (trs, y0, col) => {
+        ctx.strokeStyle = col; ctx.lineWidth = 2.4; ctx.beginPath();
+        let v = 0;
+        ctx.moveTo(X(0), yOf(y0, 0));
+        for (const [tt, nv] of trs) {
+          if (tt > lim) break;
+          if (nv !== v) { ctx.lineTo(X(tt), yOf(y0, v)); ctx.lineTo(X(tt), yOf(y0, nv)); v = nv; }
+        }
+        ctx.lineTo(X(lim), yOf(y0, v));
+        ctx.stroke();
+      };
+      drawWave(clkTr, lanes.CLK, hp.color(0));
+      drawWave(dTr, lanes.D, hp.color(2));
+
+      if (!violation) {
+        const qTr = [];
+        let q = 0;
+        edges.forEach((e, i) => {
+          const sampled = p.tD > 0 ? newVal(i) : (i === 0 ? 0 : newVal(i - 1));
+          if (sampled !== q) { qTr.push([e + tcq, sampled]); q = sampled; }
+        });
+        drawWave(qTr, lanes.Q, hp.color(3));
+      } else {
+        /* Q with metastable hatched intervals after every edge */
+        ctx.lineWidth = 2.4;
+        let v = 0, cursor = 0, labeled = false;
+        for (let i = 0; i < edges.length && cursor <= lim; i++) {
+          const m0 = edges[i] + tcq, m1 = m0 + tmeta;
+          const segEnd = Math.min(m0, lim);
+          ctx.strokeStyle = hp.color(3);
+          ctx.beginPath(); ctx.moveTo(X(cursor), yOf(lanes.Q, v)); ctx.lineTo(X(segEnd), yOf(lanes.Q, v)); ctx.stroke();
+          if (lim <= m0) { cursor = lim + 1; break; }
+          const hEnd = Math.min(m1, lim);
+          ctx.save();
+          ctx.strokeStyle = hp.color(5); ctx.lineWidth = 1.3;
+          ctx.beginPath();
+          ctx.moveTo(X(m0), yOf(lanes.Q, v));
+          for (let tt = m0; tt < hEnd; tt += 1.6) {
+            ctx.lineTo(X(Math.min(tt + 0.8, hEnd)), lanes.Q);
+            ctx.lineTo(X(Math.min(tt + 1.6, hEnd)), lanes.Q + LH);
+          }
+          ctx.stroke();
+          ctx.strokeRect(X(m0), lanes.Q, X(hEnd) - X(m0), LH);
+          if (!labeled && lim > m0 + 3) {
+            ctx.fillStyle = hp.color(5); ctx.font = "700 12px system-ui, sans-serif"; ctx.textAlign = "center";
+            ctx.fillText("✕ metastable", (X(m0) + X(m1)) / 2, lanes.Q - 12);
+            labeled = true;
+          }
+          ctx.restore();
+          if (lim < m1) { cursor = lim + 1; break; }
+          v = newVal(i); cursor = m1;
+        }
+        if (cursor <= lim) {
+          ctx.strokeStyle = hp.color(3);
+          ctx.beginPath(); ctx.moveTo(X(cursor), yOf(lanes.Q, v)); ctx.lineTo(X(lim), yOf(lanes.Q, v)); ctx.stroke();
+        }
+      }
+      /* sweep cursor */
+      if (reveal < 100) {
+        ctx.strokeStyle = k.muted; ctx.lineWidth = 1;
+        ctx.beginPath(); ctx.moveTo(X(reveal), 14); ctx.lineTo(X(reveal), lanes.Q + LH + 8); ctx.stroke();
+      }
+    }
+  });
+
+  /* ---------- Widget: CMOS inverter VTC ---------- */
+  const vmOf = p => Math.min(Math.max(p.VM, 0.4), p.VDD - 0.4);
+  const vtc = (x, p) => p.VDD / 2 * (1 - Math.tanh(p.g * (x - vmOf(p))));
+  const dUnity = p => Math.acosh(Math.sqrt(Math.max(1.0001, p.VDD * p.g / 2))) / p.g;
+  EE.functionPlot({
+    mount: "#w-vtc", height: 320,
+    x: p => ({ min: 0, max: p.VDD, label: "V_in in V" }),
+    y: p => ({ min: 0, max: p.VDD * 1.06, label: "V_out in V" }),
+    params: [
+      { key: "VDD", label: "Supply V_DD", min: 2, max: 5, step: 0.1, value: 5, unit: "V", fmt: v => v.toFixed(1) },
+      { key: "VM", label: "Switching threshold V_M", min: 0.8, max: 4, step: 0.05, value: 2.5, unit: "V", fmt: v => v.toFixed(2) },
+      { key: "g", label: "Transition steepness (gain)", min: 2, max: 20, step: 0.5, value: 8, unit: "", fmt: v => v.toFixed(1) }
+    ],
+    curves: [
+      { label: "V_out (VTC)", color: 0, fn: (x, p) => vtc(x, p) },
+      { label: "V_out = V_in", color: 2, dash: [6, 4], fn: x => x }
+    ],
+    annotations: p => {
+      const d = dUnity(p), vm = vmOf(p);
+      return [
+        { type: "vline", x: vm - d, label: "V_IL" },
+        { type: "vline", x: vm + d, label: "V_IH" },
+        { type: "hline", y: vtc(vm - d, p), label: "V_OH" },
+        { type: "hline", y: vtc(vm + d, p), label: "V_OL" },
+        { type: "point", x: vm, y: vtc(vm, p), label: "V_M" }
+      ];
+    },
+    readouts: [
+      { label: "V_IL / V_IH (slope −1)", fn: p => { const d = dUnity(p), vm = vmOf(p); return (vm - d).toFixed(2) + " V / " + (vm + d).toFixed(2) + " V"; } },
+      { label: "Noise margin NM_L", fn: p => { const d = dUnity(p), vm = vmOf(p); return (vm - d - vtc(vm + d, p)).toFixed(2) + " V"; } },
+      { label: "Noise margin NM_H", fn: p => { const d = dUnity(p), vm = vmOf(p); return (vtc(vm - d, p) - (vm + d)).toFixed(2) + " V"; } }
+    ]
+  });
+});
+</script>
+
+</article>
+</main>
+</div>
+</body>
+</html>

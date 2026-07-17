@@ -1,0 +1,369 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Robert learns</title>
+<style>
+:root {
+  --bg: #f4f1ec;
+  --bg-card: #ffffff;
+  --text: #1e1c18;
+  --text-mid: #5c574e;
+  --text-faint: #9a948a;
+  --border: #ddd8cf;
+  --border-strong: #c8c2b6;
+  --shadow: 0 1px 3px rgba(30,28,24,.06), 0 6px 20px rgba(30,28,24,.07);
+  --shadow-hover: 0 4px 12px rgba(30,28,24,.1), 0 12px 36px rgba(30,28,24,.12);
+  --radius: 14px;
+  --font-display: Georgia, "Times New Roman", serif;
+  --font-body: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --bg: #141418;
+    --bg-card: #1c1c22;
+    --text: #e2ded7;
+    --text-mid: #9e9a92;
+    --text-faint: #6b675f;
+    --border: #2a2a30;
+    --border-strong: #3a3a42;
+    --shadow: 0 1px 3px rgba(0,0,0,.2), 0 6px 20px rgba(0,0,0,.3);
+    --shadow-hover: 0 4px 12px rgba(0,0,0,.3), 0 12px 36px rgba(0,0,0,.4);
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #141418;
+  --bg-card: #1c1c22;
+  --text: #e2ded7;
+  --text-mid: #9e9a92;
+  --text-faint: #6b675f;
+  --border: #2a2a30;
+  --border-strong: #3a3a42;
+  --shadow: 0 1px 3px rgba(0,0,0,.2), 0 6px 20px rgba(0,0,0,.3);
+  --shadow-hover: 0 4px 12px rgba(0,0,0,.3), 0 12px 36px rgba(0,0,0,.4);
+}
+:root[data-theme="light"] {
+  --bg: #f4f1ec;
+  --bg-card: #ffffff;
+  --text: #1e1c18;
+  --text-mid: #5c574e;
+  --text-faint: #9a948a;
+  --border: #ddd8cf;
+  --border-strong: #c8c2b6;
+  --shadow: 0 1px 3px rgba(30,28,24,.06), 0 6px 20px rgba(30,28,24,.07);
+  --shadow-hover: 0 4px 12px rgba(30,28,24,.1), 0 12px 36px rgba(30,28,24,.12);
+}
+
+* { box-sizing: border-box; margin: 0; }
+html { scroll-behavior: smooth; }
+@media (prefers-reduced-motion: reduce) { html { scroll-behavior: auto; } }
+
+body {
+  font-family: var(--font-body);
+  background: var(--bg);
+  color: var(--text);
+  line-height: 1.65;
+  font-size: 17px;
+  -webkit-font-smoothing: antialiased;
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
+
+.page {
+  flex: 1;
+  width: 100%;
+  max-width: 820px;
+  margin: 0 auto;
+  padding: 0 28px;
+}
+
+/* ── Header ── */
+.site-header {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  padding: 52px 0 12px;
+  border-bottom: 1px solid var(--border);
+  margin-bottom: 40px;
+}
+
+.masthead {
+  font-family: var(--font-display);
+  font-size: 1.75rem;
+  font-weight: 400;
+  letter-spacing: -.01em;
+  color: var(--text);
+  line-height: 1.2;
+}
+
+.masthead em {
+  font-style: italic;
+}
+
+.theme-toggle {
+  display: grid;
+  place-items: center;
+  width: 36px;
+  height: 36px;
+  border-radius: 9px;
+  border: 1px solid var(--border);
+  background: var(--bg-card);
+  color: var(--text-mid);
+  cursor: pointer;
+  font-size: 1.05rem;
+  transition: border-color .15s, color .15s;
+  flex-shrink: 0;
+}
+.theme-toggle:hover { color: var(--text); border-color: var(--border-strong); }
+
+.intro {
+  color: var(--text-mid);
+  font-size: 1.05rem;
+  line-height: 1.6;
+  margin-bottom: 44px;
+  max-width: 580px;
+}
+
+/* ── Course grid ── */
+.courses {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 24px;
+  padding-bottom: 80px;
+}
+
+.course-tile {
+  display: grid;
+  grid-template-columns: 6px 1fr;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--bg-card);
+  box-shadow: var(--shadow);
+  overflow: hidden;
+  text-decoration: none;
+  color: var(--text);
+  transition: transform .18s ease, box-shadow .18s ease, border-color .18s ease;
+}
+.course-tile:hover {
+  transform: translateY(-3px);
+  box-shadow: var(--shadow-hover);
+  border-color: var(--border-strong);
+}
+.course-tile:focus-visible {
+  outline: 2px solid #2f6df6;
+  outline-offset: 2px;
+}
+
+.tile-accent {
+  border-radius: var(--radius) 0 0 var(--radius);
+}
+
+.tile-body {
+  padding: 28px 30px 26px;
+}
+
+.tile-eyebrow {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 10px;
+}
+
+.tile-icon {
+  font-size: 1.6rem;
+  line-height: 1;
+}
+
+.tile-label {
+  font-size: .72rem;
+  font-weight: 700;
+  letter-spacing: .08em;
+  text-transform: uppercase;
+  color: var(--text-faint);
+}
+
+.tile-title {
+  font-size: 1.45rem;
+  font-weight: 700;
+  letter-spacing: -.015em;
+  line-height: 1.2;
+  margin-bottom: 4px;
+}
+
+.tile-de {
+  font-style: italic;
+  color: #0e7c7b;
+  font-weight: 500;
+  font-size: .95rem;
+  margin-bottom: 10px;
+}
+:root[data-theme="dark"] .tile-de { color: #4fd0ce; }
+@media (prefers-color-scheme: dark) { .tile-de { color: #4fd0ce; } }
+:root[data-theme="light"] .tile-de { color: #0e7c7b; }
+
+.tile-desc {
+  color: var(--text-mid);
+  font-size: .95rem;
+  line-height: 1.6;
+  margin-bottom: 18px;
+}
+
+.tile-stats {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 18px;
+  font-size: .82rem;
+  color: var(--text-faint);
+  font-variant-numeric: tabular-nums;
+  margin-bottom: 16px;
+}
+.tile-stats b {
+  color: var(--text-mid);
+  font-weight: 650;
+}
+
+.tile-progress {
+  margin-bottom: 16px;
+}
+.tile-progress-label {
+  display: flex;
+  justify-content: space-between;
+  font-size: .8rem;
+  color: var(--text-faint);
+  margin-bottom: 6px;
+}
+.tile-progress-bar {
+  height: 6px;
+  background: var(--border);
+  border-radius: 20px;
+  overflow: hidden;
+}
+.tile-progress-fill {
+  height: 100%;
+  width: 0;
+  border-radius: 20px;
+  transition: width .5s ease;
+}
+
+.tile-action {
+  font-size: .9rem;
+  font-weight: 650;
+  letter-spacing: .01em;
+}
+.tile-action .arrow {
+  display: inline-block;
+  transition: transform .15s ease;
+}
+.course-tile:hover .tile-action .arrow {
+  transform: translateX(4px);
+}
+
+/* ── Footer ── */
+.site-foot {
+  border-top: 1px solid var(--border);
+  padding: 24px 28px;
+  text-align: center;
+  color: var(--text-faint);
+  font-size: .82rem;
+}
+
+/* ── Responsive ── */
+@media (max-width: 560px) {
+  .site-header { padding-top: 36px; }
+  .masthead { font-size: 1.45rem; }
+  .tile-body { padding: 22px 20px 20px; }
+  .tile-title { font-size: 1.25rem; }
+}
+</style>
+</head>
+<body>
+
+<div class="page">
+  <header class="site-header">
+    <div class="masthead">Robert <em>learns</em></div>
+    <button class="theme-toggle" id="theme-btn" aria-label="Toggle theme">🌙</button>
+  </header>
+
+  <p class="intro">Self-study curricula built from first principles — interactive, self-contained, and designed for deep understanding.</p>
+
+  <div class="courses" id="courses">
+
+    <a class="course-tile" href="electrical-engineering/index.html" id="tile-ee">
+      <div class="tile-accent" style="background:linear-gradient(180deg,#2f6df6,#6c4df6)"></div>
+      <div class="tile-body">
+        <div class="tile-eyebrow">
+          <span class="tile-icon">⚡</span>
+          <span class="tile-label">Curriculum</span>
+        </div>
+        <div class="tile-title">Electrical Engineering</div>
+        <div class="tile-de">Elektrotechnik — Abitur bis Master</div>
+        <p class="tile-desc">A complete German university EE degree — from complex analysis and circuit theory through electronics, control, power systems and RF — explained with interactive simulations, worked examples and self-assessment.</p>
+        <div class="tile-stats">
+          <span><b>21</b> modules</span>
+          <span><b>6</b> subject areas</span>
+          <span><b>210</b> quiz questions</span>
+        </div>
+        <div class="tile-progress" id="ee-progress" hidden>
+          <div class="tile-progress-label">
+            <span>Progress</span>
+            <span id="ee-prog-text"></span>
+          </div>
+          <div class="tile-progress-bar">
+            <span class="tile-progress-fill" id="ee-prog-bar" style="background:linear-gradient(90deg,#2f6df6,#6c4df6)"></span>
+          </div>
+        </div>
+        <div class="tile-action" style="color:#2f6df6">
+          Enter course <span class="arrow">&rarr;</span>
+        </div>
+      </div>
+    </a>
+
+  </div>
+</div>
+
+<footer class="site-foot">
+  Robert learns &middot; progress is stored in your browser
+</footer>
+
+<script>
+(function () {
+  "use strict";
+
+  /* theme */
+  function currentTheme() {
+    var s = localStorage.getItem("ee-kb-theme");
+    if (s) return s;
+    return matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light";
+  }
+  function applyTheme(t) {
+    document.documentElement.dataset.theme = t;
+    var btn = document.getElementById("theme-btn");
+    if (btn) btn.textContent = t === "dark" ? "☀️" : "🌙";
+  }
+  applyTheme(currentTheme());
+  document.getElementById("theme-btn").addEventListener("click", function () {
+    var next = document.documentElement.dataset.theme === "dark" ? "light" : "dark";
+    localStorage.setItem("ee-kb-theme", next);
+    applyTheme(next);
+  });
+
+  /* EE progress from localStorage */
+  try {
+    var data = JSON.parse(localStorage.getItem("ee-kb-progress-v1"));
+    if (data && data.completed) {
+      var done = Object.keys(data.completed).length;
+      if (done > 0) {
+        var total = 21;
+        document.getElementById("ee-progress").hidden = false;
+        document.getElementById("ee-prog-text").textContent = done + " / " + total + " completed";
+        document.getElementById("ee-prog-bar").style.width = (100 * done / total) + "%";
+      }
+    }
+  } catch (e) {}
+})();
+</script>
+</body>
+</html>

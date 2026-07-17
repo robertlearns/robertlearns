@@ -1,0 +1,810 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>M01 · Complex Numbers &amp; Linear Algebra — EE Knowledge Base</title>
+<link rel="stylesheet" href="../../assets/vendor/katex/katex.min.css">
+<link rel="stylesheet" href="../../assets/css/style.css">
+<script src="../../assets/vendor/katex/katex.min.js" defer></script>
+<script src="../../assets/vendor/katex/auto-render.min.js" defer></script>
+<script src="../curriculum.js" defer></script>
+<script src="../../assets/js/app.js" defer></script>
+<script src="../../assets/js/widgets.js" defer></script>
+</head>
+<body data-module="m01">
+<div class="layout">
+<main class="content">
+<article class="article">
+
+<span class="eyebrow">∑ Mathematical Foundations · Module 01</span>
+<h1>Complex Numbers &amp; Linear Algebra <span class="muted" style="font-weight:400;font-size:1.4rem">· <span class="de">Komplexe Zahlen &amp; Lineare Algebra</span></span></h1>
+<p class="lead">Half of electrical engineering is written in one number system — the complex numbers — and the other half in one data structure — the matrix. A 5G receiver performs billions of complex multiplications per second; a circuit simulator solves a matrix equation thousands of times per run. This module builds both languages from Abitur level, carefully enough that everything later feels inevitable rather than magical.</p>
+
+<div class="page-meta">
+  <span><b>Corresponds to:</b> Höhere Mathematik I (1st semester)</span>
+  <span><b>Prerequisites:</b> German Abitur (this is the entry module)</span>
+  <span><b>Study time:</b> ≈ 5–7 h</span>
+</div>
+
+<h2 id="why-math">1. Why electrical engineering runs on mathematics</h2>
+
+<p>Mechanical engineers can <em>see</em> their subject: a gear meshes or it doesn't. Electrical engineers work with things no human sense can perceive — voltages, currents, fields, signals. The only way to "see" a 50 Hz grid oscillation or a WiFi symbol is through its mathematical description. In EE, math is not a prerequisite you suffer through; it <em>is</em> the instrument you observe the subject with, the way a telescope is for an astronomer.</p>
+
+<p>Two mathematical languages dominate the entire degree:</p>
+<ul>
+  <li><strong>Complex exponentials</strong> \(e^{j\omega t}\) describe everything that oscillates: AC circuits (Module 05), signals and filters (Modules 12–13), radio (Modules 20–21), the power grid (Module 19). The reason is a small miracle we will derive in Section 4: multiplying complex numbers <em>adds angles</em>, which turns the calculus of sinusoids into simple algebra.</li>
+  <li><strong>Linear algebra</strong> describes everything with many interacting parts: a circuit with 10 nodes is a system \(A\mathbf{x}=\mathbf{b}\) of 10 equations (Module 04), a control system's stability is decided by eigenvalues (Module 14), and every circuit simulator — SPICE included — is at its core a very fast Gaussian-elimination engine.</li>
+</ul>
+
+<div class="box intuition">
+  <div class="box-title"><span class="ic">💡</span>Intuition: what this module really teaches</div>
+  <p>Both halves of this module answer the same question: <b>how do we compute with geometry?</b> A complex number is an arrow in a plane that you can multiply — and multiplying <em>rotates</em>. A matrix is a machine that moves <em>every</em> arrow in the plane at once — stretching, rotating, shearing. Keep the pictures in mind and the formulas become bookkeeping.</p>
+</div>
+
+<h2 id="imaginary-unit">2. The imaginary unit j — a legal square root of −1</h2>
+
+<p>Within the real numbers, \(x^2 = -1\) has no solution — any real number squared is \(\ge 0\). The historical escape (Bombelli, 1572, while solving cubic equations whose <em>real</em> solutions stubbornly required square roots of negative intermediate results) was breathtakingly pragmatic: <em>invent</em> a new number whose square is \(-1\), and keep calculating as if nothing happened. We call it the <strong>imaginary unit</strong> (<span class="de">imaginäre Einheit</span>):</p>
+\[ \boxed{\,j^2 = -1\,} \]
+
+<div class="box warn">
+  <div class="box-title"><span class="ic">⚠️</span>Why engineers write j, not i</div>
+  <p>Mathematicians write \(i\). Electrical engineers cannot: the letter \(i\) is reserved for the <b>instantaneous current</b> \(i(t)\) — lowercase letters denote time-varying quantities in circuit notation (<span class="de">Kleinbuchstaben für Momentanwerte</span>). An equation like \(i = 2 + 3i\) would be hopeless. So EE worldwide (and DIN 1302 in Germany) uses \(j\). Same number, different letter. This knowledge base uses \(j\) throughout — get used to it now, in the first module.</p>
+</div>
+
+<p>A <strong>complex number</strong> (<span class="de">komplexe Zahl</span>) is a sum of a real and an imaginary part:</p>
+\[ z = a + jb, \qquad a = \operatorname{Re}\,z, \quad b = \operatorname{Im}\,z. \]
+<p>Here \(a\) is the <strong>real part</strong> (<span class="de">Realteil</span>) and \(b\) the <strong>imaginary part</strong> (<span class="de">Imaginärteil</span>).</p>
+<p>Note that \(\operatorname{Im}z = b\) is itself a <em>real</em> number — the \(j\) is not included. The set of all complex numbers is \(\mathbb{C}\). Two complex numbers are equal exactly when both real parts <em>and</em> both imaginary parts match — one complex equation always carries <b>two</b> real equations. (That, we will see, is precisely why one complex AC equation can track both amplitude and phase.)</p>
+
+<h3 id="arithmetic">2.1 Arithmetic: calculate as usual, replace j² by −1</h3>
+
+<p>Addition and subtraction work component-wise, like vectors:</p>
+\[ (a + jb) + (c + jd) = (a+c) + j(b+d). \]
+<p>Multiplication is ordinary expansion of brackets, followed by the single substitution \(j^2 = -1\):</p>
+\[ (a + jb)(c + jd) = ac + jad + jbc + j^2 bd = (ac - bd) + j(ad + bc). \]
+<p>For example \((2+j3)(1-j) = 2 - j2 + j3 - j^2 3 = 2 + j + 3 = 5 + j\). No new rules to memorize — the old algebra survives intact. Watch what the powers of \(j\) itself do:</p>
+\[ j^1 = j,\quad j^2 = -1,\quad j^3 = -j,\quad j^4 = 1,\quad j^5 = j,\ \dots \]
+<p>They cycle with period four: \(1 \to j \to -1 \to -j \to 1\). If you plot these four values as points, they sit at compass positions E, N, W, S — each multiplication by \(j\) turns you by a quarter circle. This is the first hint of the geometric bombshell coming in Section 5: <em>complex multiplication is rotation</em>.</p>
+
+<h2 id="complex-plane">3. The complex plane — numbers become geometry</h2>
+
+<p>Since \(z = a + jb\) is fully specified by the pair \((a, b)\), plot it as a point in a plane: real part on the horizontal axis, imaginary part on the vertical axis. This is the <strong>complex plane</strong>, in German literature the <span class="de">Gaußsche Zahlenebene</span> (Gauss, 1811, made the picture respectable — before him, "imaginary" numbers were used but distrusted).</p>
+
+<figure>
+  <div class="fig-frame">
+  <svg class="diagram" viewBox="0 0 560 320" role="img" aria-label="Complex plane with z = 3 + 2j shown in Cartesian and polar form, and its conjugate">
+    <defs>
+      <marker id="f3ax" markerWidth="9" markerHeight="9" refX="7" refY="4.5" orient="auto"><path d="M0 0 L8 4.5 L0 9 z" fill="var(--text-soft)"/></marker>
+      <marker id="f3a" markerWidth="9" markerHeight="9" refX="7" refY="4.5" orient="auto"><path d="M0 0 L8 4.5 L0 9 z" fill="var(--accent)"/></marker>
+      <marker id="f3b" markerWidth="9" markerHeight="9" refX="7" refY="4.5" orient="auto"><path d="M0 0 L8 4.5 L0 9 z" fill="var(--accent-2)"/></marker>
+    </defs>
+    <!-- axes -->
+    <line x1="70" y1="160" x2="490" y2="160" stroke="var(--text-soft)" stroke-width="1.6" marker-end="url(#f3ax)"/>
+    <line x1="150" y1="300" x2="150" y2="24" stroke="var(--text-soft)" stroke-width="1.6" marker-end="url(#f3ax)"/>
+    <text x="500" y="165" font-size="13" fill="var(--text-soft)">Re</text>
+    <text x="158" y="26" font-size="13" fill="var(--text-soft)">Im</text>
+    <!-- ticks -->
+    <line x1="192" y1="156" x2="192" y2="164" class="wire"/><text x="192" y="180" text-anchor="middle" font-size="12" fill="var(--text-soft)">1</text>
+    <line x1="234" y1="156" x2="234" y2="164" class="wire"/><text x="234" y="180" text-anchor="middle" font-size="12" fill="var(--text-soft)">2</text>
+    <line x1="276" y1="156" x2="276" y2="164" class="wire"/><text x="317" y="180" text-anchor="middle" font-size="12" fill="var(--text-soft)">3 = a</text>
+    <line x1="146" y1="118" x2="154" y2="118" class="wire"/><text x="138" y="122" text-anchor="end" font-size="12" fill="var(--text-soft)">j</text>
+    <line x1="146" y1="76" x2="154" y2="76" class="wire"/><text x="138" y="80" text-anchor="end" font-size="12" fill="var(--text-soft)">j2 = jb</text>
+    <line x1="146" y1="244" x2="154" y2="244" class="wire"/><text x="138" y="248" text-anchor="end" font-size="12" fill="var(--text-soft)">−j2</text>
+    <!-- projections -->
+    <line x1="276" y1="76" x2="276" y2="160" stroke="var(--text-faint)" stroke-width="1.4" stroke-dasharray="5 4"/>
+    <line x1="276" y1="76" x2="150" y2="76" stroke="var(--text-faint)" stroke-width="1.4" stroke-dasharray="5 4"/>
+    <!-- angle arc -->
+    <path d="M 186 160 A 36 36 0 0 0 180 140" fill="none" stroke="var(--accent-2)" stroke-width="2"/>
+    <text x="200" y="146" font-size="13" fill="var(--accent-2)">φ</text>
+    <!-- z arrow -->
+    <line x1="150" y1="160" x2="270" y2="80" stroke="var(--accent)" stroke-width="2.4" marker-end="url(#f3a)"/>
+    <text x="286" y="70" font-size="14" fill="var(--accent)" font-weight="700">z = 3 + j2</text>
+    <text x="184" y="106" font-size="13" fill="var(--accent)">r = |z|</text>
+    <!-- conjugate -->
+    <line x1="150" y1="160" x2="270" y2="240" stroke="var(--accent-2)" stroke-width="2" stroke-dasharray="6 4" marker-end="url(#f3b)"/>
+    <text x="286" y="254" font-size="14" fill="var(--accent-2)">z̄ = 3 − j2</text>
+  </svg>
+  </div>
+  <figcaption><b>Fig. 3.1</b> — The complex plane (<span class="de">Gaußsche Zahlenebene</span>): \(z = 3 + j2\) as a point/arrow, its modulus \(r\), argument \(\varphi\), and its conjugate \(\bar z\) mirrored across the real axis.</figcaption>
+</figure>
+
+<h3 id="polar">3.1 Cartesian ↔ polar form</h3>
+
+<p>The same arrow can be described two ways, and fluency in <em>switching between them</em> is the single most useful complex-number skill in EE:</p>
+<ul>
+  <li><strong>Cartesian form</strong> (<span class="de">kartesische Form / Normalform</span>): \(z = a + jb\) — best for adding and subtracting.</li>
+  <li><strong>Polar form</strong> (<span class="de">Polarform</span>): length plus direction. The length is the <strong>modulus</strong> (<span class="de">Betrag</span>), the direction angle is the <strong>argument</strong> or phase (<span class="de">Argument / Phase</span>), measured counterclockwise from the positive real axis. Best for multiplying, dividing and taking powers.</li>
+</ul>
+\[ r = |z| = \sqrt{a^2 + b^2}, \qquad \varphi = \arg z = \arctan\frac{b}{a} \ (\text{quadrant-corrected!}), \]
+\[ a = r\cos\varphi, \qquad b = r\sin\varphi \quad\Longrightarrow\quad z = r(\cos\varphi + j\sin\varphi). \]
+<p>Engineers use the compact <strong>versor notation</strong> \(z = r\angle\varphi\) (<span class="de">Versorschreibweise</span>) on datasheets and in grid calculations: "\(230\,\mathrm{V}\angle{-30^\circ}\)" reads instantly as "amplitude 230, lagging by 30°".</p>
+
+<div class="box pitfall">
+  <div class="box-title"><span class="ic">🚫</span>Classic pitfall: the arctangent quadrant trap</div>
+  <p>\(\arctan(b/a)\) only returns angles between \(-90^\circ\) and \(+90^\circ\) — it cannot distinguish \(z = 1+j\) from \(z = -1-j\), because \(b/a = 1\) for both! For \(a &lt; 0\) you must add (or subtract) \(180^\circ\). Every exam has one victim of this. Always <em>sketch the point first</em>, decide the quadrant by eye, then compute. (Programming languages provide <code>atan2(b, a)</code>, which does the correction for you — that is what your calculator's R→P conversion uses.)</p>
+</div>
+
+<div class="example">
+  <div class="ex-head"><span class="ex-tag">Worked example</span> Cartesian → polar, with quadrant care</div>
+  <div class="ex-body">
+    <p>Convert \(z = -3 + j4\) to polar form.</p>
+    <div class="step"><span class="step-label">Step 1 — sketch:</span> real part negative, imaginary part positive → the point lies in the <b>second quadrant</b>, so the true angle is between 90° and 180°.</div>
+    <div class="step"><span class="step-label">Step 2 — modulus:</span> \( r = \sqrt{(-3)^2 + 4^2} = \sqrt{25} = 5 \).</div>
+    <div class="step"><span class="step-label">Step 3 — raw arctangent:</span> \( \arctan\frac{4}{-3} = \arctan(-1.333) = -53.13^\circ \) — clearly in the wrong quadrant (fourth). Correct: \( \varphi = -53.13^\circ + 180^\circ = 126.87^\circ \).</div>
+    <div class="step"><span class="step-label">Step 4 — verify:</span> \( 5\cos 126.87^\circ = 5 \cdot (-0.6) = -3 \) ✓ and \( 5\sin 126.87^\circ = 5 \cdot 0.8 = 4 \) ✓.</div>
+    <div class="result-line">\( z = 5\,(\cos 126.87^\circ + j \sin 126.87^\circ) = 5\angle 126.87^\circ \). The naive arctangent alone would have been 180° wrong.</div>
+  </div>
+</div>
+
+<div class="widget">
+  <div class="w-head"><span class="ic">🧪</span>Interactive — complex-number explorer <span class="w-tag">simulation</span></div>
+  <div class="w-body">
+    <p class="small mt0">Drag \(\operatorname{Re}z\) and \(\operatorname{Im}z\) and watch the polar readouts. Try to place \(z\) in each of the four quadrants and predict \(\arg z\) <em>before</em> reading it off. The dashed arrow is the conjugate \(\bar z\) — always the mirror image across the real axis.</p>
+    <div id="w-cplane"></div>
+  </div>
+</div>
+
+<div class="box german">
+  <div class="box-title"><span class="ic">🇩🇪</span>Vokabeln</div>
+  <p>imaginary unit = <span class="de">imaginäre Einheit</span> · complex number = <span class="de">komplexe Zahl</span> · real/imaginary part = <span class="de">Real-/Imaginärteil</span> · modulus = <span class="de">Betrag</span> · argument/phase = <span class="de">Argument/Phase</span> · complex conjugate = <span class="de">konjugiert komplex</span> · pointer/phasor = <span class="de">Zeiger</span> · vector = <span class="de">Vektor</span> · dot product = <span class="de">Skalarprodukt</span> · matrix = <span class="de">Matrix</span> · system of linear equations = <span class="de">lineares Gleichungssystem (LGS)</span> · Gaussian elimination = <span class="de">Gauß-Verfahren</span> · determinant = <span class="de">Determinante</span> · eigenvalue/eigenvector = <span class="de">Eigenwert/Eigenvektor</span></p>
+</div>
+
+<h2 id="euler">4. Euler's formula — the bridge between algebra and rotation</h2>
+
+<p>Now the central result of this module, and arguably the most-used formula in all of electrical engineering. It connects the exponential function to the trigonometric ones:</p>
+\[ \boxed{\; e^{j\varphi} = \cos\varphi + j\sin\varphi \;} \]
+<p>Why should the exponential — the function of growth and decay — have anything to do with circles? The honest justification uses <strong>Taylor series</strong> (<span class="de">Taylorreihen</span>): the fact, proved in analysis (Module 02 uses it too), that these functions equal their own infinite polynomial expansions:</p>
+\[ e^x = 1 + x + \frac{x^2}{2!} + \frac{x^3}{3!} + \frac{x^4}{4!} + \cdots \]
+\[ \cos\varphi = 1 - \frac{\varphi^2}{2!} + \frac{\varphi^4}{4!} - \cdots \qquad \sin\varphi = \varphi - \frac{\varphi^3}{3!} + \frac{\varphi^5}{5!} - \cdots \]
+<p>Feed the exponential series the <em>imaginary</em> argument \(x = j\varphi\) and use the cycle \(j^2=-1,\ j^3=-j,\ j^4=1\):</p>
+\[ e^{j\varphi} = 1 + j\varphi - \frac{\varphi^2}{2!} - j\frac{\varphi^3}{3!} + \frac{\varphi^4}{4!} + j\frac{\varphi^5}{5!} - \cdots \]
+<p>Collect the terms without \(j\) and the terms with \(j\):</p>
+\[ e^{j\varphi} = \underbrace{\left(1 - \frac{\varphi^2}{2!} + \frac{\varphi^4}{4!} - \cdots\right)}_{=\ \cos\varphi} \;+\; j\underbrace{\left(\varphi - \frac{\varphi^3}{3!} + \frac{\varphi^5}{5!} - \cdots\right)}_{=\ \sin\varphi} \]
+<p>The two bracketed series are <em>exactly</em> the cosine and sine series. The exponential of an imaginary number is a point on the <b>unit circle</b> at angle \(\varphi\): \(|e^{j\varphi}| = \sqrt{\cos^2\varphi + \sin^2\varphi} = 1\), always.</p>
+
+<div class="box key">
+  <div class="box-title"><span class="ic">🔑</span>Key idea: the exponential polar form</div>
+  <p>Combining Euler with Section 3.1, every complex number can be written as</p>
+  <p style="text-align:center">\( z = r(\cos\varphi + j\sin\varphi) = r\,e^{j\varphi} \)</p>
+  <p>— a length \(r\) times a pure direction \(e^{j\varphi}\). This is the form EE actually computes in, because exponentials obey \(e^{x}e^{y} = e^{x+y}\): <b>multiplying complex numbers multiplies lengths and adds angles.</b> All of AC circuit analysis (Module 05) rests on this one line.</p>
+</div>
+
+<div class="box history">
+  <div class="box-title"><span class="ic">📜</span>The most beautiful equation</div>
+  <p>Set \(\varphi = \pi\) in Euler's formula: \(e^{j\pi} = \cos\pi + j\sin\pi = -1\), i.e. \(e^{j\pi} + 1 = 0\) — one equation containing \(e\), \(j\) (the mathematician's \(i\)), \(\pi\), 1 and 0. Richard Feynman called Euler's formula "our jewel". Leonhard Euler published it in 1748; engineers have been living off it ever since. Useful special values to memorize: \(e^{j0}=1\), \(e^{j\pi/2}=j\), \(e^{j\pi}=-1\), \(e^{j3\pi/2}=e^{-j\pi/2}=-j\), \(e^{j2\pi}=1\).</p>
+</div>
+
+<h2 id="mult-rotation">5. Multiplication rotates, conjugation mirrors, division un-rotates</h2>
+
+<h3 id="rotate-scale">5.1 Multiplication = rotate and scale</h3>
+
+<p>Take two complex numbers in exponential form, \(z_1 = r_1 e^{j\varphi_1}\) and \(z_2 = r_2 e^{j\varphi_2}\). Their product is</p>
+\[ \boxed{\; z_1 z_2 = r_1 r_2 \, e^{j(\varphi_1 + \varphi_2)} \;} \qquad |z_1 z_2| = |z_1||z_2|, \quad \arg(z_1 z_2) = \arg z_1 + \arg z_2 . \]
+<p>Geometrically: multiplying by \(z_2\) <b>rotates</b> \(z_1\) by the angle \(\varphi_2\) and <b>scales</b> it by the factor \(r_2\). Multiplying by \(j = 1 \cdot e^{j90^\circ}\) is a pure 90° counterclockwise rotation — which is why the powers of \(j\) in Section 2.1 marched around the compass. (You can verify the angle-addition claim in Cartesian form too: expand \((\cos\varphi_1 + j\sin\varphi_1)(\cos\varphi_2 + j\sin\varphi_2)\) and the trigonometric addition theorems \(\cos(\varphi_1{+}\varphi_2)\), \(\sin(\varphi_1{+}\varphi_2)\) appear — Euler's formula <em>contains</em> the addition theorems as a special case.)</p>
+
+<div class="widget">
+  <div class="w-head"><span class="ic">🧪</span>Interactive — multiplication as rotation + scaling <span class="w-tag">simulation</span></div>
+  <div class="w-body">
+    <p class="small mt0">Set \(z_1\) and \(z_2\) by modulus and angle; the red arrow is the product. Check: its angle is always \(\varphi_1 + \varphi_2\), its length always \(r_1 r_2\). Set \(r_2 = 1,\ \varphi_2 = 90^\circ\) to see pure rotation by \(j\); set \(\varphi_2 = 0\) to see pure scaling. The dashed circle is the unit circle — pointers inside it shrink products, outside it grow them.</p>
+    <div id="w-cmult"></div>
+  </div>
+</div>
+
+<h3 id="conjugate">5.2 The complex conjugate</h3>
+
+<p>The <strong>conjugate</strong> (<span class="de">konjugiert komplexe Zahl</span>) of \(z = a + jb\) flips the sign of the imaginary part:</p>
+\[ \bar z = z^* = a - jb = r\,e^{-j\varphi} \]
+<p>— the mirror image across the real axis (Fig. 3.1). Its superpower is that it manufactures <em>real</em> numbers out of complex ones:</p>
+\[ z \cdot \bar z = (a+jb)(a-jb) = a^2 + b^2 = |z|^2, \qquad z + \bar z = 2\operatorname{Re}z, \qquad z - \bar z = j\,2\operatorname{Im}z . \]
+<p>Conjugation distributes over everything: \(\overline{z_1 + z_2} = \bar z_1 + \bar z_2\) and \(\overline{z_1 z_2} = \bar z_1 \bar z_2\). You will meet \(z\bar z\) again as the formula for AC power: \(\underline{S} = \underline{U}\,\underline{I}^*\) (Module 05).</p>
+
+<h3 id="division">5.3 Division</h3>
+
+<p>To divide in Cartesian form, expand the fraction with the conjugate of the denominator — this makes the denominator real:</p>
+\[ \frac{z_1}{z_2} = \frac{z_1 \bar z_2}{z_2 \bar z_2} = \frac{z_1 \bar z_2}{|z_2|^2}, \qquad\text{in polar form:}\quad \frac{z_1}{z_2} = \frac{r_1}{r_2}\, e^{j(\varphi_1 - \varphi_2)} . \]
+<p>Division divides moduli and <em>subtracts</em> angles — it "un-rotates". Both routes must of course agree:</p>
+
+<div class="example">
+  <div class="ex-head"><span class="ex-tag">Worked example</span> Complex division — both ways</div>
+  <div class="ex-body">
+    <p>Compute \( \dfrac{2 + j3}{1 - j} \) in Cartesian form, then again in polar form.</p>
+    <div class="step"><span class="step-label">Step 1 — Cartesian, expand with the conjugate \(1 + j\):</span>
+      \[ \frac{(2+j3)(1+j)}{(1-j)(1+j)} = \frac{2 + j2 + j3 + j^2 3}{1 - j^2} = \frac{-1 + j5}{2} = -0.5 + j2.5 . \]</div>
+    <div class="step"><span class="step-label">Step 2 — polar form of numerator and denominator:</span>
+      \( |2+j3| = \sqrt{13} \approx 3.606,\ \arg = \arctan\frac{3}{2} = 56.31^\circ \) (first quadrant, no correction);
+      \( |1-j| = \sqrt{2},\ \arg = -45^\circ \) (fourth quadrant).</div>
+    <div class="step"><span class="step-label">Step 3 — divide moduli, subtract angles:</span>
+      \[ \frac{\sqrt{13}}{\sqrt{2}}\,\angle\big(56.31^\circ - (-45^\circ)\big) = \sqrt{6.5}\,\angle 101.31^\circ \approx 2.550\angle 101.31^\circ . \]</div>
+    <div class="step"><span class="step-label">Step 4 — cross-check:</span> \( 2.550\cos 101.31^\circ \approx -0.5 \) ✓, \( 2.550\sin 101.31^\circ \approx 2.5 \) ✓, and \( |-0.5+j2.5| = \sqrt{0.25+6.25} = \sqrt{6.5} \) ✓.</div>
+    <div class="result-line">\( \dfrac{2+j3}{1-j} = -0.5 + j2.5 = 2.550\angle 101.31^\circ \). Rule of thumb: add/subtract in Cartesian, multiply/divide in polar — convert whenever the other form is cheaper.</div>
+  </div>
+</div>
+
+<h3 id="roots">5.4 Powers and roots — De Moivre</h3>
+
+<p>Repeated multiplication in polar form gives <strong>De Moivre's theorem</strong>: \( z^n = r^n e^{jn\varphi} \) — raise the modulus to the \(n\)-th power, multiply the angle by \(n\). Run it backwards and something remarkable appears: the equation \(z^n = 1\) has not one but <b>n</b> solutions, the <strong>n-th roots of unity</strong> (<span class="de">Einheitswurzeln</span>):</p>
+\[ z_k = e^{j 2\pi k / n}, \qquad k = 0, 1, \dots, n-1 , \]
+<p>because multiplying the angle of \(e^{j2\pi k/n}\) by \(n\) gives \(2\pi k\) — a whole number of full turns, landing on 1. The roots sit at the corners of a regular \(n\)-gon inscribed in the unit circle. More generally, \(z^n = w = \rho\,e^{j\psi}\) has the \(n\) solutions \(z_k = \sqrt[n]{\rho}\; e^{j(\psi + 2\pi k)/n}\).</p>
+
+<figure>
+  <div class="fig-frame">
+  <svg class="diagram" viewBox="0 0 560 280" role="img" aria-label="The five fifth roots of unity on the unit circle">
+    <!-- unit circle -->
+    <circle cx="280" cy="140" r="100" fill="none" stroke="var(--text-soft)" stroke-width="1.6"/>
+    <!-- axes -->
+    <line x1="150" y1="140" x2="410" y2="140" stroke="var(--text-faint)" stroke-width="1.2"/>
+    <line x1="280" y1="20" x2="280" y2="260" stroke="var(--text-faint)" stroke-width="1.2"/>
+    <text x="418" y="145" font-size="12" fill="var(--text-soft)">Re</text>
+    <text x="288" y="24" font-size="12" fill="var(--text-soft)">Im</text>
+    <!-- pentagon -->
+    <path d="M380 140 L310.9 44.9 L199.1 81.2 L199.1 198.8 L310.9 235.1 Z" fill="none" stroke="var(--text-faint)" stroke-width="1.3" stroke-dasharray="5 4"/>
+    <!-- radii -->
+    <line x1="280" y1="140" x2="380" y2="140" stroke="var(--accent)" stroke-width="2"/>
+    <line x1="280" y1="140" x2="310.9" y2="44.9" stroke="var(--accent)" stroke-width="2"/>
+    <line x1="280" y1="140" x2="199.1" y2="81.2" stroke="var(--accent)" stroke-width="2"/>
+    <line x1="280" y1="140" x2="199.1" y2="198.8" stroke="var(--accent)" stroke-width="2"/>
+    <line x1="280" y1="140" x2="310.9" y2="235.1" stroke="var(--accent)" stroke-width="2"/>
+    <!-- angle arc 72° -->
+    <path d="M 310 140 A 30 30 0 0 0 289.3 111.5" fill="none" stroke="var(--accent-2)" stroke-width="2"/>
+    <text x="322" y="118" font-size="12" fill="var(--accent-2)">72°</text>
+    <!-- points -->
+    <circle cx="380" cy="140" r="5" fill="var(--accent)"/>
+    <circle cx="310.9" cy="44.9" r="5" fill="var(--accent)"/>
+    <circle cx="199.1" cy="81.2" r="5" fill="var(--accent)"/>
+    <circle cx="199.1" cy="198.8" r="5" fill="var(--accent)"/>
+    <circle cx="310.9" cy="235.1" r="5" fill="var(--accent)"/>
+    <!-- labels -->
+    <text x="392" y="132" font-size="13" fill="var(--text-soft)">z₀ = 1</text>
+    <text x="318" y="38" font-size="13" fill="var(--text-soft)">z₁ = e^(j72°)</text>
+    <text x="188" y="70" text-anchor="end" font-size="13" fill="var(--text-soft)">z₂</text>
+    <text x="188" y="214" text-anchor="end" font-size="13" fill="var(--text-soft)">z₃</text>
+    <text x="318" y="252" font-size="13" fill="var(--text-soft)">z₄ = e^(−j72°)</text>
+  </svg>
+  </div>
+  <figcaption><b>Fig. 5.1</b> — The five solutions of \(z^5 = 1\): a regular pentagon on the unit circle, spaced \(360^\circ/5 = 72^\circ\) apart. Roots of unity power the FFT (Module 13) and describe the \(120^\circ\)-spaced voltages of the three-phase grid (Module 05): the three cube roots of unity <em>are</em> the three phases.</figcaption>
+</figure>
+
+<h2 id="rotating-pointer">6. The rotating pointer e<sup>jωt</sup> — where this is all going</h2>
+
+<p>Here is the payoff, and the single most important picture to take out of this module. Let the angle grow linearly with time: \(\varphi = \omega t\), where \(\omega\) is the <strong>angular frequency</strong> (<span class="de">Kreisfrequenz</span>) in rad/s. Then</p>
+\[ z(t) = A\,e^{j(\omega t + \varphi_0)} \]
+<p>is a <b>pointer</b> (<span class="de">Zeiger</span>) of fixed length \(A\) rotating counterclockwise, completing one turn every period \(T = 2\pi/\omega\). Project it onto the axes with Euler's formula:</p>
+\[ A\,e^{j(\omega t + \varphi_0)} = \underbrace{A\cos(\omega t + \varphi_0)}_{\text{shadow on Re axis}} + j\,\underbrace{A\sin(\omega t + \varphi_0)}_{\text{shadow on Im axis}} . \]
+<p>The shadow of a uniformly rotating pointer <em>is</em> a sinusoid. Every 230 V wall-socket voltage, every radio carrier, every acoustic tone can be regarded as the real part of a rotating complex pointer — and the pointer is the <em>easier</em> object to compute with, because calculus treats \(e^{j\omega t}\) royally: differentiation just multiplies it by \(j\omega\) (a fact we exploit from Module 05 on, and prove carefully in Module 02).</p>
+
+<div class="widget">
+  <div class="w-head"><span class="ic">🧪</span>Interactive — the rotating pointer and its shadow <span class="w-tag">animation</span></div>
+  <div class="w-body">
+    <p class="small mt0">The blue pointer is \(A\,e^{j(\omega t + \varphi)}\); the teal one is the reference \(e^{j\omega t}\). On the right, each pointer's vertical projection is traced over time — a perfect sinusoid. Change the phase \(\varphi\) and watch the whole waveform shift left/right without changing shape; change \(A\) and only the height changes. This picture <em>is</em> AC circuit analysis (Module 05).</p>
+    <div id="w-euler"></div>
+  </div>
+</div>
+
+<div class="box key">
+  <div class="box-title"><span class="ic">🔑</span>Key idea: one complex number replaces two real ones</div>
+  <p>A sinusoid at a known frequency is fully described by two numbers: amplitude and phase. The pointer \(A e^{j\varphi_0}\) stores exactly those two numbers as one complex number — the <b>phasor</b> (<span class="de">komplexer Zeiger / Phasor</span>). Circuits full of sines and cosines then collapse into complex arithmetic: adding voltages = adding pointers, phase shift = rotation. Module 05 builds its entire machinery on this.</p>
+</div>
+
+<h2 id="vectors">7. Vectors and the dot product</h2>
+
+<p>Now the second language. A <strong>vector</strong> (<span class="de">Vektor</span>) is an ordered list of numbers, written as a column, and pictured (in 2D/3D) as an arrow:</p>
+\[ \mathbf{a} = \begin{pmatrix} a_1 \\ a_2 \\ \vdots \\ a_n \end{pmatrix} \in \mathbb{R}^n . \]
+<p>In EE a vector might hold the three phase currents of a motor, the node voltages of a circuit, or 1024 samples of an audio signal — the algebra is the same. Vectors add component-wise and scale by real factors (exactly like complex numbers did — a complex number <em>is</em> a 2D vector with a bonus multiplication). The <strong>norm</strong> (length, <span class="de">Betrag/Norm</span>) is \(\lVert\mathbf{a}\rVert = \sqrt{a_1^2 + \cdots + a_n^2}\) — Pythagoras in \(n\) dimensions.</p>
+
+<p>The <strong>dot product</strong> (<span class="de">Skalarprodukt</span>) folds two vectors into one number:</p>
+\[ \mathbf{a}\cdot\mathbf{b} = a_1 b_1 + a_2 b_2 + \cdots + a_n b_n = \lVert\mathbf{a}\rVert\,\lVert\mathbf{b}\rVert \cos\theta , \]
+<p>where \(\theta\) is the angle between the arrows. The second form is the geometric soul of the formula: the dot product measures <em>how much the two vectors point the same way</em>. Three cases to internalize:</p>
+<ul>
+  <li>\(\mathbf{a}\cdot\mathbf{b} &gt; 0\): angle less than 90° — broadly aligned.</li>
+  <li>\(\mathbf{a}\cdot\mathbf{b} = 0\): exactly perpendicular — <strong>orthogonal</strong> (<span class="de">orthogonal</span>). Example: \((1,2)\cdot(2,-1) = 2 - 2 = 0\).</li>
+  <li>\(\mathbf{a}\cdot\mathbf{b} &lt; 0\): pointing broadly against each other.</li>
+</ul>
+
+<div class="box intuition">
+  <div class="box-title"><span class="ic">💡</span>Intuition: the dot product as a similarity score</div>
+  <p>Think of \(\mathbf{a}\cdot\mathbf{b}\) as "multiply matching entries, then sum" — a correlation. A digital receiver decides whether a WiFi signal contains a known pattern by computing exactly this dot product between the received samples and the pattern (Modules 13, 20). Orthogonality — dot product zero — is the mathematical reason a fiber or radio channel can carry many signals simultaneously without them disturbing each other.</p>
+</div>
+
+<h2 id="matrices">8. Matrices — machines that transform vectors</h2>
+
+<p>A <strong>matrix</strong> (<span class="de">Matrix</span>) is a rectangular array of numbers, \(m\) rows × \(n\) columns. Its real meaning is not "a table" but "a <b>linear map</b> (<span class="de">lineare Abbildung</span>)": a machine that eats a vector and outputs a transformed vector,</p>
+\[ \mathbf{y} = A\,\mathbf{x}, \qquad y_i = \sum_{k} a_{ik}\, x_k \quad (\text{row } i \text{ of } A \text{ dotted with } \mathbf{x}). \]
+<p>The best way to <em>see</em> what a matrix does: feed it the unit vectors. For \(2\times 2\),</p>
+\[ A = \begin{pmatrix} a & c \\ b & d \end{pmatrix}: \qquad A\begin{pmatrix}1\\0\end{pmatrix} = \begin{pmatrix}a\\b\end{pmatrix}, \quad A\begin{pmatrix}0\\1\end{pmatrix} = \begin{pmatrix}c\\d\end{pmatrix}. \]
+<p><b>The columns of a matrix are the images of the basis vectors.</b> Everything else follows by linearity: the unit square spanned by \(\mathbf{e}_1, \mathbf{e}_2\) maps to the parallelogram spanned by the columns.</p>
+
+<figure>
+  <div class="fig-frame">
+  <svg class="diagram" viewBox="0 0 640 260" role="img" aria-label="A matrix maps the unit square to a parallelogram spanned by its columns">
+    <defs>
+      <marker id="f8a" markerWidth="9" markerHeight="9" refX="7" refY="4.5" orient="auto"><path d="M0 0 L8 4.5 L0 9 z" fill="var(--accent)"/></marker>
+      <marker id="f8b" markerWidth="9" markerHeight="9" refX="7" refY="4.5" orient="auto"><path d="M0 0 L8 4.5 L0 9 z" fill="var(--accent-2)"/></marker>
+      <marker id="f8m" markerWidth="9" markerHeight="9" refX="7" refY="4.5" orient="auto"><path d="M0 0 L8 4.5 L0 9 z" fill="var(--text-soft)"/></marker>
+    </defs>
+    <!-- left panel: unit square -->
+    <rect x="90" y="145" width="55" height="55" fill="var(--accent)" opacity="0.10"/>
+    <path d="M90 200 L145 200 L145 145 L90 145 Z" fill="none" stroke="var(--text-faint)" stroke-width="1.3"/>
+    <line x1="40" y1="200" x2="190" y2="200" stroke="var(--text-faint)" stroke-width="1.2"/>
+    <line x1="90" y1="245" x2="90" y2="110" stroke="var(--text-faint)" stroke-width="1.2"/>
+    <line x1="90" y1="200" x2="141" y2="200" stroke="var(--accent)" stroke-width="2.4" marker-end="url(#f8a)"/>
+    <line x1="90" y1="200" x2="90" y2="149" stroke="var(--accent-2)" stroke-width="2.4" marker-end="url(#f8b)"/>
+    <text x="120" y="222" text-anchor="middle" font-size="13" fill="var(--accent)">e₁</text>
+    <text x="72" y="172" font-size="13" fill="var(--accent-2)">e₂</text>
+    <text x="118" y="132" text-anchor="middle" font-size="12" fill="var(--text-soft)">area 1</text>
+    <!-- map arrow -->
+    <line x1="225" y1="150" x2="300" y2="150" stroke="var(--text-soft)" stroke-width="2" marker-end="url(#f8m)"/>
+    <text x="262" y="138" text-anchor="middle" font-size="14" fill="var(--text-soft)" font-weight="700">A</text>
+    <!-- right panel: parallelogram, columns (2,0.5) and (1,1.5), scale 55 -->
+    <line x1="330" y1="200" x2="620" y2="200" stroke="var(--text-faint)" stroke-width="1.2"/>
+    <line x1="380" y1="245" x2="380" y2="60" stroke="var(--text-faint)" stroke-width="1.2"/>
+    <path d="M380 200 L490 172.5 L545 90 L435 117.5 Z" fill="var(--accent)" opacity="0.10"/>
+    <path d="M380 200 L490 172.5 L545 90 L435 117.5 Z" fill="none" stroke="var(--text-faint)" stroke-width="1.3"/>
+    <line x1="380" y1="200" x2="486" y2="173.5" stroke="var(--accent)" stroke-width="2.4" marker-end="url(#f8a)"/>
+    <line x1="380" y1="200" x2="433" y2="119.5" stroke="var(--accent-2)" stroke-width="2.4" marker-end="url(#f8b)"/>
+    <text x="474" y="196" font-size="13" fill="var(--accent)">A e₁</text>
+    <text x="398" y="118" font-size="13" fill="var(--accent-2)">A e₂</text>
+    <text x="472" y="146" text-anchor="middle" font-size="12" fill="var(--text-soft)">area = det A</text>
+  </svg>
+  </div>
+  <figcaption><b>Fig. 8.1</b> — A matrix as a linear map: the columns are where the basis vectors land; the unit square becomes a parallelogram whose area is the determinant (Section 10). Here \(A = \begin{pmatrix} 2 & 1 \\ 0.5 & 1.5 \end{pmatrix}\), \(\det A = 2.5\).</figcaption>
+</figure>
+
+<p><strong>Matrix multiplication</strong> is defined so that it means <em>composition</em>: doing map \(B\) first, then map \(A\), is the single map \(AB\). Entry \((i,k)\) of \(AB\) is row \(i\) of \(A\) dotted with column \(k\) of \(B\). The definition looks arbitrary until you see it this way — then it is the only definition possible.</p>
+
+<div class="box pitfall">
+  <div class="box-title"><span class="ic">🚫</span>Classic pitfall: matrices do not commute</div>
+  <p>In general \(AB \ne BA\) — "rotate, then stretch horizontally" visibly differs from "stretch horizontally, then rotate". Try it: \(A = \begin{pmatrix} 0 & -1 \\ 1 & 0 \end{pmatrix}\) (rotate 90°), \(B = \begin{pmatrix} 2 & 0 \\ 0 & 1 \end{pmatrix}\) (stretch x). Then \(AB = \begin{pmatrix} 0 & -1 \\ 2 & 0 \end{pmatrix}\) but \(BA = \begin{pmatrix} 0 & -2 \\ 1 & 0 \end{pmatrix}\). Never reorder matrix products the way you reorder numbers. (Complex numbers, by contrast, <em>do</em> commute — one of several ways they are nicer than general matrices.)</p>
+</div>
+
+<p>One family of matrices ties the two halves of this module together beautifully — the <strong>rotation matrix</strong> (<span class="de">Drehmatrix</span>):</p>
+\[ R(\varphi) = \begin{pmatrix} \cos\varphi & -\sin\varphi \\ \sin\varphi & \cos\varphi \end{pmatrix}, \qquad R(\varphi_1)R(\varphi_2) = R(\varphi_1 + \varphi_2). \]
+<p>Rotations compose by adding angles — exactly the behavior of \(e^{j\varphi}\). Indeed, multiplication by the complex number \(e^{j\varphi}\), viewed as a map of the plane, <em>is</em> the matrix \(R(\varphi)\). Complex numbers are the rotations-and-scalings hiding inside \(2\times2\) linear algebra.</p>
+
+<h2 id="gauss">9. Systems of linear equations and Gaussian elimination</h2>
+
+<p>Where do big systems of equations come from in EE? From Kirchhoff's laws (Module 04): every node of a circuit contributes one current equation, every mesh one voltage equation. A modest amplifier yields 5–10 coupled equations; a chip-level simulation, millions. All have the shape</p>
+\[ A\,\mathbf{x} = \mathbf{b} \]
+<p>— known coefficient matrix \(A\) (built from resistances), known right-hand side \(\mathbf{b}\) (the sources), unknown vector \(\mathbf{x}\) (the currents or node voltages). The universal solution algorithm — the one SPICE, MATLAB and your calculator all use in refined form — is <strong>Gaussian elimination</strong> (<span class="de">Gauß-Verfahren</span>, Gauss 1809; known in China two millennia earlier).</p>
+
+<h3 id="row-ops">9.1 The three legal moves</h3>
+<p>Write the system as an <strong>augmented matrix</strong> (<span class="de">erweiterte Koeffizientenmatrix</span>) \([A\,|\,\mathbf{b}]\). Three operations provably never change the solution set:</p>
+<ol>
+  <li>swap two rows,</li>
+  <li>multiply a row by a nonzero constant,</li>
+  <li>add a multiple of one row to another row.</li>
+</ol>
+<p>Strategy: use move 3 to create zeros below the diagonal, column by column, until the system is triangular (<span class="de">Stufenform</span>) — then solve from the bottom up (<strong>back-substitution</strong>, <span class="de">Rückwärtseinsetzen</span>). Crucial discipline: every move applies to the <em>entire row including the right-hand side</em>.</p>
+
+<div class="example">
+  <div class="ex-head"><span class="ex-tag">Worked example</span> A three-mesh circuit, solved by Gaussian elimination</div>
+  <div class="ex-body">
+    <p>Mesh analysis of a three-loop resistor network (the kind Module 04 constructs) yields, with currents in mA:</p>
+    \[ \begin{aligned} 2I_1 - I_2 \phantom{{}+I_3} &= 5 \\ -I_1 + 3I_2 - I_3 &= -2 \\ - I_2 + 2I_3 &= 3 \end{aligned} \qquad\Longrightarrow\qquad \left[\begin{array}{ccc|c} 2 & -1 & 0 & 5 \\ -1 & 3 & -1 & -2 \\ 0 & -1 & 2 & 3 \end{array}\right] \]
+    <div class="step"><span class="step-label">Step 1 — eliminate \(I_1\) from row 2:</span> add \(\tfrac12\) × row 1 to row 2: \(\;(-1 + 1,\; 3 - 0.5,\; -1,\;\; -2 + 2.5) = (0,\; 2.5,\; -1,\;\; 0.5)\).
+      \[ \left[\begin{array}{ccc|c} 2 & -1 & 0 & 5 \\ 0 & 2.5 & -1 & 0.5 \\ 0 & -1 & 2 & 3 \end{array}\right] \]
+      (Row 3 already has a zero in column 1 — nothing to do there.)</div>
+    <div class="step"><span class="step-label">Step 2 — eliminate \(I_2\) from row 3:</span> add \(\tfrac{1}{2.5} = 0.4\) × row 2 to row 3: \(\;(0,\; -1+1,\; 2-0.4,\;\; 3+0.2) = (0,\; 0,\; 1.6,\;\; 3.2)\). The system is now triangular:
+      \[ \left[\begin{array}{ccc|c} 2 & -1 & 0 & 5 \\ 0 & 2.5 & -1 & 0.5 \\ 0 & 0 & 1.6 & 3.2 \end{array}\right] \]</div>
+    <div class="step"><span class="step-label">Step 3 — back-substitute, bottom-up:</span>
+      row 3: \( I_3 = 3.2 / 1.6 = 2 \);
+      row 2: \( 2.5 I_2 = 0.5 + I_3 = 2.5 \Rightarrow I_2 = 1 \);
+      row 1: \( 2 I_1 = 5 + I_2 = 6 \Rightarrow I_1 = 3 \).</div>
+    <div class="step"><span class="step-label">Step 4 — sanity check in the original middle equation:</span> \(-3 + 3\cdot 1 - 2 = -2\) ✓.</div>
+    <div class="result-line">\( I_1 = 3\,\mathrm{mA},\; I_2 = 1\,\mathrm{mA},\; I_3 = 2\,\mathrm{mA} \). Cost: a handful of multiplications — and the method scales mechanically to any size, which is why it lives inside every circuit simulator.</div>
+  </div>
+</div>
+
+<h3 id="singular">9.2 When it goes wrong — and what that means</h3>
+
+<p>Elimination can hit a row reading \(0 = 5\) (no solution — the equations contradict each other) or \(0 = 0\) (infinitely many solutions — one equation was redundant). Geometrically, for two equations in two unknowns, each equation is a <em>line</em>; the solution is their intersection. Contradiction = parallel lines; redundancy = the same line twice. The quantity that detects the danger in advance is the determinant (next section). Play with it:</p>
+
+<div class="widget">
+  <div class="w-head"><span class="ic">🧪</span>Interactive — a 2×2 system as two intersecting lines <span class="w-tag">simulation</span></div>
+  <div class="w-body">
+    <p class="small mt0">The system \(a_{11}x_1 + a_{12}x_2 = b_1\), \(a_{21}x_1 + a_{22}x_2 = b_2\) drawn as two lines; the dot is the unique solution. Now make the lines parallel (try \(a_{21} = 2,\ a_{22} = 1\), matching the slope of line 1) and watch \(\det A \to 0\): the intersection shoots off to infinity and the solution readout gives up. A circuit whose matrix does this is ill-posed — e.g. two ideal voltage sources fighting in parallel.</p>
+    <div id="w-linsys"></div>
+  </div>
+</div>
+
+<h2 id="determinant">10. The determinant and the inverse</h2>
+
+<p>The <strong>determinant</strong> (<span class="de">Determinante</span>) of a square matrix is a single number that answers: <em>by what factor does the map scale areas</em> (volumes in 3D)? For \(2\times 2\) and \(3\times 3\):</p>
+\[ \boxed{\;\det\begin{pmatrix} a & c \\ b & d \end{pmatrix} = ad - bc\;} \]
+\[ \det\begin{pmatrix} a_{11} & a_{12} & a_{13} \\ a_{21} & a_{22} & a_{23} \\ a_{31} & a_{32} & a_{33} \end{pmatrix} = a_{11}a_{22}a_{33} + a_{12}a_{23}a_{31} + a_{13}a_{21}a_{32} - a_{13}a_{22}a_{31} - a_{11}a_{23}a_{32} - a_{12}a_{21}a_{33} \]
+<p>(the \(3\times3\) formula is the <strong>rule of Sarrus</strong>, <span class="de">Regel von Sarrus</span>: copy the first two columns to the right, add the three ↘ diagonals, subtract the three ↗ diagonals — it does <em>not</em> extend to \(4\times4\)). A negative determinant means the map additionally flips orientation (mirror image). The key facts:</p>
+<ul>
+  <li>\(\det A \ne 0\) ⟺ \(A\) is <strong>invertible</strong> (<span class="de">regulär</span>) ⟺ \(A\mathbf{x}=\mathbf{b}\) has exactly one solution for every \(\mathbf{b}\).</li>
+  <li>\(\det A = 0\) ⟺ \(A\) squashes the plane onto a line (or point) — information is destroyed, the map cannot be undone (<span class="de">singulär</span>).</li>
+  <li>\(\det(AB) = \det A \cdot \det B\) — scale factors multiply, as they must.</li>
+</ul>
+
+<p>If \(\det A \ne 0\), the map can be run backwards: the <strong>inverse matrix</strong> (<span class="de">inverse Matrix</span>) \(A^{-1}\) satisfies \(A^{-1}A = AA^{-1} = I\) (the identity). For \(2\times 2\) there is a formula worth memorizing:</p>
+\[ A^{-1} = \frac{1}{ad - bc}\begin{pmatrix} d & -c \\ -b & a \end{pmatrix} \qquad \text{(swap the diagonal, negate the off-diagonal, divide by det).} \]
+<p>Then \(\mathbf{x} = A^{-1}\mathbf{b}\) solves the system — elegant on paper. In practice, for anything larger than \(3\times3\), computing \(A^{-1}\) explicitly is wasteful and numerically inferior; real solvers run Gaussian elimination (as LU decomposition) directly. Know the inverse as a <em>concept</em>, solve with elimination. For \(2\times2\) systems there is also <strong>Cramer's rule</strong> (<span class="de">Cramersche Regel</span>): \(x_1 = \det A_1 / \det A\), \(x_2 = \det A_2 / \det A\), where \(A_i\) is \(A\) with column \(i\) replaced by \(\mathbf{b}\) — handy for quick symbolic work like the bridge circuits of Module 04.</p>
+
+<h2 id="eigen">11. Eigenvalues and eigenvectors — a map's natural directions</h2>
+
+<p>Apply a matrix to lots of vectors and most get knocked to a new direction. But almost every matrix has a few special directions it <em>cannot rotate</em> — vectors it merely stretches or compresses in place. These are the <strong>eigenvectors</strong> (<span class="de">Eigenvektoren</span>), and their stretch factors are the <strong>eigenvalues</strong> (<span class="de">Eigenwerte</span>) — from German <em>eigen</em>, "own/characteristic":</p>
+\[ \boxed{\; A\,\mathbf{v} = \lambda\,\mathbf{v}, \qquad \mathbf{v} \ne \mathbf{0} \;} \]
+<p>To find them, rewrite as \((A - \lambda I)\mathbf{v} = \mathbf{0}\). A nonzero solution \(\mathbf{v}\) exists only if \(A - \lambda I\) is singular, i.e.</p>
+\[ \det(A - \lambda I) = 0 , \]
+<p>the <strong>characteristic equation</strong> (<span class="de">charakteristische Gleichung</span>).</p>
+<p>For a \(2\times2\) matrix this is a quadratic with a beautiful shortcut: \(\lambda^2 - (\operatorname{tr}A)\,\lambda + \det A = 0\), where \(\operatorname{tr}A = a_{11}+a_{22}\) is the <strong>trace</strong> (<span class="de">Spur</span>). Note the sum of the eigenvalues equals the trace and their product equals the determinant — a free sanity check on every eigenvalue computation.</p>
+
+<div class="example">
+  <div class="ex-head"><span class="ex-tag">Worked example</span> Eigenvalues of a circuit's state matrix</div>
+  <div class="ex-body">
+    <p>Module 06 will describe a discharging RLC circuit by the state matrix \( A = \begin{pmatrix} 0 & 1 \\ -2 & -3 \end{pmatrix} \). Find its eigenvalues and eigenvectors.</p>
+    <div class="step"><span class="step-label">Step 1 — characteristic equation:</span> \(\operatorname{tr}A = -3\), \(\det A = 0 - (-2) = 2\), so
+      \[ \lambda^2 + 3\lambda + 2 = 0 \;\Rightarrow\; (\lambda + 1)(\lambda + 2) = 0 \;\Rightarrow\; \lambda_1 = -1,\ \lambda_2 = -2 . \]
+      Check: \(\lambda_1 + \lambda_2 = -3 = \operatorname{tr}A\) ✓, \(\lambda_1 \lambda_2 = 2 = \det A\) ✓.</div>
+    <div class="step"><span class="step-label">Step 2 — eigenvector for \(\lambda_1 = -1\):</span> solve \((A + I)\mathbf{v} = \mathbf{0}\): \(\begin{pmatrix} 1 & 1 \\ -2 & -2 \end{pmatrix}\mathbf{v} = \mathbf{0}\) → \(v_1 + v_2 = 0\) → \(\mathbf{v}_1 = \begin{pmatrix} 1 \\ -1 \end{pmatrix}\) (any nonzero multiple is equally valid — eigenvectors are directions, not specific arrows).</div>
+    <div class="step"><span class="step-label">Step 3 — eigenvector for \(\lambda_2 = -2\):</span> \((A + 2I)\mathbf{v} = \mathbf{0}\): \(2v_1 + v_2 = 0\) → \(\mathbf{v}_2 = \begin{pmatrix} 1 \\ -2 \end{pmatrix}\).</div>
+    <div class="step"><span class="step-label">Step 4 — verify one:</span> \( A\mathbf{v}_2 = \begin{pmatrix} -2 \\ -2 + 6 \end{pmatrix} = \begin{pmatrix} -2 \\ 4 \end{pmatrix} = -2\,\mathbf{v}_2 \) ✓.</div>
+    <div class="result-line">\(\lambda_{1,2} = -1, -2\) with eigenvectors \((1,-1)^\mathsf{T}\), \((1,-2)^\mathsf{T}\). Physically these are the circuit's two decay modes \(e^{-t}\) and \(e^{-2t}\): both eigenvalues negative → every transient dies out → the circuit is stable.</div>
+  </div>
+</div>
+
+<div class="box key">
+  <div class="box-title"><span class="ic">🔑</span>Key idea: eigenvalues decide stability</div>
+  <p>A linear dynamic system \(\dot{\mathbf{x}} = A\mathbf{x}\) evolves along its eigenvector directions as pure exponentials \(e^{\lambda t}\) — the system's <b>modes</b>. If every eigenvalue has a negative real part, all modes decay: the system is <b>stable</b>. One eigenvalue with positive real part and the system runs away. Complex eigenvalues \(\lambda = \sigma \pm j\omega\) (there is \(j\) again!) mean oscillating modes \(e^{\sigma t}e^{\pm j\omega t}\) — decaying spirals if \(\sigma&lt;0\). This single criterion carries amplifier design (Module 09), transient analysis (Module 06) and the whole of control engineering (Module 14).</p>
+</div>
+
+<div class="box history">
+  <div class="box-title"><span class="ic">📜</span>Where this module pays off</div>
+  <p>Complex arithmetic → phasor AC analysis (M05), impedance and resonance (M06), transfer functions and Bode plots (M12), the FFT (M13), QAM constellations — literally complex numbers drawn as symbols — in your WiFi (M20), the Smith chart (M21). Linear algebra → nodal analysis (M04), state-space models and stability (M14), digital filters as matrix operators (M13), load-flow solvers for the continental grid (M19). This module is the single most reused block of the entire curriculum.</p>
+</div>
+
+<h2 id="summary">12. Formula summary — <span class="de">Formelsammlung</span></h2>
+
+<div class="table-wrap">
+<table class="data">
+<thead><tr><th>Concept</th><th>Formula</th><th>Remember as</th></tr></thead>
+<tbody>
+<tr><td>Imaginary unit</td><td>\( j^2 = -1 \), powers cycle \( j, -1, -j, 1 \)</td><td>×j = quarter turn</td></tr>
+<tr><td>Cartesian ↔ polar</td><td>\( z = a + jb = r e^{j\varphi} \), \( r = \sqrt{a^2+b^2} \), \( \varphi = \arg z \)</td><td>quadrant-check the angle!</td></tr>
+<tr><td>Euler's formula</td><td>\( e^{j\varphi} = \cos\varphi + j\sin\varphi \)</td><td>unit-circle point at angle φ</td></tr>
+<tr><td>Multiply / divide</td><td>\( z_1 z_2 = r_1 r_2 e^{j(\varphi_1+\varphi_2)} \), \( z_1/z_2 = \tfrac{r_1}{r_2} e^{j(\varphi_1-\varphi_2)} \)</td><td>lengths ×, angles +</td></tr>
+<tr><td>Conjugate</td><td>\( \bar z = a - jb = r e^{-j\varphi} \), \( z\bar z = |z|^2 \)</td><td>mirror across Re axis</td></tr>
+<tr><td>Division trick</td><td>\( \frac{z_1}{z_2} = \frac{z_1 \bar z_2}{|z_2|^2} \)</td><td>expand with conjugate</td></tr>
+<tr><td>De Moivre / roots</td><td>\( z^n = r^n e^{jn\varphi} \); \( z^n = 1 \Rightarrow z_k = e^{j2\pi k/n} \)</td><td>n roots = regular n-gon</td></tr>
+<tr><td>Rotating pointer</td><td>\( A e^{j(\omega t + \varphi_0)} \), shadow \( = A\cos(\omega t + \varphi_0) \)</td><td>sinusoid = rotating arrow</td></tr>
+<tr><td>Dot product</td><td>\( \mathbf{a}\cdot\mathbf{b} = \sum a_k b_k = \lVert\mathbf{a}\rVert \lVert\mathbf{b}\rVert \cos\theta \)</td><td>alignment score; 0 = ⊥</td></tr>
+<tr><td>Matrix map</td><td>\( \mathbf{y} = A\mathbf{x} \); columns = images of basis vectors</td><td>AB ≠ BA in general</td></tr>
+<tr><td>Determinant 2×2</td><td>\( \det = ad - bc \)</td><td>area scale; 0 = singular</td></tr>
+<tr><td>Inverse 2×2</td><td>\( A^{-1} = \frac{1}{ad-bc}\begin{pmatrix} d & -c \\ -b & a \end{pmatrix} \)</td><td>swap diag, negate off-diag</td></tr>
+<tr><td>Eigen-equation</td><td>\( A\mathbf{v} = \lambda\mathbf{v} \), \( \det(A - \lambda I) = 0 \)</td><td>2×2: \( \lambda^2 - \mathrm{tr}\,\lambda + \det = 0 \)</td></tr>
+</tbody>
+</table>
+</div>
+
+<h2 id="exercises">13. Exercises</h2>
+<p>Work these on paper before opening the solutions — fluency in this module is muscle memory for the next twenty.</p>
+
+<div class="exercise">
+  <p class="ex-q"><span class="ex-num">E1</span>Given \(z_1 = 3 + j4\) and \(z_2 = 1 - j2\), compute \(z_1 + z_2\), \(z_1 \cdot z_2\) and \(|z_1|\). <span class="diff easy">easy</span></p>
+  <details><summary>Show solution</summary>
+    <div class="solution">
+      Sum: \( (3+1) + j(4-2) = 4 + j2 \).
+      Product: \( (3+j4)(1-j2) = 3 - j6 + j4 - j^2 8 = 3 - j2 + 8 = 11 - j2 \).
+      Modulus: \( |z_1| = \sqrt{9+16} = 5 \) — the classic 3-4-5 triangle.
+      Cross-check the product with moduli: \(|z_1||z_2| = 5\sqrt{5} \approx 11.18\) and \(|11 - j2| = \sqrt{121+4} = \sqrt{125} \approx 11.18\) ✓ — the modulus-product rule (E7) at work.
+    </div>
+  </details>
+</div>
+
+<div class="exercise">
+  <p class="ex-q"><span class="ex-num">E2</span>Convert \(z = -1 - j\) to polar form, then compute \(z^4\) with De Moivre. <span class="diff easy">easy</span></p>
+  <details><summary>Show solution</summary>
+    <div class="solution">
+      Sketch: third quadrant. \( r = \sqrt{2} \); raw arctangent gives \(45^\circ\), corrected: \( \varphi = 45^\circ - 180^\circ = -135^\circ \). So \( z = \sqrt{2}\,\angle{-135^\circ} \).
+      De Moivre: \( z^4 = (\sqrt{2})^4 \angle(4 \cdot (-135^\circ)) = 4\angle{-540^\circ} = 4\angle{180^\circ} = -4 \).
+      Sanity check the hard way: \( z^2 = (-1-j)^2 = 1 + 2j + j^2 = 2j \), then \( z^4 = (2j)^2 = -4 \) ✓. Polar took one line; Cartesian took two squarings — and the gap grows fast with the exponent.
+    </div>
+  </details>
+</div>
+
+<div class="exercise">
+  <p class="ex-q"><span class="ex-num">E3</span>Compute \( \dfrac{4 - j3}{2 + j2} \) in Cartesian form, then verify via polar form. <span class="diff med">medium</span></p>
+  <details><summary>Show solution</summary>
+    <div class="solution">
+      Expand with \( \overline{2+j2} = 2 - j2 \): numerator \( (4-j3)(2-j2) = 8 - j8 - j6 + j^2 6 = 2 - j14 \); denominator \( |2+j2|^2 = 8 \). Result: \( 0.25 - j1.75 \).
+      Polar: \( |4-j3| = 5,\ \arg = -36.87^\circ \); \( |2+j2| = 2\sqrt{2} \approx 2.828,\ \arg = 45^\circ \). Quotient: \( \frac{5}{2.828}\angle(-36.87^\circ - 45^\circ) = 1.768\angle{-81.87^\circ} \).
+      Check: \( 1.768\cos(-81.87^\circ) \approx 0.25 \) ✓, \( 1.768\sin(-81.87^\circ) \approx -1.75 \) ✓. In Module 05, this exact computation is "current = voltage / impedance".
+    </div>
+  </details>
+</div>
+
+<div class="exercise">
+  <p class="ex-q"><span class="ex-num">E4</span>Find all solutions of \(z^3 = -8\) and sketch them in the complex plane. <span class="diff med">medium</span></p>
+  <details><summary>Show solution</summary>
+    <div class="solution">
+      Write the right side in polar form: \( -8 = 8\,e^{j180^\circ} \). The three cube roots have modulus \( \sqrt[3]{8} = 2 \) and angles \( \frac{180^\circ + 360^\circ k}{3} = 60^\circ, 180^\circ, 300^\circ \):
+      \[ z_0 = 2\angle 60^\circ = 1 + j\sqrt{3}, \qquad z_1 = 2\angle 180^\circ = -2, \qquad z_2 = 2\angle 300^\circ = 1 - j\sqrt{3} . \]
+      They form an equilateral triangle of radius 2. Verify \(z_0\): \( (2\angle 60^\circ)^3 = 8\angle 180^\circ = -8 \) ✓. Note \(z_2 = \bar z_0\): non-real roots of real-coefficient equations always come in conjugate pairs — the reason AC circuit poles pair up too (Module 12).
+    </div>
+  </details>
+</div>
+
+<div class="exercise">
+  <p class="ex-q"><span class="ex-num">E5</span>Find the eigenvalues and eigenvectors of \( A = \begin{pmatrix} 2 & 1 \\ 1 & 2 \end{pmatrix} \). What is geometrically special about the eigenvectors, and why? <span class="diff med">medium</span></p>
+  <details><summary>Show solution</summary>
+    <div class="solution">
+      Characteristic equation: \( \lambda^2 - 4\lambda + 3 = 0 \) (trace 4, det 3) → \( \lambda_1 = 3, \lambda_2 = 1 \). Check: sum 4 = trace ✓, product 3 = det ✓.<br>
+      \(\lambda_1 = 3\): \( (A - 3I)\mathbf{v} = 0 \Rightarrow -v_1 + v_2 = 0 \Rightarrow \mathbf{v}_1 = (1, 1)^\mathsf{T} \).
+      \(\lambda_2 = 1\): \( v_1 + v_2 = 0 \Rightarrow \mathbf{v}_2 = (1, -1)^\mathsf{T} \).<br>
+      Special: \( \mathbf{v}_1 \cdot \mathbf{v}_2 = 1 - 1 = 0 \) — the eigenvectors are <b>orthogonal</b>. That is no accident: \(A\) is symmetric (\(A = A^\mathsf{T}\)), and symmetric matrices always have real eigenvalues and perpendicular eigenvectors — the workhorse fact behind principal-axis decompositions in mechanics, statistics and signal compression.
+    </div>
+  </details>
+</div>
+
+<div class="exercise">
+  <p class="ex-q"><span class="ex-num">E6</span>Solve by Gaussian elimination: \( x + y + z = 6\); \( 2x - y + z = 3 \); \( x + 2y - z = 2 \). Verify your solution in all three equations. <span class="diff hard">challenge</span></p>
+  <details><summary>Show solution</summary>
+    <div class="solution">
+      Augmented matrix, then eliminate column 1 using row 1 (R2 → R2 − 2R1, R3 → R3 − R1):
+      \[ \left[\begin{array}{ccc|c} 1 & 1 & 1 & 6 \\ 2 & -1 & 1 & 3 \\ 1 & 2 & -1 & 2 \end{array}\right] \to \left[\begin{array}{ccc|c} 1 & 1 & 1 & 6 \\ 0 & -3 & -1 & -9 \\ 0 & 1 & -2 & -4 \end{array}\right] \]
+      Eliminate column 2 (R3 → R3 + \(\tfrac13\) R2): \( (0,\ 0,\ -2-\tfrac13,\ -4-3) = (0,\ 0,\ -\tfrac73,\ -7) \) → \( z = 3 \).
+      Back-substitute: \( -3y - 3 = -9 \Rightarrow y = 2 \); \( x + 2 + 3 = 6 \Rightarrow x = 1 \).
+      Verify: \(1+2+3=6\) ✓; \(2-2+3=3\) ✓; \(1+4-3=2\) ✓.
+      Full verification in <em>all</em> equations matters: an arithmetic slip in elimination still satisfies the rows you used, but rarely the original set.
+    </div>
+  </details>
+</div>
+
+<div class="exercise">
+  <p class="ex-q"><span class="ex-num">E7</span>Prove that \(|z_1 z_2| = |z_1|\,|z_2|\) for all complex numbers — once using conjugates, once using polar form. Why do engineers care? <span class="diff hard">challenge</span></p>
+  <details><summary>Show solution</summary>
+    <div class="solution">
+      <b>Via conjugates:</b> using \(|z|^2 = z\bar z\) and \(\overline{z_1 z_2} = \bar z_1 \bar z_2\):
+      \[ |z_1 z_2|^2 = (z_1 z_2)\overline{(z_1 z_2)} = z_1 \bar z_1 \, z_2 \bar z_2 = |z_1|^2 |z_2|^2 , \]
+      and taking the (non-negative) square root gives the claim.
+      <b>Via polar form:</b> \( z_1 z_2 = r_1 r_2 e^{j(\varphi_1 + \varphi_2)} \); since \(|e^{j\theta}| = 1\) for any real \(\theta\), the modulus is \(r_1 r_2 = |z_1||z_2|\). The same computation shows \(\arg(z_1 z_2) = \arg z_1 + \arg z_2\) (mod \(360^\circ\)).
+      <b>Why care:</b> chain two amplifier stages and the gains (moduli) <em>multiply</em> while the phase shifts <em>add</em> — this theorem is why Bode plots (Module 12) can simply be stacked in dB and degrees, stage by stage.
+    </div>
+  </details>
+</div>
+
+<h2 id="quiz">14. Self-assessment</h2>
+
+<div class="quiz" data-quiz-title="Module 01 — Self-test">
+<script type="application/json">
+[
+ {"q":"Why do electrical engineers write j instead of i for the imaginary unit?",
+  "opts":["j and i are mathematically different numbers","the letter i is reserved for (instantaneous) current","j emphasizes that the unit rotates vectors","it is required by KaTeX and SPICE"],"a":1,
+  "explain":"Same number, different letter: in circuit notation lowercase \\(i(t)\\) means time-varying current, so the imaginary unit gets the next letter, \\(j\\). DIN 1302 codifies this for German engineering."},
+ {"q":"Compute (2 + j3)(1 − j).",
+  "opts":["5 + j","−1 + j5","5 − j","2 − j3"],"a":0,
+  "explain":"Expand: \\(2 - j2 + j3 - j^2 3 = 2 + j + 3 = 5 + j\\). The \\(-j^2 3 = +3\\) term is where sign errors happen."},
+ {"q":"The polar form of z = −1 + j is…",
+  "opts":["\\(\\sqrt{2}\\angle 45^\\circ\\)","\\(\\sqrt{2}\\angle 135^\\circ\\)","\\(1\\angle 135^\\circ\\)","\\(\\sqrt{2}\\angle -45^\\circ\\)"],"a":1,
+  "explain":"Second quadrant! \\(r = \\sqrt{1+1} = \\sqrt{2}\\); the raw arctangent gives \\(-45^\\circ\\), but with \\(a < 0\\) you must add \\(180^\\circ\\): \\(\\varphi = 135^\\circ\\). The classic quadrant trap."},
+ {"q":"Geometrically, multiplying a complex number by j…",
+  "opts":["mirrors it across the real axis","doubles its modulus","rotates it by 90° counterclockwise, same length","rotates it by 180°"],"a":2,
+  "explain":"\\(j = 1\\cdot e^{j90^\\circ}\\): multiplication adds \\(90^\\circ\\) to the angle and scales by 1. Four multiplications by j return you home — matching \\(j^4 = 1\\)."},
+ {"q":"\\(e^{j\\pi}\\) equals…",
+  "opts":["1","−1","j","0"],"a":1,
+  "explain":"Euler: \\(e^{j\\pi} = \\cos\\pi + j\\sin\\pi = -1\\) — the point on the unit circle at 180°. Rearranged, \\(e^{j\\pi} + 1 = 0\\), the famous Euler identity."},
+ {"q":"How many distinct complex solutions does z⁵ = 1 have?",
+  "opts":["1","2","5","infinitely many"],"a":2,
+  "explain":"Exactly \\(n\\) roots for \\(z^n = 1\\): \\(z_k = e^{j2\\pi k/5}\\), \\(k = 0..4\\) — a regular pentagon on the unit circle (Fig. 5.1). Over the reals you would only find \\(z = 1\\)."},
+ {"q":"For two square matrices A and B, the product AB…",
+  "opts":["always equals BA","never equals BA","equals BA only if both are invertible","generally differs from BA"],"a":3,
+  "explain":"Matrix multiplication is composition of maps, and order matters: rotate-then-stretch ≠ stretch-then-rotate. Special pairs do commute (e.g. \\(A\\) with \\(A^{-1}\\), or two rotations), so 'never' is also wrong."},
+ {"q":"det \\(\\begin{pmatrix} 2 & 1 \\\\ 4 & 2 \\end{pmatrix}\\) = ? And what does it imply for Ax = b?",
+  "opts":["0 — no unique solution exists","0 — the solution is x = 0","8 — a unique solution exists","4 — a unique solution exists"],"a":0,
+  "explain":"\\(\\det = 2\\cdot 2 - 1\\cdot 4 = 0\\): the matrix squashes the plane onto a line (its rows are proportional), so \\(A\\mathbf{x}=\\mathbf{b}\\) has either no solution or infinitely many — never exactly one."},
+ {"q":"The vectors (1, 2) and (2, −1) are…",
+  "opts":["parallel","orthogonal","at 45° to each other","linearly dependent"],"a":1,
+  "explain":"Dot product: \\(1\\cdot 2 + 2\\cdot(-1) = 0\\), and zero dot product means a 90° angle. Orthogonality is the backbone of Fourier analysis (Module 03) and multi-user radio."},
+ {"q":"An eigenvector v of a matrix A is a vector that…",
+  "opts":["A maps to zero","A leaves completely unchanged","A only scales, without changing its direction (up to sign)","is orthogonal to every row of A"],"a":2,
+  "explain":"\\(A\\mathbf{v} = \\lambda\\mathbf{v}\\): the output stays on the same line through the origin, stretched by the eigenvalue \\(\\lambda\\) (a negative \\(\\lambda\\) flips it along that same line). Only \\(\\lambda = 1\\) would mean 'unchanged', and 'maps to zero' is the special case \\(\\lambda = 0\\)."}
+]
+</script>
+</div>
+
+<script>
+document.addEventListener("ee-ready", () => {
+
+  /* ---------- shared helpers for the complex-plane widgets ---------- */
+  function arrow(ctx, x0, y0, x1, y1, color, width, dash) {
+    ctx.save();
+    ctx.strokeStyle = color; ctx.fillStyle = color; ctx.lineWidth = width || 2.4;
+    if (dash) ctx.setLineDash(dash);
+    ctx.beginPath(); ctx.moveTo(x0, y0); ctx.lineTo(x1, y1); ctx.stroke();
+    ctx.setLineDash([]);
+    const a = Math.atan2(y1 - y0, x1 - x0);
+    ctx.beginPath();
+    ctx.moveTo(x1, y1);
+    ctx.lineTo(x1 - 10 * Math.cos(a - 0.42), y1 - 10 * Math.sin(a - 0.42));
+    ctx.lineTo(x1 - 10 * Math.cos(a + 0.42), y1 - 10 * Math.sin(a + 0.42));
+    ctx.closePath(); ctx.fill();
+    ctx.restore();
+  }
+
+  /* square-aspect complex plane with grid; returns pixel mapping */
+  function plane(ctx, w, h, range, k) {
+    const cx = w / 2, cy = h / 2;
+    const s = Math.min(w, h) / (2 * range) * 0.92;
+    const ext = range * s;
+    const step = range > 3.2 ? 1 : 0.5;
+    ctx.lineWidth = 1; ctx.strokeStyle = k.grid;
+    for (let g = step; g <= range; g += step) {
+      for (const q of [g, -g]) {
+        ctx.beginPath(); ctx.moveTo(cx + q * s, cy - ext); ctx.lineTo(cx + q * s, cy + ext); ctx.stroke();
+        ctx.beginPath(); ctx.moveTo(cx - ext, cy - q * s); ctx.lineTo(cx + ext, cy - q * s); ctx.stroke();
+      }
+    }
+    ctx.strokeStyle = k.axis; ctx.lineWidth = 1.4;
+    ctx.beginPath(); ctx.moveTo(cx - ext, cy); ctx.lineTo(cx + ext, cy);
+    ctx.moveTo(cx, cy - ext); ctx.lineTo(cx, cy + ext); ctx.stroke();
+    ctx.fillStyle = k.muted; ctx.font = "10.5px system-ui, sans-serif";
+    ctx.textAlign = "center"; ctx.textBaseline = "top";
+    const lstep = range > 3.2 ? 2 : 1;
+    for (let g = lstep; g <= range - 0.2; g += lstep) {
+      ctx.fillText(String(g), cx + g * s, cy + 4);
+      ctx.fillText(String(-g), cx - g * s, cy + 4);
+    }
+    ctx.font = "600 12px system-ui, sans-serif"; ctx.textAlign = "left";
+    ctx.fillText("Re", cx + ext - 18, cy + 6);
+    ctx.fillText("Im", cx + 6, cy - ext + 2);
+    return { cx, cy, s, ext, X: x => cx + x * s, Y: y => cy - y * s };
+  }
+
+  function tipLabel(ctx, v, r, aRad, text, color) {
+    const R = r * v.s + 18;
+    ctx.fillStyle = color; ctx.font = "600 12.5px system-ui, sans-serif";
+    ctx.textAlign = "center"; ctx.textBaseline = "middle";
+    ctx.fillText(text, v.cx + R * Math.cos(aRad), v.cy - R * Math.sin(aRad));
+  }
+
+  function wrap180(d) {
+    let x = ((d + 180) % 360 + 360) % 360 - 180;
+    return x === -180 ? 180 : x;
+  }
+
+  /* --- 1. Complex-number explorer --- */
+  EE.custom({
+    mount: "#w-cplane", height: 340,
+    params: [
+      { key: "re", label: "Re z = a", min: -5, max: 5, step: 0.1, value: 3, fmt: v => v.toFixed(1) },
+      { key: "im", label: "Im z = b", min: -5, max: 5, step: 0.1, value: 2, fmt: v => v.toFixed(1) }
+    ],
+    readouts: [
+      { label: "modulus |z|", fn: p => Math.hypot(p.re, p.im).toFixed(3) },
+      { label: "argument arg z", fn: p => (Math.atan2(p.im, p.re) * 180 / Math.PI).toFixed(1) + "° = " + Math.atan2(p.im, p.re).toFixed(3) + " rad" },
+      { label: "conjugate z̄", fn: p => p.re.toFixed(1) + (p.im >= 0 ? " − j" : " + j") + Math.abs(p.im).toFixed(1) }
+    ],
+    draw: (ctx, w, h, p, H) => {
+      const k = H.ink;
+      const v = plane(ctx, w, h, 5.5, k);
+      const r = Math.hypot(p.re, p.im), phi = Math.atan2(p.im, p.re);
+      /* dashed projections onto the axes */
+      ctx.strokeStyle = k.muted; ctx.setLineDash([4, 4]); ctx.lineWidth = 1.2;
+      ctx.beginPath();
+      ctx.moveTo(v.X(p.re), v.Y(p.im)); ctx.lineTo(v.X(p.re), v.Y(0));
+      ctx.moveTo(v.X(p.re), v.Y(p.im)); ctx.lineTo(v.X(0), v.Y(p.im));
+      ctx.stroke(); ctx.setLineDash([]);
+      /* angle arc from positive Re axis to z */
+      if (r > 0.25) {
+        ctx.strokeStyle = H.color(2); ctx.lineWidth = 2;
+        ctx.beginPath(); ctx.arc(v.cx, v.cy, 26, 0, -phi, phi > 0); ctx.stroke();
+        ctx.fillStyle = H.color(2); ctx.font = "600 12px system-ui, sans-serif";
+        ctx.textAlign = "center"; ctx.textBaseline = "middle";
+        ctx.fillText("φ", v.cx + 42 * Math.cos(phi / 2), v.cy - 42 * Math.sin(phi / 2));
+      }
+      /* conjugate (dashed) and z (solid) */
+      arrow(ctx, v.cx, v.cy, v.X(p.re), v.Y(-p.im), H.color(4), 2, [5, 4]);
+      arrow(ctx, v.cx, v.cy, v.X(p.re), v.Y(p.im), H.color(0), 2.6);
+      if (r > 0.25) {
+        tipLabel(ctx, v, r, phi, "z", H.color(0));
+        tipLabel(ctx, v, r, -phi, "z̄", H.color(4));
+      }
+    }
+  });
+
+  /* --- 2. Multiplication = rotation + scaling --- */
+  EE.custom({
+    mount: "#w-cmult", height: 360,
+    params: [
+      { key: "r1", label: "|z₁|", min: 0.2, max: 2.5, step: 0.05, value: 1.4, fmt: v => v.toFixed(2) },
+      { key: "p1", label: "arg z₁", min: -180, max: 180, step: 5, value: 25, unit: "°", fmt: v => v.toFixed(0) },
+      { key: "r2", label: "|z₂|", min: 0.2, max: 2.5, step: 0.05, value: 1.5, fmt: v => v.toFixed(2) },
+      { key: "p2", label: "arg z₂", min: -180, max: 180, step: 5, value: 40, unit: "°", fmt: v => v.toFixed(0) }
+    ],
+    readouts: [
+      { label: "z₁·z₂ (polar)", fn: p => (p.r1 * p.r2).toFixed(2) + " ∠ " + wrap180(p.p1 + p.p2).toFixed(0) + "°" },
+      { label: "z₁·z₂ (cartesian)", fn: p => {
+          const a = (p.p1 + p.p2) * Math.PI / 180, m = p.r1 * p.r2;
+          const re = m * Math.cos(a), im = m * Math.sin(a);
+          return re.toFixed(2) + (im >= 0 ? " + j" : " − j") + Math.abs(im).toFixed(2);
+        } },
+      { label: "check: |z₁|·|z₂|", fn: p => p.r1.toFixed(2) + " × " + p.r2.toFixed(2) + " = " + (p.r1 * p.r2).toFixed(2) }
+    ],
+    draw: (ctx, w, h, p, H) => {
+      const k = H.ink;
+      const a1 = p.p1 * Math.PI / 180, a2 = p.p2 * Math.PI / 180;
+      const rp = p.r1 * p.r2, ap = a1 + a2;
+      const range = Math.max(1.4, p.r1, p.r2, rp) * 1.18;
+      const v = plane(ctx, w, h, range, k);
+      /* unit circle for reference */
+      ctx.strokeStyle = k.axis; ctx.lineWidth = 1.2; ctx.setLineDash([3, 5]);
+      ctx.beginPath(); ctx.arc(v.cx, v.cy, v.s, 0, 7); ctx.stroke();
+      ctx.setLineDash([]);
+      /* product angle arc */
+      ctx.strokeStyle = H.color(5); ctx.lineWidth = 1.6; ctx.globalAlpha = 0.55;
+      ctx.beginPath(); ctx.arc(v.cx, v.cy, 20, 0, -ap, ap > 0); ctx.stroke();
+      ctx.globalAlpha = 1;
+      /* the three pointers */
+      arrow(ctx, v.cx, v.cy, v.X(p.r1 * Math.cos(a1)), v.Y(p.r1 * Math.sin(a1)), H.color(0), 2.4);
+      arrow(ctx, v.cx, v.cy, v.X(p.r2 * Math.cos(a2)), v.Y(p.r2 * Math.sin(a2)), H.color(1), 2.4);
+      arrow(ctx, v.cx, v.cy, v.X(rp * Math.cos(ap)), v.Y(rp * Math.sin(ap)), H.color(5), 3);
+      tipLabel(ctx, v, p.r1, a1, "z₁", H.color(0));
+      tipLabel(ctx, v, p.r2, a2, "z₂", H.color(1));
+      tipLabel(ctx, v, rp, ap, "z₁·z₂", H.color(5));
+    }
+  });
+
+  /* --- 3. Rotating pointer e^{jωt} → sinusoid --- */
+  EE.phasor({
+    mount: "#w-euler", height: 300, periods: 2,
+    params: [
+      { key: "A", label: "Amplitude A", min: 0.2, max: 1, step: 0.05, value: 0.85, fmt: v => v.toFixed(2) },
+      { key: "phi", label: "Phase φ", min: -180, max: 180, step: 5, value: 60, unit: "°", fmt: v => v.toFixed(0) }
+    ],
+    phasors: (p, t) => [
+      { mag: p.A, phase: p.phi * Math.PI / 180, label: "A·e^j(ωt+φ)", color: 0 },
+      { mag: 1, phase: 0, label: "e^jωt (reference)", color: 1 }
+    ],
+    readouts: [
+      { label: "pointer (phasor)", fn: p => p.A.toFixed(2) + " ∠ " + p.phi.toFixed(0) + "°" },
+      { label: "projected waveform", fn: p => p.A.toFixed(2) + " · sin(ωt " + (p.phi >= 0 ? "+ " : "− ") + Math.abs(p.phi).toFixed(0) + "°)" }
+    ]
+  });
+
+  /* --- 4. 2×2 linear system: two lines, one intersection --- */
+  const detOf = p => p.a11 * p.a22 - p.a12 * p.a21;
+  EE.functionPlot({
+    mount: "#w-linsys", height: 300,
+    x: { min: -2, max: 8, label: "x₁" },
+    y: { min: -4, max: 8, label: "x₂" },
+    params: [
+      { key: "a11", label: "a₁₁", min: -3, max: 3, step: 0.1, value: 2, fmt: v => v.toFixed(1) },
+      { key: "a12", label: "a₁₂", min: 0.5, max: 4, step: 0.1, value: 1, fmt: v => v.toFixed(1) },
+      { key: "b1", label: "b₁", min: -10, max: 15, step: 0.5, value: 8, fmt: v => v.toFixed(1) },
+      { key: "a21", label: "a₂₁", min: -3, max: 3, step: 0.1, value: 1, fmt: v => v.toFixed(1) },
+      { key: "a22", label: "a₂₂", min: 0.5, max: 4, step: 0.1, value: 3, fmt: v => v.toFixed(1) },
+      { key: "b2", label: "b₂", min: -10, max: 15, step: 0.5, value: 13, fmt: v => v.toFixed(1) }
+    ],
+    curves: [
+      { label: "equation 1", color: 0, fn: (x, p) => (p.b1 - p.a11 * x) / p.a12 },
+      { label: "equation 2", color: 2, fn: (x, p) => (p.b2 - p.a21 * x) / p.a22 }
+    ],
+    annotations: p => {
+      const d = detOf(p);
+      if (Math.abs(d) < 0.05) return [];
+      const x = (p.b1 * p.a22 - p.b2 * p.a12) / d;
+      const y = (p.a11 * p.b2 - p.a21 * p.b1) / d;
+      return [{ type: "point", x, y, label: "solution" }];
+    },
+    readouts: [
+      { label: "det A", fn: p => detOf(p).toFixed(2) },
+      { label: "solution (x₁, x₂)", fn: p => {
+          const d = detOf(p);
+          if (Math.abs(d) < 0.05) return "det ≈ 0 — none / infinitely many";
+          const x = (p.b1 * p.a22 - p.b2 * p.a12) / d;
+          const y = (p.a11 * p.b2 - p.a21 * p.b1) / d;
+          return "(" + x.toFixed(2) + ", " + y.toFixed(2) + ")";
+        } }
+    ]
+  });
+});
+</script>
+
+</article>
+</main>
+</div>
+</body>
+</html>

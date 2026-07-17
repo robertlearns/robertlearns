@@ -1,0 +1,834 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>M03 · Fourier, Laplace &amp; Transforms — EE Knowledge Base</title>
+<link rel="stylesheet" href="../../assets/vendor/katex/katex.min.css">
+<link rel="stylesheet" href="../../assets/css/style.css">
+<script src="../../assets/vendor/katex/katex.min.js" defer></script>
+<script src="../../assets/vendor/katex/auto-render.min.js" defer></script>
+<script src="../curriculum.js" defer></script>
+<script src="../../assets/js/app.js" defer></script>
+<script src="../../assets/js/widgets.js" defer></script>
+</head>
+<body data-module="m03">
+<div class="layout">
+<main class="content">
+<article class="article">
+
+<span class="eyebrow">∑ Mathematical Foundations · Module 03</span>
+<h1>Fourier, Laplace &amp; Transforms <span class="muted" style="font-weight:400;font-size:1.4rem">· <span class="de">Fourier- &amp; Laplace-Transformation</span></span></h1>
+<p class="lead">This module contains the single most powerful idea in all of electrical engineering: every reasonable signal can be written as a sum of sinusoids, and sinusoids sail through linear systems unchanged except in size and timing. Once you own that idea, filters, amplifiers, radio, control loops and data links stop being separate subjects — they become one subject viewed at different frequencies.</p>
+
+<div class="page-meta">
+  <span><b>Corresponds to:</b> Höhere Mathematik III / Systemtheorie-Grundlagen (2nd–3rd semester)</span>
+  <span><b>Prerequisites:</b> Modules 01, 02</span>
+  <span><b>Study time:</b> ≈ 6–8 h</span>
+</div>
+
+<h2 id="grand-idea">1. The grand idea — why sinusoids rule everything</h2>
+
+<p>Start with an experiment you can do with a signal generator and an oscilloscope. Feed a sine wave into <em>any</em> linear, time-invariant system — an RC filter, a 50&nbsp;km cable, an audio amplifier, a loudspeaker driven gently. What comes out is <strong>always another sine wave of exactly the same frequency</strong>. The system may make it smaller or larger (amplitude change) and may delay it (phase shift, <span class="de">Phasenverschiebung</span>) — but it can never bend a sine into any other shape. Feed in a square wave, and the output is generally distorted; feed in a sinusoid, never.</p>
+
+<figure>
+  <div class="fig-frame">
+  <svg class="diagram" viewBox="0 0 640 190" role="img" aria-label="A sinusoid passes through a linear system and comes out as a sinusoid of the same frequency, only scaled and shifted">
+    <!-- input sine -->
+    <path d="M25 90 q17.5 -56 35 0 q17.5 56 35 0 q17.5 -56 35 0 q17.5 56 35 0" fill="none" stroke="var(--accent)" stroke-width="2.4"/>
+    <line x1="25" y1="90" x2="190" y2="90" stroke="var(--text-faint)" stroke-width="1" stroke-dasharray="3 4"/>
+    <text x="95" y="140" text-anchor="middle" font-size="14" fill="var(--accent)">A·sin(ωt)</text>
+    <!-- arrow in -->
+    <line x1="200" y1="90" x2="240" y2="90" class="wire" marker-end="url(#arrLti)"/>
+    <!-- system box -->
+    <rect x="248" y="55" width="150" height="70" rx="10" fill="none" stroke="var(--text-soft)" stroke-width="2"/>
+    <text x="323" y="85" text-anchor="middle" font-size="14" fill="var(--text-soft)">linear system</text>
+    <text x="323" y="105" text-anchor="middle" font-size="11" fill="var(--text-soft)">filter · cable · amplifier</text>
+    <!-- arrow out -->
+    <line x1="406" y1="90" x2="446" y2="90" class="wire" marker-end="url(#arrLti)"/>
+    <!-- output sine: smaller amplitude, phase-shifted -->
+    <path d="M458 96 q10 -30 22 -9 q7 12 13 12 q11 0 22 -21 q11 -21 22 0 q7 12 13 12 q11 0 22 -21" fill="none" stroke="var(--accent-2)" stroke-width="2.4"/>
+    <line x1="458" y1="90" x2="620" y2="90" stroke="var(--text-faint)" stroke-width="1" stroke-dasharray="3 4"/>
+    <text x="540" y="140" text-anchor="middle" font-size="14" fill="var(--accent-2)">B·sin(ωt + φ)</text>
+    <text x="540" y="162" text-anchor="middle" font-size="12" fill="var(--text-soft)">same frequency ω — always!</text>
+    <defs><marker id="arrLti" markerWidth="9" markerHeight="9" refX="7" refY="4.5" orient="auto">
+      <path d="M0 0 L8 4.5 L0 9 z" fill="var(--text-soft)"/></marker></defs>
+  </svg>
+  </div>
+  <figcaption><b>Fig. 1.1</b> — The eigenfunction property: a sinusoid entering a linear time-invariant system exits as a sinusoid of the <em>same frequency</em>; only amplitude and phase change. Two numbers per frequency describe the entire system.</figcaption>
+</figure>
+
+<p>Mathematically: the exponentials \(e^{j\omega t}\) from Module&nbsp;01 are <strong>eigenfunctions</strong> (<span class="de">Eigenfunktionen</span>) of every linear time-invariant (LTI, <span class="de">lineares zeitinvariantes System</span>) system. Differentiation, integration, delay — everything an RLC circuit can do to a signal — merely multiplies \(e^{j\omega t}\) by a complex constant:</p>
+\[ \frac{\mathrm{d}}{\mathrm{d}t}\, e^{j\omega t} = j\omega \, e^{j\omega t}, \qquad \int e^{j\omega t}\,\mathrm{d}t = \frac{1}{j\omega}\, e^{j\omega t}. \]
+
+<div class="box key">
+  <div class="box-title"><span class="ic">🔑</span>Key idea: the divide-and-conquer strategy of EE</div>
+  <p>If (1) every signal is a sum of sinusoids, and (2) a linear system treats each sinusoid independently — multiplying it by a known complex factor — then analyzing <em>any</em> signal through <em>any</em> linear system takes three steps: <b>decompose</b> the input into sinusoids (Fourier), <b>multiply</b> each by the system's factor at that frequency, <b>reassemble</b> (inverse transform). Calculus becomes multiplication. This module builds the decompose/reassemble machinery; Modules&nbsp;05–07 use it on circuits, and half of the rest of the degree runs on it.</p>
+</div>
+
+<div class="box intuition">
+  <div class="box-title"><span class="ic">💡</span>Intuition: the prism and the graphic equalizer</div>
+  <p>A glass prism performs a physical Fourier transform: white light in, rainbow out — the "spectrum" is literal. A graphic equalizer is the whole strategy in hardware: it splits audio into frequency bands, lets you scale each band with a slider, and sums them back. Your cochlea does the same thing mechanically — you <em>hear</em> in the frequency domain (<span class="de">Frequenzbereich</span>), which is why a chord sounds like three notes and not like a complicated wiggle.</p>
+</div>
+
+<div class="box warn">
+  <div class="box-title"><span class="ic">⚠️</span>ω versus f — keep the 2π where it belongs</div>
+  <p>The angular frequency \(\omega = 2\pi f\) (in rad/s) and the ordinary frequency \(f\) (in Hz) both appear constantly. Formulas in this module use \(\omega\); lab equipment and datasheets use \(f\). A dropped factor \(2\pi\) is the most common transform-exam error after sign mistakes. When a result feels off by "about 6", check the \(2\pi\).</p>
+</div>
+
+<h2 id="fourier-series">2. Fourier series — periodic signals as harmonic sums</h2>
+
+<p>Joseph Fourier's claim (1807): every periodic function of period \(T\) — square waves, sawtooths, rectified sines, anything a lab generator makes — can be written as a DC value plus sinusoids at the <strong>fundamental frequency</strong> (<span class="de">Grundfrequenz</span>) \(f_0 = 1/T\) and its integer multiples, the <strong>harmonics</strong> (<span class="de">Oberschwingungen, Harmonische</span>):</p>
+\[ \boxed{\; f(t) = \frac{a_0}{2} + \sum_{k=1}^{\infty} \Big[ a_k \cos(k\omega_0 t) + b_k \sin(k\omega_0 t) \Big] \;}, \qquad \omega_0 = \frac{2\pi}{T}. \]
+<p>The term \(a_0/2\) is simply the mean value (<span class="de">Gleichanteil</span>, DC component). The claim only becomes useful because the coefficients can be <em>computed</em>, thanks to orthogonality: the average of \(\sin(k\omega_0 t)\sin(m\omega_0 t)\) over one period is zero unless \(k = m\). Multiplying \(f(t)\) by one particular sinusoid and averaging therefore "sieves out" exactly that harmonic's coefficient:</p>
+\[ a_k = \frac{2}{T}\int_{0}^{T} f(t)\cos(k\omega_0 t)\,\mathrm{d}t, \qquad
+   b_k = \frac{2}{T}\int_{0}^{T} f(t)\sin(k\omega_0 t)\,\mathrm{d}t . \]
+
+<h3 id="symmetry">2.1 Symmetry shortcuts — read the coefficients off the waveform</h3>
+<p>Before integrating anything, look at the wave:</p>
+<ul>
+  <li><b>Even</b> function \(f(-t)=f(t)\) (mirror-symmetric about \(t=0\)): only cosines survive, all \(b_k = 0\).</li>
+  <li><b>Odd</b> function \(f(-t)=-f(t)\): only sines survive, all \(a_k = 0\).</li>
+  <li><b>Half-wave symmetry</b> \(f(t+T/2) = -f(t)\) (second half = inverted first half): only <em>odd</em> harmonics \(k = 1, 3, 5, \dots\) appear. Square and triangle waves have this — which is why you will never find a 2nd harmonic in an ideal square wave.</li>
+</ul>
+
+<div class="example">
+  <div class="ex-head"><span class="ex-tag">Worked example</span> The square wave, fully derived</div>
+  <div class="ex-body">
+    <p>Take the symmetric square wave (<span class="de">Rechteckschwingung</span>) of amplitude \(A\): \(f(t) = +A\) for \(0 &lt; t &lt; T/2\) and \(-A\) for \(T/2 &lt; t &lt; T\). Find its Fourier series.</p>
+    <div class="step"><span class="step-label">Step 1 — exploit symmetry:</span> the wave is odd (choose \(t=0\) at a rising edge) → all \(a_k = 0\), including the DC term (the mean is obviously zero). It also has half-wave symmetry → only odd \(k\) can survive. We only need \(b_k\) for odd \(k\).</div>
+    <div class="step"><span class="step-label">Step 2 — set up the integral:</span> split at \(T/2\), where the sign flips:
+    \[ b_k = \frac{2}{T}\left[ \int_0^{T/2} A \sin(k\omega_0 t)\,\mathrm{d}t + \int_{T/2}^{T} (-A) \sin(k\omega_0 t)\,\mathrm{d}t \right] = \frac{4A}{T} \int_0^{T/2} \sin(k\omega_0 t)\,\mathrm{d}t, \]
+    where the second integral equals the first by the half-wave symmetry.</div>
+    <div class="step"><span class="step-label">Step 3 — integrate:</span>
+    \[ b_k = \frac{4A}{T} \cdot \left[ -\frac{\cos(k\omega_0 t)}{k\omega_0} \right]_0^{T/2}
+          = \frac{4A}{T\,k\omega_0}\big( 1 - \cos(k\pi) \big) = \frac{2A}{\pi k}\big(1 - (-1)^k\big), \]
+    using \(\omega_0 T = 2\pi\) and \(\cos(k\pi) = (-1)^k\). The bracket is 0 for even \(k\) and 2 for odd \(k\) — exactly as the symmetry predicted.</div>
+    <div class="step"><span class="step-label">Step 4 — write the series:</span>
+    \[ \boxed{\; f(t) = \frac{4A}{\pi}\left( \sin\omega_0 t + \frac{\sin 3\omega_0 t}{3} + \frac{\sin 5\omega_0 t}{5} + \cdots \right) \;} \]
+    </div>
+    <div class="result-line">Odd harmonics only, amplitudes falling as \(1/k\). Sanity check: the fundamental has amplitude \(4A/\pi \approx 1.27A\) — <em>larger</em> than the square wave itself! The higher harmonics must partly cancel it near the peaks; watch this happen in the widget below.</div>
+  </div>
+</div>
+
+<div class="widget">
+  <div class="w-head"><span class="ic">🧪</span>Interactive — Fourier series builder <span class="w-tag">simulation</span></div>
+  <div class="w-body">
+    <p class="small mt0">Build a square, triangle or sawtooth wave from its harmonics. Slide \(N\) up and watch the partial sum (solid) hug the target (dashed). Notice: the triangle converges dramatically faster (\(1/k^2\) vs. \(1/k\)), and at the square wave's jumps a stubborn ≈ 9 % overshoot spike remains no matter how large \(N\) gets — the Gibbs phenomenon. The readout measures it live.</p>
+    <div id="w-fourier"></div>
+  </div>
+</div>
+
+<h3 id="convergence">2.2 Convergence speed and the Gibbs phenomenon</h3>
+<p>How fast the coefficients decay is dictated by how smooth the signal is:</p>
+<ul>
+  <li><b>Square wave</b> (jump discontinuities): \(b_k \propto 1/k\) — slow. You need many harmonics.</li>
+  <li><b>Sawtooth</b> (jumps too): \(\propto 1/k\), all harmonics present.</li>
+  <li><b>Triangle wave</b> (continuous, kinked derivative): \(\propto 1/k^2\) — already 9× smaller by the 3rd harmonic.</li>
+</ul>
+<p>Rule of thumb: each extra degree of smoothness buys one extra power of \(1/k\). This has hard engineering consequences: sharp edges mean strong high-frequency content, which is why fast digital edges radiate interference (EMC, Module&nbsp;21) and why switching converters need filters (Module&nbsp;18).</p>
+<p>At a jump, something curious happens. The partial sum overshoots by about <strong>9 %</strong> of the jump height, and as \(N\) grows the spike gets <em>narrower</em> but never <em>shorter</em>: the <strong>Gibbs phenomenon</strong> (<span class="de">Gibbssches Phänomen</span>). The series still converges at every point of continuity — the misbehaving spike just keeps retreating toward the jump. You will meet Gibbs again as "ringing" in filter design (Module&nbsp;12) and image compression artifacts.</p>
+
+<div class="box pitfall">
+  <div class="box-title"><span class="ic">🚫</span>Classic pitfall: "more terms will fix the overshoot"</div>
+  <p>No finite — or infinite — number of terms removes the Gibbs overshoot at a discontinuity; its peak value tends to ≈ 8.95 % of the jump, forever. Increasing \(N\) only squeezes it into a thinner sliver of time. Exams love this: convergence <em>in energy</em> (the error's power → 0) is not the same as uniform convergence of the peak value.</p>
+</div>
+
+<div class="widget">
+  <div class="w-head"><span class="ic">🧪</span>Interactive — the line spectrum <span class="w-tag">visualization</span></div>
+  <div class="w-body">
+    <p class="small mt0">The same three waveforms, now viewed in the frequency domain: each stem is one harmonic's amplitude \(|b_k|\) (for \(A = 1\)). Solid stems are the ones included in a partial sum up to \(N\); faint ones are still missing. The dashed envelope shows the decay law — compare \(1/k\) (square) against \(1/k^2\) (triangle), and check the readout for how much signal power the included harmonics already carry.</p>
+    <div id="w-spectrum"></div>
+  </div>
+</div>
+
+<h2 id="complex-form">3. The complex form — one formula instead of two</h2>
+
+<p>Module&nbsp;01 taught us \(\cos x = \tfrac12(e^{jx} + e^{-jx})\) and \(\sin x = \tfrac{1}{2j}(e^{jx} - e^{-jx})\). Substituting these into the real series merges the two coefficient families \(a_k, b_k\) into a single complex one:</p>
+\[ \boxed{\; f(t) = \sum_{k=-\infty}^{\infty} \underline{c}_k \, e^{jk\omega_0 t}, \qquad
+   \underline{c}_k = \frac{1}{T}\int_{0}^{T} f(t)\, e^{-jk\omega_0 t}\,\mathrm{d}t \;} \]
+<p>with the dictionary</p>
+\[ \underline{c}_0 = \frac{a_0}{2}, \qquad \underline{c}_k = \frac{a_k - j b_k}{2}, \qquad \underline{c}_{-k} = \underline{c}_k^{\,*} \ \ \text{(for real signals)}. \]
+<p>Three things to internalize:</p>
+<ul>
+  <li>The sum now runs over <em>negative</em> \(k\) too. Negative frequencies are not mystical: \(e^{-j\omega t}\) is just a phasor rotating clockwise, and a real cosine needs one of each, \(\cos\omega_0 t = \tfrac12 e^{j\omega_0 t} + \tfrac12 e^{-j\omega_0 t}\). The two-sided spectrum splits each real amplitude half-and-half onto \(\pm k\).</li>
+  <li>\(|\underline{c}_k|\) is the (half-)amplitude of harmonic \(k\), \(\arg \underline{c}_k\) its phase — magnitude and phase spectrum in one complex number, exactly like the phasors of Module&nbsp;05.</li>
+  <li>Every calculation gets shorter: one integral, one exponential, and the algebra of \(e^{jx}\) instead of trigonometric identities. From here on we use the complex form.</li>
+</ul>
+
+<div class="box history">
+  <div class="box-title"><span class="ic">📜</span>Fourier's scandalous claim</div>
+  <p>When Fourier presented his heat-conduction paper in 1807, the committee — including Lagrange and Laplace — refused publication: the claim that arbitrary functions, even ones with corners, equal sums of smooth sinusoids seemed absurd. Making it rigorous took mathematics a century (Dirichlet's conditions, 1829; Carleson's theorem, 1966!) and en route created much of modern analysis. Engineers, characteristically, used it the whole time. Every audio codec, DSL modem and MRI scanner is downstream of that rejected paper.</p>
+</div>
+
+<h2 id="fourier-transform">4. From series to transform — letting the period go to infinity</h2>
+
+<p>Series handle <em>periodic</em> signals. But a single voice burst, a radar echo, one logic pulse — real signals often never repeat. The trick: view a single pulse as a periodic signal whose period \(T\) has been stretched to infinity. Watch what happens as \(T\) grows:</p>
+<ul>
+  <li>The line spacing \(f_0 = 1/T\) <strong>shrinks</strong> — the spectral lines crowd together;</li>
+  <li>each individual \(\underline{c}_k \propto 1/T\) shrinks toward zero,</li>
+  <li>but the <em>envelope</em> shape of \(T \cdot \underline{c}_k\) stays put.</li>
+</ul>
+
+<figure>
+  <div class="fig-frame">
+  <svg class="diagram" viewBox="0 0 640 250" role="img" aria-label="As the period grows, spectral lines crowd together under a fixed envelope until the spectrum becomes continuous">
+    <!-- panel A -->
+    <g>
+      <line x1="20" y1="195" x2="190" y2="195" class="wire"/>
+      <path d="M45 195 q15 -44 30 0 q30 -170 60 0 q15 -44 30 0" fill="none" stroke="var(--accent-2)" stroke-width="1.6" stroke-dasharray="5 4"/>
+      <g stroke="var(--accent)" stroke-width="2.4">
+        <line x1="50" y1="195" x2="50" y2="176"/>
+        <line x1="70" y1="195" x2="70" y2="148"/>
+        <line x1="90" y1="195" x2="90" y2="110"/>
+        <line x1="110" y1="195" x2="110" y2="148"/>
+        <line x1="130" y1="195" x2="130" y2="176"/>
+      </g>
+      <text x="105" y="222" text-anchor="middle" font-size="13">period T</text>
+      <text x="105" y="240" text-anchor="middle" font-size="11" fill="var(--text-soft)">line spacing 1/T</text>
+    </g>
+    <!-- panel B -->
+    <g>
+      <line x1="230" y1="195" x2="400" y2="195" class="wire"/>
+      <path d="M255 195 q15 -44 30 0 q30 -170 60 0 q15 -44 30 0" fill="none" stroke="var(--accent-2)" stroke-width="1.6" stroke-dasharray="5 4"/>
+      <g stroke="var(--accent)" stroke-width="2">
+        <line x1="257" y1="195" x2="257" y2="188"/>
+        <line x1="264" y1="195" x2="264" y2="181"/>
+        <line x1="271" y1="195" x2="271" y2="177"/>
+        <line x1="278" y1="195" x2="278" y2="179"/>
+        <line x1="285" y1="195" x2="285" y2="190"/>
+        <line x1="292" y1="195" x2="292" y2="180"/>
+        <line x1="299" y1="195" x2="299" y2="142"/>
+        <line x1="306" y1="195" x2="306" y2="105"/>
+        <line x1="313" y1="195" x2="313" y2="75"/>
+        <line x1="320" y1="195" x2="320" y2="62"/>
+        <line x1="327" y1="195" x2="327" y2="72"/>
+        <line x1="334" y1="195" x2="334" y2="100"/>
+        <line x1="341" y1="195" x2="341" y2="140"/>
+        <line x1="348" y1="195" x2="348" y2="180"/>
+        <line x1="355" y1="195" x2="355" y2="190"/>
+        <line x1="362" y1="195" x2="362" y2="179"/>
+        <line x1="369" y1="195" x2="369" y2="177"/>
+        <line x1="376" y1="195" x2="376" y2="181"/>
+        <line x1="383" y1="195" x2="383" y2="188"/>
+      </g>
+      <text x="315" y="222" text-anchor="middle" font-size="13">period 3T</text>
+      <text x="315" y="240" text-anchor="middle" font-size="11" fill="var(--text-soft)">lines 3× denser, same envelope</text>
+    </g>
+    <!-- panel C -->
+    <g>
+      <line x1="440" y1="195" x2="610" y2="195" class="wire"/>
+      <path d="M465 195 q15 -44 30 0 q30 -170 60 0 q15 -44 30 0 L585 195 L465 195 z" fill="var(--accent)" opacity="0.18" stroke="none"/>
+      <path d="M465 195 q15 -44 30 0 q30 -170 60 0 q15 -44 30 0" fill="none" stroke="var(--accent)" stroke-width="2.2"/>
+      <text x="525" y="222" text-anchor="middle" font-size="13">T → ∞</text>
+      <text x="525" y="240" text-anchor="middle" font-size="11" fill="var(--text-soft)">continuous spectrum F(jω)</text>
+    </g>
+    <text x="320" y="24" text-anchor="middle" font-size="13" fill="var(--text-soft)">|spectrum| of one pulse repeated with growing period</text>
+  </svg>
+  </div>
+  <figcaption><b>Fig. 4.1</b> — Birth of the Fourier transform. Repeating a pulse with period \(T\) gives spectral lines spaced \(1/T\) under a fixed envelope. As \(T \to \infty\) (a single, non-repeating pulse) the lines merge into a continuum: the envelope itself <em>is</em> the Fourier transform.</figcaption>
+</figure>
+
+<p>In the limit, the sum over discrete lines becomes an integral over a continuous frequency variable, and \(T\underline{c}_k\) becomes a function \(F(j\omega)\) — the <strong>Fourier transform</strong> (<span class="de">Fourier-Transformation</span>) and its inverse (<span class="de">Rücktransformation</span>):</p>
+\[ \boxed{\; F(j\omega) = \int_{-\infty}^{\infty} f(t)\, e^{-j\omega t}\, \mathrm{d}t \;}
+\qquad\qquad
+f(t) = \frac{1}{2\pi}\int_{-\infty}^{\infty} F(j\omega)\, e^{j\omega t}\, \mathrm{d}\omega. \]
+<p>Read the pair as a conversation: the forward transform asks "how much of frequency \(\omega\) is in \(f(t)\)?" (by correlating with \(e^{-j\omega t}\)); the inverse reassembles \(f(t)\) from all its frequency components. \(|F(j\omega)|\) is the <strong>amplitude spectrum</strong> (<span class="de">Amplitudenspektrum</span>) — note its unit: if \(f\) is a voltage in V, then \(F\) is in V·s = V/Hz, a spectral <em>density</em>. A single pulse spreads finite energy over a continuum of frequencies, so each individual frequency carries an infinitesimal amount; only frequency <em>bands</em> carry finite energy.</p>
+
+<h2 id="pairs">5. The Dirac impulse and the transform pairs that matter</h2>
+
+<h3 id="dirac">5.1 The Dirac delta — the idealized bang</h3>
+<p>Circuit theory constantly needs the idealized "infinitely short, infinitely strong kick": the hammer tap, the lightning strike, the switch-closing spark. Model it as a rectangular pulse of width \(\varepsilon\) and height \(1/\varepsilon\) (unit area), then let \(\varepsilon \to 0\). The limit is the <strong>Dirac impulse</strong> (<span class="de">Dirac-Stoß, Deltafunktion</span>) \(\delta(t)\) — not a function in the classical sense (it is a <em>distribution</em>), defined entirely by what it does inside integrals:</p>
+\[ \int_{-\infty}^{\infty} \delta(t)\,\mathrm{d}t = 1, \qquad
+   \int_{-\infty}^{\infty} f(t)\,\delta(t - t_0)\,\mathrm{d}t = f(t_0) \quad \text{(sifting property)}. \]
+<p>The second identity is the <strong>sifting property</strong> (<span class="de">Ausblendeigenschaft</span>): integrating against a shifted delta simply <em>samples</em> the function at the impulse instant. It makes the delta's transform trivial — the integral \(\int \delta(t)\,e^{-j\omega t}\,\mathrm{d}t\) just evaluates the exponential at \(t = 0\):</p>
+\[ \delta(t) \;\circ\!\!-\!\!\bullet\; 1 \qquad \text{— an impulse contains all frequencies, equally.} \]
+<p>This is why you <em>test</em> a linear system by hitting it with an impulse: the response (the <span class="de">Impulsantwort</span> \(h(t)\), Module&nbsp;12) probes every frequency at once. It is also why a spark plug jams AM radio across the whole band. The delta is furthermore the derivative of the <strong>unit step</strong> (<span class="de">Einheitssprung</span>) \(\sigma(t)\) — the switch-on function that is 0 for \(t&lt;0\) and 1 for \(t&gt;0\).</p>
+
+<h3 id="rect-sinc">5.2 rect ↔ sinc — the most important pair in communications</h3>
+
+<div class="example">
+  <div class="ex-head"><span class="ex-tag">Worked example</span> Transform of a rectangular pulse</div>
+  <div class="ex-body">
+    <p>Compute \(F(j\omega)\) of a pulse of amplitude \(A\) and duration \(T\), centered at \(t = 0\): \(f(t) = A\) for \(|t| &lt; T/2\), else 0. Then evaluate: what bandwidth does a 1&nbsp;µs logic pulse occupy?</p>
+    <div class="step"><span class="step-label">Step 1 — integrate (the integrand is nonzero only on the pulse):</span>
+    \[ F(j\omega) = \int_{-T/2}^{T/2} A\, e^{-j\omega t}\,\mathrm{d}t
+       = A\,\frac{e^{-j\omega t}}{-j\omega}\Bigg|_{-T/2}^{T/2}
+       = A\,\frac{e^{j\omega T/2} - e^{-j\omega T/2}}{j\omega} . \]</div>
+    <div class="step"><span class="step-label">Step 2 — recognize Euler (Module 01):</span> the numerator is \(2j\sin(\omega T/2)\), so
+    \[ F(j\omega) = A\,\frac{2\sin(\omega T/2)}{\omega} = A\,T\,\operatorname{si}\!\left(\frac{\omega T}{2}\right),
+       \qquad \operatorname{si}(x) := \frac{\sin x}{x}, \]
+    the "sinc" function (<span class="de">Spaltfunktion</span>).</div>
+    <div class="step"><span class="step-label">Step 3 — read the shape:</span> a central hump of height \(AT\) (= pulse area) with first nulls where \(\omega T/2 = \pi\), i.e. at
+    \( f_{\text{null}} = 1/T \), then decaying side lobes. Almost all energy (≈ 90 %) sits in the main lobe \(|f| &lt; 1/T\).</div>
+    <div class="step"><span class="step-label">Step 4 — plug in numbers:</span> \(T = 1\,\mathrm{\mu s} \Rightarrow f_{\text{null}} = 1\,\mathrm{MHz}\). A 1&nbsp;µs pulse "occupies" roughly 1 MHz. A 1&nbsp;ns pulse: 1&nbsp;GHz.</div>
+    <div class="result-line">\( \mathrm{rect} \;\circ\!\!-\!\!\bullet\; \mathrm{si} \), with first-null bandwidth \(B = 1/T\). The moral: <b>bandwidth × duration ≈ 1</b>. Fast pulses are expensive in spectrum — the fundamental cost law of digital communications.</div>
+  </div>
+</div>
+
+<div class="widget">
+  <div class="w-head"><span class="ic">🧪</span>Interactive — pulse-width ↔ bandwidth duality <span class="w-tag">simulation</span></div>
+  <div class="w-body">
+    <p class="small mt0">The spectrum \(X(f) = T\operatorname{si}(\pi f T)\) of a 1 V rectangular pulse of duration \(T\). Shrink \(T\): the spectrum gets <em>wider and flatter</em> (approaching the delta's flat spectrum). Stretch \(T\): the spectrum squeezes toward a narrow spike at 0 Hz (approaching DC). The product of duration and first-null bandwidth stays exactly 1 — no slider position can beat it.</p>
+    <div id="w-sinc"></div>
+  </div>
+</div>
+
+<h3 id="duality">5.3 Duality, the Gaussian, and the uncertainty principle</h3>
+<p>The essential pairs, worth memorizing:</p>
+<div class="table-wrap">
+<table class="data">
+<thead><tr><th>\(f(t)\)</th><th>\(F(j\omega)\)</th><th>Reading</th></tr></thead>
+<tbody>
+<tr><td>\(\delta(t)\)</td><td>\(1\)</td><td>infinitely short → all frequencies</td></tr>
+<tr><td>\(1\) (DC)</td><td>\(2\pi\,\delta(\omega)\)</td><td>infinitely long → one frequency (0)</td></tr>
+<tr><td>rect, width \(T\)</td><td>\(A T \operatorname{si}(\omega T/2)\)</td><td>time-limited → band-unlimited</td></tr>
+<tr><td>\(\cos\omega_0 t\)</td><td>\(\pi[\delta(\omega - \omega_0) + \delta(\omega + \omega_0)]\)</td><td>pure tone → two spectral lines at \(\pm\omega_0\)</td></tr>
+<tr><td>\(e^{-t^2/(2\tau^2)}\) (Gaussian)</td><td>\(\tau\sqrt{2\pi}\; e^{-\omega^2 \tau^2 / 2}\)</td><td>Gaussian → Gaussian (its own transform shape)</td></tr>
+</tbody>
+</table>
+</div>
+<p>Notice the pattern running down the table: whatever is <em>narrow</em> on one side is <em>wide</em> on the other. This <strong>time–frequency duality</strong> (<span class="de">Zeit-Frequenz-Dualität</span>) is not an accident of these examples but a theorem. Scaling time by \(a\) scales frequency by \(1/a\):</p>
+\[ f(at) \;\circ\!\!-\!\!\bullet\; \frac{1}{|a|}\,F\!\left(\frac{j\omega}{a}\right). \]
+<p>Its sharpest form is the <strong>uncertainty / bandwidth–duration principle</strong> (<span class="de">Zeitdauer-Bandbreite-Produkt</span>): for suitable width definitions, \(\Delta t \cdot \Delta f \gtrsim \tfrac{1}{4\pi}\), with the Gaussian as the unique optimum. No signal is simultaneously short and narrow-band. Consequences everywhere: a radar that must resolve targets 15 m apart needs 0.1 µs pulses and therefore ≥ 10 MHz of spectrum; a piano's lowest notes take longer to "identify" by ear; and in quantum mechanics the very same mathematics, applied to position/momentum, is Heisenberg's principle.</p>
+
+<h3 id="parseval">5.4 Parseval — power is the same in both domains</h3>
+<p>Decomposing a signal does not change its energy, only its bookkeeping. For a periodic signal, the mean power is the sum of the harmonics' powers (each sinusoid of amplitude \(\hat{u}\) contributes \(\hat{u}^2/2\), cf. RMS in Module&nbsp;05):</p>
+\[ P = \frac{1}{T}\int_0^T f^2(t)\,\mathrm{d}t = \left(\frac{a_0}{2}\right)^{\!2} + \frac{1}{2}\sum_{k=1}^{\infty}\big(a_k^2 + b_k^2\big)
+ = \sum_{k=-\infty}^{\infty} |\underline{c}_k|^2 , \]
+<p>and for pulses the energy version reads \(\int f^2 \mathrm{d}t = \frac{1}{2\pi}\int |F(j\omega)|^2 \mathrm{d}\omega\) (<span class="de">Parsevalsche Gleichung</span>). Practical use: chop off harmonics and you know exactly how much power you lost — exercise E7 shows the square wave's fundamental alone carries 81 % of the total.</p>
+
+<div class="box german">
+  <div class="box-title"><span class="ic">🇩🇪</span>Vokabeln</div>
+  <p>Fourier series = <span class="de">Fourier-Reihe</span> · fundamental = <span class="de">Grundschwingung</span> · harmonic = <span class="de">Oberschwingung/Harmonische</span> · DC component = <span class="de">Gleichanteil</span> · spectrum = <span class="de">Spektrum</span> · time/frequency domain = <span class="de">Zeit-/Frequenzbereich</span> (also <span class="de">Original-/Bildbereich</span>) · unit step = <span class="de">Einheitssprung</span> · impulse = <span class="de">Dirac-Stoß</span> · impulse response = <span class="de">Impulsantwort</span> · transfer function = <span class="de">Übertragungsfunktion</span> · pole = <span class="de">Polstelle</span> · partial fractions = <span class="de">Partialbruchzerlegung</span> · region of convergence = <span class="de">Konvergenzbereich</span> · transient = <span class="de">Einschwingvorgang/Ausgleichsvorgang</span></p>
+</div>
+
+<h2 id="laplace">6. The Laplace transform — Fourier's rugged sibling</h2>
+
+<p>Fourier is perfect for steady-state signals, but engineering is full of <em>switch-on</em> events: close a relay at \(t = 0\), and what happens? Two problems appear. First, signals like the unit step \(\sigma(t)\) or a growing exponential do not decay, so the Fourier integral \(\int f(t) e^{-j\omega t}\mathrm{d}t\) does not converge in the ordinary sense. Second, Fourier has no natural slot for <em>initial conditions</em> — the capacitor charge already present when the switch closes.</p>
+<p>The fix is beautifully pragmatic: <strong>multiply the signal by a decaying exponential \(e^{-\sigma t}\) first</strong>, so the integral converges, and start the clock at \(t = 0\) since switch-on problems have no prehistory (or rather: the prehistory is compressed into initial conditions). Combining \(e^{-\sigma t}\,e^{-j\omega t} = e^{-(\sigma + j\omega)t} = e^{-st}\) with the <strong>complex frequency</strong> (<span class="de">komplexe Frequenz</span>) \(s = \sigma + j\omega\) gives the (one-sided) <strong>Laplace transform</strong> (<span class="de">Laplace-Transformation</span>):</p>
+\[ \boxed{\; F(s) = \mathcal{L}\{f(t)\} = \int_{0^-}^{\infty} f(t)\, e^{-st}\, \mathrm{d}t \;}, \qquad s = \sigma + j\omega. \]
+<p>The lower limit \(0^-\) (just before zero) makes sure an impulse at \(t=0\) is caught. The variable \(s\) has units 1/s — a "frequency" with a real part: \(e^{st} = e^{\sigma t}(\cos\omega t + j\sin\omega t)\) describes <em>growing or decaying oscillations</em>, not just steady ones. That extra dimension is exactly what transient analysis needs.</p>
+
+<h3 id="roc">6.1 Region of convergence — lightly</h3>
+<p>The integral converges only if \(e^{-\sigma t}\) out-decays the signal: for \(f(t) = e^{2t}\) you need \(\sigma &gt; 2\). Each transform therefore comes with a <strong>region of convergence</strong> (<span class="de">Konvergenzbereich</span>) \(\operatorname{Re}(s) &gt; \sigma_0\), a right half-plane. For the one-sided transform of the signals in this course, you can safely leave the ROC implicit — the formulas below "just work" — but remember it exists: it is what decides whether the Fourier transform can be recovered from \(F(s)\) (Section&nbsp;10).</p>
+
+<div class="box intuition">
+  <div class="box-title"><span class="ic">💡</span>Intuition: what Laplace buys you</div>
+  <p>Fourier asks "which steady sinusoids make up this signal?" Laplace asks the more general question "which <em>growing/decaying</em> sinusoids \(e^{\sigma t}\cos\omega t\) make it up?" — and those happen to be precisely the shapes that RLC circuits produce naturally when disturbed (Module&nbsp;02's homogeneous solutions!). Laplace speaks the native language of transients. The payoff is the derivative rule below: differential equations turn into polynomial algebra, with initial conditions built in for free.</p>
+</div>
+
+<h2 id="laplace-table">7. The essential transform table and rules</h2>
+
+<p>Everything is computed once, then looked up forever. The short table below covers 95 % of undergraduate practice. Deriving the first three is a healthy five-minute exercise (E2 warms you up); for example the step:</p>
+\[ \mathcal{L}\{\sigma(t)\} = \int_{0}^{\infty} 1 \cdot e^{-st}\,\mathrm{d}t = \left[\frac{e^{-st}}{-s}\right]_0^\infty = \frac{1}{s} \qquad (\operatorname{Re} s &gt; 0). \]
+
+<div class="table-wrap">
+<table class="data">
+<thead><tr><th>\(f(t)\), for \(t \ge 0\)</th><th>\(F(s)\)</th><th>Remark</th></tr></thead>
+<tbody>
+<tr><td>\(\delta(t)\)</td><td>\(1\)</td><td>the "1" of the s-domain</td></tr>
+<tr><td>\(\sigma(t)\) (unit step)</td><td>\(\dfrac{1}{s}\)</td><td>switching things on</td></tr>
+<tr><td>\(t\)</td><td>\(\dfrac{1}{s^2}\)</td><td>ramp; generally \(t^n \to n!/s^{n+1}\)</td></tr>
+<tr><td>\(e^{-at}\)</td><td>\(\dfrac{1}{s+a}\)</td><td>pole at \(s = -a\) — memorize!</td></tr>
+<tr><td>\(t\,e^{-at}\)</td><td>\(\dfrac{1}{(s+a)^2}\)</td><td>double pole (critical damping, M06)</td></tr>
+<tr><td>\(\sin \omega_0 t\)</td><td>\(\dfrac{\omega_0}{s^2+\omega_0^2}\)</td><td>pole pair on the \(j\omega\) axis</td></tr>
+<tr><td>\(\cos \omega_0 t\)</td><td>\(\dfrac{s}{s^2+\omega_0^2}\)</td><td>ditto, different numerator</td></tr>
+<tr><td>\(e^{-at}\sin \omega_0 t\)</td><td>\(\dfrac{\omega_0}{(s+a)^2+\omega_0^2}\)</td><td>damped oscillation: poles at \(-a \pm j\omega_0\)</td></tr>
+<tr><td><b>Derivative rule</b>: \(f'(t)\)</td><td>\(s\,F(s) - f(0^-)\)</td><td><b>the</b> rule — ODE → algebra</td></tr>
+<tr><td>Integral rule: \(\int_0^t f\,\mathrm{d}\tau\)</td><td>\(\dfrac{F(s)}{s}\)</td><td>integration = divide by \(s\)</td></tr>
+<tr><td>Damping shift: \(e^{-at}f(t)\)</td><td>\(F(s+a)\)</td><td>generates rows 5, 8 from 3, 6</td></tr>
+<tr><td>Time shift: \(f(t-T)\,\sigma(t-T)\)</td><td>\(e^{-sT}F(s)\)</td><td>delay = phase factor</td></tr>
+</tbody>
+</table>
+</div>
+
+<div class="box key">
+  <div class="box-title"><span class="ic">🔑</span>Key idea: the derivative rule</div>
+  <p>\(\mathcal{L}\{f'\} = sF(s) - f(0^-)\): differentiation in time becomes <em>multiplication by \(s\)</em>, and the initial condition drops in automatically as a bonus term. Apply it twice for \(f''\): \(s^2F(s) - s f(0^-) - f'(0^-)\). Every linear ODE with constant coefficients — i.e. every LTI circuit — thus becomes a polynomial equation in \(s\). Solve it with school algebra, transform back with the table. Module&nbsp;02's guess-the-ansatz method is hereby retired for circuits.</p>
+</div>
+
+<div class="example">
+  <div class="ex-head"><span class="ex-tag">Worked example</span> The derivative rule at work: \(\mathcal{L}\{\cos\}\) from \(\mathcal{L}\{\sin\}\)</div>
+  <div class="ex-body">
+    <p>Given \(\mathcal{L}\{\sin\omega_0 t\} = \omega_0/(s^2+\omega_0^2)\), derive the cosine transform without integrating.</p>
+    <div class="step"><span class="step-label">Step 1 — relate the functions:</span> \( \cos\omega_0 t = \frac{1}{\omega_0}\,\frac{\mathrm{d}}{\mathrm{d}t}\sin\omega_0 t \).</div>
+    <div class="step"><span class="step-label">Step 2 — apply the derivative rule</span> with \(f(t) = \sin\omega_0 t\), \(f(0^-) = 0\):
+    \[ \mathcal{L}\{\cos\omega_0 t\} = \frac{1}{\omega_0}\Big[ s \cdot \frac{\omega_0}{s^2+\omega_0^2} - 0 \Big] = \frac{s}{s^2+\omega_0^2}. \]</div>
+    <div class="result-line">Matches the table — no integral computed. This is the everyday style of s-domain work: combine a few known pairs with the rules instead of ever touching \(\int_0^\infty\) again.</div>
+  </div>
+</div>
+
+<h2 id="ode-laplace">8. Solving an ODE end-to-end: the RC step response, again</h2>
+
+<p>In Module&nbsp;02 we solved the RC charging circuit with the classical ansatz method. Same circuit, new machinery — watch how the whole procedure becomes mechanical.</p>
+
+<figure>
+  <div class="fig-frame">
+  <svg class="diagram" viewBox="0 0 560 210" role="img" aria-label="RC charging circuit: step source, resistor, capacitor">
+    <!-- source -->
+    <circle cx="70" cy="105" r="24" fill="none" stroke="var(--text-soft)" stroke-width="2"/>
+    <line x1="70" y1="81" x2="70" y2="129" class="wire"/>
+    <text x="30" y="110" text-anchor="middle" font-size="14">U<tspan baseline-shift="sub" font-size="10">0</tspan></text>
+    <!-- wires + switch -->
+    <path class="wire" d="M70 81 V45 H140"/>
+    <circle cx="146" cy="45" r="3.5" class="node"/>
+    <line x1="150" y1="43" x2="196" y2="22" class="wire"/>
+    <circle cx="202" cy="45" r="3.5" class="node"/>
+    <text x="174" y="14" text-anchor="middle" font-size="12" fill="var(--text-soft)">t = 0</text>
+    <path class="wire" d="M206 45 H250"/>
+    <!-- R -->
+    <rect x="250" y="33" width="70" height="24" fill="none" stroke="var(--text-soft)" stroke-width="2"/>
+    <text x="285" y="24" text-anchor="middle" font-size="14">R</text>
+    <path class="wire" d="M320 45 H430 V78"/>
+    <!-- C -->
+    <line x1="408" y1="78" x2="452" y2="78" stroke="var(--text-soft)" stroke-width="3"/>
+    <line x1="408" y1="92" x2="452" y2="92" stroke="var(--text-soft)" stroke-width="3"/>
+    <text x="466" y="90" font-size="14">C</text>
+    <path class="wire" d="M430 92 V165 H70 V129"/>
+    <!-- current arrow -->
+    <line x1="350" y1="45" x2="390" y2="45" stroke="var(--accent)" stroke-width="2.2" marker-end="url(#arrRc)"/>
+    <text x="370" y="34" text-anchor="middle" font-size="13" fill="var(--accent)">i(t)</text>
+    <!-- uc arrow -->
+    <line x1="500" y1="70" x2="500" y2="115" stroke="var(--accent)" stroke-width="2.2" marker-end="url(#arrRc)"/>
+    <text x="514" y="96" font-size="14" fill="var(--accent)">u<tspan baseline-shift="sub" font-size="10">C</tspan></text>
+    <defs><marker id="arrRc" markerWidth="9" markerHeight="9" refX="7" refY="4.5" orient="auto">
+      <path d="M0 0 L8 4.5 L0 9 z" fill="var(--accent)"/></marker></defs>
+  </svg>
+  </div>
+  <figcaption><b>Fig. 8.1</b> — The RC charging circuit of Module 02, revisited. At \(t=0\) the switch closes and the step \(U_0\,\sigma(t)\) drives the initially uncharged capacitor.</figcaption>
+</figure>
+
+<div class="example">
+  <div class="ex-head"><span class="ex-tag">Worked example</span> RC step response via Laplace, end to end</div>
+  <div class="ex-body">
+    <p>KVL around the loop with \(i = C\,u_C'\) gives the ODE from Module&nbsp;02: \( RC\,u_C'(t) + u_C(t) = U_0\,\sigma(t) \), with \(u_C(0^-) = 0\). Solve it by Laplace. Numbers: \(U_0 = 10\) V, \(R = 1\) kΩ, \(C = 1\) µF.</p>
+    <div class="step"><span class="step-label">Step 1 — transform the whole equation</span> (derivative rule on \(u_C'\), table on \(\sigma\)):
+    \[ RC\big[s\,U_C(s) - \underbrace{u_C(0^-)}_{=0}\big] + U_C(s) = \frac{U_0}{s}. \]</div>
+    <div class="step"><span class="step-label">Step 2 — solve algebraically</span> (this is the entire "solving" step!):
+    \[ U_C(s)\,(1 + sRC) = \frac{U_0}{s} \quad\Rightarrow\quad U_C(s) = \frac{U_0}{s\,(1 + sRC)} = \frac{U_0/RC}{s\,(s + 1/RC)}. \]</div>
+    <div class="step"><span class="step-label">Step 3 — partial fractions</span> (<span class="de">Partialbruchzerlegung</span>): with \(a = 1/RC\),
+    \[ \frac{a}{s(s+a)} = \frac{1}{s} - \frac{1}{s+a} \quad\text{(check: } \tfrac{(s+a) - s}{s(s+a)} = \tfrac{a}{s(s+a)} \checkmark\text{)}. \]</div>
+    <div class="step"><span class="step-label">Step 4 — transform back with the table</span> (\(1/s \to \sigma(t)\), \(1/(s+a) \to e^{-at}\)):
+    \[ \boxed{\; u_C(t) = U_0\left(1 - e^{-t/RC}\right), \quad t \ge 0. \;} \]</div>
+    <div class="step"><span class="step-label">Step 5 — numbers &amp; sanity:</span> \(\tau = RC = 1\,\mathrm{ms}\). At \(t = 1\) ms: \(u_C = 10(1 - e^{-1}) \approx 6.32\) V; at \(5\tau\): ≈ 9.93 V, effectively charged. Identical to Module&nbsp;02's result — but note what we did <em>not</em> do: no homogeneous/particular split, no ansatz, no fitting constants to initial conditions afterwards. The initial condition entered in Step 1 and everything else was algebra.</div>
+    <div class="result-line">\(u_C(t) = U_0(1 - e^{-t/RC})\) — same physics, one-third of the effort, and the method scales to circuits where guessing fails.</div>
+  </div>
+</div>
+
+<h2 id="transfer-function">9. Transfer functions and the s-plane — a preview with teeth</h2>
+
+<p>Redo Step 2 above with a general input \(U_{in}(s)\) instead of \(U_0/s\) (and zero initial conditions). You get \(U_C(s) = H(s)\, U_{in}(s)\) with</p>
+\[ H(s) = \frac{U_C(s)}{U_{in}(s)} = \frac{1}{1 + sRC}. \]
+<p>This ratio — output over input in the s-domain — is the <strong>transfer function</strong> (<span class="de">Übertragungsfunktion</span>), the single most used object in circuits, filters and control engineering (Modules 06, 12, 14). It is a property of the <em>system alone</em>, independent of the input. For any LTI circuit, \(H(s)\) is a ratio of polynomials in \(s\); the roots of the denominator are the <strong>poles</strong> (<span class="de">Polstellen</span>). Our RC circuit has one pole, at</p>
+\[ s_p = -\frac{1}{RC} = -\frac{1}{\tau}. \]
+<p>Here is the punchline: partial fractions decompose <em>every</em> response into terms \(k_i/(s - s_{p,i})\), and each such term transforms back to \(k_i\,e^{s_{p,i} t}\). So <strong>the pole positions in the complex s-plane completely determine the shape of the natural time response</strong>:</p>
+<ul>
+  <li>Pole on the negative real axis, \(s_p = \sigma &lt; 0\): pure decay \(e^{\sigma t}\), time constant \(\tau = 1/|\sigma|\). Farther left = faster.</li>
+  <li>Complex pair \(s_p = \sigma \pm j\omega\), \(\sigma &lt; 0\): damped oscillation \(e^{\sigma t}\cos(\omega t + \varphi)\) — decay rate from the real part, ringing frequency from the imaginary part.</li>
+  <li>Poles on the \(j\omega\) axis (\(\sigma = 0\)): sustained oscillation (or constant, at the origin) — the marginal case.</li>
+  <li>Any pole with \(\sigma &gt; 0\): the response <em>grows</em> exponentially — the system is <strong>unstable</strong> (<span class="de">instabil</span>). A microphone screeching next to its loudspeaker is a pole that wandered into the right half-plane.</li>
+</ul>
+
+<figure>
+  <div class="fig-frame">
+  <svg class="diagram" viewBox="0 0 640 330" role="img" aria-label="Map of the s-plane: pole locations and the time responses they produce">
+    <!-- left half plane shading -->
+    <rect x="40" y="35" width="280" height="260" fill="var(--accent)" opacity="0.07"/>
+    <!-- axes -->
+    <line x1="40" y1="165" x2="600" y2="165" class="wire" marker-end="url(#arrSp)"/>
+    <line x1="320" y1="295" x2="320" y2="35" class="wire" marker-end="url(#arrSp)"/>
+    <text x="610" y="152" text-anchor="end" font-size="14" fill="var(--text-soft)">σ = Re s</text>
+    <text x="334" y="46" font-size="14" fill="var(--text-soft)">jω = Im s</text>
+    <text x="60" y="288" font-size="12" fill="var(--accent)">stable half-plane (σ &lt; 0)</text>
+    <text x="440" y="288" font-size="12" fill="var(--accent-2)">unstable (σ &gt; 0)</text>
+    <!-- pole markers: X shape helper via lines -->
+    <!-- left real pole, decay -->
+    <g stroke="var(--accent)" stroke-width="2.5">
+      <line x1="124" y1="159" x2="136" y2="171"/><line x1="136" y1="159" x2="124" y2="171"/>
+    </g>
+    <path d="M120 138 q6 -26 14 -22 q10 5 18 14 q12 12 28 14" fill="none" stroke="var(--accent)" stroke-width="2"/>
+    <text x="150" y="196" text-anchor="middle" font-size="11" fill="var(--text-soft)">decay e^(σt)</text>
+    <!-- complex pair upper left, damped osc -->
+    <g stroke="var(--accent)" stroke-width="2.5">
+      <line x1="124" y1="69" x2="136" y2="81"/><line x1="136" y1="69" x2="124" y2="81"/>
+    </g>
+    <path d="M146 75 q5 -22 10 0 q5 18 10 0 q5 -13 10 0 q5 9 10 0 q5 -6 10 0 q5 4 10 0" fill="none" stroke="var(--accent)" stroke-width="2"/>
+    <text x="185" y="102" text-anchor="middle" font-size="11" fill="var(--text-soft)">damped oscillation</text>
+    <!-- jw axis pair, sustained -->
+    <g stroke="var(--accent-2)" stroke-width="2.5">
+      <line x1="314" y1="69" x2="326" y2="81"/><line x1="326" y1="69" x2="314" y2="81"/>
+    </g>
+    <path d="M338 75 q5 -20 10 0 q5 20 10 0 q5 -20 10 0 q5 20 10 0 q5 -20 10 0 q5 20 10 0" fill="none" stroke="var(--accent-2)" stroke-width="2"/>
+    <text x="372" y="102" text-anchor="middle" font-size="11" fill="var(--text-soft)">sustained oscillation</text>
+    <!-- pole at origin: step/constant -->
+    <g stroke="var(--accent-2)" stroke-width="2.5">
+      <line x1="314" y1="159" x2="326" y2="171"/><line x1="326" y1="159" x2="314" y2="171"/>
+    </g>
+    <path d="M338 152 h12 v-14 h48" fill="none" stroke="var(--accent-2)" stroke-width="2"/>
+    <text x="372" y="196" text-anchor="middle" font-size="11" fill="var(--text-soft)">constant (step)</text>
+    <!-- right real pole, growth -->
+    <g stroke="var(--accent-2)" stroke-width="2.5">
+      <line x1="484" y1="159" x2="496" y2="171"/><line x1="496" y1="159" x2="484" y2="171"/>
+    </g>
+    <path d="M506 152 q20 -2 30 -10 q10 -8 14 -24" fill="none" stroke="var(--accent-2)" stroke-width="2"/>
+    <text x="524" y="196" text-anchor="middle" font-size="11" fill="var(--text-soft)">growth — unstable!</text>
+    <!-- right complex, growing osc -->
+    <g stroke="var(--accent-2)" stroke-width="2.5">
+      <line x1="484" y1="69" x2="496" y2="81"/><line x1="496" y1="69" x2="484" y2="81"/>
+    </g>
+    <path d="M506 75 q5 -6 10 0 q5 9 10 0 q5 -13 10 0 q5 18 10 0 q5 -24 10 0 q5 28 10 0" fill="none" stroke="var(--accent-2)" stroke-width="2"/>
+    <text x="545" y="102" text-anchor="middle" font-size="11" fill="var(--text-soft)">growing oscillation</text>
+    <!-- conjugate poles bottom half -->
+    <g stroke="var(--accent)" stroke-width="2.2" opacity="0.5">
+      <line x1="124" y1="249" x2="136" y2="261"/><line x1="136" y1="249" x2="124" y2="261"/>
+    </g>
+    <g stroke="var(--accent-2)" stroke-width="2.2" opacity="0.5">
+      <line x1="314" y1="249" x2="326" y2="261"/><line x1="326" y1="249" x2="314" y2="261"/>
+      <line x1="484" y1="249" x2="496" y2="261"/><line x1="496" y1="249" x2="484" y2="261"/>
+    </g>
+    <text x="150" y="316" font-size="11" fill="var(--text-faint)">complex poles always appear as conjugate pairs (mirror below the σ axis)</text>
+    <defs><marker id="arrSp" markerWidth="9" markerHeight="9" refX="7" refY="4.5" orient="auto">
+      <path d="M0 0 L8 4.5 L0 9 z" fill="var(--text-soft)"/></marker></defs>
+  </svg>
+  </div>
+  <figcaption><b>Fig. 9.1</b> — The s-plane as a map of destinies. Each × is a pole; the sketch beside it is the time response that pole contributes. Left half-plane: everything dies out (stable). The \(j\omega\) axis: the frontier. Right half-plane: exponential runaway. Control engineering (Module&nbsp;14) is largely the art of keeping poles on the left.</figcaption>
+</figure>
+
+<div class="widget">
+  <div class="w-head"><span class="ic">🧪</span>Interactive — s-plane pole explorer <span class="w-tag">simulation</span></div>
+  <div class="w-body">
+    <p class="small mt0">Place a pole (pair) at \(s = \sigma \pm j\omega\) and see the time response \(e^{\sigma t}\cos(\omega t)\) it generates. Try: \(\sigma\) far left (fast decay), \(\sigma = 0\) (pure oscillation — the marginal case), \(\sigma &gt; 0\) (runaway). With \(\omega = 0\) you get the pure exponentials of Module 02; the dashed envelope \(\pm e^{\sigma t}\) is the "decay budget" set by the real part alone.</p>
+    <div id="w-splane"></div>
+  </div>
+</div>
+
+<h2 id="family">10. One family: Fourier ↔ Laplace ↔ z</h2>
+
+<p>Compare the two kernels: Fourier uses \(e^{-j\omega t}\), Laplace uses \(e^{-st}\) with \(s = \sigma + j\omega\). So the Fourier transform is the Laplace transform <em>evaluated on the imaginary axis</em>:</p>
+\[ F(j\omega) = F(s)\big|_{s = j\omega}, \qquad \text{valid when the ROC includes the } j\omega \text{ axis} \]
+<p>— i.e. when all poles lie strictly in the left half-plane, which for signals means \(f(t)\) is absolutely integrable (it decays). Conversely, Laplace is the Fourier transform of the pre-damped signal \(f(t)e^{-\sigma t}\). The two are one tool with two lenses: Laplace sees the whole s-plane and excels at transients and stability; Fourier lives on the \(j\omega\) axis and excels at spectra and steady state. That is why the frequency response of a circuit is simply \(H(j\omega) = H(s)|_{s = j\omega}\) — the Bode plots of Module&nbsp;06 are a walk up the imaginary axis of Fig.&nbsp;9.1.</p>
+
+<p>One sibling remains. Digital systems (Module&nbsp;13) know the signal only at sample instants \(t = nT_s\). Replacing the integral by a sum over samples and substituting \(z = e^{sT_s}\) yields the <strong>z-transform</strong> (<span class="de">z-Transformation</span>) \(X(z) = \sum_n x[n]\,z^{-n}\): the Laplace transform's discrete-time twin. Everything transfers: the derivative rule becomes a <em>delay</em> rule (\(z^{-1}\) = one sample delay), transfer functions become ratios of polynomials in \(z^{-1}\), and the stable left half-plane maps to the inside of the unit circle \(|z| = 1\). If you understand this module, Module&nbsp;13's DSP mathematics will feel like a change of notation rather than a new subject.</p>
+
+<h2 id="summary">11. Formula summary — <span class="de">Formelsammlung</span></h2>
+
+<div class="table-wrap">
+<table class="data">
+<thead><tr><th>Concept</th><th>Formula</th><th>Remember as</th></tr></thead>
+<tbody>
+<tr><td>Fourier series (real)</td><td>\( f = \frac{a_0}{2} + \sum a_k \cos k\omega_0 t + b_k \sin k\omega_0 t \)</td><td>periodic = DC + harmonics</td></tr>
+<tr><td>Coefficients</td><td>\( b_k = \frac{2}{T}\int_0^T f \sin(k\omega_0 t)\,\mathrm{d}t \) (analog \(a_k\))</td><td>orthogonality sieves them out</td></tr>
+<tr><td>Square wave</td><td>\( \frac{4A}{\pi}\sum_{k \text{ odd}} \frac{\sin k\omega_0 t}{k} \)</td><td>odd harmonics, 1/k decay, Gibbs ≈ 9 %</td></tr>
+<tr><td>Complex series</td><td>\( \underline{c}_k = \frac{1}{T}\int_0^T f\, e^{-jk\omega_0 t}\mathrm{d}t \)</td><td>two-sided line spectrum</td></tr>
+<tr><td>Fourier transform</td><td>\( F(j\omega) = \int_{-\infty}^{\infty} f\,e^{-j\omega t}\mathrm{d}t \)</td><td>continuous spectrum of a pulse</td></tr>
+<tr><td>rect ↔ sinc</td><td>\( AT\,\operatorname{si}(\omega T/2) \), first null \(f = 1/T\)</td><td>bandwidth × duration ≈ 1</td></tr>
+<tr><td>Dirac impulse</td><td>\( \int f(t)\delta(t-t_0)\mathrm{d}t = f(t_0) \); \( \delta \to 1 \)</td><td>all frequencies at once</td></tr>
+<tr><td>Parseval</td><td>\( P = \sum |\underline{c}_k|^2 \)</td><td>power identical in both domains</td></tr>
+<tr><td>Laplace transform</td><td>\( F(s) = \int_{0^-}^{\infty} f\,e^{-st}\mathrm{d}t,\; s = \sigma + j\omega \)</td><td>Fourier + damping + initial conditions</td></tr>
+<tr><td>Derivative rule</td><td>\( \mathcal{L}\{f'\} = sF(s) - f(0^-) \)</td><td>ODE → algebra, ICs for free</td></tr>
+<tr><td>Key pairs</td><td>\( \sigma \to \tfrac1s,\; e^{-at} \to \tfrac{1}{s+a},\; \sin\omega_0 t \to \tfrac{\omega_0}{s^2+\omega_0^2} \)</td><td>the working vocabulary</td></tr>
+<tr><td>Poles → time</td><td>pole at \( \sigma \pm j\omega \Rightarrow e^{\sigma t}\cos(\omega t + \varphi) \)</td><td>left = stable, right = runaway</td></tr>
+<tr><td>Fourier from Laplace</td><td>\( F(j\omega) = F(s)|_{s=j\omega} \) (poles left of axis)</td><td>one family, two lenses</td></tr>
+</tbody>
+</table>
+</div>
+
+<h2 id="exercises">12. Exercises</h2>
+<p>Do them on paper first — transform tables allowed, that is how the pros work too.</p>
+
+<div class="exercise">
+  <p class="ex-q"><span class="ex-num">E1</span>A 50 Hz square wave switches between ±325 V (roughly the peak of the 230 V mains). Give the amplitude and frequency of its fundamental and of its 3rd harmonic. Which is the lowest harmonic above 1 kHz? <span class="diff easy">easy</span></p>
+  <details><summary>Show solution</summary>
+    <div class="solution">
+      From the square-wave series \(b_k = \frac{4A}{\pi k}\) (odd \(k\)): fundamental \(b_1 = \frac{4 \cdot 325}{\pi} \approx 414\,\mathrm{V}\) at 50 Hz; third harmonic \(b_3 = 414/3 \approx 138\,\mathrm{V}\) at 150 Hz. Harmonics sit at odd multiples of 50 Hz: 50, 150, 250, … The lowest one above 1 kHz is \(k = 21\), i.e. 1050 Hz with amplitude \(414/21 \approx 19.7\,\mathrm{V}\). Real-world remark: this is why cheap "modified sine" inverters (which output near-square waves) make transformers and motors hum audibly — those harmonics are big.
+    </div>
+  </details>
+</div>
+
+<div class="exercise">
+  <p class="ex-q"><span class="ex-num">E2</span>Using only the table and linearity, find \(F(s)\) for \(f(t) = 5 - 3e^{-2t} + 2\sin 4t\) (for \(t \ge 0\)). Where are the poles? <span class="diff easy">easy</span></p>
+  <details><summary>Show solution</summary>
+    <div class="solution">
+      Term by term: \( \mathcal{L}\{5\} = \frac{5}{s} \), \( \mathcal{L}\{3e^{-2t}\} = \frac{3}{s+2} \), \( \mathcal{L}\{2\sin 4t\} = \frac{2 \cdot 4}{s^2 + 16} \). So
+      \[ F(s) = \frac{5}{s} - \frac{3}{s+2} + \frac{8}{s^2+16}. \]
+      Poles: \(s = 0\) (the constant), \(s = -2\) (the decay), \(s = \pm j4\) (the oscillation) — each time-domain behavior announces itself as a pole location. Sanity check via the pole map of Fig. 9.1: constant ↔ origin, decay ↔ negative real axis, sustained sine ↔ \(j\omega\) axis. ✓
+    </div>
+  </details>
+</div>
+
+<div class="exercise">
+  <p class="ex-q"><span class="ex-num">E3</span>Transform back: \(F(s) = \dfrac{10}{s(s+5)}\). What is \(f(t)\), its initial value and its final value? <span class="diff med">medium</span></p>
+  <details><summary>Show solution</summary>
+    <div class="solution">
+      Partial fractions: \( \frac{10}{s(s+5)} = \frac{A}{s} + \frac{B}{s+5} \) with \(A = \frac{10}{5} = 2\) (cover-up at \(s=0\)) and \(B = \frac{10}{-5} = -2\) (cover-up at \(s=-5\)). Hence
+      \[ f(t) = 2\left(1 - e^{-5t}\right). \]
+      Initial value \(f(0) = 0\), final value \(f(\infty) = 2\), time constant \(\tau = 1/5 = 0.2\,\mathrm{s}\). This is exactly the shape of the RC step response — unsurprising, since the s-domain expression \( \frac{\text{const}}{s(s+a)} \) <em>is</em> "step through a one-pole system". Recognizing such fingerprints is the real skill.
+    </div>
+  </details>
+</div>
+
+<div class="exercise">
+  <p class="ex-q"><span class="ex-num">E4</span>A radar must resolve targets 300 m apart, requiring pulses of at most \(T = 2\,\mathrm{\mu s}\). What first-null bandwidth do these pulses occupy? What happens to the bandwidth if resolution is improved to 30 m? <span class="diff med">medium</span></p>
+  <details><summary>Show solution</summary>
+    <div class="solution">
+      From rect ↔ sinc: \(B = 1/T = 1/(2\,\mathrm{\mu s}) = 500\,\mathrm{kHz}\). For 30 m resolution the pulse must shrink to 0.2 µs, so \(B = 5\,\mathrm{MHz}\) — 10× the resolution costs 10× the spectrum, with no way around it (bandwidth–duration principle). This is why radio spectrum is auctioned for billions: resolution and data rate are literally made of bandwidth. (Modern radars cheat elegantly with long <em>coded</em> pulses — pulse compression — but the time-bandwidth law still holds for the code.)
+    </div>
+  </details>
+</div>
+
+<div class="exercise">
+  <p class="ex-q"><span class="ex-num">E5</span>An RL circuit (\(R = 10\,\Omega\), \(L = 50\,\mathrm{mH}\)) with zero initial current is switched onto \(U_0 = 20\,\mathrm{V}\) at \(t=0\): \(L\,i' + R\,i = U_0\,\sigma(t)\). Solve for \(i(t)\) via Laplace. <span class="diff med">medium</span></p>
+  <details><summary>Show solution</summary>
+    <div class="solution">
+      Transform (derivative rule, \(i(0^-)=0\)): \( L s I(s) + R I(s) = \frac{U_0}{s} \) →
+      \( I(s) = \frac{U_0}{s(R + sL)} = \frac{U_0/L}{s(s + R/L)} \).
+      Partial fractions with \(a = R/L = 200\,\mathrm{s^{-1}}\): \( I(s) = \frac{U_0}{R}\left(\frac1s - \frac{1}{s+a}\right) \), hence
+      \[ i(t) = \frac{U_0}{R}\left(1 - e^{-t R/L}\right) = 2\,\mathrm{A}\left(1 - e^{-t/5\,\mathrm{ms}}\right). \]
+      Sanity: at \(t \to \infty\) the inductor is a short, so \(i = 20/10 = 2\) A ✓; \(\tau = L/R = 5\) ms; initial slope \(U_0/L = 400\) A/s (the inductor takes the full voltage first — dual of the capacitor).
+    </div>
+  </details>
+</div>
+
+<div class="exercise">
+  <p class="ex-q"><span class="ex-num">E6</span>Derive the Fourier series of the triangle wave by <em>integrating</em> the square-wave series term by term (integration is allowed inside a convergent Fourier series). Use it to prove \(1 + \frac{1}{9} + \frac{1}{25} + \cdots = \frac{\pi^2}{8}\). <span class="diff hard">challenge</span></p>
+  <details><summary>Show solution</summary>
+    <div class="solution">
+      The integral of a ±\(A\) square wave is a triangle wave of peak \(\hat{T} = A\,T/4\) (it rises at slope \(A\) for a quarter period from its minimum… choose the odd square wave; its integral is an <em>even</em> triangle). Integrating the series term by term:
+      \[ \int \frac{4A}{\pi} \sum_{k\,\mathrm{odd}} \frac{\sin k\omega_0 t}{k}\,\mathrm{d}t = -\frac{4A}{\pi \omega_0} \sum_{k\,\mathrm{odd}} \frac{\cos k\omega_0 t}{k^2} + C. \]
+      Each \(1/k\) became \(1/k^2\): integration smooths, and smoother signals have faster-decaying coefficients — the convergence rule of Section 2.2 in action. Normalizing to a unit-amplitude triangle (peak 1) gives
+      \[ f_\triangle(t) = \frac{8}{\pi^2} \left( \cos\omega_0 t + \frac{\cos 3\omega_0 t}{9} + \frac{\cos 5\omega_0 t}{25} + \cdots \right)\!, \]
+      (up to sign/phase conventions). Now evaluate at the peak \(t = 0\), where \(f_\triangle = 1\) and every cosine equals 1:
+      \[ 1 = \frac{8}{\pi^2} \sum_{k\,\mathrm{odd}} \frac{1}{k^2} \;\Rightarrow\; \sum_{k\,\mathrm{odd}} \frac{1}{k^2} = \frac{\pi^2}{8}. \]
+      A Fourier series just summed an infinite numerical series for you — Euler's Basel-problem trick in circuit-lecture clothing. (The full Basel sum over all \(k\) is \(\pi^2/6\); the odd terms carry \(3/4\) of it: \(\frac{3}{4} \cdot \frac{\pi^2}{6} = \frac{\pi^2}{8}\) ✓.)
+    </div>
+  </details>
+</div>
+
+<div class="exercise">
+  <p class="ex-q"><span class="ex-num">E7</span>Using Parseval, what fraction of a square wave's power is carried by its fundamental alone? By the first three nonzero harmonics (\(k = 1, 3, 5\))? <span class="diff hard">challenge</span></p>
+  <details><summary>Show solution</summary>
+    <div class="solution">
+      Total power of a ±\(A\) square wave directly in the time domain: \(P = \frac1T \int_0^T A^2\,\mathrm{d}t = A^2\) (the value is always ±\(A\), so the square is always \(A^2\)). Each harmonic contributes \(b_k^2/2\):
+      \[ \frac{P_1}{P} = \frac{(4A/\pi)^2 / 2}{A^2} = \frac{8}{\pi^2} \approx 81.1\,\%. \]
+      Adding \(k = 3\): \(+\frac{8}{9\pi^2} \approx 9.0\,\%\) → 90.1 %. Adding \(k = 5\): \(+\frac{8}{25\pi^2} \approx 3.2\,\%\) → 93.3 %.
+      Bonus check: Parseval demands \(\frac{8}{\pi^2}\sum_{k\,\mathrm{odd}} \frac{1}{k^2} = 1\), which is exactly the \(\pi^2/8\) identity from E6 — the two exercises verify each other. Practical reading: a filter passing only the fundamental keeps 81 % of the power; that is how a resonant tank turns a square-wave drive into a near-sine (Module 18, resonant converters).
+    </div>
+  </details>
+</div>
+
+<h2 id="quiz">13. Self-assessment</h2>
+
+<div class="quiz" data-quiz-title="Module 03 — Self-test">
+<script type="application/json">
+[
+ {"q":"A sine wave enters a linear time-invariant system. The output is…",
+  "opts":["possibly a square wave, if the gain is high","a sine of the same frequency, generally with different amplitude and phase","a sine of a different frequency","always identical to the input"],"a":1,
+  "explain":"Sinusoids are eigenfunctions of LTI systems: frequency is preserved; only amplitude and phase change. New frequencies can only be created by NONlinear systems (Module 08 uses exactly that to build mixers)."},
+ {"q":"An ideal square wave of fundamental 100 Hz contains spectral components at…",
+  "opts":["100, 200, 300, 400 Hz, …","100, 300, 500, 700 Hz, …","only 100 Hz","all frequencies continuously"],"a":1,
+  "explain":"Half-wave symmetry kills all even harmonics: only odd multiples of \\(f_0\\) survive, with amplitudes \\(\\propto 1/k\\). A periodic signal always has a discrete line spectrum, never a continuum."},
+ {"q":"For a square wave switching between ±1 V, the amplitude of the fundamental is…",
+  "opts":["1.00 V","0.90 V","1.27 V","2.00 V"],"a":2,
+  "explain":"\\(b_1 = 4A/\\pi = 4/\\pi \\approx 1.27\\,\\mathrm{V}\\) — larger than the square wave itself! The higher harmonics partially cancel it near the flat tops."},
+ {"q":"As more terms are added to the Fourier series of a square wave, the Gibbs overshoot at the jumps…",
+  "opts":["shrinks to zero","stays at ≈ 9 % of the jump but gets narrower","grows without bound","moves away from the jump"],"a":1,
+  "explain":"The classic misconception: the overshoot peak never decreases below ≈ 8.95 % of the jump height; increasing \\(N\\) only compresses it into a narrower time sliver. Convergence is in energy, not uniform at discontinuities."},
+ {"q":"A rectangular pulse lasts 5 µs. Its first spectral null lies at…",
+  "opts":["200 kHz","5 MHz","1 MHz","500 kHz"],"a":0,
+  "explain":"rect ↔ sinc with first null at \\(f = 1/T = 1/(5\\,\\mathrm{\\mu s}) = 200\\,\\mathrm{kHz}\\). Duration and bandwidth are reciprocal: \\(T \\cdot B = 1\\)."},
+ {"q":"The Fourier transform of the Dirac impulse δ(t) is…",
+  "opts":["a delta in frequency","1 — a flat spectrum containing all frequencies equally","1/(jω)","undefined"],"a":1,
+  "explain":"By the sifting property, \\(\\int \\delta(t) e^{-j\\omega t}\\mathrm{d}t = e^{0} = 1\\). An infinitely short event excites every frequency equally — which is why an impulse is the universal test signal and why sparks jam radios."},
+ {"q":"The Laplace transform of f(t) = e^{-3t}·σ(t) is…",
+  "opts":["3/(s²+9)","1/(s−3)","s/(s+3)","1/(s+3)"],"a":3,
+  "explain":"\\(\\mathcal{L}\\{e^{-at}\\} = 1/(s+a)\\), so \\(a = 3\\) gives \\(1/(s+3)\\), with a pole at \\(s = -3\\). Watch the sign: \\(1/(s-3)\\) would be the GROWING exponential \\(e^{+3t}\\)."},
+ {"q":"The main reason Laplace transforms make circuit ODEs easy is that…",
+  "opts":["they remove all resistors from the circuit","differentiation becomes multiplication by s, with initial conditions included automatically","they only work for sinusoidal inputs","they approximate the solution numerically"],"a":1,
+  "explain":"The derivative rule \\(\\mathcal{L}\\{f'\\} = sF(s) - f(0^-)\\) turns any constant-coefficient ODE into polynomial algebra AND injects the initial state as a bonus term — no ansatz, no constant-fitting afterwards."},
+ {"q":"A system has poles at s = −2 ± j10 (in 1/s). Its natural response is…",
+  "opts":["a pure decay with τ = 0.1 s","an oscillation at ≈ 1.6 Hz decaying with τ = 0.5 s","an undamped 10 Hz oscillation","exponential growth"],"a":1,
+  "explain":"Real part σ = −2 → decay envelope \\(e^{-2t}\\), i.e. \\(\\tau = 1/2 = 0.5\\,\\mathrm{s}\\). Imaginary part ω = 10 rad/s → ringing at \\(f = 10/2\\pi \\approx 1.6\\,\\mathrm{Hz}\\). Left half-plane, so stable."},
+ {"q":"The Fourier transform can be obtained from the Laplace transform by setting s = jω…",
+  "opts":["always","never — they are unrelated","only if the region of convergence includes the jω axis (all poles strictly in the left half-plane)","only for periodic signals"],"a":2,
+  "explain":"Fourier is Laplace evaluated on the imaginary axis — but that line must lie inside the ROC. For the unit step (pole AT s = 0) the naive substitution fails, which is why its Fourier transform needs an extra \\(\\pi\\delta(\\omega)\\) term."}
+]
+</script>
+</div>
+
+<script>
+document.addEventListener("ee-ready", () => {
+
+  const PI = Math.PI;
+
+  /* shared Fourier-series machinery */
+  function partialSum(wave, x, N) {
+    let s = 0;
+    for (let k = 1; k <= N; k++) {
+      if (wave === "square") {
+        if (k % 2) s += (4 / (PI * k)) * Math.sin(2 * PI * k * x);
+      } else if (wave === "triangle") {
+        if (k % 2) s += (8 / (PI * PI * k * k)) * ((((k - 1) / 2) % 2) ? -1 : 1) * Math.sin(2 * PI * k * x);
+      } else { /* sawtooth */
+        s += (2 / (PI * k)) * ((k % 2) ? 1 : -1) * Math.sin(2 * PI * k * x);
+      }
+    }
+    return s;
+  }
+  function targetWave(wave, x) {
+    if (wave === "square")   return Math.sin(2 * PI * x) >= 0 ? 1 : -1;
+    if (wave === "triangle") return (2 / PI) * Math.asin(Math.sin(2 * PI * x));
+    return 2 * (x - Math.floor(x + 0.5)); /* sawtooth, −1…+1 */
+  }
+  function harmonicAmp(wave, k) {
+    if (wave === "square")   return (k % 2) ? 4 / (PI * k) : 0;
+    if (wave === "triangle") return (k % 2) ? 8 / (PI * PI * k * k) : 0;
+    return 2 / (PI * k);
+  }
+  const waveOpts = [
+    { label: "Square", value: "square" },
+    { label: "Triangle", value: "triangle" },
+    { label: "Sawtooth", value: "sawtooth" }
+  ];
+
+  /* --- Widget 1: Fourier series builder --- */
+  EE.functionPlot({
+    mount: "#w-fourier", height: 300,
+    x: { min: 0, max: 2, label: "t / T" },
+    y: { min: -1.6, max: 1.6, label: "f(t)  (A = 1)" },
+    params: [
+      { key: "wave", label: "Waveform", type: "select", value: "square", options: waveOpts },
+      { key: "N", label: "Highest harmonic N", min: 1, max: 41, step: 1, value: 5, fmt: v => v.toFixed(0) }
+    ],
+    curves: [
+      { label: "target", color: 1, dash: [6, 4], fn: (x, p) => targetWave(p.wave, x) },
+      { label: "partial sum", color: 0, fn: (x, p) => partialSum(p.wave, x, p.N) }
+    ],
+    readouts: [
+      { label: "Nonzero harmonics in sum", fn: p => {
+          let n = 0;
+          for (let k = 1; k <= p.N; k++) if (harmonicAmp(p.wave, k) > 1e-9) n++;
+          return String(n);
+        } },
+      { label: "Peak of partial sum", fn: p => {
+          let m = 0;
+          for (let i = 0; i <= 600; i++) m = Math.max(m, Math.abs(partialSum(p.wave, i / 600, p.N)));
+          return m.toFixed(3) + " (target 1)";
+        } },
+      { label: "Overshoot", fn: p => {
+          let m = 0;
+          for (let i = 0; i <= 600; i++) m = Math.max(m, Math.abs(partialSum(p.wave, i / 600, p.N)));
+          return ((m - 1) * 100).toFixed(1) + " %";
+        } }
+    ]
+  });
+
+  /* --- Widget 2: line spectrum stems (custom) --- */
+  EE.custom({
+    mount: "#w-spectrum", height: 300,
+    params: [
+      { key: "wave", label: "Waveform", type: "select", value: "square", options: waveOpts },
+      { key: "N", label: "Harmonics included N", min: 1, max: 25, step: 1, value: 5, fmt: v => v.toFixed(0) }
+    ],
+    readouts: [
+      { label: "Fundamental |b₁|", fn: p => harmonicAmp(p.wave, 1).toFixed(3) },
+      { label: "Decay law", fn: p => p.wave === "triangle" ? "∝ 1/k²  (smooth wave)" : "∝ 1/k  (jumps)" },
+      { label: "Power in included harmonics", fn: p => {
+          let ps = 0;
+          for (let k = 1; k <= p.N; k++) { const a = harmonicAmp(p.wave, k); ps += a * a / 2; }
+          const ptot = p.wave === "square" ? 1 : 1 / 3;
+          return (100 * ps / ptot).toFixed(1) + " % of total";
+        } }
+    ],
+    draw: (ctx, w, h, p, H) => {
+      const v = H.makeView(
+        { min: 0, max: 26, label: "harmonic number k" },
+        { min: 0, max: 1.4, label: "|b_k|  (A = 1)" });
+      H.drawFrame(v);
+      /* dashed decay-law envelope */
+      H.drawCurve(v, k => (k < 0.75) ? NaN : (p.wave === "triangle" ? 8 / (PI * PI * k * k)
+                         : (p.wave === "square" ? 4 : 2) / (PI * k)),
+                  H.color(2), { dash: [5, 4], width: 1.6 });
+      /* stems */
+      for (let k = 1; k <= 25; k++) {
+        const a = harmonicAmp(p.wave, k);
+        if (a < 1e-9) continue;
+        const x = v.X(k), y0 = v.Y(0), y1 = v.Y(a);
+        ctx.globalAlpha = (k <= p.N) ? 1 : 0.22;
+        ctx.strokeStyle = H.color(0);
+        ctx.lineWidth = 2.6;
+        ctx.beginPath(); ctx.moveTo(x, y0); ctx.lineTo(x, y1); ctx.stroke();
+        ctx.fillStyle = H.color(0);
+        ctx.beginPath(); ctx.arc(x, y1, 3.6, 0, 7); ctx.fill();
+        ctx.globalAlpha = 1;
+      }
+      /* small legend */
+      ctx.font = "600 11.5px system-ui, sans-serif";
+      ctx.textAlign = "right"; ctx.textBaseline = "top";
+      ctx.fillStyle = H.color(2);
+      ctx.fillText("envelope: decay law", v.padL + v.iw - 8, v.padT + 6);
+      ctx.fillStyle = H.ink.muted;
+      ctx.fillText("solid = k ≤ N, faint = not yet included", v.padL + v.iw - 8, v.padT + 22);
+    }
+  });
+
+  /* --- Widget 3: s-plane pole explorer --- */
+  EE.functionPlot({
+    mount: "#w-splane", height: 300,
+    x: { min: 0, max: 10, label: "t in s" },
+    y: p => {
+      const m = Math.max(1.25, Math.min(8, 1.15 * Math.exp(p.sig * 10)));
+      return { min: -m, max: m, label: "f(t)" };
+    },
+    params: [
+      { key: "sig", label: "Pole real part σ", min: -1.5, max: 0.3, step: 0.01, value: -0.4, unit: "1/s", fmt: v => v.toFixed(2) },
+      { key: "om", label: "Pole imag. part ω", min: 0, max: 8, step: 0.1, value: 4, unit: "rad/s", fmt: v => v.toFixed(1) }
+    ],
+    curves: [
+      { label: "e^{σt}·cos(ωt)", color: 0, fn: (t, p) => Math.exp(p.sig * t) * Math.cos(p.om * t) },
+      { label: "", color: 2, dash: [6, 4], width: 1.6, fn: (t, p) => Math.exp(p.sig * t) },
+      { label: "", color: 2, dash: [6, 4], width: 1.6, fn: (t, p) => -Math.exp(p.sig * t) }
+    ],
+    annotations: p => (p.sig < -0.05 ? [{ type: "vline", x: -1 / p.sig, label: "τ = 1/|σ|" }] : []),
+    readouts: [
+      { label: "Stability", fn: p => p.sig < -0.005 ? "stable — response dies out"
+                                   : p.sig > 0.005 ? "UNSTABLE — response grows!"
+                                   : "marginal — sustained oscillation" },
+      { label: "Time constant τ", fn: p => p.sig < -0.005 ? EE.si(-1 / p.sig, "s") : "—" },
+      { label: "Ringing frequency", fn: p => p.om > 0.05 ? EE.si(p.om / (2 * PI), "Hz") : "none (pure exponential)" }
+    ]
+  });
+
+  /* --- Widget 4: rect ↔ sinc duality --- */
+  EE.functionPlot({
+    mount: "#w-sinc", height: 300,
+    x: { min: -6, max: 6, label: "f in kHz" },
+    y: { min: -0.55, max: 2.25, label: "X(f) in V·ms" },
+    params: [
+      { key: "T", label: "Pulse duration T", min: 0.2, max: 2, step: 0.05, value: 1, unit: "ms", fmt: v => v.toFixed(2) }
+    ],
+    curves: [
+      { label: "X(f) = T·si(πfT)", color: 0, fill: true, fn: (f, p) => {
+          const x = PI * f * p.T;
+          return p.T * (Math.abs(x) < 1e-9 ? 1 : Math.sin(x) / x);
+        } }
+    ],
+    annotations: p => [
+      { type: "vline", x: 1 / p.T, label: "first null f = 1/T" },
+      { type: "vline", x: -1 / p.T, label: "" }
+    ],
+    readouts: [
+      { label: "Pulse duration T", fn: p => p.T.toFixed(2) + " ms" },
+      { label: "First-null bandwidth B = 1/T", fn: p => (1 / p.T).toFixed(2) + " kHz" },
+      { label: "Product T·B", fn: p => "1.00 — always" }
+    ]
+  });
+
+});
+</script>
+
+</article>
+</main>
+</div>
+</body>
+</html>

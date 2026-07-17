@@ -1,0 +1,538 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>M04 · DC Circuit Analysis — EE Knowledge Base</title>
+<link rel="stylesheet" href="../../assets/vendor/katex/katex.min.css">
+<link rel="stylesheet" href="../../assets/css/style.css">
+<script src="../../assets/vendor/katex/katex.min.js" defer></script>
+<script src="../../assets/vendor/katex/auto-render.min.js" defer></script>
+<script src="../curriculum.js" defer></script>
+<script src="../../assets/js/app.js" defer></script>
+<script src="../../assets/js/widgets.js" defer></script>
+</head>
+<body data-module="m04">
+<div class="layout">
+<main class="content">
+<article class="article">
+
+<span class="eyebrow">⚡ Fundamentals of Electrical Engineering · Module 04</span>
+<h1>DC Circuit Analysis <span class="muted" style="font-weight:400;font-size:1.4rem">· <span class="de">Gleichstromtechnik</span></span></h1>
+<p class="lead">Everything in electrical engineering — from a phone charger to a national grid — is ultimately analyzed with the concepts in this module: charge, current, voltage, resistance, and two deceptively simple conservation laws. Master these and every later circuit, however exotic, becomes bookkeeping.</p>
+
+<div class="page-meta">
+  <span><b>Corresponds to:</b> Grundlagen der Elektrotechnik I (1st semester)</span>
+  <span><b>Prerequisites:</b> Module 01 (linear systems of equations)</span>
+  <span><b>Study time:</b> ≈ 4–6 h</span>
+</div>
+
+<h2 id="charge-current">1. Charge and current — what actually flows</h2>
+
+<p>Electricity begins with <strong>electric charge</strong> (<span class="de">elektrische Ladung</span>) \(Q\), measured in coulombs (C). Charge is a property of matter, like mass: electrons carry \(-e\), protons \(+e\), with the elementary charge</p>
+\[ e = 1.602 \cdot 10^{-19}\,\mathrm{C}. \]
+<p>One coulomb is therefore the charge of about \(6.24 \cdot 10^{18}\) electrons — an enormous number, which is why we work with the aggregate quantity rather than individual particles.</p>
+
+<p><strong>Electric current</strong> (<span class="de">elektrischer Strom</span>) \(I\) is the <em>rate</em> at which charge passes through a cross-section of a conductor:</p>
+\[ I = \frac{\mathrm{d}Q}{\mathrm{d}t}, \qquad [I] = \frac{\mathrm{C}}{\mathrm{s}} = \mathrm{A} \ \text{(ampere)}. \]
+
+<div class="box intuition">
+  <div class="box-title"><span class="ic">💡</span>Intuition: the water analogy</div>
+  <p>Picture a closed water-pipe system. <b>Charge</b> is the water itself, <b>current</b> is the flow rate (liters per second through a pipe cross-section), and <b>voltage</b> — coming next — is the pressure difference that pushes the water around. A pump (the source) creates pressure; narrow pipes (resistors) impede flow. The analogy is imperfect but survives an astonishing amount of first-year electrical engineering.</p>
+</div>
+
+<div class="box warn">
+  <div class="box-title"><span class="ic">⚠️</span>Conventional current vs. electron flow</div>
+  <p>By historical convention (predating the discovery of the electron), current arrows point in the direction <em>positive</em> charge would flow — from + to − outside the source. In a metal wire, the electrons actually drift the <em>opposite</em> way. All of circuit analysis uses the <strong>conventional direction</strong> (<span class="de">technische Stromrichtung</span>); electron flow direction is irrelevant for calculation. And surprisingly: the electrons themselves drift at only ~0.1 mm/s — it is the electric field, propagating near light speed, that makes the lamp light "instantly".</p>
+</div>
+
+<h2 id="voltage">2. Voltage and potential — why charge moves</h2>
+
+<p>Charge does not flow on its own; it needs an energy difference. The <strong>electric potential</strong> \(\varphi\) at a point is the potential energy per unit charge at that point. The <strong>voltage</strong> (<span class="de">Spannung</span>) between two points A and B is the potential <em>difference</em>:</p>
+\[ U_{AB} = \varphi_A - \varphi_B = \frac{W_{AB}}{Q}, \qquad [U] = \frac{\mathrm{J}}{\mathrm{C}} = \mathrm{V} \ \text{(volt)}. \]
+<p>\(U_{AB} = 5\,\mathrm{V}\) means: transporting 1 C of charge from A to B releases 5 J of energy. Two consequences worth internalizing:</p>
+<ul>
+  <li>Voltage is always <strong>between two points</strong>. "The voltage at point A" is meaningless unless a reference point (ground, <span class="de">Masse</span>, 0 V) has been agreed.</li>
+  <li>Voltage can exist without current (a battery on the shelf); current cannot flow without a driving voltage (in ordinary resistive circuits).</li>
+</ul>
+
+<div class="box german">
+  <div class="box-title"><span class="ic">🇩🇪</span>Vokabeln</div>
+  <p>charge = <span class="de">Ladung</span> · current = <span class="de">Strom(stärke)</span> · voltage = <span class="de">Spannung</span> · potential = <span class="de">Potential</span> · ground = <span class="de">Masse/Erde</span> · conductor = <span class="de">Leiter</span> · circuit = <span class="de">Stromkreis/Schaltung</span> · resistor = <span class="de">Widerstand</span> (the word covers both the component and the property!)</p>
+</div>
+
+<h2 id="ohm">3. Resistance and Ohm's law</h2>
+
+<p>Push charge through a material and it collides with the atomic lattice, dissipating energy as heat. The material "resists". For metallic conductors at constant temperature, Georg Simon Ohm found (1826) that current is <em>proportional</em> to the applied voltage:</p>
+\[ \boxed{\,U = R \cdot I\,} \qquad R = \frac{U}{I}, \quad [R] = \frac{\mathrm{V}}{\mathrm{A}} = \Omega \ \text{(ohm)}. \]
+<p>The proportionality constant \(R\) is the <strong>resistance</strong> (<span class="de">Widerstand</span>). Its reciprocal \(G = 1/R\) is the <strong>conductance</strong> (<span class="de">Leitwert</span>), in siemens (S). For a homogeneous wire of length \(l\), cross-section \(A\) and material resistivity \(\rho\) (<span class="de">spezifischer Widerstand</span>):</p>
+\[ R = \rho \, \frac{l}{A}. \]
+<p>Copper (\(\rho \approx 0.0178\,\Omega\,\mathrm{mm^2/m}\)) conducts ~60× better than steel; that is why your household wiring is copper.</p>
+
+<div class="widget">
+  <div class="w-head"><span class="ic">🧪</span>Interactive — Ohm's law as a line <span class="w-tag">simulation</span></div>
+  <div class="w-body">
+    <p class="small mt0">A resistor's \(I\)–\(U\) characteristic is a straight line through the origin — the defining picture of a <em>linear</em> component. Drag \(R\) and watch the slope: large \(R\) → flat line (little current per volt). The dot marks the operating point at the chosen source voltage.</p>
+    <div id="w-ohm"></div>
+  </div>
+</div>
+
+<div class="box key">
+  <div class="box-title"><span class="ic">🔑</span>Key idea: linearity</div>
+  <p>Ohm's law makes the resistor a <em>linear</em> element: double the cause, double the effect. Entire solution techniques (superposition, Thévenin, nodal analysis as a linear system) exist <em>because</em> R, and later L and C, are linear. Diodes and transistors will break this linearity — and that is exactly what makes them useful (Module 08).</p>
+</div>
+
+<h2 id="power">4. Energy and power</h2>
+
+<p>A charge \(Q\) falling through a voltage \(U\) releases energy \(W = U Q\). Per unit time, that is the <strong>power</strong> (<span class="de">Leistung</span>) converted in a component:</p>
+\[ P = U \cdot I \qquad [P] = \mathrm{V \cdot A} = \mathrm{W} \ \text{(watt)}. \]
+<p>Combining with Ohm's law gives the two workhorse forms for resistors:</p>
+\[ P = I^2 R = \frac{U^2}{R}. \]
+
+<div class="example">
+  <div class="ex-head"><span class="ex-tag">Worked example</span> A kettle, seriously analyzed</div>
+  <div class="ex-body">
+    <p>A kettle is rated 2000 W at 230 V. Find its current draw, its element resistance, and the energy to heat 1 L of water from 15 °C to 100 °C (ideal case), given \(c_w = 4187\,\mathrm{J/(kg\,K)}\).</p>
+    <div class="step"><span class="step-label">Step 1 — current:</span>
+      \( I = P/U = 2000/230 \approx 8.7\,\mathrm{A} \). (This is why kettles need a 10 A+ circuit.)</div>
+    <div class="step"><span class="step-label">Step 2 — resistance:</span>
+      \( R = U^2/P = 230^2/2000 \approx 26.5\,\Omega \).</div>
+    <div class="step"><span class="step-label">Step 3 — energy and time:</span>
+      \( W = m\,c_w\,\Delta T = 1 \cdot 4187 \cdot 85 \approx 356\,\mathrm{kJ} \).
+      At 2000 J/s: \( t = 356\,000/2000 \approx 178\,\mathrm{s} \approx 3\,\mathrm{min} \) — matching everyday experience.</div>
+    <div class="result-line">\(I \approx 8.7\,\mathrm{A}\), \(R \approx 26.5\,\Omega\), ideal heating time ≈ 3 minutes.</div>
+  </div>
+</div>
+
+<h2 id="sources">5. Sources — ideal and real</h2>
+
+<p>A circuit needs something to maintain the potential difference: a <strong>source</strong> (<span class="de">Quelle</span>).</p>
+<ul>
+  <li>An <strong>ideal voltage source</strong> holds \(U = U_q\) fixed regardless of the current drawn.</li>
+  <li>An <strong>ideal current source</strong> forces \(I = I_q\) regardless of the voltage across it.</li>
+</ul>
+<p>Real sources are neither. A real battery is modeled as an ideal source \(U_q\) <em>in series with an internal resistance</em> \(R_i\) (<span class="de">Innenwiderstand</span>). Its terminal voltage sags under load:</p>
+\[ U_{\text{terminal}} = U_q - R_i \, I. \]
+<p>This one equation explains why your car's headlights dim while cranking the starter (the starter draws ~100 A through \(R_i \approx 10\,\mathrm{m\Omega}\), dropping a full volt or more inside the battery).</p>
+
+<figure>
+  <div class="fig-frame">
+  <svg class="diagram" viewBox="0 0 560 200" role="img" aria-label="Real voltage source model">
+    <!-- ideal source circle -->
+    <circle cx="80" cy="100" r="26" fill="none" stroke="var(--text-soft)" stroke-width="2"/>
+    <line x1="80" y1="74" x2="80" y2="126" class="wire"/>
+    <text x="80" y="150" text-anchor="middle" font-size="14">U<tspan baseline-shift="sub" font-size="10">q</tspan></text>
+    <!-- wires -->
+    <path class="wire" d="M80 74 V40 H180"/>
+    <!-- internal resistance (IEC box style) -->
+    <rect x="180" y="28" width="70" height="24" fill="none" stroke="var(--text-soft)" stroke-width="2"/>
+    <text x="215" y="20" text-anchor="middle" font-size="14">R<tspan baseline-shift="sub" font-size="10">i</tspan></text>
+    <path class="wire" d="M250 40 H370"/>
+    <path class="wire" d="M80 126 V160 H370"/>
+    <!-- terminals -->
+    <circle cx="370" cy="40" r="4" class="node"/>
+    <circle cx="370" cy="160" r="4" class="node"/>
+    <text x="388" y="45" font-size="14">＋</text>
+    <text x="388" y="166" font-size="14">−</text>
+    <!-- terminal voltage arrow -->
+    <line x1="420" y1="60" x2="420" y2="140" stroke="var(--accent)" stroke-width="2" marker-end="url(#arr)"/>
+    <text x="432" y="105" font-size="14" fill="var(--accent)">U</text>
+    <!-- load current arrow -->
+    <line x1="300" y1="28" x2="340" y2="28" stroke="var(--accent)" stroke-width="2" marker-end="url(#arr)"/>
+    <text x="318" y="18" text-anchor="middle" font-size="13" fill="var(--accent)">I</text>
+    <!-- dashed box: the real source -->
+    <rect x="35" y="8" width="290" height="184" fill="none" stroke="var(--text-faint)" stroke-dasharray="6 5" rx="10"/>
+    <text x="45" y="188" font-size="11" fill="var(--text-faint)">real source</text>
+    <defs><marker id="arr" markerWidth="9" markerHeight="9" refX="7" refY="4.5" orient="auto">
+      <path d="M0 0 L8 4.5 L0 9 z" fill="var(--accent)"/></marker></defs>
+  </svg>
+  </div>
+  <figcaption><b>Fig. 5.1</b> — Model of a real voltage source: ideal source \(U_q\) plus internal resistance \(R_i\). Note the IEC (German-textbook) rectangle symbol for resistors — American texts use a zigzag.</figcaption>
+</figure>
+
+<h2 id="kirchhoff">6. Kirchhoff's laws — the two rules that solve everything</h2>
+
+<p>Ohm's law describes one component. To analyze <em>networks</em> of components we need just two more facts, both conservation laws, formulated by Gustav Kirchhoff (1845) — as a 21-year-old student, incidentally.</p>
+
+<h3 id="kcl">6.1 Current law (KCL) — <span class="de">Knotenregel</span></h3>
+<p>Charge cannot pile up at a junction ("node", <span class="de">Knoten</span>). Whatever flows in must flow out, at every instant:</p>
+\[ \sum_{k} I_k = 0 \quad \text{at every node (inflows +, outflows −).} \]
+<p>Water analogy: at a pipe junction, liters-in per second equals liters-out per second.</p>
+
+<h3 id="kvl">6.2 Voltage law (KVL) — <span class="de">Maschenregel</span></h3>
+<p>Potential is a well-defined height. Walk any closed loop (<span class="de">Masche</span>) in a circuit and you return to the height you started at:</p>
+\[ \sum_{k} U_k = 0 \quad \text{around every closed loop.} \]
+<p>Analogy: hike any closed path in the mountains — climbs and descents must cancel.</p>
+
+<figure>
+  <div class="fig-frame">
+  <svg class="diagram" viewBox="0 0 620 250" role="img" aria-label="Two-loop circuit for Kirchhoff's laws">
+    <!-- outer wires -->
+    <path class="wire" d="M70 55 H240 M310 55 H520 M70 195 H520"/>
+    <!-- source left -->
+    <circle cx="70" cy="125" r="24" fill="none" stroke="var(--text-soft)" stroke-width="2"/>
+    <line x1="70" y1="101" x2="70" y2="149" class="wire"/>
+    <path class="wire" d="M70 55 V101 M70 149 V195"/>
+    <text x="30" y="130" font-size="15">U<tspan baseline-shift="sub" font-size="11">q</tspan></text>
+    <!-- R1 top left branch -->
+    <rect x="240" y="43" width="70" height="24" fill="none" stroke="var(--text-soft)" stroke-width="2"/>
+    <text x="275" y="34" text-anchor="middle" font-size="14">R₁</text>
+    <!-- node A -->
+    <circle cx="380" cy="55" r="5" class="node"/>
+    <text x="380" y="40" text-anchor="middle" font-size="14" font-weight="700">A</text>
+    <!-- R2 middle branch -->
+    <path class="wire" d="M380 55 V85"/>
+    <rect x="368" y="85" width="24" height="70" fill="none" stroke="var(--text-soft)" stroke-width="2"/>
+    <text x="352" y="125" text-anchor="end" font-size="14">R₂</text>
+    <path class="wire" d="M380 155 V195"/>
+    <!-- R3 right branch -->
+    <path class="wire" d="M520 55 V85"/>
+    <rect x="508" y="85" width="24" height="70" fill="none" stroke="var(--text-soft)" stroke-width="2"/>
+    <text x="548" y="125" font-size="14">R₃</text>
+    <path class="wire" d="M520 155 V195"/>
+    <!-- current arrows -->
+    <line x1="160" y1="55" x2="205" y2="55" stroke="var(--accent)" stroke-width="2.2" marker-end="url(#arr2)"/>
+    <text x="182" y="45" text-anchor="middle" font-size="13" fill="var(--accent)">I₁</text>
+    <line x1="395" y1="95" x2="395" y2="130" stroke="var(--accent)" stroke-width="2.2" marker-end="url(#arr2)"/>
+    <text x="408" y="115" font-size="13" fill="var(--accent)">I₂</text>
+    <line x1="430" y1="55" x2="475" y2="55" stroke="var(--accent)" stroke-width="2.2" marker-end="url(#arr2)"/>
+    <text x="452" y="45" text-anchor="middle" font-size="13" fill="var(--accent)">I₃</text>
+    <!-- mesh arrows -->
+    <path d="M200 125 a28 28 0 1 1 -0.1 0" fill="none" stroke="var(--accent-2)" stroke-width="2" marker-end="url(#arr3)"/>
+    <text x="200" y="130" text-anchor="middle" font-size="12" fill="var(--accent-2)">M₁</text>
+    <path d="M448 125 a28 28 0 1 1 -0.1 0" fill="none" stroke="var(--accent-2)" stroke-width="2" marker-end="url(#arr3)"/>
+    <text x="448" y="130" text-anchor="middle" font-size="12" fill="var(--accent-2)">M₂</text>
+    <!-- ground node B -->
+    <circle cx="380" cy="195" r="5" class="node"/>
+    <text x="380" y="220" text-anchor="middle" font-size="14" font-weight="700">B (reference)</text>
+    <defs>
+     <marker id="arr2" markerWidth="9" markerHeight="9" refX="7" refY="4.5" orient="auto"><path d="M0 0 L8 4.5 L0 9 z" fill="var(--accent)"/></marker>
+     <marker id="arr3" markerWidth="8" markerHeight="8" refX="6" refY="4" orient="auto"><path d="M0 0 L7 4 L0 8 z" fill="var(--accent-2)"/></marker>
+    </defs>
+  </svg>
+  </div>
+  <figcaption><b>Fig. 6.1</b> — A two-mesh network. KCL at node A: \(I_1 = I_2 + I_3\). KVL around mesh M₁: \(U_q - I_1 R_1 - I_2 R_2 = 0\). KVL around M₂: \(I_2 R_2 - I_3 R_3 = 0\). Three equations, three unknown currents — solvable. This <em>is</em> circuit analysis.</figcaption>
+</figure>
+
+<div class="example">
+  <div class="ex-head"><span class="ex-tag">Worked example</span> Solving Fig. 6.1 numerically</div>
+  <div class="ex-body">
+    <p>Let \(U_q = 12\,\mathrm{V}\), \(R_1 = 1\,\mathrm{k\Omega}\), \(R_2 = 2\,\mathrm{k\Omega}\), \(R_3 = 2\,\mathrm{k\Omega}\). Find all currents.</p>
+    <div class="step"><span class="step-label">Step 1 — set up the three equations:</span>
+      \[ I_1 = I_2 + I_3, \qquad 12 = 1000\,I_1 + 2000\,I_2, \qquad 2000\,I_2 = 2000\,I_3 . \]</div>
+    <div class="step"><span class="step-label">Step 2 — exploit symmetry:</span> the third equation gives \(I_2 = I_3\), so \(I_1 = 2 I_2\).</div>
+    <div class="step"><span class="step-label">Step 3 — substitute:</span>
+      \( 12 = 1000 (2 I_2) + 2000 I_2 = 4000\, I_2 \Rightarrow I_2 = 3\,\mathrm{mA} \).</div>
+    <div class="result-line">\( I_2 = I_3 = 3\,\mathrm{mA},\; I_1 = 6\,\mathrm{mA} \). Check (KVL M₁): \(12 - 6 - 6 = 0\) ✓</div>
+  </div>
+</div>
+
+<div class="box pitfall">
+  <div class="box-title"><span class="ic">🚫</span>Classic pitfall: sign discipline</div>
+  <p>90 % of wrong answers in GET exams are sign errors. The cure: <b>before</b> writing any equation, draw an assumed arrow for every current and voltage (direction is your free choice). Then apply the rules mechanically. If a result comes out negative, the quantity simply flows opposite to your arrow — that is not an error. German convention: in the <span class="de">Verbraucherzählpfeilsystem</span> (load reference convention), U and I arrows point the <em>same</em> way through a load, and then \(P = UI > 0\) means the component absorbs power.</p>
+</div>
+
+<h2 id="series-parallel">7. Series, parallel, and the two dividers</h2>
+
+<h3 id="series">7.1 Series connection (<span class="de">Reihenschaltung</span>)</h3>
+<p>Same current through all elements; voltages add:</p>
+\[ R_{\text{total}} = R_1 + R_2 + \dots + R_n \]
+<p>The applied voltage splits <em>proportionally to resistance</em> — the <strong>voltage divider</strong> (<span class="de">Spannungsteiler</span>), arguably the most-used formula in all of electronics:</p>
+\[ \boxed{\;\frac{U_2}{U_{\text{total}}} = \frac{R_2}{R_1 + R_2}\;} \]
+
+<h3 id="parallel">7.2 Parallel connection (<span class="de">Parallelschaltung</span>)</h3>
+<p>Same voltage across all elements; currents add. Conductances add, hence:</p>
+\[ \frac{1}{R_{\text{total}}} = \frac{1}{R_1} + \frac{1}{R_2} + \dots \qquad
+   \text{two resistors: } R_{\text{total}} = \frac{R_1 R_2}{R_1 + R_2} \]
+<p>The parallel total is always <em>smaller than the smallest</em> member — adding a path can only make flow easier. Current splits in <em>inverse</em> proportion to resistance (<strong>current divider</strong>, <span class="de">Stromteiler</span>): the smaller resistor takes the larger share.</p>
+
+<div class="widget">
+  <div class="w-head"><span class="ic">🧪</span>Interactive — the voltage divider <span class="w-tag">simulation</span></div>
+  <div class="w-body">
+    <p class="small mt0">Output voltage of the divider as a function of \(R_2\), for your chosen \(R_1\) and input voltage. The dot is your current design point. Note the curve is <em>not</em> linear in \(R_2\) — it saturates toward \(U_{in}\) because for \(R_2 \gg R_1\) nearly all voltage drops across \(R_2\).</p>
+    <div id="w-divider"></div>
+  </div>
+</div>
+
+<div class="box key">
+  <div class="box-title"><span class="ic">🔑</span>Why the divider matters</div>
+  <p>Sensor interfaces (a thermistor forming \(R_2\)), volume knobs (a potentiometer <em>is</em> a variable divider), reference voltages, level shifters — all voltage dividers. Its one weakness: connect a load across \(R_2\) and the ratio changes, because the load sits in parallel with \(R_2\). Quantifying that "loading effect" is precisely what Thévenin's theorem (next section) is for.</p>
+</div>
+
+<h2 id="thevenin">8. Thévenin & Norton — any network becomes two components</h2>
+
+<p>Here is the most elegant result of DC circuit theory. Take <em>any</em> linear network of sources and resistors, with two terminals sticking out. As seen from those terminals, the whole network behaves <strong>exactly</strong> like:</p>
+<ul>
+  <li>one ideal voltage source \(U_{Th}\) in series with one resistor \(R_{Th}\) &nbsp;(<b>Thévenin</b>, <span class="de">Ersatzspannungsquelle</span>), or equivalently</li>
+  <li>one ideal current source \(I_N = U_{Th}/R_{Th}\) in parallel with the same \(R_{Th}\) &nbsp;(<b>Norton</b>, <span class="de">Ersatzstromquelle</span>).</li>
+</ul>
+<p>Recipe:</p>
+<ol>
+  <li>\(U_{Th}\) = open-circuit voltage at the terminals (<span class="de">Leerlaufspannung</span>).</li>
+  <li>\(R_{Th}\) = resistance seen looking into the terminals with all sources "switched off" (voltage sources → short circuit, current sources → open circuit). Alternatively \(R_{Th} = U_{Th}/I_{SC}\) with the short-circuit current.</li>
+</ol>
+
+<div class="example">
+  <div class="ex-head"><span class="ex-tag">Worked example</span> Thévenin equivalent of a loaded divider</div>
+  <div class="ex-body">
+    <p>A divider with \(U_q = 10\,\mathrm{V}\), \(R_1 = 6\,\mathrm{k\Omega}\), \(R_2 = 4\,\mathrm{k\Omega}\); terminals across \(R_2\). What voltage does a \(10\,\mathrm{k\Omega}\) load actually see?</p>
+    <div class="step"><span class="step-label">Step 1 — open-circuit voltage:</span>
+      \( U_{Th} = 10 \cdot \frac{4}{6+4} = 4\,\mathrm{V} \).</div>
+    <div class="step"><span class="step-label">Step 2 — dead network:</span> replace \(U_q\) with a short. From the terminals you now see \(R_1\) parallel to \(R_2\):
+      \( R_{Th} = \frac{6 \cdot 4}{6 + 4} = 2.4\,\mathrm{k\Omega} \).</div>
+    <div class="step"><span class="step-label">Step 3 — attach the load to the equivalent:</span> a simple two-resistor divider now:
+      \( U_L = 4 \cdot \frac{10}{2.4 + 10} \approx 3.23\,\mathrm{V} \).</div>
+    <div class="result-line">The "4 V" divider delivers only ≈ 3.23 V into 10 kΩ — a 19 % sag. Rule of thumb: keep the load ≥ 10× \(R_{Th}\) to stay within ~10 %.</div>
+  </div>
+</div>
+
+<h2 id="maxpower">9. Maximum power transfer & efficiency</h2>
+
+<p>Connect a load \(R_L\) to a real source \((U_q, R_i)\). The load power is</p>
+\[ P_L = I^2 R_L = \frac{U_q^2 \, R_L}{(R_i + R_L)^2}. \]
+<p>Small \(R_L\): lots of current but tiny voltage — little power. Large \(R_L\): full voltage but a trickle of current — little power again. The maximum lies exactly at</p>
+\[ \boxed{\;R_L = R_i\;} \quad\text{(matching, } P_{max} = \frac{U_q^2}{4 R_i}\text{)}, \]
+<p>where, however, the efficiency is only \(\eta = 50\,\%\) — half the energy heats the source. Hence two opposite design philosophies: <b>communications</b> engineers match impedances (maximum signal power matters, Module 21); <b>power</b> engineers do the opposite and make \(R_i \ll R_L\) (efficiency matters — a matched power plant would burn half its output in its own generators).</p>
+
+<div class="widget">
+  <div class="w-head"><span class="ic">🧪</span>Interactive — power transfer vs. load <span class="w-tag">simulation</span></div>
+  <div class="w-body">
+    <p class="small mt0">Load power and efficiency as functions of \(R_L\). The dashed line marks matching \(R_L = R_i\): power peaks there, but efficiency is only 50 % and keeps climbing for larger loads.</p>
+    <div id="w-maxpower"></div>
+  </div>
+</div>
+
+<h2 id="method">10. Systematic analysis: nodal analysis</h2>
+
+<p>Kirchhoff plus Ohm always works, but ad-hoc loop-hunting scales terribly. The industry-standard systematic method — the one inside SPICE and every circuit simulator — is <strong>nodal analysis</strong> (<span class="de">Knotenpotentialverfahren</span>):</p>
+<ol>
+  <li>Pick a reference node (ground); every other node \(k\) gets an unknown potential \(\varphi_k\).</li>
+  <li>Write KCL at each non-reference node, expressing every branch current via Ohm's law as \((\varphi_a - \varphi_b)/R\).</li>
+  <li>Solve the resulting linear system \(\mathbf{G}\boldsymbol{\varphi} = \mathbf{i}\) — with the linear algebra of Module 01.</li>
+</ol>
+<p>For \(n\) non-reference nodes you get exactly \(n\) equations, mechanically. The conductance matrix \(\mathbf{G}\) even has a fill-in-by-inspection structure: diagonal entry = sum of conductances at the node; off-diagonal = minus the conductance between the two nodes; symmetric for resistor networks.</p>
+
+<div class="example">
+  <div class="ex-head"><span class="ex-tag">Worked example</span> Fig. 6.1 again — by nodal analysis, one line</div>
+  <div class="ex-body">
+    <p>Only node A is unknown (B is ground). KCL at A, currents out of A positive:</p>
+    <div class="step">
+      \[ \frac{\varphi_A - 12}{1\,\mathrm{k}} + \frac{\varphi_A}{2\,\mathrm{k}} + \frac{\varphi_A}{2\,\mathrm{k}} = 0 \;\Rightarrow\; \varphi_A \left(\tfrac1{1\mathrm{k}} + \tfrac1{2\mathrm{k}} + \tfrac1{2\mathrm{k}}\right) = \tfrac{12}{1\mathrm{k}} \;\Rightarrow\; \varphi_A = 6\,\mathrm{V}. \]
+    </div>
+    <div class="result-line">\(\varphi_A = 6\) V, so \(I_2 = I_3 = 6\,\mathrm{V}/2\,\mathrm{k\Omega} = 3\) mA — same result as Section 6, but one equation instead of three. That efficiency gain grows with circuit size.</div>
+  </div>
+</div>
+
+<div class="box history">
+  <div class="box-title"><span class="ic">📜</span>Where you'll meet all this again</div>
+  <p>Phasor-domain AC analysis (M05) is this module with complex numbers substituted in. Transistor small-signal analysis (M09) is Thévenin equivalents around an operating point. SPICE (used from M08 onward) is nodal analysis executed by a computer. Load-flow analysis of national grids (M19) is nodal analysis with complex power. One module, forty years of mileage.</p>
+</div>
+
+<h2 id="summary">11. Formula summary — <span class="de">Formelsammlung</span></h2>
+
+<div class="table-wrap">
+<table class="data">
+<thead><tr><th>Concept</th><th>Formula</th><th>Remember as</th></tr></thead>
+<tbody>
+<tr><td>Current</td><td>\( I = \mathrm{d}Q/\mathrm{d}t \)</td><td>charge flow rate</td></tr>
+<tr><td>Ohm's law</td><td>\( U = R\,I \)</td><td>the linear component law</td></tr>
+<tr><td>Wire resistance</td><td>\( R = \rho\, l / A \)</td><td>long &amp; thin = high R</td></tr>
+<tr><td>Power</td><td>\( P = U I = I^2 R = U^2/R \)</td><td>pick the form matching your knowns</td></tr>
+<tr><td>KCL</td><td>\( \sum I_k = 0 \) at a node</td><td>charge conservation</td></tr>
+<tr><td>KVL</td><td>\( \sum U_k = 0 \) around a loop</td><td>energy conservation</td></tr>
+<tr><td>Series</td><td>\( R = R_1 + R_2 \)</td><td>voltage divider \( U_2/U = R_2/(R_1{+}R_2) \)</td></tr>
+<tr><td>Parallel</td><td>\( R = R_1 R_2/(R_1{+}R_2) \)</td><td>smaller than the smallest</td></tr>
+<tr><td>Thévenin</td><td>\( U_{Th} = U_{oc},\; R_{Th} = U_{oc}/I_{sc} \)</td><td>any network → source + resistor</td></tr>
+<tr><td>Max. power transfer</td><td>\( R_L = R_i \Rightarrow P_{max} = U_q^2/4R_i \)</td><td>match for power, mismatch for efficiency</td></tr>
+</tbody>
+</table>
+</div>
+
+<h2 id="exercises">12. Exercises</h2>
+<p>Work these on paper before opening the solutions — the struggle is the learning.</p>
+
+<div class="exercise">
+  <p class="ex-q"><span class="ex-num">E1</span>An LED needs 2.0 V at 20 mA; the supply is 5 V. Size the series resistor and its minimum power rating. <span class="diff easy">easy</span></p>
+  <details><summary>Show solution</summary>
+    <div class="solution">
+      The resistor must drop \(5 - 2 = 3\) V at 20 mA: \( R = 3/0.02 = 150\,\Omega \).
+      Its dissipation: \( P = U I = 3 \cdot 0.02 = 60\,\mathrm{mW} \) — a standard 0.25 W resistor has ample margin. This tiny calculation is probably the most frequently performed circuit design task on Earth.
+    </div>
+  </details>
+</div>
+
+<div class="exercise">
+  <p class="ex-q"><span class="ex-num">E2</span>Three resistors: \(R_1 = 100\,\Omega\) in series with the parallel combination of \(R_2 = 300\,\Omega\) and \(R_3 = 150\,\Omega\). Total resistance? Current from a 12 V source? Voltage across the parallel pair? <span class="diff easy">easy</span></p>
+  <details><summary>Show solution</summary>
+    <div class="solution">
+      \( R_2 \| R_3 = \frac{300 \cdot 150}{450} = 100\,\Omega \) → \( R_{tot} = 200\,\Omega \) → \( I = 12/200 = 60\,\mathrm{mA} \).
+      Divider: the parallel pair gets \( 12 \cdot \frac{100}{200} = 6\,\mathrm{V} \). (Check via currents: \(I_2 = 6/300 = 20\) mA, \(I_3 = 6/150 = 40\) mA, sum 60 mA ✓)
+    </div>
+  </details>
+</div>
+
+<div class="exercise">
+  <p class="ex-q"><span class="ex-num">E3</span>A battery shows 12.6 V unloaded and 11.8 V while delivering 40 A. Find \(R_i\), the short-circuit current, and the power wasted internally at 40 A. <span class="diff med">medium</span></p>
+  <details><summary>Show solution</summary>
+    <div class="solution">
+      Sag: \( \Delta U = 0.8\,\mathrm{V} \) at 40 A → \( R_i = 0.8/40 = 20\,\mathrm{m\Omega} \).
+      Short-circuit current: \( I_{sc} = 12.6/0.02 = 630\,\mathrm{A} \) (why battery terminals must never be shorted — and why a car battery <em>can</em> crank a starter).
+      Internal loss: \( P_i = I^2 R_i = 1600 \cdot 0.02 = 32\,\mathrm{W} \) of heat inside the battery.
+    </div>
+  </details>
+</div>
+
+<div class="exercise">
+  <p class="ex-q"><span class="ex-num">E4</span>Solve by nodal analysis: node 1 connects to a 24 V source through \(2\,\Omega\), to ground through \(4\,\Omega\), and to node 2 through \(4\,\Omega\); node 2 connects to ground through \(8\,\Omega\). Find \(\varphi_1, \varphi_2\). <span class="diff med">medium</span></p>
+  <details><summary>Show solution</summary>
+    <div class="solution">
+      KCL at node 1: \( \frac{\varphi_1 - 24}{2} + \frac{\varphi_1}{4} + \frac{\varphi_1 - \varphi_2}{4} = 0 \) → \( \varphi_1 - 0.25\,\varphi_2 = 12 \) (after ×1... simplifying: multiply by 4: \(2\varphi_1 - 48 + \varphi_1 + \varphi_1 - \varphi_2 = 0\) → \(4\varphi_1 - \varphi_2 = 48\)).<br>
+      KCL at node 2: \( \frac{\varphi_2 - \varphi_1}{4} + \frac{\varphi_2}{8} = 0 \) → \( -2\varphi_1 + 3\varphi_2 = 0 \) → \( \varphi_1 = 1.5\,\varphi_2 \).<br>
+      Substitute: \( 6\varphi_2 - \varphi_2 = 48 \Rightarrow \varphi_2 = 9.6\,\mathrm{V},\; \varphi_1 = 14.4\,\mathrm{V} \).
+      Check at node 2: \((9.6-14.4)/4 = -1.2\) A in, \(9.6/8 = 1.2\) A out ✓
+    </div>
+  </details>
+</div>
+
+<div class="exercise">
+  <p class="ex-q"><span class="ex-num">E5</span>Prove that the maximum-power condition is \(R_L = R_i\) by differentiating \(P_L(R_L)\). <span class="diff hard">challenge</span></p>
+  <details><summary>Show solution</summary>
+    <div class="solution">
+      \( P_L = \frac{U_q^2 R_L}{(R_i + R_L)^2} \). Quotient rule:
+      \[ \frac{\mathrm{d}P_L}{\mathrm{d}R_L} = U_q^2 \, \frac{(R_i + R_L)^2 - R_L \cdot 2 (R_i + R_L)}{(R_i + R_L)^4} = U_q^2 \, \frac{R_i - R_L}{(R_i + R_L)^3}. \]
+      This is positive for \(R_L < R_i\), zero at \(R_L = R_i\), negative beyond — a maximum. Physically: below matching you lose voltage, above it you lose current; the product peaks in the middle.
+    </div>
+  </details>
+</div>
+
+<div class="exercise">
+  <p class="ex-q"><span class="ex-num">E6</span>Twelve identical 1 Ω resistors form the edges of a cube. What is the resistance between opposite corners? <span class="diff hard">challenge</span></p>
+  <details><summary>Show solution</summary>
+    <div class="solution">
+      Classic symmetry argument: by the cube's symmetry, the three nodes adjacent to the input corner are at equal potential, as are the three adjacent to the output corner. Equal-potential nodes can be merged without changing anything.
+      The network collapses to: 3 resistors in parallel (⅓ Ω), then 6 in parallel (⅙ Ω), then 3 in parallel (⅓ Ω), all in series:
+      \[ R = \tfrac13 + \tfrac16 + \tfrac13 = \tfrac56\,\Omega \approx 0.83\,\Omega. \]
+      Moral: <em>before</em> grinding through nodal analysis, look for symmetry — it can trivialize a 7-unknown problem.
+    </div>
+  </details>
+</div>
+
+<h2 id="quiz">13. Self-assessment</h2>
+
+<div class="quiz" data-quiz-title="Module 04 — Self-test">
+<script type="application/json">
+[
+ {"q":"A current of 2 A flows for 30 s. How much charge passed?",
+  "opts":["15 C","60 C","0.067 C","2 C"],"a":1,
+  "explain":"\\(Q = I \\cdot t = 2 \\cdot 30 = 60\\,\\mathrm{C}\\). Current is charge per time, so charge is current × time."},
+ {"q":"Voltage is best described as…",
+  "opts":["the flow of electrons through a wire","energy per unit charge between two points","the same thing as electric field","charge stored in a component"],"a":1,
+  "explain":"\\(U = W/Q\\) — the energy released (or required) per coulomb moved between two points. It is always a difference between two points."},
+ {"q":"A 470 Ω resistor carries 25 mA. The voltage across it is…",
+  "opts":["18.8 V","11.75 V","0.053 V","4.7 V"],"a":1,
+  "explain":"\\(U = R I = 470 \\cdot 0.025 = 11.75\\,\\mathrm{V}\\). Watch the milli prefix — unit discipline prevents most errors."},
+ {"q":"Two resistors 1 kΩ and 4 kΩ in parallel give…",
+  "opts":["5 kΩ","2.5 kΩ","800 Ω","3 kΩ"],"a":2,
+  "explain":"\\(R = \\frac{1000 \\cdot 4000}{5000} = 800\\,\\Omega\\) — always smaller than the smallest member (1 kΩ)."},
+ {"q":"Kirchhoff's current law is a consequence of…",
+  "opts":["energy conservation","Ohm's law","charge conservation","the definition of resistance"],"a":2,
+  "explain":"Charge cannot accumulate at an ideal node, so inflow = outflow. (KVL is the energy-conservation counterpart.)"},
+ {"q":"In a voltage divider with R₁ = 3 kΩ (top) and R₂ = 1 kΩ (bottom) across 8 V, the output across R₂ is…",
+  "opts":["6 V","2 V","4 V","2.67 V"],"a":1,
+  "explain":"\\(U_2 = 8 \\cdot \\frac{1}{3+1} = 2\\,\\mathrm{V}\\) — voltage divides proportionally to resistance in series."},
+ {"q":"A computed branch current comes out as −2.4 A. This means…",
+  "opts":["the calculation is wrong","the circuit is unstable","current flows opposite to the assumed arrow","the resistor is negative"],"a":2,
+  "explain":"Reference arrows are arbitrary choices. A negative result just says the physical direction is opposite to your assumption — flip your mental picture, not your equations."},
+ {"q":"The Thévenin resistance of a network is found by…",
+  "opts":["adding all resistances","short-circuiting voltage sources, opening current sources, and computing the terminal resistance","dividing total voltage by total current anywhere","measuring the largest resistor"],"a":1,
+  "explain":"Kill the sources (U-sources → short, I-sources → open) and look into the terminals. Equivalently \\(R_{Th} = U_{oc}/I_{sc}\\)."},
+ {"q":"At maximum power transfer (R_L = R_i), the efficiency is…",
+  "opts":["100 %","closest to 75 %","50 %","25 %"],"a":2,
+  "explain":"Equal resistances dissipate equal power, so half the energy is lost in the source. That's why power grids do NOT operate matched — they make \\(R_i \\ll R_L\\)."},
+ {"q":"A 2000 W heater runs 3 hours daily. At 0.30 €/kWh, the monthly (30-day) cost is…",
+  "opts":["≈ 5.40 €","≈ 54 €","≈ 18 €","≈ 180 €"],"a":1,
+  "explain":"Energy: \\(2\\,\\mathrm{kW} \\cdot 3\\,\\mathrm{h} \\cdot 30 = 180\\,\\mathrm{kWh}\\); cost \\(180 \\cdot 0.30 = 54\\,€\\). kWh is a unit of energy, not power — a distinction journalists get wrong daily."}
+]
+</script>
+</div>
+
+<script>
+document.addEventListener("ee-ready", () => {
+
+  /* --- Ohm's law: I(U) line with operating point --- */
+  EE.functionPlot({
+    mount: "#w-ohm", height: 280,
+    x: { min: 0, max: 12, label: "U in V" },
+    y: p => ({ min: 0, max: 130, label: "I in mA" }),
+    params: [
+      { key: "R", label: "Resistance R", min: 100, max: 2000, step: 10, value: 470, unit: "Ω", fmt: v => v.toFixed(0) },
+      { key: "U", label: "Source voltage U", min: 0, max: 12, step: 0.1, value: 9, unit: "V", fmt: v => v.toFixed(1) }
+    ],
+    curves: [
+      { label: "I = U/R", color: 0, fn: (u, p) => 1000 * u / p.R }
+    ],
+    annotations: p => [
+      { type: "point", x: p.U, y: 1000 * p.U / p.R, label: "operating point" }
+    ],
+    readouts: [
+      { label: "Current at U", fn: p => EE.si(p.U / p.R, "A") },
+      { label: "Conductance G", fn: p => EE.si(1 / p.R, "S") },
+      { label: "Power P = U²/R", fn: p => EE.si(p.U * p.U / p.R, "W") }
+    ]
+  });
+
+  /* --- Voltage divider --- */
+  EE.functionPlot({
+    mount: "#w-divider", height: 280,
+    x: { min: 0, max: 10000, label: "R₂ in Ω" },
+    y: p => ({ min: 0, max: p.Uin * 1.08, label: "U₂ in V" }),
+    params: [
+      { key: "Uin", label: "Input voltage", min: 1, max: 24, step: 0.5, value: 12, unit: "V", fmt: v => v.toFixed(1) },
+      { key: "R1", label: "R₁ (top)", min: 100, max: 10000, step: 100, value: 2000, unit: "Ω", fmt: v => v.toFixed(0) },
+      { key: "R2", label: "R₂ (bottom, your pick)", min: 100, max: 10000, step: 100, value: 3000, unit: "Ω", fmt: v => v.toFixed(0) }
+    ],
+    curves: [
+      { label: "U₂(R₂)", color: 0, fn: (r2, p) => p.Uin * r2 / (p.R1 + r2) }
+    ],
+    annotations: p => [
+      { type: "hline", y: p.Uin, label: "U_in (asymptote)" },
+      { type: "point", x: p.R2, y: p.Uin * p.R2 / (p.R1 + p.R2), label: "your design point" }
+    ],
+    readouts: [
+      { label: "U₂ at your R₂", fn: p => (p.Uin * p.R2 / (p.R1 + p.R2)).toFixed(2) + " V" },
+      { label: "Divider ratio", fn: p => (p.R2 / (p.R1 + p.R2)).toFixed(3) },
+      { label: "Cross current", fn: p => EE.si(p.Uin / (p.R1 + p.R2), "A") }
+    ]
+  });
+
+  /* --- Max power transfer --- */
+  EE.functionPlot({
+    mount: "#w-maxpower", height: 300,
+    x: p => ({ min: 0, max: 8 * p.Ri, label: "R_L in Ω" }),
+    y: p => ({ min: 0, max: 1.15 * p.U * p.U / (4 * p.Ri), label: "P_L in W" }),
+    params: [
+      { key: "U", label: "Source voltage U_q", min: 1, max: 24, step: 0.5, value: 10, unit: "V", fmt: v => v.toFixed(1) },
+      { key: "Ri", label: "Internal resistance R_i", min: 1, max: 100, step: 1, value: 25, unit: "Ω", fmt: v => v.toFixed(0) }
+    ],
+    curves: [
+      { label: "P_L (W)", color: 0, fn: (rl, p) => p.U * p.U * rl / Math.pow(p.Ri + rl, 2) },
+      { label: "η (scaled: top = 100 %)", color: 1, dash: [6, 4], fn: (rl, p) => (rl / (p.Ri + rl)) * (1.15 * p.U * p.U / (4 * p.Ri)) }
+    ],
+    annotations: p => [
+      { type: "vline", x: p.Ri, label: "matching R_L = R_i" },
+      { type: "point", x: p.Ri, y: p.U * p.U / (4 * p.Ri), label: "P_max" }
+    ],
+    readouts: [
+      { label: "P_max", fn: p => EE.si(p.U * p.U / (4 * p.Ri), "W") },
+      { label: "η at matching", fn: p => "50 %" },
+      { label: "I at matching", fn: p => EE.si(p.U / (2 * p.Ri), "A") }
+    ]
+  });
+});
+</script>
+
+</article>
+</main>
+</div>
+</body>
+</html>

@@ -1,0 +1,1109 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>M12 · Signals &amp; Systems — EE Knowledge Base</title>
+<link rel="stylesheet" href="../../assets/vendor/katex/katex.min.css">
+<link rel="stylesheet" href="../../assets/css/style.css">
+<script src="../../assets/vendor/katex/katex.min.js" defer></script>
+<script src="../../assets/vendor/katex/auto-render.min.js" defer></script>
+<script src="../curriculum.js" defer></script>
+<script src="../../assets/js/app.js" defer></script>
+<script src="../../assets/js/widgets.js" defer></script>
+</head>
+<body data-module="m12">
+<div class="layout">
+<main class="content">
+<article class="article">
+
+<span class="eyebrow">🎛️ Signals, Control &amp; Computing · Module 12</span>
+<h1>Signals &amp; Systems <span class="muted" style="font-weight:400;font-size:1.4rem">· <span class="de">Signale &amp; Systeme</span></span></h1>
+<p class="lead">This is the module where electrical engineering acquires its universal language. A microphone voltage, a share price, an ECG trace, a radar echo — all are <em>signals</em>; an amplifier, a filter, a car suspension, a national economy — all are <em>systems</em>. One compact theory — impulse response, convolution, poles, Bode plots, sampling — describes them all, and every later module (filters, control, communications, DSP) speaks this language fluently.</p>
+
+<div class="page-meta">
+  <span><b>Corresponds to:</b> Signale und Systeme (3rd–4th semester)</span>
+  <span><b>Prerequisites:</b> Modules 03, 05</span>
+  <span><b>Study time:</b> ≈ 7–9 h</span>
+</div>
+
+<h2 id="signals">1. Signals — the raw material</h2>
+
+<p>A <strong>signal</strong> (<span class="de">Signal</span>) is a function that carries information: a physical quantity varying over time (or space, or both). Mathematically we simply write \(x(t)\). A <strong>system</strong> (<span class="de">System</span>) is anything that transforms one signal into another: \(y(t) = T\{x(t)\}\). Signals are functions; systems are functions <em>of</em> functions. Before analyzing systems we need a taxonomy of their inputs.</p>
+
+<h3 id="taxonomy">1.1 The five classification axes</h3>
+
+<div class="table-wrap">
+<table class="data">
+<thead><tr><th>Axis</th><th>Classes</th><th>Examples</th></tr></thead>
+<tbody>
+<tr><td><b>Time axis</b></td><td><b>continuous-time</b> \(x(t)\) (<span class="de">zeitkontinuierlich</span>) vs. <b>discrete-time</b> \(x[n]\) (<span class="de">zeitdiskret</span>)</td><td>microphone voltage vs. its samples in a WAV file</td></tr>
+<tr><td><b>Amplitude axis</b></td><td><b>analog</b> (continuous values) vs. <b>digital</b> (quantized values, <span class="de">wertdiskret</span>)</td><td>thermometer voltage vs. 16-bit integer readings</td></tr>
+<tr><td><b>Repetition</b></td><td><b>periodic</b>: \(x(t+T)=x(t)\) (<span class="de">periodisch</span>) vs. <b>aperiodic</b></td><td>mains voltage vs. a speech recording</td></tr>
+<tr><td><b>Size</b></td><td><b>energy signal</b> vs. <b>power signal</b> (below)</td><td>a single pulse vs. a never-ending sine</td></tr>
+<tr><td><b>Predictability</b></td><td><b>deterministic</b> (a formula gives \(x(t)\) exactly) vs. <b>random/stochastic</b> (<span class="de">stochastisch</span>, only statistics known)</td><td>\(\sin(\omega t)\) vs. amplifier noise, real data traffic</td></tr>
+</tbody>
+</table>
+</div>
+
+<p>Note that "digital" and "discrete-time" are independent properties: a digital signal is discrete in <em>value</em>, a discrete-time signal is discrete in <em>time</em>. A CD stream is both; a sampled-but-not-yet-quantized voltage in an ADC front end is discrete-time but still analog in amplitude. This module works mostly with continuous-time deterministic signals; Module 13 goes discrete, and random signals get their own treatment in stochastic signal theory.</p>
+
+<h3 id="energy-power">1.2 Energy signals vs. power signals</h3>
+
+<p>Borrowing from circuits: if \(x(t)\) were a voltage across a 1 Ω resistor, the instantaneous power would be \(x^2(t)\). We define the (normalized) <strong>signal energy</strong> and <strong>signal power</strong>:</p>
+\[ E = \int_{-\infty}^{\infty} |x(t)|^2 \,\mathrm{d}t, \qquad
+   P = \lim_{T\to\infty} \frac{1}{2T}\int_{-T}^{T} |x(t)|^2 \,\mathrm{d}t . \]
+<ul>
+  <li><strong>Energy signal</strong> (<span class="de">Energiesignal</span>): \(0 < E < \infty\). Then necessarily \(P = 0\) — finite energy smeared over infinite time. Every finite-duration pulse, every decaying transient.</li>
+  <li><strong>Power signal</strong> (<span class="de">Leistungssignal</span>): \(0 < P < \infty\) (so \(E = \infty\)). Every periodic signal: for \(x(t) = \hat{x}\sin(\omega t)\), \(P = \hat{x}^2/2\) — precisely the RMS-squared from Module 05.</li>
+</ul>
+<p>The classes are mutually exclusive, and some signals (e.g. the ramp \(t\cdot u(t)\)) are neither. The distinction matters later: energy signals get Fourier <em>transforms</em>, power signals get Fourier <em>series</em> or power spectral densities.</p>
+
+<div class="box intuition">
+  <div class="box-title"><span class="ic">💡</span>Intuition: rain shower vs. climate</div>
+  <p>An energy signal is a rain shower: you can meaningfully ask "how much water fell in total?" (finite energy), but the long-run average rate is zero. A power signal is the climate: total rainfall since forever is infinite and meaningless, but the average rate — millimeters per year — is finite and exactly the useful number. Ask each signal the question it can answer.</p>
+</div>
+
+<h2 id="elementary">2. The elementary signals — a small cast of characters</h2>
+
+<p>A handful of standard signals act as building blocks and as test inputs for systems. Learn their names, shapes, and relationships.</p>
+
+<h3 id="step-ramp-rect">2.1 Step, ramp, rectangular pulse</h3>
+
+<p>The <strong>unit step</strong> (<span class="de">Einheitssprung, Sprungfunktion</span>) models switching something on at \(t=0\):</p>
+\[ u(t) = \begin{cases} 0, & t < 0 \\ 1, & t > 0 \end{cases} \]
+<p>(the value at exactly \(t=0\) is a convention; \(\tfrac12\) is common and never matters in practice). The <strong>unit ramp</strong> \(r(t) = t\,u(t)\) is its integral — it models quantities that grow linearly after switch-on. The <strong>rectangular pulse</strong> (<span class="de">Rechteckimpuls</span>) of width \(T\),</p>
+\[ \operatorname{rect}\!\left(\tfrac{t}{T}\right) = u\!\left(t+\tfrac{T}{2}\right) - u\!\left(t-\tfrac{T}{2}\right), \]
+<p>models anything of finite duration: a camera flash, one bit on a wire, a gate window. Steps build pulses; pulses build everything else — as we are about to see.</p>
+
+<figure>
+  <div class="fig-frame">
+  <svg class="diagram" viewBox="0 0 700 190" role="img" aria-label="Elementary signals: unit step, ramp, rectangular pulse, Dirac impulse">
+    <!-- panel 1: step -->
+    <g>
+      <line x1="20" y1="130" x2="160" y2="130" class="wire"/>
+      <line x1="55" y1="160" x2="55" y2="40" class="wire"/>
+      <path d="M20 130 H55 V70 H160" fill="none" stroke="var(--accent)" stroke-width="2.5"/>
+      <text x="90" y="30" text-anchor="middle" font-size="14" fill="var(--accent)">u(t)</text>
+      <text x="45" y="66" text-anchor="end" font-size="12">1</text>
+      <text x="155" y="148" text-anchor="end" font-size="12">t</text>
+    </g>
+    <!-- panel 2: ramp -->
+    <g>
+      <line x1="195" y1="130" x2="335" y2="130" class="wire"/>
+      <line x1="230" y1="160" x2="230" y2="40" class="wire"/>
+      <path d="M195 130 H230 L320 55" fill="none" stroke="var(--accent)" stroke-width="2.5"/>
+      <text x="270" y="30" text-anchor="middle" font-size="14" fill="var(--accent)">r(t) = t·u(t)</text>
+      <text x="330" y="148" text-anchor="end" font-size="12">t</text>
+    </g>
+    <!-- panel 3: rect -->
+    <g>
+      <line x1="370" y1="130" x2="510" y2="130" class="wire"/>
+      <line x1="440" y1="160" x2="440" y2="40" class="wire"/>
+      <path d="M370 130 H415 V70 H465 V130 H510" fill="none" stroke="var(--accent)" stroke-width="2.5"/>
+      <text x="440" y="30" text-anchor="middle" font-size="14" fill="var(--accent)">rect(t/T)</text>
+      <text x="415" y="148" text-anchor="middle" font-size="12">−T/2</text>
+      <text x="467" y="148" text-anchor="middle" font-size="12">T/2</text>
+    </g>
+    <!-- panel 4: dirac -->
+    <g>
+      <line x1="545" y1="130" x2="685" y2="130" class="wire"/>
+      <line x1="580" y1="160" x2="580" y2="40" class="wire"/>
+      <line x1="615" y1="130" x2="615" y2="70" stroke="var(--accent-2)" stroke-width="3"/>
+      <polygon points="609,72 621,72 615,56" fill="var(--accent-2)"/>
+      <text x="632" y="30" text-anchor="middle" font-size="14" fill="var(--accent-2)">δ(t)</text>
+      <text x="632" y="70" font-size="12" fill="var(--accent-2)">(1)</text>
+      <text x="680" y="148" text-anchor="end" font-size="12">t</text>
+    </g>
+  </svg>
+  </div>
+  <figcaption><b>Fig. 2.1</b> — The elementary signals. The Dirac impulse is drawn as an arrow because its <em>height</em> is infinite; the number in parentheses is its <em>weight</em> (area), here 1.</figcaption>
+</figure>
+
+<h3 id="dirac">2.2 The Dirac impulse — handle with care</h3>
+
+<p>Take a rectangular pulse of width \(\varepsilon\) and height \(1/\varepsilon\): its area is always exactly 1. Now let \(\varepsilon \to 0\). The result — infinitely short, infinitely tall, area 1 — is the <strong>Dirac impulse</strong> (<span class="de">Dirac-Stoß, Deltafunktion</span>):</p>
+\[ \delta(t) = \lim_{\varepsilon\to 0}\, \frac{1}{\varepsilon}\operatorname{rect}\!\left(\frac{t}{\varepsilon}\right), \qquad \int_{-\infty}^{\infty} \delta(t)\,\mathrm{d}t = 1 . \]
+<p>Strictly, \(\delta\) is not a function but a <em>distribution</em> (recall the careful treatment in Module 03): it is only defined by what it does <em>inside integrals</em>. And what it does there is the single most-used identity of this module, the <strong>sifting property</strong> (<span class="de">Ausblendeigenschaft</span>):</p>
+\[ \boxed{\;\int_{-\infty}^{\infty} x(t)\,\delta(t - t_0)\,\mathrm{d}t = x(t_0)\;} \]
+<p>The impulse "sifts out" the value of \(x\) at the instant where it sits. Why it must be true: the shrinking rectangle at \(t_0\) samples \(x\) over an ever-narrower window in which \(x\) is essentially constant at \(x(t_0)\); height \(1/\varepsilon\) times width \(\varepsilon\) leaves exactly that value. Two more facts to keep close:</p>
+\[ \delta(t) = \frac{\mathrm{d}u(t)}{\mathrm{d}t}, \qquad u(t) = \int_{-\infty}^{t} \delta(\tau)\,\mathrm{d}\tau, \qquad \delta(at) = \frac{1}{|a|}\,\delta(t). \]
+
+<div class="box warn">
+  <div class="box-title"><span class="ic">⚠️</span>The impulse has units — and other fine print</div>
+  <p>If \(t\) is in seconds, \(\delta(t)\) has units \(1/\mathrm{s}\) (its integral over time must be dimensionless). A current impulse \(Q\,\delta(t)\) in amperes therefore carries the charge \(Q\) — an idealized instantaneous charge dump. Also: expressions like \(\delta^2(t)\) are mathematically meaningless, and a "value" \(\delta(0)=\infty\) should never appear in your calculations. If your \(\delta\) is not under an integral (or about to be), be suspicious.</p>
+</div>
+
+<h3 id="complex-exp">2.3 The complex exponential — one signal to rule them all</h3>
+
+<p>The most important signal in this entire theory is</p>
+\[ x(t) = e^{st}, \qquad s = \sigma + j\omega \in \mathbb{C}. \]
+<p>By Euler's formula (Module 03), \(e^{st} = e^{\sigma t}\left(\cos\omega t + j\sin\omega t\right)\) — an oscillation at \(\omega\) inside an exponential envelope \(e^{\sigma t}\). One two-parameter family covers every signal we care about:</p>
+<div class="table-wrap">
+<table class="data">
+<thead><tr><th>Choice of \(s\)</th><th>Signal</th></tr></thead>
+<tbody>
+<tr><td>\(s = 0\)</td><td>DC (constant)</td></tr>
+<tr><td>\(s = \sigma\) real, \(\sigma&lt;0\)</td><td>decaying exponential (every RC discharge)</td></tr>
+<tr><td>\(s = j\omega\) purely imaginary</td><td>steady sinusoid (all of Module 05!)</td></tr>
+<tr><td>\(s = \sigma + j\omega,\ \sigma&lt;0\)</td><td>damped oscillation (every ringing circuit, Module 06)</td></tr>
+<tr><td>\(s = \sigma + j\omega,\ \sigma&gt;0\)</td><td>growing oscillation (every unstable feedback loop)</td></tr>
+</tbody>
+</table>
+</div>
+<p>Why this family and not, say, polynomials? Because \(e^{st}\) is the <strong>eigensignal</strong> of every linear time-invariant system: send it through, and it comes out as <em>itself</em>, merely scaled by a complex constant. Section 6 proves this in three lines, and the entire frequency-domain worldview — phasors, transfer functions, Bode plots — is the payoff. The parameter \(s\) even gets its own home, the <em>s-plane</em>, which we will map thoroughly in Section 7.</p>
+
+<h2 id="systems">3. Systems and their properties</h2>
+
+<p>A system \(y = T\{x\}\) can be anything from two resistors to a jet engine. What makes system <em>theory</em> possible is that a few structural properties — not the physics — determine which mathematical tools apply. For each property you need three things: the definition, a <b>test recipe</b>, and a feel for examples and counterexamples.</p>
+
+<h3 id="linearity">3.1 Linearity — <span class="de">Linearität</span></h3>
+
+<p>A system is <strong>linear</strong> if superposition holds: for all signals and constants,</p>
+\[ T\{a\,x_1 + b\,x_2\} = a\,T\{x_1\} + b\,T\{x_2\}. \]
+<p><b>Test recipe:</b> feed \(a x_1 + b x_2\) through the system definition and expand; separately compute \(a y_1 + b y_2\); compare the two expressions term by term.</p>
+<p><b>Example:</b> the differentiator \(y = \dot{x}\) — the derivative of a sum is the sum of derivatives. ✓ Also \(y(t) = t\,x(t)\): time-varying gain, but still linear in \(x\). ✓<br>
+<b>Counterexample:</b> the squarer \(y = x^2\): \((x_1 + x_2)^2 = x_1^2 + 2x_1x_2 + x_2^2 \ne x_1^2 + x_2^2\). ✗ Subtler: \(y = x + 1\) — it <em>looks</em> harmless, but scaling fails: input \(2x\) gives \(2x+1\), not \(2(x+1)\). Affine is not linear (zero in must give zero out!).</p>
+
+<h3 id="time-invariance">3.2 Time-invariance — <span class="de">Zeitinvarianz</span></h3>
+
+<p>A system is <strong>time-invariant</strong> if its behavior does not depend on when the experiment is run: delaying the input by \(t_0\) delays the output by \(t_0\) and changes nothing else,</p>
+\[ T\{x(t - t_0)\} = y(t - t_0) \quad \text{for all } t_0. \]
+<p><b>Test recipe:</b> compute (a) the response to the pre-shifted input \(x(t-t_0)\), and (b) the shifted output \(y(t-t_0)\) by replacing every \(t\) in the output formula. Equal for all \(t_0\) → time-invariant. Watch for any <em>explicit</em> \(t\) in the system law — that is the usual culprit.</p>
+<p><b>Example:</b> \(y = \dot{x}\), \(y(t) = x(t-3)\), any RC network with fixed components. ✓<br>
+<b>Counterexample:</b> \(y(t) = t\,x(t)\): response to \(x(t-t_0)\) is \(t\,x(t-t_0)\), but \(y(t-t_0) = (t-t_0)\,x(t-t_0)\). ✗ (A gain knob someone is turning during the measurement.) Also \(y(t) = x(2t)\): time-scaling squeezes any shift. ✗</p>
+
+<h3 id="causality">3.3 Causality — <span class="de">Kausalität</span></h3>
+
+<p>A system is <strong>causal</strong> if the output at time \(t\) depends only on the input at times \(\le t\). No physical real-time system can be non-causal — effects cannot precede causes.</p>
+<p><b>Test recipe:</b> ask "to compute \(y(t_1)\), do I need \(x\) at any \(\tau > t_1\)?" For LTI systems there is a one-look criterion coming in Section 4: \(h(t) = 0\) for all \(t < 0\).</p>
+<p><b>Counterexample:</b> \(y(t) = x(t+1)\) (a predictor), or the centered moving average \(y(t) = \tfrac{1}{2T}\int_{t-T}^{t+T} x(\tau)\mathrm{d}\tau\). Non-causal systems are not useless — offline processing (an audio file, a stored image) has the "future" already on disk, and image filters are routinely non-causal in the spatial coordinates.</p>
+
+<h3 id="memory">3.4 Memory — <span class="de">Gedächtnis</span></h3>
+
+<p>A system is <strong>memoryless</strong> (<span class="de">gedächtnislos</span>) if \(y(t)\) depends only on \(x(t)\) at the very same instant: \(y(t) = f\big(x(t)\big)\). A resistor is memoryless (\(u = Ri\), now). A capacitor is not: \(u_C = \tfrac1C \int_{-\infty}^{t} i\,\mathrm{d}\tau\) — its voltage remembers the entire current history. Memory is not a defect; it is exactly what makes filters, integrators and dynamics possible. Memoryless + linear + time-invariant leaves only \(y = k\,x\): a plain gain.</p>
+
+<h3 id="stability">3.5 BIBO stability — <span class="de">Stabilität</span></h3>
+
+<p>A system is <strong>BIBO stable</strong> (bounded input → bounded output) if every bounded input \(|x(t)| \le M_x < \infty\) produces a bounded output. <b>Test recipe:</b> to prove instability, one witness suffices — find a single bounded input that makes the output run away. To prove stability of an LTI system, check the absolute integrability of the impulse response (Section 4):</p>
+\[ \int_{-\infty}^{\infty} |h(t)|\,\mathrm{d}t < \infty \quad\Longleftrightarrow\quad \text{BIBO stable.} \]
+<p><b>Counterexample:</b> the ideal integrator \(y(t)=\int_{-\infty}^t x\,\mathrm{d}\tau\). Feed it the humble bounded step \(u(t)\): out comes the ramp \(t\,u(t)\) — unbounded. ✗ This is why "just integrate" controllers must be handled with care in Module 14.</p>
+
+<div class="box key">
+  <div class="box-title"><span class="ic">🔑</span>Key idea: LTI is the sweet spot</div>
+  <p>Linear + time-invariant (<b>LTI</b>, <span class="de">LZI-System</span>) is the combination that unlocks everything in the next five sections: complete characterization by one function \(h(t)\), convolution, transfer functions, Bode plots. Real devices are neither perfectly linear nor eternally time-invariant — but around an operating point, over the time scales we care about, LTI is an astonishingly accurate and utterly indispensable approximation. Learn the LTI theory deeply; treat everything else as a perturbation of it.</p>
+</div>
+
+<h2 id="lti">4. LTI systems — why one function tells you everything</h2>
+
+<p>Here is the central magic trick. Define the <strong>impulse response</strong> (<span class="de">Impulsantwort</span>) \(h(t)\) as the system's output when the input is a single unit impulse:</p>
+\[ h(t) = T\{\delta(t)\}. \]
+<p>Claim: for an LTI system, \(h(t)\) determines the response to <em>every</em> input. The derivation is a three-step argument worth internalizing, not memorizing.</p>
+
+<p><b>Step 1 — chop the input into pulses.</b> Approximate \(x(t)\) by a staircase of narrow rectangles of width \(\Delta\) (Fig. 4.1). The rectangle at \(\tau = k\Delta\) has height \(x(k\Delta)\); writing it via the unit-area pulse \(\delta_\Delta(t) = \tfrac1\Delta \operatorname{rect}(t/\Delta)\):</p>
+\[ x(t) \approx \sum_k x(k\Delta)\; \delta_\Delta(t - k\Delta)\, \Delta . \]
+
+<p><b>Step 2 — use linearity and time-invariance.</b> Time-invariance: the response to \(\delta_\Delta(t-k\Delta)\) is \(h_\Delta(t-k\Delta)\), the same pulse response shifted. Linearity: the response to the weighted sum is the weighted sum of responses:</p>
+\[ y(t) \approx \sum_k x(k\Delta)\; h_\Delta(t - k\Delta)\, \Delta . \]
+
+<p><b>Step 3 — let \(\Delta \to 0\).</b> The pulse becomes the Dirac impulse, \(h_\Delta \to h\), the sum becomes an integral:</p>
+\[ \boxed{\; y(t) = \int_{-\infty}^{\infty} x(\tau)\, h(t-\tau)\,\mathrm{d}\tau \;=\; (x * h)(t) \;} \]
+<p>This is the <strong>convolution integral</strong> (<span class="de">Faltungsintegral</span>) — the single formula that computes any LTI output from any input. Its meaning: the output <em>now</em> is a weighted sum of all past (and, if non-causal, future) input values, and \(h\) is the weighting pattern — the system's memory profile.</p>
+
+<figure>
+  <div class="fig-frame">
+  <svg class="diagram" viewBox="0 0 580 230" role="img" aria-label="Staircase approximation of a signal by shifted rectangular pulses">
+    <line x1="40" y1="185" x2="545" y2="185" class="wire" marker-end="url(#arrStair)"/>
+    <line x1="60" y1="205" x2="60" y2="30" class="wire" marker-end="url(#arrStair)"/>
+    <text x="552" y="205" font-size="13">τ</text>
+    <text x="45" y="26" font-size="13">x(τ)</text>
+    <!-- staircase rectangles -->
+    <g fill="var(--accent)" fill-opacity="0.18" stroke="var(--accent)" stroke-width="1.2">
+      <rect x="100" y="150" width="40" height="35"/>
+      <rect x="140" y="118" width="40" height="67"/>
+      <rect x="180" y="88"  width="40" height="97"/>
+      <rect x="220" y="72"  width="40" height="113"/>
+      <rect x="260" y="80"  width="40" height="105"/>
+      <rect x="300" y="104" width="40" height="81"/>
+      <rect x="340" y="132" width="40" height="53"/>
+      <rect x="380" y="158" width="40" height="27"/>
+    </g>
+    <!-- smooth curve -->
+    <path d="M100 165 C150 115, 200 62, 240 68 C280 74, 330 120, 420 172" fill="none" stroke="var(--accent-2)" stroke-width="2.5"/>
+    <text x="255" y="52" font-size="13" fill="var(--accent-2)">x(τ)</text>
+    <!-- highlighted slice -->
+    <rect x="220" y="72" width="40" height="113" fill="none" stroke="var(--accent-2)" stroke-width="2" stroke-dasharray="5 4"/>
+    <text x="240" y="215" text-anchor="middle" font-size="12">kΔ</text>
+    <line x1="240" y1="192" x2="240" y2="188" class="wire"/>
+    <text x="455" y="120" font-size="12.5" fill="var(--text-soft)">one slice ≈</text>
+    <text x="455" y="138" font-size="12.5" fill="var(--text-soft)">x(kΔ)·δ_Δ(τ−kΔ)·Δ</text>
+    <defs><marker id="arrStair" markerWidth="9" markerHeight="9" refX="7" refY="4.5" orient="auto"><path d="M0 0 L8 4.5 L0 9 z" fill="var(--text-soft)"/></marker></defs>
+  </svg>
+  </div>
+  <figcaption><b>Fig. 4.1</b> — Any signal is a sum of narrow shifted pulses. Because the system is LTI, the response is the equally-weighted sum of shifted pulse responses — which becomes the convolution integral as Δ → 0.</figcaption>
+</figure>
+
+<div class="box key">
+  <div class="box-title"><span class="ic">🔑</span>Key idea: h(t) is the system's fingerprint</div>
+  <p>One measurement — hit the system with an impulse, record what comes out — and you know its response to <em>everything</em>. This is why acousticians fire starter pistols in concert halls (the recorded reverberation <em>is</em> \(h(t)\), and convolving any dry recording with it lets you "play" that music in that hall), and why network analyzers fully characterize amplifiers. In practice one often measures the <strong>step response</strong> (<span class="de">Sprungantwort</span>) \(g(t) = T\{u(t)\}\) instead — a step is easier to generate than an impulse — and uses \(h(t) = \mathrm{d}g/\mathrm{d}t\).</p>
+</div>
+
+<h2 id="convolution">5. Convolution — the mechanics</h2>
+
+<h3 id="graphical">5.1 The graphical method: flip — shift — multiply — integrate</h3>
+
+<p>The integral \(y(t) = \int x(\tau)h(t-\tau)\mathrm{d}\tau\) confuses everyone at first because of the argument \(h(t-\tau)\): as a function of the integration variable \(\tau\), it is \(h\) <em>flipped</em> (mirror at the vertical axis, because of \(-\tau\)) and <em>shifted</em> by \(t\). So for each output instant \(t\):</p>
+<ol>
+  <li><b>Flip</b> (<span class="de">falten</span> = to fold — hence the German name!): draw \(h(-\tau)\).</li>
+  <li><b>Shift</b> it by \(t\): the flipped copy now sits at position \(t\); this is \(h(t-\tau)\).</li>
+  <li><b>Multiply</b> pointwise with \(x(\tau)\).</li>
+  <li><b>Integrate</b>: the area under the product is the single number \(y(t)\).</li>
+</ol>
+<p>Slide the flipped copy from \(t=-\infty\) to \(+\infty\) and the areas trace out the whole output. The widget below animates exactly this.</p>
+
+<div class="widget">
+  <div class="w-head"><span class="ic">🧪</span>Interactive — convolution, frame by frame <span class="w-tag">animation</span></div>
+  <div class="w-body">
+    <p class="small mt0">Top: \(x(\tau)\) (blue) and the flipped, shifted \(h(t-\tau)\) (amber) sliding across it; the shaded region is their product — its area is the output value. Bottom: \(y(t)\) being traced out. Try rect ∗ rect (a triangle emerges!), then exp ∗ rect. Switch to "slider" mode to scrub \(t\) by hand through the interesting moments: first contact, full overlap, separation.</p>
+    <div id="w-conv"></div>
+  </div>
+</div>
+
+<div class="example">
+  <div class="ex-head"><span class="ex-tag">Worked example</span> rect ∗ rect = triangle, fully by hand</div>
+  <div class="ex-body">
+    <p>Let \(x(t) = h(t) = 1\) for \(0 \le t \le T\) (with \(T = 1\,\mathrm{ms}\)), zero elsewhere. Compute \(y = x * h\) graphically, case by case. The flipped-shifted copy \(h(t-\tau)\) occupies \(\tau \in [t-T,\; t]\); the signal \(x(\tau)\) occupies \(\tau \in [0, T]\). Everything reduces to: <em>how much do these two intervals overlap?</em></p>
+    <div class="step"><span class="step-label">Case 1 — no contact yet (\(t &lt; 0\)):</span> the intervals \([t-T, t]\) and \([0,T]\) are disjoint. Zero overlap: \(y(t) = 0\).</div>
+    <div class="step"><span class="step-label">Case 2 — sliding in (\(0 \le t &lt; T\)):</span> overlap runs from \(0\) to \(t\), so
+      \[ y(t) = \int_0^t 1 \cdot 1 \,\mathrm{d}\tau = t . \]
+      The output <em>ramps up linearly</em> as the pulses engage.</div>
+    <div class="step"><span class="step-label">Case 3 — sliding out (\(T \le t &lt; 2T\)):</span> overlap runs from \(t - T\) to \(T\):
+      \[ y(t) = \int_{t-T}^{T} \mathrm{d}\tau = 2T - t . \]
+      A linear ramp back down.</div>
+    <div class="step"><span class="step-label">Case 4 — past each other (\(t \ge 2T\)):</span> disjoint again, \(y(t) = 0\).</div>
+    <div class="result-line">\(y(t)\) is a <b>triangle</b>: peak value \(T = 1\,\mathrm{ms}\cdot(1)^2\) at \(t = T\), total width \(2T = 2\,\mathrm{ms}\). Sanity checks: the output duration is the <em>sum</em> of the input durations (\(T + T\)); the output area equals the product of the areas (\(T \cdot T = T^2\) — the triangle's area, ✓); and the output is smoother than the inputs (convolution always smooths — two discontinuous rects gave a continuous triangle).</div>
+  </div>
+</div>
+
+<div class="box pitfall">
+  <div class="box-title"><span class="ic">🚫</span>Classic pitfall: forgetting to flip</div>
+  <p>Sliding an <em>unflipped</em> \(h(\tau - t)\) across \(x\) computes the <em>correlation</em>, not the convolution — for symmetric signals you get away with it, and then the exam presents an asymmetric \(h\) and the answer is time-reversed. Second classic: getting the integration limits wrong in the case analysis. Always determine the limits from "where are <em>both</em> factors nonzero?", sketching the two intervals — never from memory. Third: forgetting that the result's support starts at the <em>sum</em> of the two starting points.</p>
+</div>
+
+<h3 id="conv-props">5.2 Properties of convolution</h3>
+
+<div class="table-wrap">
+<table class="data">
+<thead><tr><th>Property</th><th>Statement</th><th>Why you care</th></tr></thead>
+<tbody>
+<tr><td>Commutative</td><td>\( x * h = h * x \)</td><td>flip whichever signal is simpler</td></tr>
+<tr><td>Associative</td><td>\( (x * h_1) * h_2 = x * (h_1 * h_2) \)</td><td>a cascade of LTI systems is one LTI system with \(h = h_1 * h_2\), in any order</td></tr>
+<tr><td>Distributive</td><td>\( x * (h_1 + h_2) = x*h_1 + x*h_2 \)</td><td>parallel systems add their impulse responses</td></tr>
+<tr><td>Identity</td><td>\( x * \delta = x \)</td><td>the impulse is the "do nothing" system</td></tr>
+<tr><td>Shift</td><td>\( x * \delta(t - t_0) = x(t - t_0) \)</td><td>a pure delay is convolution with a shifted impulse</td></tr>
+<tr><td>Duration</td><td>durations add; start times add</td><td>quick sanity check on any result</td></tr>
+<tr><td>Area</td><td>\( \int y = \int x \cdot \int h \)</td><td>second sanity check, takes ten seconds</td></tr>
+<tr><td>Derivative</td><td>\( (x*h)' = x' * h = x * h' \)</td><td>differentiate whichever factor is easier</td></tr>
+</tbody>
+</table>
+</div>
+
+<p>The associativity result deserves a pause: an entire chain of amplifiers, cables and filters collapses into <em>one</em> equivalent LTI system. In the frequency domain (Section 6 onward) this becomes even better — convolution turns into multiplication, and cascades simply multiply their transfer functions.</p>
+<h2 id="eigen">6. The eigenfunction property — why engineers think in frequency</h2>
+
+<h3 id="eigen-derivation">6.1 Three lines that create a worldview</h3>
+
+<p>Feed the complex exponential \(x(t) = e^{st}\) into an LTI system with impulse response \(h(t)\), using commutativity \(y = h * x\):</p>
+\[ y(t) = \int_{-\infty}^{\infty} h(\tau)\, e^{s(t-\tau)}\,\mathrm{d}\tau
+       = e^{st} \underbrace{\int_{-\infty}^{\infty} h(\tau)\, e^{-s\tau}\,\mathrm{d}\tau}_{\displaystyle H(s)} \]
+\[ \boxed{\; x(t) = e^{st} \;\Longrightarrow\; y(t) = H(s)\, e^{st} \;} \]
+<p>The exponential passes through <em>unchanged in shape</em> — the system can only multiply it by the complex number \(H(s)\). In linear-algebra language (Module 01): \(e^{st}\) is an <strong>eigenfunction</strong> (<span class="de">Eigenfunktion</span>) of every LTI system, with eigenvalue \(H(s)\). The function \(H(s)\), the Laplace transform of \(h(t)\), is the <strong>transfer function</strong> (<span class="de">Übertragungsfunktion</span>).</p>
+
+<h3 id="freq-response">6.2 The frequency response H(jω)</h3>
+
+<p>Set \(s = j\omega\) — a pure sinusoid — and you get the <strong>frequency response</strong> (<span class="de">Frequenzgang</span>) \(H(j\omega)\). Because a real cosine is a pair of complex exponentials, a real input \(\hat{x}\cos(\omega t)\) produces, in steady state,</p>
+\[ y(t) = |H(j\omega)|\;\hat{x}\,\cos\!\big(\omega t + \varphi(\omega)\big), \qquad \varphi(\omega) = \angle H(j\omega). \]
+<p>Read that carefully — it is the most consequential sentence of the module: <b>a sinusoid in gives a sinusoid out, at the same frequency</b>; the system can only change its <em>amplitude</em> (by the <strong>magnitude response</strong> \(|H(j\omega)|\), <span class="de">Amplitudengang</span>) and its <em>phase</em> (by the <strong>phase response</strong> \(\varphi(\omega)\), <span class="de">Phasengang</span>). No new frequencies are ever created by an LTI system. Distortion that adds harmonics — an overdriven guitar amp — is by definition non-linearity.</p>
+
+<div class="box intuition">
+  <div class="box-title"><span class="ic">💡</span>Intuition: the system as a graphic equalizer</div>
+  <p>Decompose any input into sinusoids (Fourier, Module 03). The LTI system is then just a wall of independent volume-and-delay knobs, one per frequency: \(|H(j\omega)|\) is the volume setting, \(\varphi(\omega)\) the delay setting. Convolution in time <em>is</em> this per-frequency multiplication seen from the other side: \(Y(j\omega) = H(j\omega)X(j\omega)\). When convolution feels opaque, switch domains — that freedom is the whole point of the transform machinery.</p>
+</div>
+
+<div class="example">
+  <div class="ex-head"><span class="ex-tag">Worked example</span> The eigenfunction property in action: an RC lowpass</div>
+  <div class="ex-body">
+    <p>An RC lowpass (\(R = 1.6\,\mathrm{k\Omega},\ C = 100\,\mathrm{nF}\), output across C) is driven by \(x(t) = 5\,\mathrm{V}\cdot\cos(2\pi \cdot 3\,\mathrm{kHz}\cdot t)\). Find the steady-state output.</p>
+    <div class="step"><span class="step-label">Step 1 — transfer function:</span> the complex voltage divider from Module 05:
+      \( H(j\omega) = \frac{1/(j\omega C)}{R + 1/(j\omega C)} = \frac{1}{1 + j\omega RC} \), with \(\tau = RC = 0.16\,\mathrm{ms}\) and corner frequency \(f_c = \frac{1}{2\pi RC} \approx 1\,\mathrm{kHz}\).</div>
+    <div class="step"><span class="step-label">Step 2 — evaluate at the signal frequency:</span> \( \omega RC = f/f_c = 3 \):
+      \( |H| = \frac{1}{\sqrt{1 + 3^2}} = \frac{1}{\sqrt{10}} \approx 0.316, \qquad \varphi = -\arctan 3 \approx -71.6^\circ. \)</div>
+    <div class="step"><span class="step-label">Step 3 — write down the output:</span>
+      \( y(t) \approx 1.58\,\mathrm{V}\cdot\cos(2\pi\cdot 3\,\mathrm{kHz}\cdot t - 71.6^\circ) \). Same frequency, smaller, later.</div>
+    <div class="result-line">\(y\) is a 3 kHz cosine of amplitude ≈ 1.58 V lagging by ≈ 72°. No convolution integral was harmed: one complex multiplication replaced it. That trade — integral for multiplication — is what you bought with the eigenfunction property.</div>
+  </div>
+</div>
+
+<h2 id="tf">7. The transfer function — poles, zeros, and the s-plane map</h2>
+
+<h3 id="poles-zeros">7.1 Poles and zeros</h3>
+
+<p>For every circuit made of R, L, C and amplifiers — indeed for every system described by a linear ODE with constant coefficients — \(H(s)\) is a <em>rational function</em>: a ratio of polynomials,</p>
+\[ H(s) = \frac{N(s)}{D(s)} = k\,\frac{(s - z_1)(s - z_2)\cdots}{(s - p_1)(s - p_2)\cdots} \]
+<p>The roots \(z_i\) of the numerator are the <strong>zeros</strong> (<span class="de">Nullstellen</span>) — frequencies the system completely blocks. The roots \(p_i\) of the denominator are the <strong>poles</strong> (<span class="de">Polstellen</span>) — the system's natural resonances. A partial-fraction expansion (Module 03) turns \(H(s)\) back into time:</p>
+\[ H(s) = \sum_i \frac{A_i}{s - p_i} \quad\Longrightarrow\quad h(t) = \sum_i A_i\, e^{p_i t}\,u(t) \]
+<p>(for simple poles, causal system). Each pole \(p_i = \sigma_i + j\omega_i\) contributes one natural mode \(e^{\sigma_i t}e^{j\omega_i t}\): <b>the pole's real part sets the decay/growth, its imaginary part sets the oscillation frequency.</b> Complex poles come in conjugate pairs and combine into real damped cosines \(e^{\sigma t}\cos(\omega t + \varphi)\).</p>
+
+<h3 id="s-plane">7.2 The s-plane map</h3>
+
+<p>Plot the poles (×) and zeros (○) in the complex plane and you can <em>read off</em> the system's temperament at a glance:</p>
+
+<figure>
+  <div class="fig-frame">
+  <svg class="diagram" viewBox="0 0 660 320" role="img" aria-label="s-plane map: pole locations and their corresponding time responses">
+    <!-- shaded stable half -->
+    <rect x="40" y="30" width="290" height="260" fill="var(--accent)" fill-opacity="0.06"/>
+    <!-- axes -->
+    <line x1="30" y1="160" x2="630" y2="160" class="wire" marker-end="url(#arrSpl)"/>
+    <line x1="330" y1="300" x2="330" y2="22" class="wire" marker-end="url(#arrSpl)"/>
+    <text x="626" y="180" text-anchor="end" font-size="13">σ = Re(s)</text>
+    <text x="340" y="34" font-size="13">jω = Im(s)</text>
+    <text x="70" y="50" font-size="12.5" fill="var(--accent)">stable region (left half-plane)</text>
+    <!-- pole: LHP real, decay -->
+    <g stroke="var(--accent)" stroke-width="2.5"><path d="M115 153 l14 14 M129 153 l-14 14"/></g>
+    <path d="M72 196 q14 32 32 40 q20 9 44 11" fill="none" stroke="var(--accent)" stroke-width="2"/>
+    <text x="105" y="268" text-anchor="middle" font-size="11.5" fill="var(--text-soft)">decay e^(σt)</text>
+    <!-- pole pair: LHP complex, damped oscillation -->
+    <g stroke="var(--accent)" stroke-width="2.5"><path d="M218 78 l14 14 M232 78 l-14 14 M218 228 l14 14 M232 228 l-14 14"/></g>
+    <path d="M182 122 q6 -24 12 0 q6 24 12 0 q6 -18 12 0 q6 14 12 0 q6 -9 12 0 q6 6 12 0" fill="none" stroke="var(--accent)" stroke-width="2"/>
+    <text x="222" y="140" text-anchor="middle" font-size="11.5" fill="var(--text-soft)">damped ringing</text>
+    <!-- pole pair on axis: sustained oscillation -->
+    <g stroke="var(--accent-2)" stroke-width="2.5"><path d="M323 55 l14 14 M337 55 l-14 14 M323 248 l14 14 M337 248 l-14 14"/></g>
+    <path d="M352 100 q6 -22 12 0 q6 22 12 0 q6 -22 12 0 q6 22 12 0 q6 -22 12 0 q6 22 12 0" fill="none" stroke="var(--accent-2)" stroke-width="2"/>
+    <text x="392" y="122" text-anchor="middle" font-size="11.5" fill="var(--text-soft)">constant oscillation</text>
+    <!-- pole RHP complex: growing oscillation -->
+    <g stroke="var(--accent-2)" stroke-width="2.5"><path d="M488 90 l14 14 M502 90 l-14 14 M488 216 l14 14 M502 216 l-14 14"/></g>
+    <path d="M448 190 q6 -8 12 0 q6 10 12 0 q7 -18 14 0 q7 24 14 0 q8 -36 16 0 q8 44 16 0" fill="none" stroke="var(--accent-2)" stroke-width="2"/>
+    <text x="524" y="238" font-size="11.5" fill="var(--text-soft)">growing —</text>
+    <text x="524" y="253" font-size="11.5" fill="var(--text-soft)">unstable!</text>
+    <defs><marker id="arrSpl" markerWidth="9" markerHeight="9" refX="7" refY="4.5" orient="auto"><path d="M0 0 L8 4.5 L0 9 z" fill="var(--text-soft)"/></marker></defs>
+  </svg>
+  </div>
+  <figcaption><b>Fig. 7.1</b> — The s-plane map. Left half-plane poles → decaying modes; poles on the imaginary axis → sustained oscillation (marginal); right half-plane poles → exponential growth. Distance from the real axis sets the ringing frequency; distance from the imaginary axis sets the decay rate.</figcaption>
+</figure>
+
+<p>Three rules of thumb summarize the geography:</p>
+<ul>
+  <li><b>Left = decay, right = growth.</b> \(\mathrm{Re}(p) = \sigma < 0\) gives \(e^{\sigma t} \to 0\); \(\sigma > 0\) explodes.</li>
+  <li><b>Height = pitch.</b> \(\mathrm{Im}(p) = \omega\) is the ringing frequency in rad/s; poles on the real axis do not oscillate at all.</li>
+  <li><b>Close to the axis = slow.</b> A pole hugging the imaginary axis decays sluggishly and rings long — think of a bell.</li>
+</ul>
+
+<h3 id="stability-poles">7.3 Stability and dominant poles</h3>
+
+<p>Because \(h(t)\) is a sum of pole modes, BIBO stability has a beautifully clean criterion:</p>
+\[ \boxed{\;\text{causal LTI system stable} \iff \text{all poles satisfy } \mathrm{Re}(p_i) < 0\;} \]
+<p>(zeros are irrelevant for stability — they cannot make anything grow). Poles exactly <em>on</em> the imaginary axis are the knife's edge: <strong>marginally stable</strong> (<span class="de">grenzstabil</span>), oscillating forever, and tipped into instability by the slightest perturbation — an ideal oscillator is exactly this, deliberately.</p>
+<p>Among stable poles, the one closest to the imaginary axis decays slowest and therefore rules the long-term behavior: the <strong>dominant pole</strong> (<span class="de">dominanter Pol</span>). Practical consequence: a fifth-order amplifier with poles at \(-10^3\) and four poles beyond \(-10^6\) (all in 1/s) behaves, for settling-time purposes, like a first-order system with \(\tau = 1\,\mathrm{ms}\). Engineers approximate high-order systems by their one or two dominant poles constantly — it is the standard first move in Module 14.</p>
+
+<div class="widget">
+  <div class="w-head"><span class="ic">🧪</span>Interactive — pole explorer <span class="w-tag">simulation</span></div>
+  <div class="w-body">
+    <p class="small mt0">Place a conjugate pole pair \(s = \sigma \pm j\omega\) with the sliders and watch the natural mode \(h(t) = e^{\sigma t}\cos(\omega t)\). Push \(\sigma\) toward zero: the ringing lasts longer and longer. Cross into \(\sigma &gt; 0\): the envelope reverses and the response explodes. Set \(\omega = 0\) for a pure exponential.</p>
+    <div id="w-poles"></div>
+  </div>
+</div>
+
+<div class="box history">
+  <div class="box-title"><span class="ic">📜</span>Poles run the world</div>
+  <p>Pole placement is arguably the most economically important activity in engineering: flight control laws place the poles of an intrinsically unstable airframe into the left half-plane hundreds of times per second (Module 14); phase-locked loops in every radio place poles for lock speed vs. jitter (Module 21); the 2019–2021 redesigns of grid-inverter controls were, at heart, arguments about poles drifting rightward as solar penetration grew (Module 19). When this module says "where are the poles?", it is asking the professional's first question.</p>
+</div>
+
+<h2 id="bode">8. Bode plots — frequency response you can sketch on a napkin</h2>
+
+<h3 id="db">8.1 Decibels, recapped in one paragraph</h3>
+
+<p>Magnitude responses span factors of millions, so we plot them logarithmically. The gain in <strong>decibels</strong>: \(|H|_{\mathrm{dB}} = 20\log_{10}|H|\). Anchors to memorize: \(\times 1 = 0\,\mathrm{dB}\), \(\times\sqrt{2} \approx 3\,\mathrm{dB}\), \(\times 2 \approx 6\,\mathrm{dB}\), \(\times 10 = 20\,\mathrm{dB}\), \(\times 100 = 40\,\mathrm{dB}\); division flips the sign. The payoff of logs: cascaded gains <em>multiply</em>, so their dB values — and their Bode curves — simply <em>add</em>. With a log frequency axis as well, the pieces of any rational \(H(s)\) become straight-line segments. That is the <strong>Bode plot</strong> (<span class="de">Bode-Diagramm</span>): magnitude in dB and phase in degrees, both over \(\log \omega\).</p>
+
+<h3 id="bode-rules">8.2 The asymptotic construction rules</h3>
+
+<p>Write \(H(s)\) in <em>normal form</em> — every factor as \((1 + s/\omega_c)\) — and read off the corner frequencies \(\omega_c\) (<span class="de">Knickfrequenzen</span>). Then each factor contributes:</p>
+
+<div class="table-wrap">
+<table class="data">
+<thead><tr><th>Factor</th><th>Magnitude asymptote</th><th>Phase</th></tr></thead>
+<tbody>
+<tr><td>constant \(k\)</td><td>horizontal line at \(20\log_{10}|k|\)</td><td>0° (−180° if \(k&lt;0\))</td></tr>
+<tr><td>zero at origin \(s\)</td><td>+20 dB/dec, crossing 0 dB at \(\omega = 1\)</td><td>+90° everywhere</td></tr>
+<tr><td>pole at origin \(1/s\) (integrator)</td><td>−20 dB/dec, crossing 0 dB at \(\omega = 1\)</td><td>−90° everywhere</td></tr>
+<tr><td>simple zero \((1 + s/\omega_c)\)</td><td>0 dB below \(\omega_c\), then +20 dB/dec (actual: +3 dB at \(\omega_c\))</td><td>0° → +90°, passing +45° at \(\omega_c\), spread over \(\omega_c/10 \ldots 10\,\omega_c\)</td></tr>
+<tr><td>simple pole \(1/(1 + s/\omega_c)\)</td><td>0 dB below \(\omega_c\), then −20 dB/dec (actual: −3 dB at \(\omega_c\))</td><td>0° → −90°, passing −45° at \(\omega_c\)</td></tr>
+<tr><td>complex pole pair \(\dfrac{1}{1 + 2\zeta s/\omega_0 + (s/\omega_0)^2}\)</td><td>0 dB below \(\omega_0\), then <b>−40 dB/dec</b>; near \(\omega_0\) a resonance bump of \(\approx 20\log_{10}\frac{1}{2\zeta}\) for small \(\zeta\)</td><td>0° → −180°, passing −90° at \(\omega_0\), sharper for small \(\zeta\)</td></tr>
+</tbody>
+</table>
+</div>
+
+<p>Construction procedure: (1) normal form, list corners left to right; (2) find the low-frequency asymptote from the constant and any \(s^{\pm n}\) factors; (3) walk rightward, bending the slope by ±20 dB/dec at each corner; (4) round the corners by ∓3 dB; (5) sketch phase by adding the S-curves. Total time: two minutes. Accuracy: within ~1–3 dB of exact — which is why analog designers still sketch Bode plots before touching a simulator.</p>
+
+<div class="example">
+  <div class="ex-head"><span class="ex-tag">Worked example</span> Full Bode construction of \(H(s) = \dfrac{100\,(s + 10)}{(s+1)(s+100)}\)</div>
+  <div class="ex-body">
+    <div class="step"><span class="step-label">Step 1 — normal form:</span> pull each root out as \((1 + s/\omega_c)\):
+      \[ H(s) = \frac{100 \cdot 10\,(1 + s/10)}{1\cdot(1 + s/1)\cdot 100\,(1 + s/100)} = 10\;\frac{1 + s/10}{(1 + s/1)(1 + s/100)} . \]
+      DC gain \(H(0) = 10 \;\widehat{=}\; 20\,\mathrm{dB}\). Corners, left to right: <b>pole at 1</b>, <b>zero at 10</b>, <b>pole at 100</b> (all rad/s).</div>
+    <div class="step"><span class="step-label">Step 2 — magnitude asymptotes:</span> start flat at 20 dB. At \(\omega = 1\) the pole bends the slope to −20 dB/dec; over the decade to \(\omega = 10\) the curve falls 20 dB → reaches <b>0 dB at ω = 10</b>. There the zero bends the slope back to 0 dB/dec: flat at 0 dB until \(\omega = 100\), where the second pole bends it to −20 dB/dec for good. (Check the far end: at \(\omega \gg 100\), \(|H| \approx 100\,\omega/\omega^2 = 100/\omega\) — at \(\omega = 1000\) that is 0.1 = −20 dB. The asymptote agrees. ✓)</div>
+    <div class="step"><span class="step-label">Step 3 — corrections:</span> −3 dB at ω = 1 (→ 17 dB), +3 dB at ω = 10 (→ 3 dB), −3 dB at ω = 100 (→ −3 dB). Done — that is already accurate to a fraction of a dB.</div>
+    <div class="step"><span class="step-label">Step 4 — phase:</span> each corner contributes its S-curve: pole@1 (0→−90°), zero@10 (0→+90°), pole@100 (0→−90°). Low-frequency phase 0°; around \(\omega \approx 1\) the phase dips (−45° at ω = 1); the zero pulls it back up toward −45°…0° in the mid-band; the last pole takes it down to the high-frequency limit \((n_z - n_p)\cdot 90° = -90°\).</div>
+    <div class="result-line">A "shelf" response: 20 dB below 1 rad/s, 0 dB between 10 and 100 rad/s, falling beyond. The −3 dB <b>bandwidth</b> relative to the DC gain (20 dB → 17 dB line) is read off at \(\omega \approx 1\) rad/s. Five minutes, no computer.</div>
+  </div>
+</div>
+
+<h3 id="bode-widget">8.3 The second-order response and resonance peaking</h3>
+
+<div class="widget">
+  <div class="w-head"><span class="ic">🧪</span>Interactive — second-order Bode explorer <span class="w-tag">simulation</span></div>
+  <div class="w-body">
+    <p class="small mt0">The standard second-order lowpass \(H(s) = \omega_0^2/(s^2 + 2\zeta\omega_0 s + \omega_0^2)\). Sweep the damping ratio \(\zeta\): below \(\zeta = 1/\sqrt{2} \approx 0.707\) a resonance peak grows at \(\omega \approx \omega_0\) — at \(\zeta = 0.05\) it towers 20 dB above the passband. Watch the phase transition through −90° at \(f_0\) get ever steeper as \(\zeta\) drops. Compare with the RLC resonance curves of Module 06 — they are the same physics.</p>
+    <div id="w-bode2"></div>
+  </div>
+</div>
+
+<h2 id="prototypes">9. First- and second-order prototypes — the two systems you must know cold</h2>
+
+<h3 id="first-order">9.1 First order: one pole, one time constant</h3>
+
+<p>Prototype: \(H(s) = \dfrac{1}{1 + s\tau}\) — every RC lowpass, every thermal lag, every dominant-pole amplifier. Its three faces:</p>
+\[ h(t) = \frac{1}{\tau}e^{-t/\tau}u(t), \qquad
+   g(t) = \left(1 - e^{-t/\tau}\right)u(t), \qquad
+   |H(j\omega)| = \frac{1}{\sqrt{1 + (\omega\tau)^2}} . \]
+<p>The numbers every engineer carries in their head: the step response reaches 63 % at \(t = \tau\), 95 % at \(3\tau\), 99 % at \(5\tau\); the −3 dB corner sits at \(\omega_c = 1/\tau\); and the 10–90 % <strong>rise time</strong> (<span class="de">Anstiegszeit</span>) obeys</p>
+\[ t_r \approx 2.2\,\tau \quad\Longrightarrow\quad t_r \cdot f_{3\mathrm{dB}} \approx 0.35 . \]
+<p>That last identity — bandwidth × rise time ≈ 0.35 — lets you infer an oscilloscope's bandwidth from how it renders a sharp edge, and vice versa. A 100 MHz scope cannot show edges faster than ≈ 3.5 ns, no matter what the circuit does.</p>
+
+<h3 id="second-order">9.2 Second order: two poles, and the personality parameter ζ</h3>
+
+<p>Prototype (normalized DC gain 1):</p>
+\[ H(s) = \frac{\omega_0^2}{s^2 + 2\zeta\omega_0 s + \omega_0^2}, \qquad
+   p_{1,2} = -\zeta\omega_0 \pm \omega_0\sqrt{\zeta^2 - 1}, \]
+<p>with undamped natural frequency \(\omega_0\) (<span class="de">Kennkreisfrequenz</span>) and <strong>damping ratio</strong> \(\zeta\) (<span class="de">Dämpfungsgrad</span>). The value of \(\zeta\) sets the system's entire personality:</p>
+
+<div class="table-wrap">
+<table class="data">
+<thead><tr><th>Regime</th><th>Poles</th><th>Step response</th><th>Frequency response</th></tr></thead>
+<tbody>
+<tr><td>\(\zeta > 1\) overdamped (<span class="de">Kriechfall</span>)</td><td>two distinct real poles</td><td>sluggish creep, no overshoot</td><td>droops early, no peak</td></tr>
+<tr><td>\(\zeta = 1\) critically damped (<span class="de">aperiodischer Grenzfall</span>)</td><td>double real pole at \(-\omega_0\)</td><td>fastest response without overshoot</td><td>−6 dB at \(\omega_0\), no peak</td></tr>
+<tr><td>\(0 < \zeta < 1\) underdamped (<span class="de">Schwingfall</span>)</td><td>conjugate pair, \(\omega_d = \omega_0\sqrt{1-\zeta^2}\)</td><td>overshoot \(M_p = e^{-\pi\zeta/\sqrt{1-\zeta^2}}\), ringing at \(\omega_d\)</td><td>peak if \(\zeta < 1/\sqrt2\)</td></tr>
+<tr><td>\(\zeta = 0\) undamped</td><td>on the jω axis</td><td>oscillates forever</td><td>infinite peak — resonance disaster</td></tr>
+</tbody>
+</table>
+</div>
+
+<p>For \(\zeta < 1/\sqrt{2}\) the magnitude response peaks at \(\omega_r = \omega_0\sqrt{1 - 2\zeta^2}\) with height</p>
+\[ |H|_{\max} = \frac{1}{2\zeta\sqrt{1 - \zeta^2}} \;\approx\; Q = \frac{1}{2\zeta} \ \ (\zeta \ll 1), \]
+<p>connecting directly to the resonance and quality factor \(Q\) of the series RLC circuit in Module 06, where \(\zeta = \frac{R}{2}\sqrt{C/L}\). Design lore: \(\zeta \approx 0.7\) (poles at 45°) is the classic engineering compromise — fast, ~4–5 % overshoot, flattest possible passband (Butterworth!); car suspensions aim slightly under 1; measurement instruments nearer 1 to avoid overshoot lying about the measured value.</p>
+
+<div class="box pitfall">
+  <div class="box-title"><span class="ic">🚫</span>Classic pitfall: three different "resonance frequencies"</div>
+  <p>Keep apart: \(\omega_0\) (undamped natural frequency, from the poles' distance to the origin), \(\omega_d = \omega_0\sqrt{1-\zeta^2}\) (actual ringing frequency of the step response) and \(\omega_r = \omega_0\sqrt{1-2\zeta^2}\) (where the magnitude response peaks). For small \(\zeta\) all three nearly coincide, and exam setters love the regime where they do not. At \(\zeta = 0.6\): \(\omega_d = 0.8\,\omega_0\) but \(\omega_r = 0.53\,\omega_0\) — far from interchangeable.</p>
+</div>
+
+<h2 id="filters">10. Filters — ideal shapes vs. buildable reality</h2>
+
+<p>The most common job description for an LTI system: pass some frequencies, block others — a <strong>filter</strong>. The four ideal shapes:</p>
+
+<figure>
+  <div class="fig-frame">
+  <svg class="diagram" viewBox="0 0 700 170" role="img" aria-label="Ideal filter magnitude responses: lowpass, highpass, bandpass, bandstop">
+    <!-- LP -->
+    <g>
+      <line x1="25" y1="120" x2="160" y2="120" class="wire"/>
+      <line x1="35" y1="135" x2="35" y2="35" class="wire"/>
+      <path d="M35 55 H95 V120" fill="none" stroke="var(--accent)" stroke-width="2.5"/>
+      <text x="95" y="155" text-anchor="middle" font-size="12">Lowpass</text>
+      <text x="95" y="135" text-anchor="middle" font-size="11">f_c</text>
+      <text x="20" y="55" text-anchor="end" font-size="11">1</text>
+    </g>
+    <!-- HP -->
+    <g>
+      <line x1="200" y1="120" x2="335" y2="120" class="wire"/>
+      <line x1="210" y1="135" x2="210" y2="35" class="wire"/>
+      <path d="M210 120 H270 V55 H330" fill="none" stroke="var(--accent)" stroke-width="2.5"/>
+      <text x="270" y="155" text-anchor="middle" font-size="12">Highpass</text>
+      <text x="270" y="135" text-anchor="middle" font-size="11">f_c</text>
+    </g>
+    <!-- BP -->
+    <g>
+      <line x1="375" y1="120" x2="510" y2="120" class="wire"/>
+      <line x1="385" y1="135" x2="385" y2="35" class="wire"/>
+      <path d="M385 120 H420 V55 H465 V120 H505" fill="none" stroke="var(--accent)" stroke-width="2.5"/>
+      <text x="445" y="155" text-anchor="middle" font-size="12">Bandpass</text>
+    </g>
+    <!-- BS -->
+    <g>
+      <line x1="550" y1="120" x2="685" y2="120" class="wire"/>
+      <line x1="560" y1="135" x2="560" y2="35" class="wire"/>
+      <path d="M560 55 H595 V120 H640 V55 H680" fill="none" stroke="var(--accent)" stroke-width="2.5"/>
+      <text x="620" y="155" text-anchor="middle" font-size="12">Bandstop</text>
+    </g>
+  </svg>
+  </div>
+  <figcaption><b>Fig. 10.1</b> — Ideal "brick-wall" magnitude responses: lowpass (<span class="de">Tiefpass</span>), highpass (<span class="de">Hochpass</span>), bandpass (<span class="de">Bandpass</span>), bandstop/notch (<span class="de">Bandsperre</span>). None of them can be built exactly.</figcaption>
+</figure>
+
+<h3 id="brick-wall">10.1 Why the brick wall is impossible</h3>
+
+<p>Take the ideal lowpass: \(|H| = 1\) for \(|f| < f_c\), zero beyond, zero phase. Inverse-transforming this rectangle in frequency (Module 03) gives the impulse response</p>
+\[ h(t) = 2f_c\,\operatorname{si}(2\pi f_c t) = 2f_c\,\frac{\sin(2\pi f_c t)}{2\pi f_c t}, \]
+<p>a sinc ripple extending over <em>all</em> time — including \(t < 0\). The ideal filter responds <b>before the impulse arrives</b>: it is non-causal, hence unbuildable in real time (its sinc tails decaying only as \(1/t\) also mean it is not even BIBO stable). Every real filter is a compromise triangle between (a) flat passband, (b) steep transition, (c) benign phase/transient behavior — you may pick roughly two. The classical approximation families (Butterworth: maximally flat; Chebyshev: steeper but rippled; Bessel: best phase, laziest rolloff) and their realization as circuits and algorithms are the business of Module 13.</p>
+
+<div class="box intuition">
+  <div class="box-title"><span class="ic">💡</span>Intuition: sharp in frequency = long in time</div>
+  <p>Frequency selectivity requires <em>observation time</em>. To decide whether a tone is 999 Hz or 1001 Hz you must listen for on the order of half a second — the reciprocal of the 2 Hz difference. A filter that separates frequencies sharply must therefore "listen" for a long time: a long, ringing impulse response. The brick wall takes this to the limit — infinitely sharp needs infinitely long, including infinitely early. This time–frequency duality (bandwidth × duration ≳ constant) is the engineering face of the uncertainty principle, and it will return in windowing (Module 13) and digital communications (Module 21).</p>
+</div>
+
+<h2 id="sampling">11. Sampling — the bridge to the digital world</h2>
+
+<p>Every phone call, every measurement in this decade eventually becomes numbers. <strong>Sampling</strong> (<span class="de">Abtastung</span>) reads the signal every \(T_s\) seconds — sampling frequency \(f_s = 1/T_s\) (<span class="de">Abtastfrequenz</span>). The astonishing claim of the <strong>sampling theorem</strong>: under one condition, the samples contain <em>everything</em> — the continuous signal can be reconstructed exactly, not approximately.</p>
+
+<h3 id="replication">11.1 The spectrum-replication picture</h3>
+
+<p><b>Derivation sketch.</b> Model sampling as multiplying \(x(t)\) by an impulse train \(\text{ш}(t) = \sum_n \delta(t - nT_s)\):</p>
+\[ x_s(t) = x(t)\cdot \sum_{n} \delta(t - nT_s) = \sum_n x(nT_s)\,\delta(t - nT_s) \]
+<p>(the sifting property keeps exactly the sample values). The impulse train is periodic, so it has a Fourier series — and a remarkable one: all coefficients equal, \(\text{ш}(t) = \frac{1}{T_s}\sum_k e^{jk\omega_s t}\). Multiplication by \(e^{jk\omega_s t}\) shifts a spectrum by \(k\omega_s\) (Module 03). Therefore:</p>
+\[ \boxed{\;X_s(f) = \frac{1}{T_s}\sum_{k=-\infty}^{\infty} X(f - k f_s)\;} \]
+<p><b>Sampling replicates the spectrum</b> at every multiple of \(f_s\) (Fig. 11.1). If \(x\) is band-limited to \(f_{\max}\) and the replicas do not touch, the original spectrum sits intact between them — a lowpass filter can cut it back out, losslessly. The replicas stay clear of each other exactly when \(f_s - f_{\max} > f_{\max}\):</p>
+\[ \boxed{\; f_s > 2 f_{\max} \;} \quad\text{(Shannon/Nyquist sampling theorem, } \textit{Abtasttheorem}\text{)} \]
+<p>The threshold \(2 f_{\max}\) is the <strong>Nyquist rate</strong>; \(f_s/2\) is the <strong>Nyquist frequency</strong> — the highest frequency a given sampler can represent.</p>
+
+<figure>
+  <div class="fig-frame">
+  <svg class="diagram" viewBox="0 0 660 300" role="img" aria-label="Spectrum replication by sampling, without and with aliasing">
+    <!-- row 1: fs > 2fmax -->
+    <line x1="30" y1="105" x2="630" y2="105" class="wire" marker-end="url(#arrSam)"/>
+    <text x="636" y="120" font-size="12">f</text>
+    <text x="38" y="38" font-size="12.5" fill="var(--text-soft)">f_s &gt; 2 f_max : replicas separated — recoverable</text>
+    <!-- baseband triangle -->
+    <path d="M270 105 L330 55 L390 105 Z" fill="var(--accent)" fill-opacity="0.25" stroke="var(--accent)" stroke-width="2"/>
+    <path d="M90 105 L150 55 L210 105 Z" fill="none" stroke="var(--accent)" stroke-width="1.6" stroke-dasharray="5 4"/>
+    <path d="M450 105 L510 55 L570 105 Z" fill="none" stroke="var(--accent)" stroke-width="1.6" stroke-dasharray="5 4"/>
+    <text x="330" y="122" text-anchor="middle" font-size="11.5">0</text>
+    <text x="510" y="122" text-anchor="middle" font-size="11.5">f_s</text>
+    <text x="150" y="122" text-anchor="middle" font-size="11.5">−f_s</text>
+    <text x="392" y="140" text-anchor="middle" font-size="11">f_max</text>
+    <line x1="390" y1="105" x2="390" y2="128" stroke="var(--text-faint)" stroke-width="1" stroke-dasharray="3 3"/>
+    <!-- row 2: fs < 2fmax -->
+    <line x1="30" y1="255" x2="630" y2="255" class="wire" marker-end="url(#arrSam)"/>
+    <text x="636" y="270" font-size="12">f</text>
+    <text x="38" y="188" font-size="12.5" fill="var(--text-soft)">f_s &lt; 2 f_max : replicas overlap — aliasing corrupts the spectrum</text>
+    <path d="M240 255 L330 200 L420 255 Z" fill="var(--accent)" fill-opacity="0.25" stroke="var(--accent)" stroke-width="2"/>
+    <path d="M320 255 L410 200 L500 255 Z" fill="none" stroke="var(--accent-2)" stroke-width="2" stroke-dasharray="5 4"/>
+    <path d="M160 255 L250 200 L340 255 Z" fill="none" stroke="var(--accent-2)" stroke-width="2" stroke-dasharray="5 4"/>
+    <!-- overlap shading -->
+    <path d="M320 255 L370 224 L420 255 Z" fill="var(--accent-2)" fill-opacity="0.35"/>
+    <path d="M240 255 L290 224 L340 255 Z" fill="var(--accent-2)" fill-opacity="0.35"/>
+    <text x="330" y="272" text-anchor="middle" font-size="11.5">0</text>
+    <text x="410" y="196" text-anchor="middle" font-size="11" fill="var(--accent-2)">replica at f_s</text>
+    <text x="372" y="240" text-anchor="middle" font-size="10.5" fill="var(--accent-2)">overlap!</text>
+    <defs><marker id="arrSam" markerWidth="9" markerHeight="9" refX="7" refY="4.5" orient="auto"><path d="M0 0 L8 4.5 L0 9 z" fill="var(--text-soft)"/></marker></defs>
+  </svg>
+  </div>
+  <figcaption><b>Fig. 11.1</b> — Sampling replicates the baseband spectrum (solid) at every multiple of \(f_s\) (dashed). Top: replicas clear of each other — an ideal lowpass recovers the original perfectly. Bottom: \(f_s\) too low — replica tails fold into the baseband (shaded) and the damage is permanent.</figcaption>
+</figure>
+
+<h3 id="aliasing">11.2 Aliasing — when frequencies lie about their identity</h3>
+
+<p>Sample too slowly and a high frequency \(f > f_s/2\) becomes indistinguishable from a low one: its samples are <em>identical</em> to those of the <strong>alias</strong> (<span class="de">Rückfaltung, Aliasing</span>) at</p>
+\[ f_a = \left| f - k f_s \right|, \qquad k = \operatorname{round}(f/f_s), \]
+<p>i.e. the frequency folded back into \([0, f_s/2]\). Once sampled, the information about which of the two it "really" was is gone forever — no algorithm can undo aliasing.</p>
+
+<div class="box intuition">
+  <div class="box-title"><span class="ic">💡</span>Intuition: the wagon wheel and the stroboscope</div>
+  <p>In old westerns, stagecoach wheels seem to spin slowly backwards: the film camera samples at 24 frames/s, and a spoke pattern rotating slightly faster than an integer multiple of that appears folded down to a slow (or negative — backwards!) frequency. The same effect makes a strobe light "freeze" machinery: flash at exactly the rotation rate and the shaft's apparent frequency aliases to zero. Mechanics use this deliberately; your measurement chain suffers it accidentally — a 50 Hz hum sampled at 49 Hz shows up as a mysterious 1 Hz wobble in the data.</p>
+</div>
+
+<div class="widget">
+  <div class="w-head"><span class="ic">🧪</span>Interactive — aliasing demonstrator <span class="w-tag">simulation</span></div>
+  <div class="w-body">
+    <p class="small mt0">A sine of frequency \(f\) (solid) is sampled at \(f_s\) (dots). The dashed curve is the sine a reconstructor would infer from the dots. Keep \(f &lt; f_s/2\): both curves agree. Push \(f\) past \(f_s/2\): the dots are perfectly straddled by a slower impostor — watch the apparent frequency fold back down, hit 0 at \(f = f_s\), and rise again. That is the wagon wheel, quantified.</p>
+    <div id="w-alias"></div>
+  </div>
+</div>
+
+<div class="example">
+  <div class="ex-head"><span class="ex-tag">Worked example</span> Computing alias frequencies</div>
+  <div class="ex-body">
+    <p>A data logger samples at \(f_s = 8\,\mathrm{kHz}\) with no input filter. What apparent frequencies do components at (a) 3 kHz, (b) 6.5 kHz and (c) 15.5 kHz produce?</p>
+    <div class="step"><span class="step-label">Step (a) — 3 kHz:</span> below the Nyquist frequency \(f_s/2 = 4\,\mathrm{kHz}\) → appears correctly at <b>3 kHz</b> (\(k = \operatorname{round}(3/8) = 0\)).</div>
+    <div class="step"><span class="step-label">Step (b) — 6.5 kHz:</span> \(k = \operatorname{round}(6.5/8) = 1\): \(f_a = |6.5 - 8| = 1.5\,\mathrm{kHz}\). A 6.5 kHz whistle is recorded as a <b>1.5 kHz</b> tone.</div>
+    <div class="step"><span class="step-label">Step (c) — 15.5 kHz:</span> \(k = \operatorname{round}(15.5/8) = 2\): \(f_a = |15.5 - 16| = 0.5\,\mathrm{kHz}\). Even far-ultrasonic content folds right into the audio band.</div>
+    <div class="result-line">Apparent tones: 3 kHz, 1.5 kHz, 0.5 kHz — the last two are pure fiction. Sanity check: every alias lies in \([0, 4\,\mathrm{kHz}]\), as it must. Moral: what you see in sampled data is <em>always</em> in \([0, f_s/2]\), whatever the input was actually doing.</div>
+  </div>
+</div>
+
+<h3 id="reconstruction">11.3 Anti-aliasing and reconstruction</h3>
+
+<p>Two practical consequences frame every ADC and DAC on Earth:</p>
+<ul>
+  <li><b>Before sampling:</b> an analog <strong>anti-aliasing filter</strong> (<span class="de">Anti-Aliasing-Filter</span>) must remove content above \(f_s/2\) <em>before</em> the sampler — afterwards is too late, the folding is irreversible. Because real filters need a transition band (Section 10), one samples faster than the naked theorem demands: CD audio keeps 20 kHz and samples at 44.1 kHz, leaving a 2.05 kHz guard band for the filter's rolloff. Modern systems oversample massively and filter digitally — but an analog first-stage filter is always there.</li>
+  <li><b>After the DAC:</b> ideal reconstruction would convolve the sample impulses with the sinc of an ideal lowpass — non-causal, so real DACs instead hold each sample constant for \(T_s\): the <strong>zero-order hold</strong> (<span class="de">Halteglied</span>). Its staircase output has the spectrum of the ideal one multiplied by a \(\operatorname{si}(\pi f/f_s)\) droop plus leftover replicas — which a gentle analog "smoothing" lowpass then cleans up. The full digital signal chain built on this — quantization, DSP, digital filters — is Module 13.</li>
+</ul>
+
+<div class="box german">
+  <div class="box-title"><span class="ic">🇩🇪</span>Vokabeln</div>
+  <p>signal/system = <span class="de">Signal/System</span> · continuous/discrete-time = <span class="de">zeitkontinuierlich/zeitdiskret</span> · unit step = <span class="de">Einheitssprung</span> · impulse = <span class="de">Dirac-Stoß</span> · sifting property = <span class="de">Ausblendeigenschaft</span> · convolution = <span class="de">Faltung</span> · impulse/step response = <span class="de">Impuls-/Sprungantwort</span> · transfer function = <span class="de">Übertragungsfunktion</span> · frequency response = <span class="de">Frequenzgang</span> · magnitude/phase response = <span class="de">Amplituden-/Phasengang</span> · pole/zero = <span class="de">Polstelle/Nullstelle</span> · corner frequency = <span class="de">Knickfrequenz</span> · damping ratio = <span class="de">Dämpfungsgrad</span> · rise time = <span class="de">Anstiegszeit</span> · overshoot = <span class="de">Überschwingen</span> · lowpass/highpass/bandpass/bandstop = <span class="de">Tiefpass/Hochpass/Bandpass/Bandsperre</span> · sampling (theorem) = <span class="de">Abtastung (Abtasttheorem)</span> · aliasing = <span class="de">Rückfaltung</span> · stable = <span class="de">stabil</span></p>
+</div>
+<h2 id="summary">12. Formula summary — <span class="de">Formelsammlung</span></h2>
+
+<div class="table-wrap">
+<table class="data">
+<thead><tr><th>Concept</th><th>Formula</th><th>Remember as</th></tr></thead>
+<tbody>
+<tr><td>Signal energy / power</td><td>\( E = \int |x|^2 \mathrm{d}t, \quad P = \lim_{T\to\infty}\frac{1}{2T}\int_{-T}^{T}|x|^2\mathrm{d}t \)</td><td>pulse ↔ energy, periodic ↔ power (\(P_{\sin} = \hat{x}^2/2\))</td></tr>
+<tr><td>Sifting property</td><td>\( \int x(t)\,\delta(t-t_0)\,\mathrm{d}t = x(t_0) \)</td><td>δ samples the integrand</td></tr>
+<tr><td>Step ↔ impulse</td><td>\( \delta = \mathrm{d}u/\mathrm{d}t \)</td><td>impulse = edge of the step</td></tr>
+<tr><td>LTI output</td><td>\( y = x * h = \int x(\tau)h(t-\tau)\mathrm{d}\tau \)</td><td>flip – shift – multiply – integrate</td></tr>
+<tr><td>Convolution checks</td><td>durations add, areas multiply</td><td>ten-second sanity test</td></tr>
+<tr><td>BIBO (LTI)</td><td>\( \int |h(t)|\,\mathrm{d}t < \infty \)</td><td>absolutely integrable h</td></tr>
+<tr><td>Eigenfunction</td><td>\( e^{st} \to H(s)\,e^{st} \)</td><td>exponentials pass through unchanged in shape</td></tr>
+<tr><td>Sinusoid through LTI</td><td>\( \hat{x}\cos\omega t \to |H(j\omega)|\,\hat{x}\cos(\omega t + \angle H) \)</td><td>same frequency, scaled &amp; shifted</td></tr>
+<tr><td>Natural modes</td><td>\( h(t) = \sum A_i e^{p_i t} \)</td><td>Re p = decay, Im p = ringing</td></tr>
+<tr><td>Stability</td><td>all poles: \( \mathrm{Re}(p_i) < 0 \)</td><td>left half-plane only</td></tr>
+<tr><td>Decibel</td><td>\( |H|_{\mathrm{dB}} = 20\log_{10}|H| \)</td><td>×10 = +20 dB, ×√2 = +3 dB</td></tr>
+<tr><td>First order</td><td>\( \tau,\ \omega_c = 1/\tau,\ t_r f_{3\mathrm{dB}} \approx 0.35 \)</td><td>63 % at τ, 95 % at 3τ</td></tr>
+<tr><td>Second order</td><td>\( M_p = e^{-\pi\zeta/\sqrt{1-\zeta^2}},\ |H|_{\max} \approx \tfrac{1}{2\zeta} \)</td><td>ζ &lt; 0.707 → resonance peak, Q = 1/2ζ</td></tr>
+<tr><td>Sampling theorem</td><td>\( f_s > 2 f_{\max} \)</td><td>spectrum replicas must not touch</td></tr>
+<tr><td>Replication</td><td>\( X_s(f) = \tfrac{1}{T_s}\sum_k X(f - k f_s) \)</td><td>sampling copies the spectrum every \(f_s\)</td></tr>
+<tr><td>Alias frequency</td><td>\( f_a = |f - k f_s|,\ k = \mathrm{round}(f/f_s) \)</td><td>fold back into [0, f_s/2]</td></tr>
+</tbody>
+</table>
+</div>
+
+<h2 id="exercises">13. Exercises</h2>
+<p>Work these on paper first. Graphical convolution in particular is a hand skill — the widget can check you, but only your pencil teaches you.</p>
+
+<div class="exercise">
+  <p class="ex-q"><span class="ex-num">E1</span>Classify each signal (periodic? energy or power signal?) and compute \(E\) or \(P\): (a) \(x_1(t) = 3\cos(100\pi t)\), (b) \(x_2(t) = e^{-t}u(t)\), (c) \(x_3(t) = u(t)\), (d) \(x_4(t) = t\,u(t)\). <span class="diff easy">easy</span></p>
+  <details><summary>Show solution</summary>
+    <div class="solution">
+      (a) Periodic (\(T = 20\,\mathrm{ms}\)) → power signal, \(P = \hat{x}^2/2 = 4.5\) (in V² for x in V).
+      (b) Aperiodic, decaying: \(E = \int_0^\infty e^{-2t}\mathrm{d}t = \tfrac12\) → energy signal.
+      (c) The step: \(E = \infty\), but \(P = \lim \frac{1}{2T}\int_0^T 1\,\mathrm{d}t = \tfrac12\) → power signal.
+      (d) The ramp: even the power average diverges (\(\int_0^T t^2 \mathrm{d}t = T^3/3\), divided by \(2T\) still \(\to\infty\)) → <em>neither</em>. Sanity check: every finite-duration or decaying signal you will meet is an energy signal; everything periodic is a power signal.
+    </div>
+  </details>
+</div>
+
+<div class="exercise">
+  <p class="ex-q"><span class="ex-num">E2</span>Evaluate using the sifting property: (a) \(\int_{-\infty}^{\infty}(t^2+1)\,\delta(t-2)\,\mathrm{d}t\); (b) \(\int_{0}^{5}\cos(\pi t)\,\delta(t-4)\,\mathrm{d}t\); (c) \(\int_{-\infty}^{\infty}\delta(t+1)\,u(t)\,\mathrm{d}t\); (d) \(\int_{-\infty}^{\infty} e^{-3t}\,\delta(2t)\,\mathrm{d}t\). <span class="diff easy">easy</span></p>
+  <details><summary>Show solution</summary>
+    <div class="solution">
+      (a) The impulse sits at \(t=2\): result \(2^2+1 = 5\).
+      (b) Impulse at \(t=4\), which lies inside [0, 5]: \(\cos(4\pi) = 1\).
+      (c) Impulse at \(t=-1\): sift out \(u(-1) = 0\).
+      (d) Scaling rule \(\delta(2t) = \tfrac12\delta(t)\): result \(\tfrac12 e^{0} = \tfrac12\).
+      The traps were all in the fine print: integration limits must contain the impulse (b), and the argument scaling changes the weight (d).
+    </div>
+  </details>
+</div>
+
+<div class="exercise">
+  <p class="ex-q"><span class="ex-num">E3</span>For (a) \(y(t) = t\,x(t)\) and (b) \(y(t) = x(2t)\), test linearity, time-invariance and causality with full arguments. <span class="diff med">medium</span></p>
+  <details><summary>Show solution</summary>
+    <div class="solution">
+      (a) <b>Linear</b>: \(t\,(a x_1 + b x_2) = a\,t x_1 + b\,t x_2\) ✓. <b>Not time-invariant</b>: input \(x(t-t_0)\) gives \(t\,x(t-t_0)\), but the shifted output is \((t-t_0)\,x(t-t_0)\) — different whenever \(t_0 \ne 0\). <b>Causal</b> (even memoryless): \(y(t)\) uses only \(x(t)\) now.
+      (b) <b>Linear</b> ✓ (same substitution argument). <b>Not time-invariant</b>: input \(x(t-t_0)\) yields \(x(2t - t_0)\), but \(y(t-t_0) = x(2t - 2t_0)\) ✗. <b>Not causal</b>: \(y(1) = x(2)\) — the output at t = 1 s needs the input one second in the future. Moral: any explicit \(t\) or time-rescaling in the system law should make your time-invariance alarm ring.
+    </div>
+  </details>
+</div>
+
+<div class="exercise">
+  <p class="ex-q"><span class="ex-num">E4</span>An RC lowpass has \(h(t) = \frac{1}{\tau}e^{-t/\tau}u(t)\) with \(\tau = 1\,\mathrm{ms}\). Compute the step response \(g = u * h\) by convolution, and find when the output reaches 95 % and 99 % of its final value. <span class="diff med">medium</span></p>
+  <details><summary>Show solution</summary>
+    <div class="solution">
+      For \(t \ge 0\), the flipped step \(u(t-\tau')\) overlaps \(h\) on \([0, t]\):
+      \[ g(t) = \int_0^t \tfrac{1}{\tau}e^{-\tau'/\tau}\mathrm{d}\tau' = 1 - e^{-t/\tau}. \]
+      95 %: \(e^{-t/\tau} = 0.05 \Rightarrow t = \tau\ln 20 \approx 3.0\,\tau = 3.0\,\mathrm{ms}\). 99 %: \(t = \tau \ln 100 \approx 4.6\,\tau \approx 4.6\,\mathrm{ms}\). These are the "3τ / 5τ" settling rules of thumb, now derived rather than memorized. Sanity: \(g(\infty) = 1\) matches the DC gain \(H(0) = 1\), and \(\mathrm{d}g/\mathrm{d}t = h\) ✓.
+    </div>
+  </details>
+</div>
+
+<div class="exercise">
+  <p class="ex-q"><span class="ex-num">E5</span>Sketch the Bode magnitude plot of \(H(s) = \dfrac{100\,s}{(s+10)(s+1000)}\): normal form, corner frequencies, all asymptote slopes, mid-band gain, and the phase at \(\omega = 100\) rad/s. <span class="diff med">medium</span></p>
+  <details><summary>Show solution</summary>
+    <div class="solution">
+      Normal form: \(H = \frac{100\,s}{10\cdot 1000\,(1+s/10)(1+s/1000)} = 0.01\,\frac{s}{(1+s/10)(1+s/1000)}\).
+      Low frequencies: the zero at the origin gives +20 dB/dec; at \(\omega = 1\): \(|H| \approx 0.01\) = −40 dB. Corner ω = 10: pole flattens the slope → mid-band plateau \(|H| \approx 0.01 \times 10 = 0.1\) = <b>−20 dB</b> between 10 and 1000 rad/s. Corner ω = 1000: second pole → −20 dB/dec falloff. Shape: a band-pass.
+      Phase at \(\omega = 100\): zero at origin +90°; pole at 10 (a decade below) ≈ −84°; pole at 1000 (a decade above) ≈ −6°. Sum ≈ <b>0°</b> — the classic mid-band phase of a bandpass. Sanity: at the geometric band center the two corner phases nearly cancel the +90° of the zero; exact calculation gives +0.0° because \(100 = \sqrt{10 \cdot 1000}\).
+    </div>
+  </details>
+</div>
+
+<div class="exercise">
+  <p class="ex-q"><span class="ex-num">E6</span>A vibration monitor needs content up to 400 Hz; the machine also emits a strong 900 Hz component. The ADC samples at \(f_s = 1\,\mathrm{kHz}\). (a) Where does the 900 Hz line appear in the data? Why is that disastrous? (b) An anti-aliasing lowpass (−20 dB/dec per order above its 400 Hz corner) must suppress everything that folds into the 0–400 Hz band by ≥ 40 dB. Estimate the required filter order, and show how resampling at 4 kHz changes the answer. <span class="diff hard">challenge</span></p>
+  <details><summary>Show solution</summary>
+    <div class="solution">
+      (a) \(k = \mathrm{round}(900/1000) = 1\): \(f_a = |900 - 1000| = 100\,\mathrm{Hz}\) — dead center in the measurement band, indistinguishable from a genuine 100 Hz bearing vibration. A maintenance decision could be made on a fictitious signal.
+      (b) With \(f_s = 1\,\mathrm{kHz}\), everything above \(f_s - 400 = 600\,\mathrm{Hz}\) folds into the useful band, so the stopband must start at 600 Hz. An n-th order filter cornered at 400 Hz gives roughly \(20n\log_{10}(600/400) \approx 3.5\,n\) dB there — 40 dB needs \(n \approx 12\): absurd. At \(f_s = 4\,\mathrm{kHz}\) the folding edge moves to \(3.6\,\mathrm{kHz}\): \(20n\log_{10}(3600/400) \approx 19\,n\) dB → \(n = 3\) suffices (and 900 Hz no longer aliases at all). Moral: <b>oversampling buys cheap analog filters</b> — the design trade at the heart of every modern ADC front end (Module 13).
+    </div>
+  </details>
+</div>
+
+<div class="exercise">
+  <p class="ex-q"><span class="ex-num">E7</span>Derive the impulse response of the ideal lowpass \(H(j2\pi f) = \operatorname{rect}\!\left(\frac{f}{2f_c}\right)\) by inverse Fourier transform, and prove that the filter is (a) non-causal and (b) not even BIBO stable. <span class="diff hard">challenge</span></p>
+  <details><summary>Show solution</summary>
+    <div class="solution">
+      \[ h(t) = \int_{-f_c}^{f_c} e^{j2\pi f t}\,\mathrm{d}f = \frac{e^{j2\pi f_c t} - e^{-j2\pi f_c t}}{j2\pi t} = \frac{\sin(2\pi f_c t)}{\pi t} = 2f_c\,\operatorname{si}(2\pi f_c t). \]
+      (a) \(h(t) \ne 0\) for \(t < 0\) (the sinc is even!) — the filter outputs signal before the impulse arrives. Non-causal, hence not realizable in real time; any realizable approximation must delay and truncate the sinc.
+      (b) \(\int|h|\,\mathrm{d}t\): over the k-th half-period lobe, \(|h| \sim \frac{1}{\pi t}\), so the lobe areas fall off like \(1/k\) — the harmonic series — and the integral diverges. Not BIBO stable: there exists a bounded input (one that flips sign in step with the sinc lobes) producing an unbounded output. So the brick wall fails on <em>two</em> independent counts — which is why even offline digital "ideal" filters are windowed, truncated compromises (Module 13).
+    </div>
+  </details>
+</div>
+
+<h2 id="quiz">14. Self-assessment</h2>
+
+<div class="quiz" data-quiz-title="Module 12 — Self-test">
+<script type="application/json">
+[
+ {"q":"The signal x(t) = e⁻²ᵗ·u(t) is…",
+  "opts":["a power signal with P = 0.25","an energy signal with E = 0.25","an energy signal with E = 0.5","neither an energy nor a power signal"],"a":1,
+  "explain":"\\(E = \\int_0^\\infty e^{-4t}\\mathrm{d}t = 1/4\\). Finite energy → energy signal (and then automatically P = 0). Watch the exponent: squaring doubles it to \\(e^{-4t}\\)."},
+ {"q":"Evaluate ∫(t² + 1)·δ(t − 2) dt over all t.",
+  "opts":["1","4","5","0"],"a":2,
+  "explain":"Sifting property: the impulse at \\(t_0 = 2\\) picks out the integrand's value there: \\(2^2 + 1 = 5\\)."},
+ {"q":"The system y(t) = x(t) + 2 looks harmless. Which property does it violate?",
+  "opts":["causality","time-invariance","linearity","BIBO stability"],"a":2,
+  "explain":"Zero in must give zero out for a linear system — here zero in gives 2 out, and scaling fails: input \\(2x\\) gives \\(2x+2 \\ne 2(x+2)\\). Affine ≠ linear; a favorite exam trap."},
+ {"q":"An LTI system is completely characterized by…",
+  "opts":["its response to one impulse","its response to a 1 kHz sine","its DC gain and bandwidth","its input signal"],"a":0,
+  "explain":"Any input is a weighted sum of shifted impulses; linearity + time-invariance then force \\(y = x * h\\). One function, \\(h(t)\\), determines the response to everything."},
+ {"q":"Convolving two identical rectangular pulses of width T gives…",
+  "opts":["a rectangle of width 2T","a triangle of total width 2T","a triangle of total width T","a Gaussian"],"a":1,
+  "explain":"The overlap grows linearly while sliding in and shrinks linearly while sliding out: a triangle peaking at \\(t = T\\), supported on \\([0, 2T]\\) — durations add under convolution."},
+ {"q":"A causal system has poles at s = −2 ± j5 (1/s). Its natural response is…",
+  "opts":["a growing 5 rad/s oscillation","a decaying oscillation, envelope e⁻²ᵗ, ringing near 5 rad/s","a pure decay with τ = 0.5 s, no oscillation","sustained oscillation at 2 rad/s"],"a":1,
+  "explain":"Re(p) = −2 sets the envelope \\(e^{-2t}\\) (decaying, stable); Im(p) = ±5 sets the ringing frequency ≈ 5 rad/s. Left half-plane = decay; height above the real axis = pitch."},
+ {"q":"On a Bode plot, a single real pole contributes, above its corner frequency…",
+  "opts":["−40 dB/dec and −180° of phase","−20 dB/dec, with −45° of phase right at the corner","−20 dB/dec, with −90° of phase right at the corner","−6 dB/dec and −45° at the corner"],"a":1,
+  "explain":"Each simple pole bends the magnitude by −20 dB/decade and sweeps the phase from 0° to −90°, passing exactly −45° at \\(\\omega_c\\) (where the magnitude is −3 dB, not the asymptote's 0 dB)."},
+ {"q":"A second-order lowpass has ζ = 0.1. Its resonance peak is approximately…",
+  "opts":["3 dB","8 dB","14 dB","20 dB"],"a":2,
+  "explain":"\\(|H|_{max} = \\frac{1}{2\\zeta\\sqrt{1-\\zeta^2}} \\approx \\frac{1}{2\\cdot 0.1} = 5\\), and \\(20\\log_{10}5 \\approx 14\\,\\mathrm{dB}\\). Small ζ → Q = 1/(2ζ) → tall, narrow resonance — the RLC story of Module 06."},
+ {"q":"An 800 Hz sine is sampled at f_s = 1 kHz. The sampled data shows a sine at…",
+  "opts":["800 Hz","400 Hz","200 Hz","100 Hz"],"a":2,
+  "explain":"800 Hz exceeds the Nyquist frequency of 500 Hz. Fold: \\(k = \\mathrm{round}(800/1000) = 1\\), \\(f_a = |800 - 1000| = 200\\,\\mathrm{Hz}\\). The 800 Hz identity is irrecoverably lost."},
+ {"q":"The fundamental reason an ideal brick-wall lowpass cannot be built in real time is that…",
+  "opts":["infinite gain would be required at the cutoff","its impulse response is a sinc extending to t < 0 — it would respond before the input arrives","resistors are too noisy near the cutoff frequency","its phase response would exceed 360°"],"a":1,
+  "explain":"A rectangle in frequency transforms to a sinc in time, which is nonzero for all \\(t<0\\): non-causal. (Its \\(1/t\\) tails also make \\(\\int|h|\\) diverge — not even BIBO stable.) Real filters trade off flatness, steepness and phase instead."}
+]
+</script>
+</div>
+
+<script>
+document.addEventListener("ee-ready", () => {
+
+  /* ---------- shared: simple sub-panel with frame + zero axes ---------- */
+  function panel(ctx, K, px, py, pw, ph, x0, x1, y0, y1) {
+    const X = v => px + (v - x0) / (x1 - x0) * pw;
+    const Y = v => py + (1 - (v - y0) / (y1 - y0)) * ph;
+    ctx.strokeStyle = K.axis; ctx.lineWidth = 1;
+    ctx.strokeRect(px, py, pw, ph);
+    ctx.strokeStyle = K.grid;
+    if (y0 < 0 && y1 > 0) { ctx.beginPath(); ctx.moveTo(px, Y(0)); ctx.lineTo(px + pw, Y(0)); ctx.stroke(); }
+    if (x0 < 0 && x1 > 0) { ctx.beginPath(); ctx.moveTo(X(0), py); ctx.lineTo(X(0), py + ph); ctx.stroke(); }
+    return { X, Y };
+  }
+  function timeTicks(ctx, K, V, py, ph, vals) {
+    ctx.fillStyle = K.muted; ctx.font = "11px system-ui, sans-serif";
+    ctx.textAlign = "center"; ctx.textBaseline = "top";
+    ctx.strokeStyle = K.axis;
+    for (const v of vals) {
+      const x = V.X(v);
+      ctx.beginPath(); ctx.moveTo(x, py + ph); ctx.lineTo(x, py + ph + 4); ctx.stroke();
+      ctx.fillText(String(v), x, py + ph + 6);
+    }
+  }
+
+  /* ================= Widget 1: convolution animator ================= */
+  const convSig = {
+    rect: t => (t >= 0 && t <= 1) ? 1 : 0,
+    tri:  t => (t >= 0 && t <= 1) ? 1 - Math.abs(2 * t - 1) : 0,
+    exp:  t => (t >= 0) ? Math.exp(-2.2 * t) : 0
+  };
+  const sigOpts = [
+    { label: "rect", value: "rect" },
+    { label: "triangle", value: "tri" },
+    { label: "exp decay", value: "exp" }
+  ];
+  const convState = { t: 0, y: 0 };
+  EE.custom({
+    mount: "#w-conv", height: 470, animate: true,
+    params: [
+      { key: "xs", label: "signal x(t)", type: "select", value: "rect", options: sigOpts },
+      { key: "hs", label: "impulse response h(t)", type: "select", value: "rect", options: sigOpts },
+      { key: "mode", label: "time control", type: "select", value: "auto",
+        options: [{ label: "▶ animate", value: "auto" }, { label: "✋ slider", value: "man" }] },
+      { key: "tman", label: "shift t (slider mode)", min: -0.5, max: 3.5, step: 0.01, value: 1.0, unit: "s", fmt: v => v.toFixed(2) }
+    ],
+    readouts: [
+      { label: "current shift t", fn: () => convState.t.toFixed(2) + " s" },
+      { label: "y(t) = shaded area", fn: () => convState.y.toFixed(3) }
+    ],
+    draw(ctx, w, h, p, H) {
+      const K = H.ink;
+      const fx = convSig[p.xs], fh = convSig[p.hs];
+      const T0 = -0.5, T1 = 3.5;
+      const tc = p.mode === "auto" ? T0 + ((H.t * 0.55) % (T1 - T0)) : p.tman;
+
+      const NI = 320, dI = (T1 - T0) / NI;
+      const conv = t => {
+        let s = 0;
+        for (let i = 0; i <= NI; i++) { const tau = T0 + i * dI; s += fx(tau) * fh(t - tau); }
+        return s * dI;
+      };
+
+      const padL = 52, padR = 14;
+      const pw = w - padL - padR;
+      const topY = 16, topH = Math.round(h * 0.36);
+      const botY = topY + topH + 62, botH = h - botY - 34;
+
+      /* ---- top panel: x(tau) and h(t - tau), product shaded ---- */
+      const VT = panel(ctx, K, padL, topY, pw, topH, T0, T1, -0.08, 1.18);
+      timeTicks(ctx, K, VT, topY, topH, [0, 1, 2, 3]);
+      /* product fill */
+      ctx.save();
+      ctx.beginPath(); ctx.rect(padL, topY, pw, topH); ctx.clip();
+      ctx.fillStyle = H.color(1); ctx.globalAlpha = 0.35;
+      ctx.beginPath();
+      ctx.moveTo(VT.X(T0), VT.Y(0));
+      const NP = 300;
+      for (let i = 0; i <= NP; i++) {
+        const tau = T0 + (i / NP) * (T1 - T0);
+        ctx.lineTo(VT.X(tau), VT.Y(fx(tau) * fh(tc - tau)));
+      }
+      ctx.lineTo(VT.X(T1), VT.Y(0)); ctx.closePath(); ctx.fill();
+      ctx.globalAlpha = 1;
+      /* x(tau) */
+      ctx.strokeStyle = H.color(0); ctx.lineWidth = 2.4; ctx.beginPath();
+      for (let i = 0; i <= NP; i++) {
+        const tau = T0 + (i / NP) * (T1 - T0);
+        const px2 = VT.X(tau), py2 = VT.Y(fx(tau));
+        i ? ctx.lineTo(px2, py2) : ctx.moveTo(px2, py2);
+      }
+      ctx.stroke();
+      /* h(t - tau), flipped + shifted */
+      ctx.strokeStyle = H.color(2); ctx.lineWidth = 2.4; ctx.beginPath();
+      for (let i = 0; i <= NP; i++) {
+        const tau = T0 + (i / NP) * (T1 - T0);
+        const px2 = VT.X(tau), py2 = VT.Y(fh(tc - tau));
+        i ? ctx.lineTo(px2, py2) : ctx.moveTo(px2, py2);
+      }
+      ctx.stroke();
+      ctx.restore();
+      /* marker for current t on the top axis */
+      ctx.strokeStyle = K.muted; ctx.setLineDash([4, 4]); ctx.lineWidth = 1.2;
+      ctx.beginPath(); ctx.moveTo(VT.X(tc), topY); ctx.lineTo(VT.X(tc), topY + topH); ctx.stroke();
+      ctx.setLineDash([]);
+      /* labels */
+      ctx.font = "600 12px system-ui, sans-serif"; ctx.textBaseline = "alphabetic";
+      ctx.fillStyle = H.color(0); ctx.textAlign = "left";
+      ctx.fillText("x(τ)", padL + 8, topY + 16);
+      ctx.fillStyle = H.color(2);
+      ctx.fillText("h(t−τ)  ← slides", padL + 58, topY + 16);
+      ctx.fillStyle = H.color(1);
+      ctx.fillText("shaded: product (area = y(t))", padL + 8, topY + topH + 30);
+      ctx.fillStyle = K.muted; ctx.font = "11px system-ui, sans-serif"; ctx.textAlign = "right";
+      ctx.fillText("τ in s", padL + pw, topY + topH + 30);
+
+      /* ---- bottom panel: y(t) traced up to tc ---- */
+      const NY = 200;
+      let ymax = 0.12;
+      const ycurve = [];
+      for (let i = 0; i <= NY; i++) {
+        const t = T0 + (i / NY) * (T1 - T0);
+        const yv = conv(t);
+        ycurve.push([t, yv]);
+        if (yv > ymax) ymax = yv;
+      }
+      const VB = panel(ctx, K, padL, botY, pw, botH, T0, T1, -0.06 * ymax, ymax * 1.18);
+      timeTicks(ctx, K, VB, botY, botH, [0, 1, 2, 3]);
+      /* full curve, faint dashed */
+      ctx.strokeStyle = K.muted; ctx.setLineDash([3, 5]); ctx.lineWidth = 1.4; ctx.beginPath();
+      ycurve.forEach(([t, yv], i) => { i ? ctx.lineTo(VB.X(t), VB.Y(yv)) : ctx.moveTo(VB.X(t), VB.Y(yv)); });
+      ctx.stroke(); ctx.setLineDash([]);
+      /* solid up to tc */
+      ctx.strokeStyle = H.color(1); ctx.lineWidth = 2.6; ctx.beginPath();
+      let started = false;
+      for (const [t, yv] of ycurve) {
+        if (t > tc) break;
+        started ? ctx.lineTo(VB.X(t), VB.Y(yv)) : ctx.moveTo(VB.X(t), VB.Y(yv));
+        started = true;
+      }
+      ctx.stroke();
+      const ynow = conv(tc);
+      ctx.fillStyle = H.color(1);
+      ctx.beginPath(); ctx.arc(VB.X(tc), VB.Y(ynow), 4.5, 0, 7); ctx.fill();
+      ctx.strokeStyle = K.surface; ctx.lineWidth = 2; ctx.stroke();
+      ctx.font = "600 12px system-ui, sans-serif";
+      ctx.fillStyle = H.color(1); ctx.textAlign = "left";
+      ctx.fillText("y(t) = (x ∗ h)(t)", padL + 8, botY + 16);
+      ctx.fillStyle = K.muted; ctx.font = "11px system-ui, sans-serif"; ctx.textAlign = "right";
+      ctx.fillText("t in s", padL + pw, botY + botH + 26);
+
+      convState.t = tc; convState.y = ynow;
+    }
+  });
+
+  /* ================= Widget 2: pole explorer ================= */
+  EE.custom({
+    mount: "#w-poles", height: 320,
+    params: [
+      { key: "sig", label: "real part σ", min: -2, max: 0.6, step: 0.02, value: -0.4, unit: "1/s", fmt: v => v.toFixed(2) },
+      { key: "om", label: "imaginary part ω", min: 0, max: 10, step: 0.1, value: 5, unit: "rad/s", fmt: v => v.toFixed(1) }
+    ],
+    readouts: [
+      { label: "pole(s)", fn: p => p.om < 0.05 ? ("s = " + p.sig.toFixed(2) + " s⁻¹ (real)") : ("s = " + p.sig.toFixed(2) + " ± j" + p.om.toFixed(1) + " s⁻¹") },
+      { label: "verdict", fn: p => p.sig < -0.01 ? "stable — mode decays" : (p.sig > 0.01 ? "UNSTABLE — mode grows" : "marginal — rings forever") },
+      { label: "envelope time constant", fn: p => Math.abs(p.sig) < 0.01 ? "∞" : EE.si(1 / Math.abs(p.sig), "s") }
+    ],
+    draw(ctx, w, h, p, H) {
+      const K = H.ink;
+      const modeCol = p.sig < -0.01 ? H.color(1) : (p.sig > 0.01 ? H.color(5) : H.color(2));
+
+      /* ---- left: s-plane ---- */
+      const sx = 46, sy = 14, sw = Math.min(230, w * 0.34), sh = h - 62;
+      const S0 = -2.5, S1 = 1.2, W0 = -11, W1 = 11;
+      /* stable shading */
+      const VS = { X: v => sx + (v - S0) / (S1 - S0) * sw, Y: v => sy + (1 - (v - W0) / (W1 - W0)) * sh };
+      ctx.fillStyle = K.accentSoft;
+      ctx.fillRect(sx, sy, VS.X(0) - sx, sh);
+      panel(ctx, K, sx, sy, sw, sh, S0, S1, W0, W1);
+      /* jω axis emphasized */
+      ctx.strokeStyle = K.axis; ctx.lineWidth = 1.4;
+      ctx.beginPath(); ctx.moveTo(VS.X(0), sy); ctx.lineTo(VS.X(0), sy + sh); ctx.stroke();
+      /* poles */
+      const drawX = (cx, cy) => {
+        ctx.strokeStyle = modeCol; ctx.lineWidth = 2.6;
+        ctx.beginPath();
+        ctx.moveTo(cx - 6, cy - 6); ctx.lineTo(cx + 6, cy + 6);
+        ctx.moveTo(cx + 6, cy - 6); ctx.lineTo(cx - 6, cy + 6);
+        ctx.stroke();
+      };
+      drawX(VS.X(p.sig), VS.Y(p.om));
+      if (p.om >= 0.05) drawX(VS.X(p.sig), VS.Y(-p.om));
+      ctx.fillStyle = K.muted; ctx.font = "11px system-ui, sans-serif";
+      ctx.textAlign = "center"; ctx.textBaseline = "top";
+      ctx.fillText("s-plane   σ →", sx + sw / 2, sy + sh + 8);
+      ctx.textAlign = "left"; ctx.textBaseline = "alphabetic";
+      ctx.fillText("jω", VS.X(0) + 6, sy + 14);
+      ctx.fillText("stable", sx + 6, sy + sh - 8);
+
+      /* ---- right: impulse response ---- */
+      const rx = sx + sw + 46, rw = w - rx - 14, ry = 14, rh = h - 62;
+      const TT = 6, Y1 = 3;
+      const VR = panel(ctx, K, rx, ry, rw, rh, 0, TT, -Y1, Y1);
+      timeTicks(ctx, K, VR, ry, rh, [0, 2, 4, 6]);
+      ctx.save();
+      ctx.beginPath(); ctx.rect(rx, ry, rw, rh); ctx.clip();
+      /* envelopes */
+      ctx.strokeStyle = K.muted; ctx.setLineDash([4, 4]); ctx.lineWidth = 1.2;
+      for (const sgn of [1, -1]) {
+        ctx.beginPath();
+        for (let i = 0; i <= 240; i++) {
+          const t = (i / 240) * TT, yv = sgn * Math.exp(p.sig * t);
+          i ? ctx.lineTo(VR.X(t), VR.Y(yv)) : ctx.moveTo(VR.X(t), VR.Y(yv));
+        }
+        ctx.stroke();
+      }
+      ctx.setLineDash([]);
+      /* h(t) */
+      ctx.strokeStyle = modeCol; ctx.lineWidth = 2.4;
+      ctx.beginPath();
+      for (let i = 0; i <= 480; i++) {
+        const t = (i / 480) * TT, yv = Math.exp(p.sig * t) * Math.cos(p.om * t);
+        i ? ctx.lineTo(VR.X(t), VR.Y(yv)) : ctx.moveTo(VR.X(t), VR.Y(yv));
+      }
+      ctx.stroke();
+      ctx.restore();
+      ctx.fillStyle = modeCol; ctx.font = "600 12px system-ui, sans-serif"; ctx.textAlign = "left";
+      ctx.fillText("h(t) = e^(σt)·cos(ωt)", rx + 8, ry + 16);
+      ctx.fillStyle = K.muted; ctx.font = "11px system-ui, sans-serif"; ctx.textAlign = "right";
+      ctx.fillText("t in s", rx + rw, ry + rh + 26);
+    }
+  });
+
+  /* ================= Widget 3: second-order Bode explorer ================= */
+  EE.bodePlot({
+    mount: "#w-bode2", fmin: 1, fmax: 10000,
+    magRange: { min: -60, max: 25 }, phaseRange: { min: -180, max: 0 },
+    params: [
+      { key: "f0", label: "natural frequency f₀", min: 20, max: 2000, step: 10, value: 200, unit: "Hz", fmt: v => v.toFixed(0) },
+      { key: "z", label: "damping ratio ζ", min: 0.05, max: 1.5, step: 0.01, value: 0.2, fmt: v => v.toFixed(2) }
+    ],
+    mag(f, p) {
+      const u = f / p.f0;
+      return -10 * Math.log10(Math.pow(1 - u * u, 2) + Math.pow(2 * p.z * u, 2));
+    },
+    phase(f, p) {
+      const u = f / p.f0;
+      return -Math.atan2(2 * p.z * u, 1 - u * u) * 180 / Math.PI;
+    },
+    annotations(p, which) {
+      if (which === "mag") {
+        const arr = [{ type: "vline", x: p.f0, label: "f₀" }, { type: "hline", y: -3, label: "−3 dB" }];
+        if (p.z < Math.SQRT1_2) {
+          const fr = p.f0 * Math.sqrt(1 - 2 * p.z * p.z);
+          const pk = 20 * Math.log10(1 / (2 * p.z * Math.sqrt(1 - p.z * p.z)));
+          arr.push({ type: "point", x: fr, y: pk, label: "resonance peak" });
+        }
+        return arr;
+      }
+      return [{ type: "vline", x: p.f0, label: "f₀ → −90°" }];
+    },
+    readouts: [
+      { label: "Q = 1/(2ζ)", fn: p => (1 / (2 * p.z)).toFixed(2) },
+      { label: "resonance peak", fn: p => p.z < Math.SQRT1_2
+          ? (20 * Math.log10(1 / (2 * p.z * Math.sqrt(1 - p.z * p.z)))).toFixed(1) + " dB at " + EE.si(p.f0 * Math.sqrt(1 - 2 * p.z * p.z), "Hz")
+          : "none (ζ ≥ 0.707)" },
+      { label: "step overshoot", fn: p => p.z < 1
+          ? (100 * Math.exp(-Math.PI * p.z / Math.sqrt(1 - p.z * p.z))).toFixed(1) + " %"
+          : "0 % (overdamped)" }
+    ]
+  });
+
+  /* ================= Widget 4: aliasing demonstrator ================= */
+  EE.functionPlot({
+    mount: "#w-alias", height: 300,
+    x: { min: 0, max: 20, label: "t in ms" },
+    y: { min: -1.45, max: 1.45, label: "amplitude" },
+    params: [
+      { key: "f", label: "signal frequency f", min: 10, max: 1000, step: 5, value: 440, unit: "Hz", fmt: v => v.toFixed(0) },
+      { key: "fs", label: "sampling frequency f_s", min: 100, max: 1000, step: 10, value: 500, unit: "Hz", fmt: v => v.toFixed(0) }
+    ],
+    curves: [
+      { label: "x(t)", color: 0, fn: (t, p) => Math.sin(2 * Math.PI * p.f * t / 1000) },
+      { label: "reconstructed", color: 5, dash: [7, 5],
+        fn: (t, p) => { const ff = p.f - p.fs * Math.round(p.f / p.fs); return Math.sin(2 * Math.PI * ff * t / 1000); } }
+    ],
+    annotations: p => {
+      const pts = [];
+      const nMax = Math.floor(20 * p.fs / 1000);
+      for (let n = 0; n <= nMax; n++) {
+        pts.push({ type: "point", x: 1000 * n / p.fs, y: Math.sin(2 * Math.PI * p.f * n / p.fs) });
+      }
+      return pts;
+    },
+    readouts: [
+      { label: "Nyquist limit f_s/2", fn: p => EE.si(p.fs / 2, "Hz") },
+      { label: "apparent frequency", fn: p => EE.si(Math.abs(p.f - p.fs * Math.round(p.f / p.fs)), "Hz") },
+      { label: "verdict", fn: p => p.f <= p.fs / 2 ? "f ≤ f_s/2 — faithful" : "f > f_s/2 — ALIASED" }
+    ]
+  });
+});
+</script>
+
+</article>
+</main>
+</div>
+</body>
+</html>
