@@ -339,6 +339,9 @@ table.data td.num, table.data th.num { text-align: right; font-variant-numeric: 
 }
 
 /* ---------- Account button (dialog styles are injected by sync.js) ---------- */
+/* stays hidden until sync.js boots and wires it up — the .tb-btn display
+   rule must not override the hidden attribute */
+.topbar #account-btn[hidden] { display: none; }
 .topbar #account-btn { font-size: .9rem; gap: 6px; }
 .topbar #account-btn .ab-name { font-weight: 650; max-width: 12ch; overflow: hidden; text-overflow: ellipsis; }
 
