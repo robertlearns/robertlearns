@@ -3,8 +3,9 @@
    EE Knowledge Base (robertlearns.github.io).
 
    Data stored per user: username, salted PBKDF2 password hash,
-   salted recovery-code hash, progress JSON, timestamps, rev.
-   No email, no IP persisted, no cookies.
+   salted recovery-code hash, timestamps, plus one progress JSON
+   (with its own revision counter) per course. No email, no IP
+   persisted, no cookies.
 
    Bindings: DB (D1), AUTH_SECRET (secret, HMAC key for tokens).
    ============================================================ */
@@ -20,7 +21,8 @@ const PBKDF2_ITER = 100000;          // Cloudflare free-plan cap
 const TOKEN_TTL_S = 30 * 24 * 3600;  // 30 days
 const MAX_PROGRESS_BYTES = 32 * 1024;
 const USERNAME_RE = /^[a-z0-9_-]{3,32}$/;
-const MODULE_ID_RE = /^m\d{2}$/;
+const COURSE_RE = /^[a-z0-9][a-z0-9-]{0,31}$/;
+const MODULE_ID_RE = /^[a-z0-9][a-z0-9_-]{0,23}$/;
 
 /* ---------------- rate limiting (best-effort, in-memory) ---------------- */
 const rl = new Map(); // ip -> {n, windowStart}
@@ -201,7 +203,7 @@ async function handleRegister(env, req, origin) {
        VALUES (?, ?, ?, ?, ?, ?, ?) RETURNING id, username, token_epoch`)
       .bind(username, pw.salt, pw.hash, rc.salt, rc.hash, now, now).first();
     const token = await makeToken(env, res);
-    return json(201, { token, username, recoveryCode }, origin);
+    return json(201, { token, username: res.username, recoveryCode }, origin);
   } catch (e) {
     if (String(e).includes("UNIQUE")) return json(409, { error: "username already taken" }, origin);
     throw e;
@@ -217,35 +219,49 @@ async function handleLogin(env, req, origin) {
   const ok = user && await verifySecret(password, user.pw_salt, user.pw_hash);
   if (!ok) return json(401, { error: "invalid credentials" }, origin);
   const token = await makeToken(env, user);
-  return json(200, { token, username: user.username, progress: JSON.parse(user.progress), rev: user.rev }, origin);
+  return json(200, { token, username: user.username }, origin);
 }
 
-async function handleGetProgress(env, req, origin) {
+async function handleGetProgress(env, req, origin, url) {
   const user = await requireUser(env, req);
   if (!user) return json(401, { error: "unauthorized" }, origin);
-  return json(200, { progress: JSON.parse(user.progress), rev: user.rev, updatedAt: user.updated_at }, origin);
+  const course = url.searchParams.get("course") || "";
+  if (!COURSE_RE.test(course)) return json(400, { error: "invalid course" }, origin);
+  const row = await env.DB.prepare("SELECT doc, rev, updated_at FROM progress WHERE user_id = ? AND course = ?")
+    .bind(user.id, course).first();
+  if (!row) return json(200, { progress: {}, rev: 0, updatedAt: null }, origin);
+  return json(200, { progress: JSON.parse(row.doc), rev: row.rev, updatedAt: row.updated_at }, origin);
 }
 
 async function handlePutProgress(env, req, origin) {
   const user = await requireUser(env, req);
   if (!user) return json(401, { error: "unauthorized" }, origin);
   const body = await readBody(req);
-  if (!body || !validProgress(body.progress) || !Number.isInteger(body.baseRev)) {
+  if (!body || typeof body.course !== "string" || !COURSE_RE.test(body.course)
+      || !validProgress(body.progress) || !Number.isInteger(body.baseRev) || body.baseRev < 0) {
     return json(400, { error: "invalid progress" }, origin);
   }
-  if (body.baseRev !== user.rev) {
-    return json(409, { progress: JSON.parse(user.progress), rev: user.rev }, origin);
+  const doc = JSON.stringify(body.progress);
+  const now = Date.now();
+  if (body.baseRev === 0) {
+    // First write for this course on this account: create the row if absent…
+    const ins = await env.DB.prepare(
+      `INSERT INTO progress (user_id, course, doc, rev, updated_at) VALUES (?, ?, ?, 1, ?)
+       ON CONFLICT (user_id, course) DO NOTHING`)
+      .bind(user.id, body.course, doc, now).run();
+    if (ins.meta.changes) return json(200, { rev: 1 }, origin);
+    // …otherwise fall through to the rev-guarded update below.
   }
-  const newRev = user.rev + 1;
-  // Guard the rev in the WHERE clause too, so two concurrent PUTs can't both win.
+  // Rev guard in the WHERE clause so two concurrent PUTs can't both win.
   const res = await env.DB.prepare(
-    "UPDATE users SET progress = ?, rev = ?, updated_at = ? WHERE id = ? AND rev = ?")
-    .bind(JSON.stringify(body.progress), newRev, Date.now(), user.id, user.rev).run();
+    "UPDATE progress SET doc = ?, rev = ?, updated_at = ? WHERE user_id = ? AND course = ? AND rev = ?")
+    .bind(doc, body.baseRev + 1, now, user.id, body.course, body.baseRev).run();
   if (!res.meta.changes) {
-    const fresh = await env.DB.prepare("SELECT progress, rev FROM users WHERE id = ?").bind(user.id).first();
-    return json(409, { progress: JSON.parse(fresh.progress), rev: fresh.rev }, origin);
+    const fresh = await env.DB.prepare("SELECT doc, rev FROM progress WHERE user_id = ? AND course = ?")
+      .bind(user.id, body.course).first();
+    return json(409, { progress: fresh ? JSON.parse(fresh.doc) : {}, rev: fresh ? fresh.rev : 0 }, origin);
   }
-  return json(200, { rev: newRev }, origin);
+  return json(200, { rev: body.baseRev + 1 }, origin);
 }
 
 async function handleRecover(env, req, origin) {
@@ -278,7 +294,10 @@ async function handleDeleteAccount(env, req, origin) {
   if (!(await verifySecret(password, user.pw_salt, user.pw_hash))) {
     return json(401, { error: "wrong password" }, origin);
   }
-  await env.DB.prepare("DELETE FROM users WHERE id = ?").bind(user.id).run();
+  await env.DB.batch([
+    env.DB.prepare("DELETE FROM progress WHERE user_id = ?").bind(user.id),
+    env.DB.prepare("DELETE FROM users WHERE id = ?").bind(user.id),
+  ]);
   return json(204, null, origin);
 }
 
@@ -307,7 +326,7 @@ export default {
       switch (route) {
         case "POST /api/register":  return await handleRegister(env, req, origin);
         case "POST /api/login":     return await handleLogin(env, req, origin);
-        case "GET /api/progress":   return await handleGetProgress(env, req, origin);
+        case "GET /api/progress":   return await handleGetProgress(env, req, origin, url);
         case "PUT /api/progress":   return await handlePutProgress(env, req, origin);
         case "POST /api/recover":   return await handleRecover(env, req, origin);
         case "DELETE /api/account": return await handleDeleteAccount(env, req, origin);

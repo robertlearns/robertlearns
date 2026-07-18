@@ -11,11 +11,15 @@ Base URL: `https://ee-sync.<your-subdomain>.workers.dev` — all bodies JSON.
 | Endpoint | Auth | Body | Success | Errors |
 |---|---|---|---|---|
 | `POST /api/register` | – | `{username, password}` | `201 {token, username, recoveryCode}` | 400 invalid, 409 taken |
-| `POST /api/login` | – | `{username, password}` | `200 {token, username, progress, rev}` | 401 |
-| `GET /api/progress` | Bearer | – | `200 {progress, rev, updatedAt}` | 401 |
-| `PUT /api/progress` | Bearer | `{progress, baseRev}` | `200 {rev}` | 400, 401, `409 {progress, rev}` stale |
+| `POST /api/login` | – | `{username, password}` | `200 {token, username}` | 401 |
+| `GET /api/progress?course=<slug>` | Bearer | – | `200 {progress, rev, updatedAt}` | 400, 401 |
+| `PUT /api/progress` | Bearer | `{course, progress, baseRev}` | `200 {rev}` | 400, 401, `409 {progress, rev}` stale |
 | `POST /api/recover` | – | `{username, recoveryCode, newPassword}` | `200 {token, username, recoveryCode}` (new code) | 400, 401 |
 | `DELETE /api/account` | Bearer | `{password}` | `204` | 401 |
+
+One account holds a separate progress document (own revision counter) per course.
+Course slugs: `^[a-z0-9][a-z0-9-]{0,31}$` — the EE knowledge base uses `ee`; a future
+course page sets `window.EE_COURSE = "<slug>"` before loading `sync.js`.
 
 Username: `^[a-z0-9_-]{3,32}$` (lowercased). Password: 8–200 chars. The recovery code
 is shown once at registration (and re-issued on every recovery); it is the only way to

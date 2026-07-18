@@ -16,6 +16,10 @@
   const API_BASE = /^(localhost|127\.0\.0\.1)$/.test(location.hostname)
     ? "http://127.0.0.1:8787" : PROD_API;
 
+  /* Course slug this page's progress is stored under on the server.
+     A future course sets window.EE_COURSE (and its own store/meta keys)
+     before loading sync.js; the account is shared across courses. */
+  const COURSE = window.EE_COURSE || "ee";
   const AUTH_KEY = "ee-kb-auth-v1";
   const META_KEY = "ee-kb-sync-v1";
 
@@ -118,13 +122,13 @@
     updateButton();
   }
 
-  async function pull() {
+  async function pull(forceMerge) {
     if (!getAuth()) return;
     try {
-      const { status, data } = await api("GET", "/api/progress");
+      const { status, data } = await api("GET", "/api/progress?course=" + COURSE);
       if (status === 401) { clearAuth(); return; }
       if (status !== 200 || !data) return;
-      adoptServerState(data.progress, data.rev, false);
+      adoptServerState(data.progress, data.rev, !!forceMerge);
     } catch { /* offline — keep local */ }
   }
 
@@ -132,7 +136,7 @@
     if (!getAuth()) return;
     try {
       const { status, data } = await api("PUT", "/api/progress",
-        { progress: { completed: EEStore.completed, quiz: EEStore.quiz }, baseRev: getMeta().rev });
+        { course: COURSE, progress: { completed: EEStore.completed, quiz: EEStore.quiz }, baseRev: getMeta().rev });
       if (status === 200) { setMeta({ rev: data.rev, dirty: false, lastSync: Date.now() }); statusRefresh(); return; }
       if (status === 401) { clearAuth(); return; }
       if (status === 409 && data && !retrying) {
@@ -161,7 +165,7 @@
         fetch(API_BASE + "/api/progress", {
           method: "PUT", keepalive: true,
           headers: { "Content-Type": "application/json", "Authorization": "Bearer " + getAuth().token },
-          body: JSON.stringify({ progress: { completed: EEStore.completed, quiz: EEStore.quiz }, baseRev: getMeta().rev }),
+          body: JSON.stringify({ course: COURSE, progress: { completed: EEStore.completed, quiz: EEStore.quiz }, baseRev: getMeta().rev }),
         });
       } catch {}
     }
@@ -232,7 +236,8 @@
           const { status, data } = await api("POST", "/api/login", { username, password });
           if (status !== 200) return showErr(data && data.error || "Login failed.");
           setAuth(data.token, data.username);
-          adoptServerState(data.progress, data.rev, true);
+          setMeta({ rev: 0 });
+          await pull(true); // merge pre-account local progress with the server's
           viewLoggedIn();
         } else {
           const { status, data } = await api("POST", "/api/register", { username, password });
@@ -294,7 +299,7 @@
         if (status !== 200) return showErr(data && data.error || "Recovery failed.");
         setAuth(data.token, data.username);
         setMeta({ rev: 0 });
-        pull();
+        pull(true);
         updateButton();
         viewRecoveryCode(data.recoveryCode, "Password reset — new recovery code");
       } catch { showErr("Could not reach the sync server. Try again later."); }
