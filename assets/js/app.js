@@ -19,7 +19,15 @@
       try { return JSON.parse(localStorage.getItem(STORE_KEY)) || {}; }
       catch { return {}; }
     })(),
-    save() { try { localStorage.setItem(STORE_KEY, JSON.stringify(this.data)); } catch {} },
+    save() {
+      try { localStorage.setItem(STORE_KEY, JSON.stringify(this.data)); } catch {}
+      document.dispatchEvent(new CustomEvent("ee-progress-changed"));
+    },
+    /* overwrite without dispatching ee-progress-changed (used by sync merge) */
+    replaceData(d) {
+      this.data = d || {};
+      try { localStorage.setItem(STORE_KEY, JSON.stringify(this.data)); } catch {}
+    },
     get completed() { return this.data.completed || (this.data.completed = {}); },
     get quiz() { return this.data.quiz || (this.data.quiz = {}); },
     isDone(id) { return !!this.completed[id]; },
@@ -64,6 +72,7 @@
       <a class="tb-btn" href="${SITE_ROOT}" aria-label="All courses" title="All courses" style="font-size:1.2rem;text-decoration:none">🏠</a>
       <a class="brand" href="${ROOT}index.html"><span class="logo">EE</span><span>EE Knowledge Base <span class="muted" style="font-weight:400">· Elektrotechnik</span></span></a>
       <span class="spacer"></span>
+      <button class="tb-btn" id="account-btn" aria-label="Account" hidden>👤</button>
       <button class="tb-btn" id="theme-btn" aria-label="Toggle theme">🌙</button>`;
     document.body.prepend(tb);
     document.getElementById("theme-btn").addEventListener("click", () => {
@@ -228,6 +237,15 @@
     });
   }
 
+  function buildFooter() {
+    /* pages with a hand-written footer (the two landing pages) keep theirs */
+    if (document.querySelector(".site-footer, .site-foot")) return;
+    const f = el("footer", { class: "site-footer" }, `
+      Built with Claude Code · educational use only — no guarantee of correctness ·
+      © Robert Scholz · <a href="${SITE_ROOT}legal.html">Legal &amp; Privacy</a>`);
+    document.body.appendChild(f);
+  }
+
   /* ---------------- KaTeX ---------------- */
   function renderMath(root) {
     if (typeof renderMathInElement !== "function") return;
@@ -250,6 +268,7 @@
     renderMath(document.body);
     buildTOC();
     buildPager();
+    buildFooter();
     document.dispatchEvent(new CustomEvent("ee-ready"));
   });
 })();

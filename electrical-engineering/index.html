@@ -10,6 +10,7 @@
 <script src="../assets/vendor/katex/auto-render.min.js" defer></script>
 <script src="curriculum.js" defer></script>
 <script src="../assets/js/app.js" defer></script>
+<script src="../assets/js/sync.js" defer></script>
 </head>
 <body>
 
@@ -38,6 +39,11 @@
       <span class="muted" id="prog-label">0 / 21 modules completed</span>
     </div>
     <div class="bar"><span id="prog-bar"></span></div>
+    <div class="dash-parts" id="dash-parts"></div>
+    <details class="dash-quiz" id="dash-quiz-wrap">
+      <summary>Quiz scores</summary>
+      <table class="dash-quiz-table"><tbody id="dash-quiz"></tbody></table>
+    </details>
   </div>
 
   <section class="cat-block" style="margin-top:26px">
@@ -51,11 +57,13 @@
 </div>
 
 <footer class="site-footer">
-  EE Knowledge Base · built for self-study · progress is stored only in your browser (localStorage) · math rendered offline with KaTeX
+  EE Knowledge Base · a personal, non-commercial self-study project · built with Claude Code · educational use only — no guarantee of correctness ·
+  progress is stored in your browser, optionally synced if you create an account · math rendered offline with KaTeX ·
+  <a href="../legal.html">Legal &amp; Privacy</a>
 </footer>
 
 <script>
-document.addEventListener("ee-ready", () => {
+function renderHub() {
   const wrap = document.getElementById("curriculum");
   let html = "";
   for (const part of EE_CURRICULUM.parts) {
@@ -78,12 +86,45 @@ document.addEventListener("ee-ready", () => {
   }
   wrap.innerHTML = html;
 
-  /* progress bar */
+  /* overall progress bar */
   const total = EE_MODULES.length;
   const done = EE_MODULES.filter(m => EEStore.isDone(m.id)).length;
   document.getElementById("prog-label").textContent = `${done} / ${total} modules completed`;
   document.getElementById("prog-bar").style.width = (100 * done / total) + "%";
-});
+
+  /* per-part dashboard */
+  let parts = "";
+  for (const part of EE_CURRICULUM.parts) {
+    const n = part.modules.length;
+    const d = part.modules.filter(m => EEStore.isDone(m.id)).length;
+    const quizzes = part.modules.map(m => EEStore.quizBest(m.id)).filter(Boolean);
+    const avg = quizzes.length
+      ? Math.round(100 * quizzes.reduce((s, q) => s + q.score / q.total, 0) / quizzes.length)
+      : null;
+    parts += `<div class="dash-row">
+      <span class="dash-ic">${part.icon}</span>
+      <span class="dash-title">${part.title}</span>
+      <span class="dash-count">${d}/${n}</span>
+      <span class="dash-bar"><span style="width:${(100 * d / n)}%"></span></span>
+      <span class="dash-avg">${avg == null ? "—" : "quiz ⌀ " + avg + "%"}</span>
+    </div>`;
+  }
+  document.getElementById("dash-parts").innerHTML = parts;
+
+  /* quiz score table */
+  let rows = "";
+  for (const m of EE_MODULES) {
+    const q = EEStore.quizBest(m.id);
+    rows += `<tr>
+      <td class="dq-num">${m.num}</td>
+      <td class="dq-title"><a href="modules/${m.file}">${m.title}</a></td>
+      <td class="dq-score">${q ? `${q.score}/${q.total} (${Math.round(100 * q.score / q.total)}%)` : "—"}</td>
+    </tr>`;
+  }
+  document.getElementById("dash-quiz").innerHTML = rows;
+}
+document.addEventListener("ee-ready", renderHub);
+document.addEventListener("ee-progress-merged", renderHub);
 </script>
 </body>
 </html>

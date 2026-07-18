@@ -1,0 +1,10 @@
+name = "ee-sync"
+main = "src/index.js"
+compatibility_date = "2026-07-01"
+
+# After `wrangler d1 create ee-sync-db --location weur`, paste the
+# database_id it prints below, then `wrangler d1 migrations apply ee-sync-db --remote`.
+[[d1_databases]]
+binding = "DB"
+database_name = "ee-sync-db"
+database_id = "e13e745c-2a0f-4c1e-8e47-9069cc87f58d"

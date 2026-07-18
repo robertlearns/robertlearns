@@ -313,6 +313,53 @@ table.data td.num, table.data th.num { text-align: right; font-variant-numeric: 
 .btn:hover { filter: brightness(1.06); }
 .btn.ghost { background: transparent; color: var(--accent); }
 .btn.done { background: var(--ok); border-color: var(--ok); }
+.btn.danger { background: var(--bad); border-color: var(--bad); }
+.btn.danger.ghost { background: transparent; color: var(--bad); }
+
+/* ---------- Progress dashboard (EE hub) ---------- */
+.dash-parts { margin-top: 16px; display: grid; gap: 8px; }
+.dash-row { display: grid; grid-template-columns: 26px minmax(140px, 1.4fr) 42px 1fr 86px; gap: 10px; align-items: center; font-size: .9rem; }
+.dash-row .dash-ic { text-align: center; }
+.dash-row .dash-title { color: var(--text-soft); font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.dash-row .dash-count { color: var(--text-faint); font-variant-numeric: tabular-nums; text-align: right; }
+.dash-row .dash-bar { height: 7px; border-radius: 4px; background: var(--bg-sunken); overflow: hidden; }
+.dash-row .dash-bar span { display: block; height: 100%; border-radius: 4px; background: linear-gradient(90deg, var(--accent), var(--accent-2)); }
+.dash-row .dash-avg { color: var(--text-faint); font-size: .82rem; text-align: right; font-variant-numeric: tabular-nums; }
+.dash-quiz { margin-top: 14px; border-top: 1px solid var(--border); padding-top: 10px; }
+.dash-quiz summary { cursor: pointer; color: var(--text-soft); font-size: .9rem; font-weight: 600; }
+.dash-quiz-table { width: 100%; border-collapse: collapse; margin-top: 8px; font-size: .88rem; }
+.dash-quiz-table td { padding: 5px 8px; border-bottom: 1px solid var(--border); }
+.dash-quiz-table .dq-num { color: var(--text-faint); font-variant-numeric: tabular-nums; width: 34px; }
+.dash-quiz-table .dq-title a { color: var(--text-soft); text-decoration: none; }
+.dash-quiz-table .dq-title a:hover { color: var(--accent); }
+.dash-quiz-table .dq-score { text-align: right; font-variant-numeric: tabular-nums; color: var(--text-soft); white-space: nowrap; }
+@media (max-width: 640px) {
+  .dash-row { grid-template-columns: 22px 1fr 42px 76px; }
+  .dash-row .dash-bar { display: none; }
+}
+
+/* ---------- Account dialog (sync.js) ---------- */
+.topbar #account-btn { font-size: .9rem; gap: 6px; }
+.topbar #account-btn .ab-name { font-weight: 650; max-width: 12ch; overflow: hidden; text-overflow: ellipsis; }
+.account-dialog { border: 1px solid var(--border); border-radius: var(--radius); background: var(--bg-elev); color: var(--text); box-shadow: var(--shadow-lg); padding: 22px 24px; width: min(420px, 92vw); }
+.account-dialog::backdrop { background: rgba(10, 14, 22, .55); }
+.account-dialog .ad-head { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 12px; font-size: 1.05rem; }
+.account-dialog .ad-tabs { display: flex; gap: 6px; }
+.account-dialog .ad-tab { border: 1px solid var(--border); background: transparent; color: var(--text-soft); border-radius: 8px; padding: 6px 12px; cursor: pointer; font-weight: 650; font-size: .9rem; }
+.account-dialog .ad-tab.on { background: var(--accent-soft); color: var(--accent); border-color: var(--accent); }
+.account-dialog .ad-close { border: 0; background: none; color: var(--text-faint); font-size: 1rem; cursor: pointer; }
+.account-dialog .ad-sub { color: var(--text-soft); font-size: .92rem; margin: 0 0 14px; }
+.account-dialog .ad-field { display: block; margin-bottom: 12px; }
+.account-dialog .ad-field span { display: block; font-size: .82rem; font-weight: 650; color: var(--text-soft); margin-bottom: 4px; }
+.account-dialog .ad-field input { width: 100%; box-sizing: border-box; padding: 9px 12px; border: 1px solid var(--border-strong); border-radius: 8px; background: var(--bg-panel); color: var(--text); font-size: .95rem; }
+.account-dialog .ad-field input:focus { outline: 2px solid var(--accent); outline-offset: 1px; border-color: var(--accent); }
+.account-dialog .ad-actions { display: flex; gap: 10px; flex-wrap: wrap; margin-top: 14px; }
+.account-dialog .ad-error { color: var(--bad); background: var(--bad-soft); border-radius: 8px; padding: 8px 12px; font-size: .88rem; margin: 10px 0 0; }
+.account-dialog .ad-privacy { color: var(--text-faint); font-size: .8rem; margin: 16px 0 0; border-top: 1px solid var(--border); padding-top: 10px; }
+.account-dialog .ad-code { display: flex; align-items: center; gap: 10px; background: var(--bg-sunken); border: 1px dashed var(--border-strong); border-radius: 8px; padding: 12px 14px; margin-bottom: 12px; }
+.account-dialog .ad-code code { font-family: var(--font-mono); font-size: 1.02rem; letter-spacing: .04em; flex: 1; word-break: break-all; }
+.account-dialog .ad-check { display: flex; gap: 8px; align-items: center; font-size: .9rem; color: var(--text-soft); }
+.account-dialog .btn[disabled] { opacity: .5; cursor: not-allowed; }
 
 /* ---------- Footer ---------- */
 .site-footer { border-top: 1px solid var(--border); padding: 30px 32px; color: var(--text-faint); font-size: .86rem; text-align: center; background: var(--bg-panel); }

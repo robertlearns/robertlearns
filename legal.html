@@ -1,0 +1,164 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Legal &amp; Privacy — Robert learns</title>
+<style>
+:root {
+  --bg: #f7f8fa; --bg-panel: #ffffff; --bg-sunken: #eef1f6;
+  --text: #1c2330; --text-soft: #4a5568; --text-faint: #7a8699;
+  --border: #e2e7ef; --border-strong: #cbd3e0;
+  --accent: #2f6df6; --accent-2: #6c4df6;
+  --warn: #c8860b; --warn-soft: #fdf3dd;
+  --bad: #d8452b; --bad-soft: #fbe6e1;
+}
+:root[data-theme="dark"] {
+  --bg: #0f1420; --bg-panel: #161c2b; --bg-sunken: #0c111b;
+  --text: #e8ecf4; --text-soft: #aab4c5; --text-faint: #6b7688;
+  --border: #232c40; --border-strong: #34405c;
+  --warn-soft: #2b2410; --bad-soft: #2b1512;
+}
+* { box-sizing: border-box; }
+body {
+  margin: 0; background: var(--bg); color: var(--text);
+  font: 16px/1.65 -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+}
+.wrap { max-width: 760px; margin: 0 auto; padding: 28px 24px 80px; }
+.top { display: flex; align-items: center; gap: 12px; margin-bottom: 28px; }
+.top a.back { color: var(--text-soft); text-decoration: none; font-size: .92rem; }
+.top a.back:hover { color: var(--accent); }
+.top .spacer { flex: 1; }
+.theme-toggle { border: 1px solid var(--border-strong); background: var(--bg-panel); border-radius: 8px; padding: 6px 10px; cursor: pointer; font-size: 1rem; }
+h1 { font-size: 1.9rem; letter-spacing: -.02em; margin: 0 0 6px; }
+.updated { color: var(--text-faint); font-size: .86rem; margin-bottom: 30px; }
+h2 { font-size: 1.2rem; margin: 34px 0 10px; padding-top: 22px; border-top: 1px solid var(--border); }
+h2:first-of-type { border-top: 0; padding-top: 0; }
+p, li { color: var(--text-soft); }
+b, strong { color: var(--text); }
+a { color: var(--accent); }
+code { background: var(--bg-sunken); border-radius: 5px; padding: 1px 6px; font-size: .88em;
+  font-family: "SF Mono", "JetBrains Mono", ui-monospace, Menlo, Consolas, monospace; }
+.callout { border-left: 4px solid var(--warn); background: var(--warn-soft); border-radius: 8px; padding: 14px 18px; margin: 14px 0; }
+.callout.danger { border-left-color: var(--bad); background: var(--bad-soft); }
+.callout p { margin: 0; }
+.foot-note { margin-top: 44px; padding-top: 18px; border-top: 1px solid var(--border); color: var(--text-faint); font-size: .85rem; }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <div class="top">
+    <a class="back" href="index.html">← Robert learns</a>
+    <span class="spacer"></span>
+    <button class="theme-toggle" id="theme-btn" aria-label="Toggle theme">🌙</button>
+  </div>
+
+  <h1>Legal &amp; Privacy</h1>
+  <p class="updated">Last updated: 18 July 2026</p>
+
+  <h2>Site notice</h2>
+  <p>
+    This website (<b>Robert learns</b>, incl. the EE&nbsp;Knowledge&nbsp;Base) is a personal,
+    <b>non-commercial</b> self-study project. It generates no revenue and contains no
+    advertising, no sponsored content and no affiliate links.
+  </p>
+  <p>
+    Responsible for the content: <b>Robert Scholz</b><br>
+    Contact: <a href="mailto:robertetudie@gmail.com">robertetudie@gmail.com</a>
+  </p>
+
+  <h2>How this site was made (AI disclosure)</h2>
+  <p>
+    The pages were created with <b>Claude Code</b>, an AI coding tool by Anthropic, and
+    curated by me. AI-generated content can contain mistakes — factual errors, wrong
+    formulas, or misleading simplifications — that survive review.
+  </p>
+
+  <h2>No guarantee of correctness</h2>
+  <p>
+    All content is provided <b>“as is”</b>, for personal educational use only, without any
+    warranty of correctness, completeness, or fitness for a particular purpose. I take
+    <b>no responsibility</b> for the accuracy of the material or for consequences of relying
+    on it. Always verify important results against established textbooks and standards.
+  </p>
+
+  <h2>Safety warning</h2>
+  <div class="callout danger">
+    <p>
+      ⚠️ This site covers electrical engineering topics including mains and high voltage.
+      <b>Do not perform real electrical work based on this content.</b> Mains voltage can be
+      lethal. Real installations and repairs must follow local regulations (in Germany e.g.
+      the VDE&nbsp;standards) and are the job of qualified electricians.
+    </p>
+  </div>
+
+  <h2>Privacy</h2>
+  <p>
+    This site is designed to collect as little data as possible:
+  </p>
+  <ul>
+    <li><b>No cookies, no analytics, no trackers.</b> No Google Fonts, no CDNs — all
+      resources, including the KaTeX math renderer and its fonts, are served from this
+      site itself, so no third party is contacted while you browse.</li>
+    <li><b>Learning progress</b> (completed modules, quiz scores, theme choice) is stored
+      only in your own browser using localStorage (keys <code>ee-kb-progress-v1</code>,
+      <code>ee-kb-theme</code>). It is not transmitted anywhere. Clearing your browser
+      data removes it.</li>
+    <li><b>Optional account for cross-device sync.</b> If — and only if — you create an
+      account, the following is stored on a server: your chosen username, a salted hash of
+      your password, a salted hash of your recovery code, your learning progress, and
+      timestamps. <b>No email address and no other personal data</b> are required or stored.
+      The sync service runs on Cloudflare Workers with the database located in Western
+      Europe; Cloudflare, Inc. transiently processes connection metadata (such as IP
+      addresses) to deliver requests — see the
+      <a href="https://www.cloudflare.com/privacypolicy/" rel="noopener">Cloudflare privacy policy</a>.
+      The session token is kept in your browser's localStorage. You can
+      <b>delete your account yourself</b> at any time in the account dialog; this immediately
+      and permanently removes all your data from the server.</li>
+    <li><b>Hosting.</b> The site is served via GitHub Pages. GitHub may process visitors'
+      IP addresses in ordinary server logs — see the
+      <a href="https://docs.github.com/en/site-policy/privacy-policies/github-privacy-statement" rel="noopener">GitHub privacy statement</a>.</li>
+  </ul>
+
+  <h2>Copyright &amp; licenses</h2>
+  <p>
+    Original content © 2026 Robert Scholz, licensed under
+    <a href="https://creativecommons.org/licenses/by-nc-sa/4.0/" rel="noopener">CC&nbsp;BY-NC-SA&nbsp;4.0</a>
+    — you may share and adapt it for non-commercial purposes with attribution, under the
+    same license.
+  </p>
+  <p>
+    Third-party software: <a href="https://katex.org" rel="noopener">KaTeX</a>
+    (MIT license, © Khan Academy and other contributors —
+    <a href="assets/vendor/katex/LICENSE">license text</a>).
+  </p>
+
+  <p class="foot-note">
+    This page is informational and not legal advice.
+  </p>
+
+</div>
+
+<script>
+(function () {
+  "use strict";
+  function currentTheme() {
+    var s = localStorage.getItem("ee-kb-theme");
+    if (s) return s;
+    return matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light";
+  }
+  function applyTheme(t) {
+    document.documentElement.dataset.theme = t;
+    document.getElementById("theme-btn").textContent = t === "dark" ? "☀️" : "🌙";
+  }
+  applyTheme(currentTheme());
+  document.getElementById("theme-btn").addEventListener("click", function () {
+    var next = document.documentElement.dataset.theme === "dark" ? "light" : "dark";
+    localStorage.setItem("ee-kb-theme", next);
+    applyTheme(next);
+  });
+})();
+</script>
+</body>
+</html>
