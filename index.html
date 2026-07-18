@@ -119,6 +119,10 @@ body {
 }
 .theme-toggle:hover { color: var(--text); border-color: var(--border-strong); }
 
+.header-actions { display: flex; gap: 10px; align-items: center; }
+#account-btn { width: auto; min-width: 36px; padding: 0 10px; display: inline-flex; align-items: center; gap: 6px; }
+#account-btn .ab-name { font-size: .85rem; font-weight: 600; max-width: 12ch; overflow: hidden; text-overflow: ellipsis; }
+
 .intro {
   color: var(--text-mid);
   font-size: 1.05rem;
@@ -285,7 +289,10 @@ body {
 <div class="page">
   <header class="site-header">
     <div class="masthead">Robert <em>learns</em></div>
-    <button class="theme-toggle" id="theme-btn" aria-label="Toggle theme">🌙</button>
+    <div class="header-actions">
+      <button class="theme-toggle" id="account-btn" hidden aria-label="Account">👤</button>
+      <button class="theme-toggle" id="theme-btn" aria-label="Toggle theme">🌙</button>
+    </div>
   </header>
 
   <p class="intro">Self-study curricula built from first principles — interactive, self-contained, and designed for deep understanding.</p>
@@ -352,20 +359,21 @@ body {
     applyTheme(next);
   });
 
-  /* EE progress from localStorage */
-  try {
-    var data = JSON.parse(localStorage.getItem("ee-kb-progress-v1"));
-    if (data && data.completed) {
-      var done = Object.keys(data.completed).length;
-      if (done > 0) {
-        var total = 21;
-        document.getElementById("ee-progress").hidden = false;
-        document.getElementById("ee-prog-text").textContent = done + " / " + total + " completed";
-        document.getElementById("ee-prog-bar").style.width = (100 * done / total) + "%";
-      }
-    }
-  } catch (e) {}
+  /* EE progress from localStorage (re-rendered after account sync) */
+  function renderProgress() {
+    try {
+      var data = JSON.parse(localStorage.getItem("ee-kb-progress-v1"));
+      var done = data && data.completed ? Object.keys(data.completed).length : 0;
+      var total = 21;
+      document.getElementById("ee-progress").hidden = done === 0;
+      document.getElementById("ee-prog-text").textContent = done + " / " + total + " completed";
+      document.getElementById("ee-prog-bar").style.width = (100 * done / total) + "%";
+    } catch (e) {}
+  }
+  renderProgress();
+  document.addEventListener("ee-progress-merged", renderProgress);
 })();
 </script>
+<script src="assets/js/sync.js" defer></script>
 </body>
 </html>

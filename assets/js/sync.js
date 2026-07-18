@@ -9,7 +9,22 @@
    ============================================================ */
 (function () {
   "use strict";
-  if (!window.EEStore) return;
+
+  /* Progress store: the app shell's EEStore where present (course pages);
+     otherwise a minimal localStorage-backed shim so pages without the
+     shell (the portal) can still offer accounts and sync progress. */
+  const Store = window.EEStore || (() => {
+    const KEY = "ee-kb-progress-v1";
+    return {
+      get data() {
+        try { return JSON.parse(localStorage.getItem(KEY)) || {}; } catch { return {}; }
+      },
+      replaceData(d) { try { localStorage.setItem(KEY, JSON.stringify(d || {})); } catch {} },
+      get completed() { return this.data.completed || {}; },
+      get quiz() { return this.data.quiz || {}; },
+      isDone(id) { return !!(this.data.completed || {})[id]; },
+    };
+  })();
 
   /* After `wrangler deploy`, replace with the printed workers.dev URL. */
   const PROD_API = "https://ee-sync.robertetudie.workers.dev";
@@ -88,11 +103,11 @@
   /* ---------------- UI refresh after a merge ---------------- */
   function applyMergedUI() {
     document.querySelectorAll(".nav-link[data-mod]").forEach(l =>
-      l.classList.toggle("done", EEStore.isDone(l.dataset.mod)));
+      l.classList.toggle("done", Store.isDone(l.dataset.mod)));
     const btn = document.getElementById("complete-btn");
     const modId = document.body.dataset.module;
     if (btn && modId) {
-      const done = EEStore.isDone(modId);
+      const done = Store.isDone(modId);
       btn.textContent = done ? "✓ Completed" : "Mark as complete";
       btn.classList.toggle("done", done);
       const bar = btn.closest(".complete-bar");
@@ -112,10 +127,10 @@
      a clean device must adopt the server state as-is, or a module
      un-completed elsewhere would be resurrected by the union merge. */
   function adoptServerState(progress, rev, forceMerge) {
-    const next = (forceMerge || getMeta().dirty) ? mergeProgress(progress, EEStore.data) : progress;
+    const next = (forceMerge || getMeta().dirty) ? mergeProgress(progress, Store.data) : progress;
     setMeta({ rev, lastSync: Date.now() });
-    const changed = canon(next) !== canon(EEStore.data);
-    EEStore.replaceData(next);
+    const changed = canon(next) !== canon(Store.data);
+    Store.replaceData(next);
     if (changed) applyMergedUI();
     if (canon(next) !== canon(progress)) doPush();
     else setMeta({ dirty: false });
@@ -136,13 +151,13 @@
     if (!getAuth()) return;
     try {
       const { status, data } = await api("PUT", "/api/progress",
-        { course: COURSE, progress: { completed: EEStore.completed, quiz: EEStore.quiz }, baseRev: getMeta().rev });
+        { course: COURSE, progress: { completed: Store.completed, quiz: Store.quiz }, baseRev: getMeta().rev });
       if (status === 200) { setMeta({ rev: data.rev, dirty: false, lastSync: Date.now() }); statusRefresh(); return; }
       if (status === 401) { clearAuth(); return; }
       if (status === 409 && data && !retrying) {
-        const merged = mergeProgress(data.progress, EEStore.data);
+        const merged = mergeProgress(data.progress, Store.data);
         setMeta({ rev: data.rev });
-        if (canon(merged) !== canon(EEStore.data)) { EEStore.replaceData(merged); applyMergedUI(); }
+        if (canon(merged) !== canon(Store.data)) { Store.replaceData(merged); applyMergedUI(); }
         return doPush(true);
       }
       setMeta({ dirty: true });
@@ -165,7 +180,7 @@
         fetch(API_BASE + "/api/progress", {
           method: "PUT", keepalive: true,
           headers: { "Content-Type": "application/json", "Authorization": "Bearer " + getAuth().token },
-          body: JSON.stringify({ course: COURSE, progress: { completed: EEStore.completed, quiz: EEStore.quiz }, baseRev: getMeta().rev }),
+          body: JSON.stringify({ course: COURSE, progress: { completed: Store.completed, quiz: Store.quiz }, baseRev: getMeta().rev }),
         });
       } catch {}
     }
@@ -174,8 +189,58 @@
   /* ---------------- account dialog ---------------- */
   let dlg = null;
 
+  /* Dialog styles are injected here (not in style.css) so the dialog works
+     on any page, including ones with their own design system (the portal).
+     The --ad-* fallback chains pick up whichever theme variables exist. */
+  const DIALOG_CSS = `
+.account-dialog {
+  --ad-bg: var(--bg-elev, var(--bg-card, #fff));
+  --ad-panel: var(--bg-panel, var(--bg-card, #fff));
+  --ad-sunken: var(--bg-sunken, var(--bg, #eef1f6));
+  --ad-text: var(--text, #1c2330);
+  --ad-soft: var(--text-soft, var(--text-mid, #4a5568));
+  --ad-faint: var(--text-faint, #7a8699);
+  --ad-border: var(--border, #e2e7ef);
+  --ad-border-strong: var(--border-strong, #cbd3e0);
+  --ad-accent: var(--accent, #2f6df6);
+  --ad-accent-soft: var(--accent-soft, rgba(47,109,246,.14));
+  --ad-bad: var(--bad, #d8452b);
+  --ad-bad-soft: var(--bad-soft, rgba(216,69,43,.14));
+  margin: auto; /* re-center: page CSS resets may zero the UA dialog margins */
+  border: 1px solid var(--ad-border); border-radius: 12px;
+  background: var(--ad-bg); color: var(--ad-text);
+  box-shadow: 0 8px 32px rgba(10,14,22,.28);
+  padding: 22px 24px; width: min(420px, 92vw);
+}
+.account-dialog::backdrop { background: rgba(10,14,22,.55); }
+.account-dialog .ad-head { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin: 0 0 12px; font-size: 1.05rem; }
+.account-dialog .ad-tabs { display: flex; gap: 6px; }
+.account-dialog .ad-tab { border: 1px solid var(--ad-border); background: transparent; color: var(--ad-soft); border-radius: 8px; padding: 6px 12px; cursor: pointer; font-weight: 650; font-size: .9rem; }
+.account-dialog .ad-tab.on { background: var(--ad-accent-soft); color: var(--ad-accent); border-color: var(--ad-accent); }
+.account-dialog .ad-close { border: 0; background: none; color: var(--ad-faint); font-size: 1rem; cursor: pointer; }
+.account-dialog .ad-sub { color: var(--ad-soft); font-size: .92rem; margin: 0 0 14px; }
+.account-dialog .ad-field { display: block; margin: 0 0 12px; }
+.account-dialog .ad-field span { display: block; font-size: .82rem; font-weight: 650; color: var(--ad-soft); margin: 0 0 4px; }
+.account-dialog .ad-field input { width: 100%; box-sizing: border-box; padding: 9px 12px; border: 1px solid var(--ad-border-strong); border-radius: 8px; background: var(--ad-panel); color: var(--ad-text); font-size: .95rem; }
+.account-dialog .ad-field input:focus { outline: 2px solid var(--ad-accent); outline-offset: 1px; border-color: var(--ad-accent); }
+.account-dialog .ad-actions { display: flex; gap: 10px; flex-wrap: wrap; margin-top: 14px; }
+.account-dialog .ad-error { color: var(--ad-bad); background: var(--ad-bad-soft); border-radius: 8px; padding: 8px 12px; font-size: .88rem; margin: 10px 0 0; }
+.account-dialog .ad-privacy { color: var(--ad-faint); font-size: .8rem; margin: 16px 0 0; border-top: 1px solid var(--ad-border); padding-top: 10px; }
+.account-dialog .ad-privacy a { color: var(--ad-soft); }
+.account-dialog .ad-code { display: flex; align-items: center; gap: 10px; background: var(--ad-sunken); border: 1px dashed var(--ad-border-strong); border-radius: 8px; padding: 12px 14px; margin: 0 0 12px; }
+.account-dialog .ad-code code { font-family: var(--font-mono, ui-monospace, Menlo, Consolas, monospace); font-size: 1.02rem; letter-spacing: .04em; flex: 1; word-break: break-all; }
+.account-dialog .ad-check { display: flex; gap: 8px; align-items: center; font-size: .9rem; color: var(--ad-soft); }
+.account-dialog .btn { border: 1px solid var(--ad-accent); background: var(--ad-accent); color: #fff; border-radius: 9px; padding: 9px 16px; cursor: pointer; font-weight: 650; font-size: .92rem; text-decoration: none; display: inline-flex; align-items: center; gap: 8px; font-family: inherit; }
+.account-dialog .btn:hover { filter: brightness(1.06); }
+.account-dialog .btn.ghost { background: transparent; color: var(--ad-accent); }
+.account-dialog .btn.danger { background: var(--ad-bad); border-color: var(--ad-bad); color: #fff; }
+.account-dialog .btn[disabled] { opacity: .5; cursor: not-allowed; filter: none; }`;
+
   function ensureDialog() {
     if (dlg) return dlg;
+    const style = document.createElement("style");
+    style.textContent = DIALOG_CSS;
+    document.head.appendChild(style);
     dlg = document.createElement("dialog");
     dlg.className = "account-dialog";
     document.body.appendChild(dlg);
@@ -200,7 +265,9 @@
       learning progress — no email, no personal data. <a href="${siteRoot()}legal.html">Legal &amp; Privacy</a></p>`;
   }
   function siteRoot() {
-    return /\/modules\//.test(location.pathname) ? "../../" : "../";
+    if (/\/modules\//.test(location.pathname)) return "../../";
+    if (/\/electrical-engineering\//.test(location.pathname)) return "../";
+    return "./";
   }
 
   function viewLoggedOut(tab) {
@@ -397,8 +464,9 @@
     pull();
   }
 
-  /* app.js builds the topbar on DOMContentLoaded and then fires ee-ready;
-     if the shell is already up (dynamic load), boot immediately. */
-  if (document.querySelector(".topbar")) boot();
+  /* Pages with the app shell get #account-btn injected by app.js on
+     DOMContentLoaded (then ee-ready fires); pages with a hardcoded
+     button (the portal) have it in the DOM already when this runs. */
+  if (document.getElementById("account-btn")) boot();
   else document.addEventListener("ee-ready", boot, { once: true });
 })();
