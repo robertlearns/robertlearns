@@ -10,6 +10,8 @@
    ============================================================ */
 
 const ALLOWED_ORIGINS = [
+  "https://robert-learns.com",
+  "https://www.robert-learns.com",
   "https://robertlearns.github.io",
 ];
 const DEV_ORIGIN = /^http:\/\/(localhost|127\.0\.0\.1)(:\d+)?$/;
